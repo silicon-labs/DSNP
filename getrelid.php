@@ -9,7 +9,7 @@ $fp = $_GET['fp'];
 
 $fn = 'relid/' . $fp . '.asc';
 
-$asc = file( $fn );
+$asc = file_get_contents( $fn );
 unlink( $asc );
 
 header( 'Content-Type: text/plain' );

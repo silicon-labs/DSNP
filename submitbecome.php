@@ -22,7 +22,7 @@ $gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 $gnupg->addencryptkey( $fp );
 $gnupg->addsignkey( $FINGERPRINT, '' );
 $enc = $gnupg->encryptsign( $relid );
-$fn = 'tokens/' . $fp . '.asc';
+$fn = 'relid/' . $fp . '.asc';
 $fd = fopen( $fn, 'wt' );
 fwrite( $fd, $enc );
 fclose( $fd );

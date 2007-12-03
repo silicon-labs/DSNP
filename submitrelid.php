@@ -7,7 +7,7 @@ iduri_session_start( $IDENTITY );
 
 $furi = $_GET['uri'];
 
-$asc = $furi . 'tokens/' . $FINGERPRINT . '.asc';
+$asc = $furi . 'getrelid.php?fp=' . $FINGERPRINT;
 $response = http_get( $asc, array("timeout"=>1), $info );
 $message = http_parse_message( $response );
 

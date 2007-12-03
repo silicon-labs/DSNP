@@ -9,8 +9,7 @@ requireOwner();
 
 $furi = $_GET['uri'];
 
-
-$asc = $furi . 'tokens/' . $FINGERPRINT . '.asc';
+$asc = $furi . 'getrelid.php?fp=' . $FINGERPRINT;
 $response = http_get( $asc, array("timeout"=>1), $info );
 $message = http_parse_message( $response );
 
@@ -31,7 +30,7 @@ $gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 $gnupg->addencryptkey( $fp );
 $gnupg->addsignkey( $FINGERPRINT, '' );
 $enc = $gnupg->encryptsign( $plain . ' ' . $relid );
-$fn = 'tokens/' . $fp . '.asc';
+$fn = 'relid/' . $fp . '.asc';
 $fd = fopen( $fn, 'wt' );
 fwrite( $fd, $enc );
 fclose( $fd );

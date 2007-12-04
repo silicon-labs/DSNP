@@ -89,6 +89,16 @@ function friendList( $data )
 	}
 }
 
+function showFriendRequests( $data )
+{
+	$requests = $data['requests'];
+	foreach ( $requests as $furi => $n ) {
+		echo "<b>Friend Request:</b> <a href=\"$furi\">$furi</a>&nbsp;&nbsp;<a\n";
+		echo "href=\"answer.php?uri=" . urlencode($furi) . "&a=yes\">yes</a>&nbsp;&nbsp;<a\n";
+		echo "href=\"answer.php?uri=" . urlencode($furi) . "&a=no\">no</a><br>\n";
+	}
+}
+
 function requireFriend()
 {
 	if ( $_SESSION['auth'] != 'friend' )

@@ -10,9 +10,10 @@ $data = read_data();
 </head>
 <h1>Owner Page -- <?php print $IDENTITY;?></h1>
 <a href="<?php print $IDENTITY . 'logout.php';?>">logout</a><br>
-
+<?php showFriendRequests( $data ); ?>
 <h1>Friend List</h1>
 
 <?php friendList( $data ); ?>
+
 
 </html>

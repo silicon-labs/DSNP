@@ -26,14 +26,18 @@ $getrelid = $s[1];
 $data = read_data();
 $fp = $data['fingerprints'][$furi];
 $data['getrelids'][$fp] = $getrelid;
-write_data( $data );
 
 if ( $putrelid == $data['putrelids'][$fp] ) {
 	echo "friend request submitted<br>\n";
 	echo "<a href=\"$IDENTITY\">back to profile</a>";
+
+	/* Store the request for review. */
+	$data['requests'][$furi] = 1;
 }
 else {
 	echo "<center>\n";
 	echo "FRIEND REQUEST FAILED<br>\n";
 	echo "</center>\n";
 }
+
+write_data( $data );

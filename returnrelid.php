@@ -30,6 +30,11 @@ $data = read_data();
 $data['getrelids'][$fp] = $getrelid;
 $data['putrelids'][$fp] = $putrelid;
 $data['fingerprints'][$furi] = $fp;
+
+# We consider them a friend at this point, though it is only a one-way link. We
+# can't prove it.
+$data['friends'][$furi] = $fp;
+
 write_data( $data );
 
 # Create the message containing the relid echo and the relid for the friend to

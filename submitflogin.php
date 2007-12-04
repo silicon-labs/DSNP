@@ -9,6 +9,7 @@ $furi = $_POST['uri'];
 
 $data = read_data( );
 $friends = $data['friends'];
+$putrelids = $data['putrelids'];
 
 if ( !isset( $friends[$furi] ) ) {
 	echo "<center>\n";
@@ -24,7 +25,7 @@ else {
 	$token = sha1( uniqid( mt_rand() ) );
 	$_SESSION['tok'] = $token;
 	$enc = $gnupg->encryptsign( $token );
-	$fn = 'tokens/' . $friends[$furi] . '.asc';
+	$fn = 'tokens/' . $putrelids[$friends[$furi]] . '.asc';
 	$fd = fopen( $fn, 'wt' );
 	fwrite( $fd, $enc );
 	fclose( $fd );

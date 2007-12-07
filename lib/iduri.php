@@ -85,7 +85,18 @@ function friendList( $data )
 {
 	$friends = $data['friends'];
 	foreach ( $friends as $uri => $fp ) {
-		echo "<a href=\"$uri\">$uri</a><br>";
+		echo "<a href=\"$uri\">$uri</a> ";
+		$fn = 'downloads/' . $fp . '.srl';
+		if ( is_file( $fn ) ) {
+			$fd = fopen( $fn, 'r' );
+			fclose( $fd );
+			echo "have data ";
+		}
+		else {
+			echo "no data ";
+		}
+		echo "<a href=\"refresh.php?uri=" . urlencode($uri) . "\">refresh</a>";
+		echo "<br>";
 	}
 }
 

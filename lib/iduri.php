@@ -71,16 +71,6 @@ function read_data( )
 	return unserialize( $s );
 }
 
-function initDB()
-{
-	$data = Array(
-		'name' => '',
-		'friends' => Array()
-	);
-
-	write_data( $data );
-}
-
 function friendList( $data )
 {
 	$friends = $data['friends'];

@@ -84,12 +84,4 @@ cat > config.php << EOF
 ?>
 EOF
 
-php << EOF
-<?php
-include( 'config.php' );
-include( 'lib/iduri.php' );
-initDB( );
-?>
-EOF
-
-
+php lib/init.php

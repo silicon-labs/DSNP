@@ -73,6 +73,7 @@ function read_data( )
 
 function friendList( $data )
 {
+	$owner = $_SESSION['auth'] == 'owner';
 	$friends = $data['friends'];
 	foreach ( $friends as $uri => $fp ) {
 		echo "<a href=\"$uri\">$uri</a> ";
@@ -85,7 +86,9 @@ function friendList( $data )
 		else {
 			echo "no data ";
 		}
-		echo "<a href=\"refresh.php?uri=" . urlencode($uri) . "\">refresh</a>";
+		if ( $owner ) {
+			echo "<a href=\"refresh.php?uri=" . urlencode($uri) . "\">refresh</a>";
+		}
 		echo "<br>";
 	}
 }

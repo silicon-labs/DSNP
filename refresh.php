@@ -34,20 +34,20 @@ $from_relid = $getrelids[$from_fp];
 
 $message = fetchMessage( $from_uri, 'feeds', $from_relid );
 
-if ( strlen( $message->responseCode == 200 ) ) {
+if ( strlen( $message->responseCode != 200 ) )
+	exit("feed fetch failed\n");
 
-	$gnupg = new gnupg();
-	$from_plain = decryptVerify( $gnupg, $message->body );
+# Fetch of feed succeeded. Decrypt it.
+$gnupg = new gnupg();
+$from_plain = decryptVerify( $gnupg, $message->body );
 
-	$from_data = unserialize( $from_plain );
+# Parse it.
+$from_data = unserialize( $from_plain );
 
-	writeFriendData( $from_fp, $from_data );
+# Store it.
+writeFriendData( $from_fp, $from_data );
 
-	header( "Location: $CFG_IDENTITY" );
-}
-else {
-	echo "SHIZER";
-}
-
+# Go back home.
+header( "Location: $CFG_IDENTITY" );
 
 ?>

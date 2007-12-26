@@ -31,12 +31,8 @@ $fp = importId( $gnupg, $furi );
 
 # Fetch and decrypt the relid from the potential friend.
 $asc = $furi . 'getrelid.php?fp=' . $CFG_FINGERPRINT;
-$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
-$message = http_parse_message( $response );
-$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
-$getrelid = "";
-$res = $gnupg->decryptverify( $message->body, $getrelid );
+$message = fetchHTTP( $asc );
+$getrelid = decryptVerify( $gnupg, $message );
 
 # Create a relationship id for the friend to use.
 $putrelid = sha1( uniqid( mt_rand() ) );
@@ -55,16 +51,8 @@ writeData( $data );
 
 # Create the message containing the relid echo and the relid for the friend to
 # use.
-$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->addencryptkey( $fp );
-$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
-$enc = $gnupg->encryptsign( $getrelid . ' ' . $putrelid );
-$fn = 'relid/' . $fp . '.asc';
-$fd = fopen( $fn, 'wt' );
-fwrite( $fd, $enc );
-fclose( $fd );
-chmod( $fn, 0644 );
+$plain = $getrelid . ' ' . $putrelid;
+$enc = encryptSign( $gnupg, $fp, $plain );
+publishMessage( 'relid', $fp, $enc );
 
-//header( 'Content-type: text/plain' );
-//print $enc;
 header('Location: ' . $furi . 'submitrelid.php?uri=' . urlencode( $CFG_IDENTITY ) );

@@ -91,13 +91,18 @@ function decryptVerify( $gnupg, $message )
 	return $plain;
 }
 
-function fetchMessage( $from_uri, $prefix, $name )
+function fetchHTTP( $resource )
 {
 	global $CFG_HTTP_GET_TIMEOUT;
-	$asc = $from_uri . $prefix . '/' . $name . '.asc';
 	$get_options = array( "timeout" => $CFG_HTTP_GET_TIMEOUT );
-	$response = http_get( $asc, $get_options, $info );
+	$response = http_get( $resource, $get_options, $info );
 	return http_parse_message( $response );
+}
+
+function fetchMessage( $from_uri, $prefix, $name )
+{
+	$asc = $from_uri . $prefix . '/' . $name . '.asc';
+	return fetchHTTP( $asc );
 }
 
 function writeFriendData( $friend_fp, $friend_data )

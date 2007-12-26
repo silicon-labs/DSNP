@@ -18,7 +18,7 @@
 
 function iduriSessionStart()
 {
-	global $CFG_IDENTITY
+	global $CFG_IDENTITY;
 	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
 	session_set_cookie_params( 0, $path );
 	session_start();
@@ -43,12 +43,14 @@ function friendLoginForm()
 	</form><?php
 }
 
-function importId( $gnupg, $uri, $timeout )
+function importId( $gnupg, $uri )
 {
-	$response = http_get( $uri . 'id.asc', array("timeout"=>$timeout), $info );
+	global $CFG_HTTP_GET_TIMEOUT;
+	$get_options = array( "timeout" => $CFG_HTTP_GET_TIMEOUT );
+	$response = http_get( $uri . 'id.asc', $get_options, $info );
 	$message = http_parse_message( $response );
 
-	// Import the key.
+	/* Import the key. */
 	$res = $gnupg->import( $message->body );
 
 	$fp = $res['fingerprint'];
@@ -58,7 +60,6 @@ function importId( $gnupg, $uri, $timeout )
 	$uid = $res[0]['uids'][0];
 	$user_id = $uid['uid'];
 
-	//header('Content-type: text/plain');
 	return $fp;
 }
 

@@ -26,7 +26,7 @@ $data = readData();
 $gnupg = new gnupg();
 
 # Get the public key.
-$fp = importId( $gnupg, $furi, $CFG_HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi );
 
 # Create a relationship id for the friend to use.
 $putrelid = sha1( uniqid( mt_rand() ) );

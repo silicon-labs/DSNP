@@ -29,7 +29,7 @@ $data = readData();
 
 $gnupg = new gnupg();
 
-$fp = importId( $gnupg, $furi, $CFG_HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi );
 
 $data['friends'][$furi] = $fp;
 writeData( $data );

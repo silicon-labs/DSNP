@@ -27,7 +27,7 @@ $furi = $_GET['uri'];
 
 # Get the public key of the friend.
 $gnupg = new gnupg();
-$fp = importId( $gnupg, $furi, $CFG_HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi );
 
 # Fetch and decrypt the relid from the potential friend.
 $asc = $furi . 'getrelid.php?fp=' . $CFG_FINGERPRINT;

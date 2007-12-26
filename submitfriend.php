@@ -29,9 +29,9 @@ $data = readData();
 
 $gnupg = new gnupg();
 
-$fp = importId( $gnupg, $furi, $HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi, $CFG_HTTP_GET_TIMEOUT );
 
 $data['friends'][$furi] = $fp;
 writeData( $data );
 
-header('Location: ' . $IDENTITY );
+header('Location: ' . $CFG_IDENTITY );

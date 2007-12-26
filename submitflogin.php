@@ -37,7 +37,7 @@ else {
 	$gnupg = new gnupg();
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 	$gnupg->addencryptkey( $friends[$furi] );
-	$gnupg->addsignkey( $FINGERPRINT, '' );
+	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
 	$token = sha1( uniqid( mt_rand() ) );
 	$_SESSION['tok'] = $token;
 	$enc = $gnupg->encryptsign( $token );
@@ -48,5 +48,5 @@ else {
 	chmod( $fn, 0644 );
 
 
-	header('Location: ' . $furi . 'returnftok.php?uri=' . urlencode( $IDENTITY ) );
+	header('Location: ' . $furi . 'returnftok.php?uri=' . urlencode( $CFG_IDENTITY ) );
 }

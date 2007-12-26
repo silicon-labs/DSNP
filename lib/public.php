@@ -25,11 +25,11 @@ $data = readData();
 <title><?php print $data['name']?> </title>
 </head>
 
-<h1>Public Page -- <?php print $IDENTITY;?></h1>
+<h1>Public Page -- <?php print $CFG_IDENTITY;?></h1>
 
-<a href="<?php print $IDENTITY . 'login.php';?>">owner login</a><br>
-<a href="<?php print $IDENTITY . 'flogin.php';?>">friend login</a><br>
-<a href="<?php print $IDENTITY . 'becomefriend.php';?>">become friend</a>
+<a href="<?php print $CFG_IDENTITY . 'login.php';?>">owner login</a><br>
+<a href="<?php print $CFG_IDENTITY . 'flogin.php';?>">friend login</a><br>
+<a href="<?php print $CFG_IDENTITY . 'becomefriend.php';?>">become friend</a>
 
 </html>
 

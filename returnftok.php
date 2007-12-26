@@ -30,12 +30,12 @@ $friends = $data['friends'];
 $getrelids = $data['getrelids'];
 
 $asc = $furi . 'tokens/' . $getrelids[$friends[$furi]] . '.asc';
-$response = http_get( $asc, array("timeout"=>$HTTP_GET_TIMEOUT), $info );
+$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
 $message = http_parse_message( $response );
 
 $gnupg = new gnupg();
 $gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->adddecryptkey( $FINGERPRINT, "" );
+$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
 $plain= "";
 $res = $gnupg->decryptverify( $message->body, $plain );
 

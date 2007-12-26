@@ -36,4 +36,4 @@ unset( $data['requests'][$furi] );
 
 writeData( $data );
 
-header( "Location: $IDENTITY" );
+header( "Location: $CFG_IDENTITY" );

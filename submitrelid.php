@@ -24,12 +24,12 @@ iduriSessionStart();
 $furi = $_GET['uri'];
 
 # Fetch and decrypt the get and put relids.
-$asc = $furi . 'getrelid.php?fp=' . $FINGERPRINT;
-$response = http_get( $asc, array("timeout"=>$HTTP_GET_TIMEOUT), $info );
+$asc = $furi . 'getrelid.php?fp=' . $CFG_FINGERPRINT;
+$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
 $message = http_parse_message( $response );
 $gnupg = new gnupg();
 $gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->adddecryptkey( $FINGERPRINT, "" );
+$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
 $relids = "";
 $res = $gnupg->decryptverify( $message->body, $relids );
 
@@ -45,7 +45,7 @@ $data['getrelids'][$fp] = $getrelid;
 
 if ( $putrelid == $data['putrelids'][$fp] ) {
 	echo "friend request submitted<br>\n";
-	echo "<a href=\"$IDENTITY\">back to profile</a>";
+	echo "<a href=\"$CFG_IDENTITY\">back to profile</a>";
 
 	/* Store the request for review. */
 	$data['requests'][$furi] = 1;

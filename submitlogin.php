@@ -25,10 +25,10 @@ $login = $_POST['username'];
 $pass = $_POST['password'];
 $md5pass = md5( $login . ':iduri:' . $pass );
 
-if ( $login == $USER && $md5pass == $PASS ) {
+if ( $login == $CFG_USER && $md5pass == $CFG_PASS ) {
 	/* Login successful. */
 	$_SESSION['auth'] = 'owner';
-	header( "Location: $IDENTITY" );
+	header( "Location: $CFG_IDENTITY" );
 }
 else {
 	echo "<center>\n";

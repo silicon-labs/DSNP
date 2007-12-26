@@ -16,13 +16,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-putenv( 'GNUPGHOME=./gnupghome/' );
-$HTTP_GET_TIMEOUT = 5;
-
 function iduriSessionStart()
 {
-	global $IDENTITY
-	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $IDENTITY );
+	global $CFG_IDENTITY
+	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
 	session_set_cookie_params( 0, $path );
 	session_start();
 }
@@ -67,10 +64,10 @@ function importId( $gnupg, $uri, $timeout )
 
 function encryptSign( $gnupg, $to_fp, $message )
 {
-	global $FINGERPRINT;
+	global $CFG_FINGERPRINT;
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 	$gnupg->addencryptkey( $to_fp );
-	$gnupg->addsignkey( $FINGERPRINT, '' );
+	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
 	return $gnupg->encryptsign( $message );
 }
 

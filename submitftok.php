@@ -28,7 +28,7 @@ $friends = $data['friends'];
 
 if ( $_SESSION['tok'] == $token ) {
 	$_SESSION['auth'] = 'friend';
-	header( "Location: $IDENTITY" );
+	header( "Location: $CFG_IDENTITY" );
 }
 else {
 	echo "<center>\n";

@@ -32,7 +32,7 @@ foreach ( $friends as $uri => $fp ) {
 	$gnupg = new gnupg();
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 	$gnupg->addencryptkey( $fp );
-	$gnupg->addsignkey( $FINGERPRINT, '' );
+	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
 	$enc = $gnupg->encryptsign( serialize($friends) );
 	$fn = 'feeds/' . $putrelids[$fp] . '.asc';
 	$fd = fopen( $fn, 'wt' );
@@ -41,5 +41,5 @@ foreach ( $friends as $uri => $fp ) {
 	chmod( $fn, 0644 );
 }
 
-header('Location: ' . $IDENTITY );
+header('Location: ' . $CFG_IDENTITY );
 ?>

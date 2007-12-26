@@ -26,8 +26,8 @@ $data = readData();
 <title><?php $data['name']?> </title>
 </head>
 
-<h1>Friend Page -- <?php print $IDENTITY;?></h1>
-<a href="<?php print $IDENTITY . 'logout.php';?>">logout</a>
+<h1>Friend Page -- <?php print $CFG_IDENTITY;?></h1>
+<a href="<?php print $CFG_IDENTITY . 'logout.php';?>">logout</a>
 
 <h1>Friend List</h1>
 

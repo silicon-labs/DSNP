@@ -27,14 +27,14 @@ $furi = $_GET['uri'];
 
 # Get the public key of the friend.
 $gnupg = new gnupg();
-$fp = importId( $gnupg, $furi, $HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi, $CFG_HTTP_GET_TIMEOUT );
 
 # Fetch and decrypt the relid from the potential friend.
-$asc = $furi . 'getrelid.php?fp=' . $FINGERPRINT;
-$response = http_get( $asc, array("timeout"=>$HTTP_GET_TIMEOUT), $info );
+$asc = $furi . 'getrelid.php?fp=' . $CFG_FINGERPRINT;
+$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
 $message = http_parse_message( $response );
 $gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->adddecryptkey( $FINGERPRINT, "" );
+$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
 $getrelid = "";
 $res = $gnupg->decryptverify( $message->body, $getrelid );
 
@@ -57,7 +57,7 @@ writeData( $data );
 # use.
 $gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 $gnupg->addencryptkey( $fp );
-$gnupg->addsignkey( $FINGERPRINT, '' );
+$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
 $enc = $gnupg->encryptsign( $getrelid . ' ' . $putrelid );
 $fn = 'relid/' . $fp . '.asc';
 $fd = fopen( $fn, 'wt' );
@@ -67,4 +67,4 @@ chmod( $fn, 0644 );
 
 //header( 'Content-type: text/plain' );
 //print $enc;
-header('Location: ' . $furi . 'submitrelid.php?uri=' . urlencode( $IDENTITY ) );
+header('Location: ' . $furi . 'submitrelid.php?uri=' . urlencode( $CFG_IDENTITY ) );

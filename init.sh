@@ -91,10 +91,13 @@ PASSHASH=`echo -n $USER:iduri:$PASS | md5sum | awk '{print $1;}'`
 cat > config.php << EOF
 <?php
 /* Configuration */
-\$IDENTITY = '$URI';
-\$FINGERPRINT = '$FINGERPRINT';
-\$USER = '$USER';
-\$PASS = '$PASSHASH';
+\$CFG_IDENTITY = '$URI';
+\$CFG_FINGERPRINT = '$FINGERPRINT';
+\$CFG_USER = '$USER';
+\$CFG_PASS = '$PASSHASH';
+\$CFG_HTTP_GET_TIMEOUT = 5;
+
+putenv( 'GNUPGHOME=./gnupghome/' );
 ?>
 EOF
 

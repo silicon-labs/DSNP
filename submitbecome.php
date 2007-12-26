@@ -26,7 +26,7 @@ $data = readData();
 $gnupg = new gnupg();
 
 # Get the public key.
-$fp = importId( $gnupg, $furi, $HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi, $CFG_HTTP_GET_TIMEOUT );
 
 # Create a relationship id for the friend to use.
 $putrelid = sha1( uniqid( mt_rand() ) );
@@ -41,4 +41,4 @@ writeData( $data );
 $enc = encryptSign( $gnupg, $fp, $putrelid );
 publishMessage( 'relid', $fp, $enc );
 
-header('Location: ' . $furi . 'returnrelid.php?uri=' . urlencode( $IDENTITY ) );
+header('Location: ' . $furi . 'returnrelid.php?uri=' . urlencode( $CFG_IDENTITY ) );

@@ -23,6 +23,6 @@ iduriSessionStart();
 
 unset($_SESSION['auth']);
 
-header( "Location: $IDENTITY" );
+header( "Location: $CFG_IDENTITY" );
 
 ?>

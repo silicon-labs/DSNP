@@ -30,7 +30,7 @@ $friends = $data['friends'];
 $getrelids = $data['getrelids'];
 
 $asc = $furi . 'feeds/' . $getrelids[$friends[$furi]] . '.asc';
-$response = http_get( $asc, array("timeout"=>$HTTP_GET_TIMEOUT), $info );
+$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
 $message = http_parse_message( $response );
 
 
@@ -39,7 +39,7 @@ if ( strlen( $message->responseCode == 200 ) ) {
 
 	$gnupg = new gnupg();
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-	$gnupg->adddecryptkey( $FINGERPRINT, "" );
+	$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
 	$plain= "";
 	$res = $gnupg->decryptverify( $message->body, $plain );
 
@@ -49,6 +49,6 @@ if ( strlen( $message->responseCode == 200 ) ) {
 	fclose( $fd );
 }
 
-header( "Location: $IDENTITY" );
+header( "Location: $CFG_IDENTITY" );
 
 ?>

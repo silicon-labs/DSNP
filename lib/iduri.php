@@ -63,13 +63,13 @@ function importId( $gnupg, $uri )
 	return $fp;
 }
 
-function encryptSign( $gnupg, $to_fp, $message )
+function encryptSign( $gnupg, $to_fp, $plain )
 {
 	global $CFG_FINGERPRINT;
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 	$gnupg->addencryptkey( $to_fp );
 	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
-	return $gnupg->encryptsign( $message );
+	return $gnupg->encryptsign( $plain );
 }
 
 function publishMessage( $prefix, $name, $message )
@@ -81,10 +81,41 @@ function publishMessage( $prefix, $name, $message )
 	chmod( $fn, 0644 );
 }
 
+function decryptVerify( $gnupg, $message )
+{
+	global $CFG_FINGERPRINT;
+	$plain= "";
+	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
+	$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
+	$res = $gnupg->decryptverify( $message->body, $plain );
+	return $plain;
+}
+
+function fetchMessage( $from_uri, $prefix, $name )
+{
+	global $CFG_HTTP_GET_TIMEOUT;
+	$asc = $from_uri . $prefix . '/' . $name . '.asc';
+	$get_options = array( "timeout" => $CFG_HTTP_GET_TIMEOUT );
+	$response = http_get( $asc, $get_options, $info );
+	return http_parse_message( $response );
+}
+
+function writeFriendData( $friend_fp, $friend_data )
+{
+	$s = serialize( $friend_data );
+
+	$fd = fopen( 'downloads/' . $friend_fp . '.srl', 'w' );
+	fprintf( $fd, "%d\n", strlen( $s ) );
+	fwrite( $fd, $s );
+	fprintf( $fd, "\n" );
+	fclose( $fd );
+}
+
 function writeData( $data )
 {
-	$fd = fopen( 'data.srl', 'w' );	
 	$s = serialize( $data );
+
+	$fd = fopen( 'data.srl', 'w' );	
 	fprintf( $fd, "%d\n", strlen( $s ) );
 	fwrite( $fd, $s );
 	fprintf( $fd, "\n" );

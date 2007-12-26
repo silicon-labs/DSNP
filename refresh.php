@@ -23,32 +23,31 @@ iduriSessionStart();
 
 requireOwner();
 
-$furi = $_GET['uri'];
+$from_uri = $_GET['uri'];
 
 $data = readData();
 $friends = $data['friends'];
 $getrelids = $data['getrelids'];
 
-$asc = $furi . 'feeds/' . $getrelids[$friends[$furi]] . '.asc';
-$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
-$message = http_parse_message( $response );
+$from_fp = $friends[$from_uri];
+$from_relid = $getrelids[$from_fp];
 
+$message = fetchMessage( $from_uri, 'feeds', $from_relid );
 
 if ( strlen( $message->responseCode == 200 ) ) {
-	$fd = fopen( 'downloads/' . $friends[$furi] . '.srl', 'w' );
 
 	$gnupg = new gnupg();
-	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-	$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
-	$plain= "";
-	$res = $gnupg->decryptverify( $message->body, $plain );
+	$from_plain = decryptVerify( $gnupg, $message->body );
 
-	fprintf( $fd, "%d\n", strlen( $plain ) );
-	fwrite( $fd, $plain );
-	fprintf( $fd, "\n" );
-	fclose( $fd );
+	$from_data = unserialize( $from_plain );
+
+	writeFriendData( $from_fp, $from_data );
+
+	header( "Location: $CFG_IDENTITY" );
+}
+else {
+	echo "SHIZER";
 }
 
-header( "Location: $CFG_IDENTITY" );
 
 ?>

@@ -8,6 +8,7 @@ $ apt-get install gnupg
 2. The gnupg package for PHP (http://pecl.php.net/package/gnupg):
 
 $ apt-get install php5-dev        # for making extensions
+$ apt-get install php-pear        # provides pecl
 $ apt-get install libgpgme11-dev  # the GNUPG Made Easy library.
 $ pecl install gnupg
 $ echo extension=gnupg.so >> $PHP_CONFIG/php.ini

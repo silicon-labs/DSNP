@@ -19,7 +19,7 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 $fp = $_GET['fp'];
 

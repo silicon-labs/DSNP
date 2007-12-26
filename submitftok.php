@@ -19,11 +19,11 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 $token = $_GET['token'];
 
-$data = read_data( );
+$data = readData();
 $friends = $data['friends'];
 
 if ( $_SESSION['tok'] == $token ) {

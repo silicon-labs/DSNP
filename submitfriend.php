@@ -19,19 +19,19 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 requireOwner();
 
 $furi = $_POST['uri'];
 
-$data = read_data( );
+$data = readData();
 
 $gnupg = new gnupg();
 
-$fp = import_id( $gnupg, $furi, $HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi, $HTTP_GET_TIMEOUT );
 
 $data['friends'][$furi] = $fp;
-write_data( $data );
+writeData( $data );
 
 header('Location: ' . $IDENTITY );

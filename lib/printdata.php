@@ -19,6 +19,6 @@
 
 include( 'config.php' );
 include( 'lib/iduri.php' );
-$data = read_data();
+$data = readData();
 print_r( $data );
 ?>

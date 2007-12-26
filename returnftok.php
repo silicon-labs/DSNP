@@ -19,13 +19,13 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 requireOwner();
 
 $furi = $_GET['uri'];
 
-$data = read_data();
+$data = readData();
 $friends = $data['friends'];
 $getrelids = $data['getrelids'];
 

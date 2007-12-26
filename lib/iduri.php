@@ -19,9 +19,10 @@
 putenv( 'GNUPGHOME=./gnupghome/' );
 $HTTP_GET_TIMEOUT = 5;
 
-function iduri_session_start( $id )
+function iduriSessionStart()
 {
-	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $id );
+	global $IDENTITY
+	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $IDENTITY );
 	session_set_cookie_params( 0, $path );
 	session_start();
 }
@@ -45,7 +46,7 @@ function friendLoginForm()
 	</form><?php
 }
 
-function import_id( $gnupg, $uri, $timeout )
+function importId( $gnupg, $uri, $timeout )
 {
 	$response = http_get( $uri . 'id.asc', array("timeout"=>$timeout), $info );
 	$message = http_parse_message( $response );
@@ -64,7 +65,7 @@ function import_id( $gnupg, $uri, $timeout )
 	return $fp;
 }
 
-function encrypt_sign( $gnupg, $to_fp, $message )
+function encryptSign( $gnupg, $to_fp, $message )
 {
 	global $FINGERPRINT;
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
@@ -73,7 +74,7 @@ function encrypt_sign( $gnupg, $to_fp, $message )
 	return $gnupg->encryptsign( $message );
 }
 
-function publish_message( $prefix, $name, $message )
+function publishMessage( $prefix, $name, $message )
 {
 	$fn = $prefix . '/' . $name . '.asc';
 	$fd = fopen( $fn, 'wt' );
@@ -82,7 +83,7 @@ function publish_message( $prefix, $name, $message )
 	chmod( $fn, 0644 );
 }
 
-function write_data( $data )
+function writeData( $data )
 {
 	$fd = fopen( 'data.srl', 'w' );	
 	$s = serialize( $data );
@@ -91,7 +92,7 @@ function write_data( $data )
 	fprintf( $fd, "\n" );
 }
 
-function read_data( )
+function readData( )
 {
 	$fd = fopen( 'data.srl', 'r' );	
 	fscanf( $fd, "%d\n", &$slen  );

@@ -19,13 +19,13 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 requireOwner();
 
 $furi = $_GET['uri'];
 
-$data = read_data();
+$data = readData();
 $fp = $data['fingerprints'][$furi];
 
 if ( $_GET['a'] == 'yes' )
@@ -34,6 +34,6 @@ if ( $_GET['a'] == 'yes' )
 # Remove the request.
 unset( $data['requests'][$furi] );
 
-write_data( $data );
+writeData( $data );
 
 header( "Location: $IDENTITY" );

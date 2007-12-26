@@ -19,26 +19,26 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 $furi = $_POST['uri'];
-$data = read_data( );
+$data = readData();
 $gnupg = new gnupg();
 
 # Get the public key.
-$fp = import_id( $gnupg, $furi, $HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi, $HTTP_GET_TIMEOUT );
 
 # Create a relationship id for the friend to use.
 $putrelid = sha1( uniqid( mt_rand() ) );
 
 # Store the fingerprint and relid. 
-$data = read_data();
+$data = readData();
 $data['putrelids'][$fp] = $putrelid;
 $data['fingerprints'][$furi] = $fp;
-write_data( $data );
+writeData( $data );
 
 # Create the relid message for the identity requesting friendship.
-$enc = encrypt_sign( $gnupg, $fp, $putrelid );
-publish_message( 'relid', $fp, $enc );
+$enc = encryptSign( $gnupg, $fp, $putrelid );
+publishMessage( 'relid', $fp, $enc );
 
 header('Location: ' . $furi . 'returnrelid.php?uri=' . urlencode( $IDENTITY ) );

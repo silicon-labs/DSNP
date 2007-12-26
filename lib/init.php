@@ -28,5 +28,5 @@ $data = Array(
 		'requests' => Array()
 		);
 
-write_data( $data );
+writeData( $data );
 ?>

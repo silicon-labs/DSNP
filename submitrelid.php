@@ -19,7 +19,7 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 $furi = $_GET['uri'];
 
@@ -39,7 +39,7 @@ $putrelid = $s[0];
 $getrelid = $s[1];
 
 # Store getrelid.
-$data = read_data();
+$data = readData();
 $fp = $data['fingerprints'][$furi];
 $data['getrelids'][$fp] = $getrelid;
 
@@ -56,4 +56,4 @@ else {
 	echo "</center>\n";
 }
 
-write_data( $data );
+writeData( $data );

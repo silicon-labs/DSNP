@@ -17,7 +17,7 @@
  */
 
 
-$data = read_data();
+$data = readData();
 
 ?>
 

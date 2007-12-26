@@ -19,7 +19,7 @@
 include('config.php');
 include('lib/iduri.php');
 
-iduri_session_start( $IDENTITY );
+iduriSessionStart();
 
 requireOwner();
 
@@ -27,7 +27,7 @@ $furi = $_GET['uri'];
 
 # Get the public key of the friend.
 $gnupg = new gnupg();
-$fp = import_id( $gnupg, $furi, $HTTP_GET_TIMEOUT );
+$fp = importId( $gnupg, $furi, $HTTP_GET_TIMEOUT );
 
 # Fetch and decrypt the relid from the potential friend.
 $asc = $furi . 'getrelid.php?fp=' . $FINGERPRINT;
@@ -42,7 +42,7 @@ $res = $gnupg->decryptverify( $message->body, $getrelid );
 $putrelid = sha1( uniqid( mt_rand() ) );
 
 # Store the fingerprint and the relids. 
-$data = read_data();
+$data = readData();
 $data['getrelids'][$fp] = $getrelid;
 $data['putrelids'][$fp] = $putrelid;
 $data['fingerprints'][$furi] = $fp;
@@ -51,7 +51,7 @@ $data['fingerprints'][$furi] = $fp;
 # can't prove it.
 $data['friends'][$furi] = $fp;
 
-write_data( $data );
+writeData( $data );
 
 # Create the message containing the relid echo and the relid for the friend to
 # use.

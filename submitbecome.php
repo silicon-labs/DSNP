@@ -22,9 +22,7 @@ include('lib/iduri.php');
 iduri_session_start( $IDENTITY );
 
 $furi = $_POST['uri'];
-
 $data = read_data( );
-
 $gnupg = new gnupg();
 
 # Get the public key.
@@ -39,15 +37,8 @@ $data['putrelids'][$fp] = $putrelid;
 $data['fingerprints'][$furi] = $fp;
 write_data( $data );
 
-# Create the put relid message for the identity requesting friendship.
-$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->addencryptkey( $fp );
-$gnupg->addsignkey( $FINGERPRINT, '' );
-$enc = $gnupg->encryptsign( $putrelid );
-$fn = 'relid/' . $fp . '.asc';
-$fd = fopen( $fn, 'wt' );
-fwrite( $fd, $enc );
-fclose( $fd );
-chmod( $fn, 0644 );
+# Create the relid message for the identity requesting friendship.
+$enc = encrypt_sign( $gnupg, $fp, $putrelid );
+publish_message( 'relid', $fp, $enc );
 
 header('Location: ' . $furi . 'returnrelid.php?uri=' . urlencode( $IDENTITY ) );

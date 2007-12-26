@@ -45,9 +45,9 @@ function friendLoginForm()
 	</form><?php
 }
 
-function import_id( $gnupg, $URI, $timeout )
+function import_id( $gnupg, $uri, $timeout )
 {
-	$response = http_get( $URI . 'id.asc', array("timeout"=>$timeout), $info );
+	$response = http_get( $uri . 'id.asc', array("timeout"=>$timeout), $info );
 	$message = http_parse_message( $response );
 
 	// Import the key.
@@ -64,11 +64,22 @@ function import_id( $gnupg, $URI, $timeout )
 	return $fp;
 }
 
-function sign( $gpg )
+function encrypt_sign( $gnupg, $to_fp, $message )
 {
+	global $FINGERPRINT;
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-	$gnupg->addsignkey( $FINGERPRINT, "" );
-	return $gnupg->sign( $IDENTITY );
+	$gnupg->addencryptkey( $to_fp );
+	$gnupg->addsignkey( $FINGERPRINT, '' );
+	return $gnupg->encryptsign( $message );
+}
+
+function publish_message( $prefix, $name, $message )
+{
+	$fn = $prefix . '/' . $name . '.asc';
+	$fd = fopen( $fn, 'wt' );
+	fwrite( $fd, $message );
+	fclose( $fd );
+	chmod( $fn, 0644 );
 }
 
 function write_data( $data )

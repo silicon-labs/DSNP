@@ -21,15 +21,11 @@ include('lib/iduri.php');
 
 iduri_session_start( $IDENTITY );
 
-$data = read_data( );
-
-write_data( $data );
-
 ?>
 <html>
 
 <head>
-<title>Iduri Friend Login</title>
+<title>Become Friend</title>
 </head>
 
 <body>

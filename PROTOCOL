@@ -30,22 +30,24 @@ Potential friend who is receiving the request:     friendee, $FR-URI, $FR-FP
       b) friender submits $URI
 
 2. Friendee server processes the request:
-      a) fetches $URI/id.asc (using SSL)
-      b) randomly generates a one-way relationship id ($FR-RELID)
-      b) randomly generates a one-way request id ($FR-REQID)
-      c) encrypts $FR-RELID to friender and signs it
-      d) makes message available at $FR-URI/friend-request/$FR-REQID.asc
-      c) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
+      a) verifies challenge response
+      b) fetches $URI/id.asc (using SSL)
+      c) randomly generates a one-way relationship id ($FR-RELID)
+      d) randomly generates a one-way request id ($FR-REQID)
+      e) encrypts $FR-RELID to friender and signs it
+      f) makes message available at $FR-URI/friend-request/$FR-REQID.asc
+      g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 
 3. Friender server processes the return-relid request:
-      a) fetches $FR-URI/id.asc (using SSL)
-      b) fetches $FR-URI/friend-request/$FR-REQID.asc 
-      c) decrypts and verifies $FR-RELID
-      d) randomly generates $RELID
-      d) randomly generates $REQID
-      e) encrypts "$FR-RELID $RELID" to friendee and signs it
-      f) makes message available at $URI/request-return/$REQID.asc
-      g) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
+      a) verifies browser is logged in as owner
+      b) fetches $FR-URI/id.asc (using SSL)
+      c) fetches $FR-URI/friend-request/$FR-REQID.asc 
+      d) decrypts and verifies $FR-RELID
+      e) randomly generates $RELID
+      f) randomly generates $REQID
+      g) encrypts "$FR-RELID $RELID" to friendee and signs it
+      h) makes message available at $URI/request-return/$REQID.asc
+      i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
 
 4. Friendee server processes the friend-final request:
       a) fetches $URI/request-return/$REQID.asc 

@@ -34,19 +34,17 @@ if ( !isset( $friends[$furi] ) ) {
 	echo "</center>\n";
 }
 else {
-	$gnupg = new gnupg();
-	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-	$gnupg->addencryptkey( $friends[$furi] );
-	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
 	$token = sha1( uniqid( mt_rand() ) );
 	$_SESSION['tok'] = $token;
-	$enc = $gnupg->encryptsign( $token );
-	$fn = 'tokens/' . $putrelids[$friends[$furi]] . '.asc';
-	$fd = fopen( $fn, 'wt' );
-	fwrite( $fd, $enc );
-	fclose( $fd );
-	chmod( $fn, 0644 );
 
+	# Get fingerprint and relid.
+	$to_fp = $friends[$furi];
+	$to_relid = $putrelids[$to_fp];
+
+	# Encrypt and publish the token for the friend to use.
+	$gnupg = new gnupg();
+	$enc = encryptSign( $gnupg, $to_fp, $token );
+	publishMessage( 'tokens', $to_relid, $enc );
 
 	header('Location: ' . $furi . 'returnftok.php?uri=' . urlencode( $CFG_IDENTITY ) );
 }

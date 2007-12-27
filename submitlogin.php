@@ -26,7 +26,7 @@ $pass = $_POST['password'];
 $md5pass = md5( $login . ':iduri:' . $pass );
 
 if ( $login == $CFG_USER && $md5pass == $CFG_PASS ) {
-	/* Login successful. */
+	# Login successful.
 	$_SESSION['auth'] = 'owner';
 	header( "Location: $CFG_IDENTITY" );
 }

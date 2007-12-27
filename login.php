@@ -25,7 +25,7 @@ iduriSessionStart();
 <html>
 
 <head>
-<title>Iduri Owner Login</title>
+<title>Login as Owner</title>
 </head>
 
 <body>

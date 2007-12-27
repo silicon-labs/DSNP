@@ -66,6 +66,8 @@ function importId( $gnupg, $uri )
 function encryptSign( $gnupg, $to_fp, $plain )
 {
 	global $CFG_FINGERPRINT;
+	$gnupg->clearencryptkeys();
+	$gnupg->clearsignkeys();
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 	$gnupg->addencryptkey( $to_fp );
 	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
@@ -85,6 +87,7 @@ function decryptVerify( $gnupg, $message )
 {
 	global $CFG_FINGERPRINT;
 	$plain= "";
+	$gnupg->cleardecryptkeys();
 	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
 	$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
 	$res = $gnupg->decryptverify( $message->body, $plain );

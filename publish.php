@@ -28,17 +28,10 @@ $data = readData();
 $friends = $data['friends'];
 $putrelids = $data['putrelids'];
 
+$gnupg = new gnupg();
 foreach ( $friends as $uri => $fp ) {
-	$gnupg = new gnupg();
-	$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-	$gnupg->addencryptkey( $fp );
-	$gnupg->addsignkey( $CFG_FINGERPRINT, '' );
-	$enc = $gnupg->encryptsign( serialize($friends) );
-	$fn = 'feeds/' . $putrelids[$fp] . '.asc';
-	$fd = fopen( $fn, 'wt' );
-	fwrite( $fd, $enc );
-	fclose( $fd );
-	chmod( $fn, 0644 );
+	$enc = encryptSign( $gnupg, $fp, serialize($friends) );
+	publishMessage( 'feeds', $putrelids[$fp], $enc );
 }
 
 header('Location: ' . $CFG_IDENTITY );

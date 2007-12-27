@@ -25,7 +25,7 @@ iduriSessionStart();
 <html>
 
 <head>
-<title>Iduri Friend Login</title>
+<title>Login as Friend </title>
 </head>
 
 <body>

@@ -29,14 +29,10 @@ $data = readData();
 $friends = $data['friends'];
 $getrelids = $data['getrelids'];
 
-$asc = $furi . 'tokens/' . $getrelids[$friends[$furi]] . '.asc';
-$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
-$message = http_parse_message( $response );
-
 $gnupg = new gnupg();
-$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
-$plain= "";
-$res = $gnupg->decryptverify( $message->body, $plain );
+$from_relid = $getrelids[$friends[$furi]];
+
+$message = fetchMessage( $furi, 'tokens', $from_relid );
+$plain = decryptVerify( $gnupg, $message );
 
 header('Location: ' . $furi . 'submitftok.php?token=' . urlencode( $plain ) );

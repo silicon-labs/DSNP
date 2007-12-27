@@ -37,8 +37,15 @@ $data['putrelids'][$fp] = $putrelid;
 $data['fingerprints'][$furi] = $fp;
 writeData( $data );
 
+# Create a request id for posting the relationship id.
+$reqid = sha1( uniqid( mt_rand() ) );
+
 # Create the relid message for the identity requesting friendship.
 $enc = encryptSign( $gnupg, $fp, $putrelid );
-publishMessage( 'relid', $fp, $enc );
+publishMessage( 'relid', $reqid, $enc );
 
-header('Location: ' . $furi . 'returnrelid.php?uri=' . urlencode( $CFG_IDENTITY ) );
+# URI and request id arguments for the redirect.
+$arg_uri = 'uri=' . urlencode( $CFG_IDENTITY );
+$arg_reqid = 'reqid=' . urlencode( $reqid );
+
+header('Location: ' . $furi . 'returnrelid.php?' . $arg_uri . '&' . $arg_reqid );

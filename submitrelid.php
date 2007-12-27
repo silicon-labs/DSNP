@@ -22,16 +22,12 @@ include('lib/iduri.php');
 iduriSessionStart();
 
 $furi = $_GET['uri'];
+$reqid = $_GET['reqid'];
+$gnupg = new gnupg();
 
 # Fetch and decrypt the get and put relids.
-$asc = $furi . 'getrelid.php?fp=' . $CFG_FINGERPRINT;
-$response = http_get( $asc, array("timeout"=>$CFG_HTTP_GET_TIMEOUT), $info );
-$message = http_parse_message( $response );
-$gnupg = new gnupg();
-$gnupg->setsignmode( gnupg::SIG_MODE_NORMAL );
-$gnupg->adddecryptkey( $CFG_FINGERPRINT, "" );
-$relids = "";
-$res = $gnupg->decryptverify( $message->body, $relids );
+$message = fetchMessage( $furi, 'relid', $reqid );
+$relids = decryptVerify( $gnupg, $message );
 
 # Get individual relids.
 $s = split(' ', $relids);

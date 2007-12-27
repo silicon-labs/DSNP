@@ -24,18 +24,21 @@ iduriSessionStart();
 requireOwner();
 
 $furi = $_GET['uri'];
+$reqid = $_GET['reqid'];
 
 # Get the public key of the friend.
 $gnupg = new gnupg();
 $fp = importId( $gnupg, $furi );
 
 # Fetch and decrypt the relid from the potential friend.
-$asc = $furi . 'getrelid.php?fp=' . $CFG_FINGERPRINT;
-$message = fetchHTTP( $asc );
+$message = fetchMessage( $furi, 'relid', $reqid );
 $getrelid = decryptVerify( $gnupg, $message );
 
 # Create a relationship id for the friend to use.
 $putrelid = sha1( uniqid( mt_rand() ) );
+
+# Create a request id for posting the relationship id.
+$reqid = sha1( uniqid( mt_rand() ) );
 
 # Store the fingerprint and the relids. 
 $data = readData();
@@ -53,6 +56,10 @@ writeData( $data );
 # use.
 $plain = $getrelid . ' ' . $putrelid;
 $enc = encryptSign( $gnupg, $fp, $plain );
-publishMessage( 'relid', $fp, $enc );
+publishMessage( 'relid', $reqid, $enc );
 
-header('Location: ' . $furi . 'submitrelid.php?uri=' . urlencode( $CFG_IDENTITY ) );
+# URI and request id arguments for the redirect.
+$arg_uri = 'uri=' . urlencode( $CFG_IDENTITY );
+$arg_reqid = 'reqid=' . urlencode( $reqid );
+
+header('Location: ' . $furi . 'submitrelid.php?' . $arg_uri . '&' . $arg_reqid );

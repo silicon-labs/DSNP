@@ -42,7 +42,7 @@ $reqid = sha1( uniqid( mt_rand() ) );
 
 # Create the relid message for the identity requesting friendship.
 $enc = encryptSign( $gnupg, $fp, $putrelid );
-publishMessage( 'relid', $reqid, $enc );
+publishMessage( 'relids', $reqid, $enc );
 
 # URI and request id arguments for the redirect.
 $arg_uri = 'uri=' . urlencode( $CFG_IDENTITY );

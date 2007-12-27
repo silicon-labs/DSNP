@@ -31,7 +31,7 @@ $gnupg = new gnupg();
 $fp = importId( $gnupg, $furi );
 
 # Fetch and decrypt the relid from the potential friend.
-$message = fetchMessage( $furi, 'relid', $reqid );
+$message = fetchMessage( $furi, 'relids', $reqid );
 $getrelid = decryptVerify( $gnupg, $message );
 
 # Create a relationship id for the friend to use.
@@ -56,7 +56,7 @@ writeData( $data );
 # use.
 $plain = $getrelid . ' ' . $putrelid;
 $enc = encryptSign( $gnupg, $fp, $plain );
-publishMessage( 'relid', $reqid, $enc );
+publishMessage( 'relids', $reqid, $enc );
 
 # URI and request id arguments for the redirect.
 $arg_uri = 'uri=' . urlencode( $CFG_IDENTITY );

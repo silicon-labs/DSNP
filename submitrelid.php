@@ -26,7 +26,7 @@ $reqid = $_GET['reqid'];
 $gnupg = new gnupg();
 
 # Fetch and decrypt the get and put relids.
-$message = fetchMessage( $furi, 'relid', $reqid );
+$message = fetchMessage( $furi, 'relids', $reqid );
 $relids = decryptVerify( $gnupg, $message );
 
 # Get individual relids.

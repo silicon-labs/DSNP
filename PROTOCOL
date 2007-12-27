@@ -32,23 +32,23 @@ Potential friend who is receiving the request:     friendee, $FR-URI, $FR-FP
 2. Friendee server processes the request:
       a) fetches $URI/id.asc (using SSL)
       b) randomly generates a one-way relationship id ($FR-RELID)
+      b) randomly generates a one-way request id ($FR-REQID)
       c) encrypts $FR-RELID to friender and signs it
-      d) makes message available at $FR-URI/friend-request/$FP.asc
-      c) redirects the user's browser to $URI/return-relid?uri=$FR-URI
+      d) makes message available at $FR-URI/friend-request/$FR-REQID.asc
+      c) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 
 3. Friender server processes the return-relid request:
       a) fetches $FR-URI/id.asc (using SSL)
-      b) fetches $FR-URI/friend-request/$FP.asc (after which 
-         $FR-URI must destroy it)
+      b) fetches $FR-URI/friend-request/$FR-REQID.asc 
       c) decrypts and verifies $FR-RELID
       d) randomly generates $RELID
+      d) randomly generates $REQID
       e) encrypts "$FR-RELID $RELID" to friendee and signs it
-      f) makes message available at $URI/request-return/$FR-FP.asc
-      g) redirects the friender to $FR-URI/friend-final?uri=$URI
+      f) makes message available at $URI/request-return/$REQID.asc
+      g) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
 
 4. Friendee server processes the friend-final request:
-      a) fetches $URI/request-return/$FR-FP.asc (after which 
-         $URI must destroy it)
+      a) fetches $URI/request-return/$REQID.asc 
       b) decrypts and verifies message, must contain correct $FR-RELID
       c) stores request for friendee to accept/deny
 

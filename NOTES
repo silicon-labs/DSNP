@@ -1,0 +1,5 @@
+1. Scrap http for plain stream communication.
+
+2. Support push and pull.
+
+3. Use TLS for ID.

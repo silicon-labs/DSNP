@@ -1,5 +1,4 @@
 <?php
-
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -18,6 +17,16 @@
 
 include('config.php');
 
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_DB_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
+
+# Look for the user/pass combination.
+$query = "SELECT user FROM user";
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
 ?>
 
 <html>
@@ -27,6 +36,15 @@ include('config.php');
 
 <h1>Secure Personal Publishing</h1>
 
-Installation: <?php print $CFG_INSTALLATION;?></h1>
+Installation: <?php print $CFG_INSTALLATION;?>
+
+<p>
+
+<?php
+
+while ( $row = mysql_fetch_assoc($result) )
+    echo '<a href="id/' . $row['user'] . '"/>' . $row['user'] . '</a><br>';
+
+?>
 
 </html>

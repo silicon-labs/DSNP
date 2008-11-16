@@ -19,7 +19,7 @@
 function iduriSessionStart()
 {
 	global $CFG_INSTALLATION;
-	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_INSTALLATION );
+	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
 	session_set_cookie_params( 0, $path );
 	session_start();
 }

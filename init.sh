@@ -167,8 +167,9 @@ EOF
 
 cat > php/config.php << EOF
 <?php
-/* Configuration */
+\$CFG_USER = \$_GET['u'];
 \$CFG_INSTALLATION = '$INSTALLATION';
+\$CFG_IDENTITY = '${INSTALLATION}id/\${CFG_USER}/';
 \$CFG_DB_PASS = '$DB_PASS';
 \$CFG_HTTP_GET_TIMEOUT = 5;
 ?>

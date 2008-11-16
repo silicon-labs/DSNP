@@ -103,6 +103,10 @@
 
 #php lib/init.php
 
+#
+# Read the installation location.
+#
+
 echo
 echo "Please give the Uniform Resource Identifier (URI) of this installation. This"
 echo "will be the installations public name. It should start with 'http://' and end"
@@ -119,17 +123,62 @@ while true; do
 done 
 
 echo
+echo "Please choose a password to protect the database user 'iduri'"
+echo
+
+while true; do
+	read -s -p 'password: ' DB_PASS; echo
+	read -s -p '   again: ' AGAIN; echo
+
+	if [ "$DB_PASS" != "$AGAIN" ]; then
+		echo; echo error: passwords do not match; echo
+		continue
+	fi
+
+	if [ -z "$DB_PASS" ]; then
+		echo; echo error: password must not be empty; echo 
+		continue
+	fi
+	break;
+done
+
+echo
 echo "Thank you, now initializing the installation."
 echo
+
+#
+# Init the database.
+#
+
+echo Initializing the database. Please Connecting as root@localhost.
+
+mysql -f -h localhost -u root -p << EOF
+drop user iduri@localhost;
+drop database iduri;
+create database iduri;
+grant all on iduri.* to 'iduri'@'localhost' identified by '$DB_PASS';
+use iduri;
+create table user ( user varchar(20), pass varchar(40), email varchar(50) );
+EOF
+
+#
+# Init the config file.
+#
 
 cat > php/config.php << EOF
 <?php
 /* Configuration */
 \$CFG_INSTALLATION = '$INSTALLATION';
+\$CFG_DB_PASS = '$DB_PASS';
 \$CFG_HTTP_GET_TIMEOUT = 5;
 ?>
 EOF
 
+#
+# Init the the .htaccess file.
+#
+
+# FIXME: strip the host from the the first rewrite target.
 cat > php/.htaccess << EOF
 RewriteEngine on
 
@@ -139,3 +188,4 @@ RewriteRule ^id/([a-zA-Z0-9.]+)$ 	${INSTALLATION}id/\$1/ [R,L]
 RewriteRule ^id/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1
 RewriteRule ^id/([a-zA-Z0-9.]+)/(.*)$ 	user/\$2?u=\$1          [QSA,L]
 EOF
+

@@ -16,13 +16,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
+include('../config.php');
 include('lib/iduri.php');
 
 iduriSessionStart();
 
 unset($_SESSION['auth']);
 
-header( "Location: $CFG_IDENTITY" );
+$U = $_GET['u'];
+header( "Location: ${CFG_INSTALLATION}id/$U/" );
 
 ?>

@@ -16,19 +16,32 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
+include('../config.php');
 include('lib/iduri.php');
 
 iduriSessionStart();
 
-$login = $_POST['username'];
-$pass = $_POST['password'];
-$md5pass = md5( $login . ':iduri:' . $pass );
+$spp_login = $_GET['u'];
+$spp_pass = $_POST['password'];
+$spp_md5pass = md5( $login . ':iduri:' . $pass );
 
-if ( $login == $CFG_USER && $md5pass == $CFG_PASS ) {
+$db_host = 'localhost';
+$db_user = 'iduri';
+$db_pass = $CFG_DB_PASS;
+
+$conn = mysql_connect($db_host, $db_user, $db_pass) or die 
+	('Could not connect to database');
+mysql_select_db('iduri') or die
+	('Could not select database \'iduri\'');
+
+$query = 'select * from user;';
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+$line = mysql_fetch_array($result, MYSQL_ASSOC);
+if ( $line ) {
 	# Login successful.
 	$_SESSION['auth'] = 'owner';
-	header( "Location: $CFG_IDENTITY" );
+	header( "Location: ${CFG_INSTALLATION}id/$spp_login/" );
 }
 else {
 	echo "<center>\n";

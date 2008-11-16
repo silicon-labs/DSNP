@@ -16,23 +16,21 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-$data = readData();
-
 ?>
 
 <html>
 <head>
 <title><?php print $data['name']?> </title>
 </head>
-<h1>Owner Page -- <?php print $CFG_IDENTITY;?></h1>
+<h1>Owner Page -- <?php print $U;?></h1>
 
 <a href="logout.php">logout</a><br>
 <a href="publish.php">publish to friends</a><br>
 
-<?php showFriendRequests( $data ); ?>
+<?php #showFriendRequests( $data ); ?>
 
 <h1>Friend List</h1>
 
-<?php friendList( $data ); ?>
+<?php #friendList( $data ); ?>
 
 </html>

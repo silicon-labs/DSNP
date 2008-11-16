@@ -16,8 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-$data = readData();
-
 ?>
 
 <html>
@@ -25,11 +23,11 @@ $data = readData();
 <title><?php print $data['name']?> </title>
 </head>
 
-<h1>Public Page -- <?php print $CFG_IDENTITY;?></h1>
+<h1>Public Page -- <?php print $U;?></h1>
 
-<a href="<?php print $CFG_IDENTITY . 'login.php';?>">owner login</a><br>
-<a href="<?php print $CFG_IDENTITY . 'flogin.php';?>">friend login</a><br>
-<a href="<?php print $CFG_IDENTITY . 'becomefriend.php';?>">become friend</a>
+<a href="login.php">owner login</a><br>
+<a href="flogin.php">friend login</a><br>
+<a href="becomefriend.php">become friend</a>
 
 </html>
 

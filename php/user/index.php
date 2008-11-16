@@ -16,17 +16,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
+include('../config.php');
+include('lib/iduri.php');
 
+iduriSessionStart();
+
+$U = $_REQUEST['u'];
+$R = $_REQUEST['r'];
+
+if ( $_SESSION['auth'] == 'owner' )
+	include('lib/owner.php');
+else if ( $_SESSION['auth'] == 'friend' )
+	include('lib/friend.php');
+else
+	include('lib/public.php');
 ?>
-
-<html>
-<head>
-<title><?php print $data['name']?> </title>
-</head>
-
-<h1>Secure Personal Publishing</h1>
-
-Installation: <?php print $CFG_INSTALLATION;?></h1>
-
-</html>

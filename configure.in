@@ -1,0 +1,27 @@
+dnl  Copyright (c) 2008, Adrian Thurston <thurston@cs.queensu.ca>
+dnl
+dnl  Permission to use, copy, modify, and/or distribute this software for any
+dnl  purpose with or without fee is hereby granted, provided that the above
+dnl  copyright notice and this permission notice appear in all copies.
+dnl
+dnl  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+dnl  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+dnl  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+dnl  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+dnl  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+dnl  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+dnl  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  
+AC_INIT(sppd/main.cpp)
+AC_CONFIG_HEADER(sppd/config.h)
+
+dnl Checks for programs.
+AC_PROG_CXX
+
+dnl Check for definition of MAKE.
+AC_PROG_MAKE_SET
+
+dnl write output files
+AC_OUTPUT(Makefile sppd/Makefile)
+
+echo "configuration of spp complete"

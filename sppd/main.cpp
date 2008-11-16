@@ -14,7 +14,113 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <openssl/rand.h>
+#include <openssl/rsa.h>
+#include <openssl/bn.h>
+
+#include <mysql.h>
+#include <string.h>
+
+char *strend( char *s )
+{
+	return s + strlen(s);
+}
+
+int create_user()
+{
+	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
+	RSA *rsa;
+	MYSQL *mysql, *connect_res;
+	int query_res;
+
+	RAND_load_file("/dev/urandom", 1024);
+	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
+
+	if ( rsa == 0 ) {
+		fprintf( stderr, "error: key generation failed\n");
+		return -1;
+	}
+
+	n = BN_bn2hex( rsa->n );
+	e = BN_bn2hex( rsa->e );
+	d = BN_bn2hex( rsa->d );
+	p = BN_bn2hex( rsa->p );
+	q = BN_bn2hex( rsa->q );
+	dmp1 = BN_bn2hex( rsa->dmp1 );
+	dmq1 = BN_bn2hex( rsa->dmq1 );
+	iqmp = BN_bn2hex( rsa->iqmp );
+
+	printf( "n\n%s\n\n", n );
+	printf( "e\n%s\n\n", e );
+	printf( "d\n%s\n\n", d );
+	printf( "p\n%s\n\n", p );
+	printf( "q\n%s\n\n", q );
+	printf( "dmp1\n%s\n\n", dmp1 );
+	printf( "dmq1\n%s\n\n", dmq1 );
+	printf( "iqmp\n%s\n\n", iqmp );
+
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, "localhost", "spp", "g7x6dqwer", "spp", 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		fprintf( stderr, "error: failed to connect to the database\n");
+		return -1;
+	}
+
+	char *query = (char*)malloc( 1024 + 256*15 );
+	const char *user = "Adrian.Thurston";
+	const char *pass = "b2ece0f6a5f160af32e2a32f4ddb348e";
+	const char *email = "thurston@complang.org";
+
+	strcpy( query, "insert into user values('" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), pass, strlen(pass) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), email, strlen(email) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), n, strlen(n) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), e, strlen(e) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), d, strlen(d) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), p, strlen(p) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), q, strlen(q) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), dmp1, strlen(dmp1) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), dmq1, strlen(dmq1) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), iqmp, strlen(iqmp) );
+	strcat( query, "' );" );
+
+	printf( "query: %s\n", query );
+
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		fprintf( stderr, "error: insert query failed\n");
+		return -1;
+	}
+
+	free( query );
+
+	OPENSSL_free( n );
+	OPENSSL_free( e );
+	OPENSSL_free( d );
+	OPENSSL_free( p );
+	OPENSSL_free( q );
+	OPENSSL_free( dmp1 );
+	OPENSSL_free( dmq1 );
+	OPENSSL_free( iqmp );
+
+	RSA_free( rsa );
+	mysql_close( mysql );
+
+	return 0;
+}
+
 int main( int argc, char **argv )
 {
-	return 0;
+	create_user();
 }

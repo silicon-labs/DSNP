@@ -86,7 +86,7 @@
 #	sed -n '/.ey .ingerprint/{ s/^[^=]*=//; s/[ \t]*//g; p}'`
 
 # Hash the password
-#PASSHASH=`echo -n $USER:iduri:$PASS | md5sum | awk '{print $1;}'`
+#PASSHASH=`echo -n $USER:spp:$PASS | md5sum | awk '{print $1;}'`
 
 #cat > config.php << EOF
 #<?php
@@ -123,7 +123,7 @@ while true; do
 done 
 
 echo
-echo "Please choose a password to protect the database user 'iduri'"
+echo "Please choose a password to protect the database user 'spp'"
 echo
 
 while true; do
@@ -150,15 +150,32 @@ echo
 # Init the database.
 #
 
+
+USER_USER=20
+USER_PASS=40
+
 echo Initializing the database. Please Connecting as root@localhost.
 
 mysql -f -h localhost -u root -p << EOF
-drop user iduri@localhost;
-drop database iduri;
-create database iduri;
-grant all on iduri.* to 'iduri'@'localhost' identified by '$DB_PASS';
-use iduri;
-create table user ( user varchar(20), pass varchar(40), email varchar(50) );
+drop user spp@localhost;
+drop database spp;
+create database spp;
+grant all on spp.* to 'spp'@'localhost' identified by '$DB_PASS';
+use spp;
+create table user ( 
+	user varchar(20), 
+	pass varchar(40), 
+	email varchar(50),
+
+	rsa_n text, # 256
+	rsa_e char(6),
+	rsa_d text, # 256
+	rsa_p char(128),
+	rsa_q char(128),
+	rsa_dmp1 char(128),
+	rsa_dmq1 char(128),
+	rsa_iqmp char(128)
+);
 EOF
 
 #
@@ -171,8 +188,8 @@ cat > php/config.php << EOF
 \$CFG_INSTALLATION = '$INSTALLATION';
 \$CFG_IDENTITY = "${INSTALLATION}id/\${CFG_USER}/";
 \$CFG_DB_HOST = 'localhost';
-\$CFG_DB_DATABASE = 'iduri';
-\$CFG_DB_USER = 'iduri';
+\$CFG_DB_DATABASE = 'spp';
+\$CFG_DB_USER = 'spp';
 \$CFG_DB_PASS = '$DB_PASS';
 \$CFG_HTTP_GET_TIMEOUT = 5;
 ?>

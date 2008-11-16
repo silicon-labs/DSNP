@@ -22,13 +22,13 @@ include('lib/iduri.php');
 iduriSessionStart();
 
 $pass = $_POST['password'];
-$md5pass = md5( $CFG_USER . ':iduri:' . $pass );
+$md5pass = md5( $CFG_USER . ':spp:' . $pass );
 
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_DB_PASS) or die 
 	('Could not connect to database');
-mysql_select_db('iduri') or die
-	('Could not select database \'iduri\'');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
 
 # Look for the user/pass combination.
 $query = sprintf("SELECT user FROM user WHERE user='%s' AND pass='%s'",

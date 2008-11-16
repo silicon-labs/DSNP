@@ -17,6 +17,8 @@
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
 #include <openssl/bn.h>
+#include <openssl/md5.h>
+
 
 #include <mysql.h>
 #include <string.h>
@@ -26,11 +28,14 @@ char *strend( char *s )
 	return s + strlen(s);
 }
 
-int create_user()
+int create_user( const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
 	MYSQL *mysql, *connect_res;
+	char pass_comb[1024], pass_hashed[33];
+	unsigned char pass_bin[16];
+	char *query;
 	int query_res;
 
 	RAND_load_file("/dev/urandom", 1024);
@@ -66,15 +71,20 @@ int create_user()
 		return -1;
 	}
 
-	char *query = (char*)malloc( 1024 + 256*15 );
-	const char *user = "Adrian.Thurston";
-	const char *pass = "b2ece0f6a5f160af32e2a32f4ddb348e";
-	const char *email = "thurston@complang.org";
+	query = (char*)malloc( 1024 + 256*15 );
+
+	sprintf( pass_comb, "%s:spp:%s", user, pass );
+	MD5( (unsigned char*)pass_comb, strlen(pass_comb), pass_bin );
+	sprintf( pass_hashed, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x", 
+		pass_bin[0], pass_bin[1], pass_bin[2], pass_bin[3],
+		pass_bin[4], pass_bin[5], pass_bin[6], pass_bin[7],
+		pass_bin[8], pass_bin[9], pass_bin[10], pass_bin[11],
+		pass_bin[12], pass_bin[13], pass_bin[14], pass_bin[15] );
 
 	strcpy( query, "insert into user values('" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), pass, strlen(pass) );
+	mysql_real_escape_string( mysql, strend(query), pass_hashed, strlen(pass_hashed) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), email, strlen(email) );
 	strcat( query, "', '" );
@@ -122,5 +132,5 @@ int create_user()
 
 int main( int argc, char **argv )
 {
-	create_user();
+	create_user( "Adrian.Thurston", "iduri", "thurston@complang.org" );
 }

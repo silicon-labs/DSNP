@@ -133,7 +133,7 @@ EOF
 cat > php/.htaccess << EOF
 RewriteEngine on
 
-RewriteRule ^id/([a-zA-Z0-9.]+)$ 	$INSTALLATION/id/\$1/ [R,L]
+RewriteRule ^id/([a-zA-Z0-9.]+)$ 	${INSTALLATION}id/\$1/ [R,L]
 
 # Users
 RewriteRule ^id/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1

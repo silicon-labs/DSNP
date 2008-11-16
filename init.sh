@@ -169,7 +169,10 @@ cat > php/config.php << EOF
 <?php
 \$CFG_USER = \$_GET['u'];
 \$CFG_INSTALLATION = '$INSTALLATION';
-\$CFG_IDENTITY = '${INSTALLATION}id/\${CFG_USER}/';
+\$CFG_IDENTITY = "${INSTALLATION}id/\${CFG_USER}/";
+\$CFG_DB_HOST = 'localhost';
+\$CFG_DB_DATABASE = 'iduri';
+\$CFG_DB_USER = 'iduri';
 \$CFG_DB_PASS = '$DB_PASS';
 \$CFG_HTTP_GET_TIMEOUT = 5;
 ?>

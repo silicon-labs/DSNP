@@ -21,27 +21,28 @@ include('lib/iduri.php');
 
 iduriSessionStart();
 
-$spp_login = $_GET['u'];
-$spp_pass = $_POST['password'];
-$spp_md5pass = md5( $login . ':iduri:' . $pass );
+$pass = $_POST['password'];
+$md5pass = md5( $CFG_USER . ':iduri:' . $pass );
 
-$db_host = 'localhost';
-$db_user = 'iduri';
-$db_pass = $CFG_DB_PASS;
-
-$conn = mysql_connect($db_host, $db_user, $db_pass) or die 
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_DB_PASS) or die 
 	('Could not connect to database');
 mysql_select_db('iduri') or die
 	('Could not select database \'iduri\'');
 
-$query = 'select * from user;';
+# Look for the user/pass combination.
+$query = sprintf("SELECT user FROM user WHERE user='%s' AND pass='%s'",
+    mysql_real_escape_string($CFG_USER),
+    mysql_real_escape_string($md5pass)
+);
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
+# If there is a result then the login is successful. 
 $line = mysql_fetch_array($result, MYSQL_ASSOC);
 if ( $line ) {
 	# Login successful.
 	$_SESSION['auth'] = 'owner';
-	header( "Location: ${CFG_INSTALLATION}id/$spp_login/" );
+	header( "Location: $CFG_IDENTITY" );
 }
 else {
 	echo "<center>\n";

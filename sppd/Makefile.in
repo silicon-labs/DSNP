@@ -19,7 +19,8 @@ DEFS +=
 CXXFLAGS += -g -Wall
 LDFLAGS +=
 
-CC_SRCS = main.cpp 
+CC_SRCS = main.cpp parser.cpp
+GEN_SRCS = parser.cpp
 
 LIBS = -lssl -lmysqlclient
 
@@ -40,8 +41,11 @@ DEPS = $(CC_SRCS:%.cpp=.%.d)
 # Rules.
 all: sppd
 
-sppd: $(OBJS)
+sppd: $(GEN_SRCS) $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+parser.cpp: parser.rl
+	ragel -G2 -o $@ $<
 
 #version.h: ../version.mk
 #	echo '#define VERSION "$(VERSION)"' > version.h

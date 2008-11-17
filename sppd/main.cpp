@@ -19,9 +19,10 @@
 #include <openssl/bn.h>
 #include <openssl/md5.h>
 
-
 #include <mysql.h>
 #include <string.h>
+#include "sppd.h"
+
 
 char *strend( char *s )
 {
@@ -139,5 +140,7 @@ int create_user( const char *user, const char *pass, const char *email )
 
 int main( int argc, char **argv )
 {
-	create_user( "Adrian.Thurston", "iduri", "thurston@complang.org" );
+	static char buf[1024];
+	long len = fread( buf, 1, 1024, stdin );
+	parse( buf, len );
 }

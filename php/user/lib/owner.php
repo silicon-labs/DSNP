@@ -25,7 +25,6 @@
 <h1>Owner Page -- <?php print $U;?></h1>
 
 <a href="logout.php">logout</a><br>
-<a href="publish.php">publish to friends</a><br>
 
 <?php #showFriendRequests( $data ); ?>
 

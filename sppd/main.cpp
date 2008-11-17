@@ -28,13 +28,26 @@ char *strend( char *s )
 	return s + strlen(s);
 }
 
+void pass_hash( char *dest, const char *user, const char *pass )
+{
+	unsigned char pass_bin[16];
+	char pass_comb[1024];
+	sprintf( pass_comb, "%s:spp:%s", user, pass );
+	MD5( (unsigned char*)pass_comb, strlen(pass_comb), pass_bin );
+	sprintf( dest, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x", 
+		pass_bin[0], pass_bin[1], pass_bin[2], pass_bin[3],
+		pass_bin[4], pass_bin[5], pass_bin[6], pass_bin[7],
+		pass_bin[8], pass_bin[9], pass_bin[10], pass_bin[11],
+		pass_bin[12], pass_bin[13], pass_bin[14], pass_bin[15] );
+}
+
+
 int create_user( const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
 	MYSQL *mysql, *connect_res;
-	char pass_comb[1024], pass_hashed[33];
-	unsigned char pass_bin[16];
+	char pass_hashed[33];
 	char *query;
 	int query_res;
 
@@ -73,13 +86,7 @@ int create_user( const char *user, const char *pass, const char *email )
 
 	query = (char*)malloc( 1024 + 256*15 );
 
-	sprintf( pass_comb, "%s:spp:%s", user, pass );
-	MD5( (unsigned char*)pass_comb, strlen(pass_comb), pass_bin );
-	sprintf( pass_hashed, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x", 
-		pass_bin[0], pass_bin[1], pass_bin[2], pass_bin[3],
-		pass_bin[4], pass_bin[5], pass_bin[6], pass_bin[7],
-		pass_bin[8], pass_bin[9], pass_bin[10], pass_bin[11],
-		pass_bin[12], pass_bin[13], pass_bin[14], pass_bin[15] );
+	pass_hash( pass_hashed, user, pass );
 
 	strcpy( query, "insert into user values('" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );

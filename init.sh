@@ -203,10 +203,10 @@ EOF
 cat > php/.htaccess << EOF
 RewriteEngine on
 
-RewriteRule ^id/([a-zA-Z0-9.]+)$ 	${INSTALLATION}id/\$1/ [R,L]
+RewriteRule ^u/([a-zA-Z0-9.]+)$ 	${INSTALLATION}id/\$1/ [R,L]
 
 # Users
-RewriteRule ^id/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1
-RewriteRule ^id/([a-zA-Z0-9.]+)/(.*)$ 	user/\$2?u=\$1          [QSA,L]
+RewriteRule ^u/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1
+RewriteRule ^u/([a-zA-Z0-9.]+)/(.*)$ 	user/\$2?u=\$1          [QSA,L]
 EOF
 

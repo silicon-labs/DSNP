@@ -114,13 +114,17 @@ echo "with '/'."
 echo
 
 while true; do 
-	read -p 'installation uri: ' INSTALLATION
+	read -p 'installation uri: ' URI_IN
 
-	if echo $INSTALLATION | grep '^http:\/\/.*\/$' >/dev/null; then
+	if echo $URI_IN | grep '^http:\/\/.*\/$' >/dev/null; then
 		break
 	fi
 	echo; echo error: uri did not validate; echo
 done 
+
+CFG_URI=`echo $URI_IN | sed 's/\/$//;'`
+CFG_HOST=`echo $URI_IN | sed 's/^http:\/\///; s/\/.*$//;'`
+CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//; s/\/$//;'`
 
 echo
 echo "Please choose an admin password. This password to protect the database user"
@@ -128,15 +132,15 @@ echo "'spp' and the admin login page."
 echo
 
 while true; do
-	read -s -p 'password: ' ADMIN_PASS; echo
+	read -s -p 'password: ' CFG_ADMIN_PASS; echo
 	read -s -p '   again: ' AGAIN; echo
 
-	if [ "$ADMIN_PASS" != "$AGAIN" ]; then
+	if [ "$CFG_ADMIN_PASS" != "$AGAIN" ]; then
 		echo; echo error: passwords do not match; echo
 		continue
 	fi
 
-	if [ -z "$ADMIN_PASS" ]; then
+	if [ -z "$CFG_ADMIN_PASS" ]; then
 		echo; echo error: password must not be empty; echo 
 		continue
 	fi
@@ -152,16 +156,13 @@ echo
 #
 
 
-USER_USER=20
-USER_PASS=40
-
 echo Initializing the database. Please Connecting as root@localhost.
 
 mysql -f -h localhost -u root -p << EOF
 drop user spp@localhost;
 drop database spp;
 create database spp;
-grant all on spp.* to 'spp'@'localhost' identified by '$ADMIN_PASS';
+grant all on spp.* to 'spp'@'localhost' identified by '$CFG_ADMIN_PASS';
 use spp;
 create table user ( 
 	user varchar(20), 
@@ -185,11 +186,13 @@ EOF
 
 cat > php/config.php << EOF
 <?php
-\$CFG_INSTALLATION = '$INSTALLATION';
+\$CFG_URI = '$CFG_URI';
+\$CFG_HOST = '$CFG_HOST';
+\$CFG_PATH = '$CFG_PATH';
 \$CFG_DB_HOST = 'localhost';
 \$CFG_DB_DATABASE = 'spp';
 \$CFG_DB_USER = 'spp';
-\$CFG_ADMIN_PASS = '$ADMIN_PASS';
+\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 \$CFG_HTTP_GET_TIMEOUT = 5;
 ?>
 EOF
@@ -202,7 +205,7 @@ EOF
 cat > php/.htaccess << EOF
 RewriteEngine on
 
-RewriteRule ^u/([a-zA-Z0-9.]+)$ 	${INSTALLATION}u/\$1/ [R,L]
+RewriteRule ^u/([a-zA-Z0-9.]+)$ 	$CFG_PATH/u/\$1/ [R,L]
 
 # Users
 RewriteRule ^u/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1

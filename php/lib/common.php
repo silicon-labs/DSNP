@@ -16,14 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-function sppSessionStart()
-{
-	global $CFG_INSTALLATION;
-	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
-	session_set_cookie_params( 0, $path );
-	session_start();
-}
-
 function loginForm()
 {
 	?><form method="post" action="submitlogin.php">

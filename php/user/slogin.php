@@ -20,7 +20,7 @@ include('../config.php');
 include('lib/session.php');
 
 $pass = $_POST['password'];
-$md5pass = md5( $CFG_USER . ':spp:' . $pass );
+$md5pass = md5( $USER_NAME . ':spp:' . $pass );
 
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
@@ -30,7 +30,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 # Look for the user/pass combination.
 $query = sprintf("SELECT user FROM user WHERE user='%s' AND pass='%s'",
-    mysql_real_escape_string($CFG_USER),
+    mysql_real_escape_string($USER_NAME),
     mysql_real_escape_string($md5pass)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -40,12 +40,18 @@ $line = mysql_fetch_array($result, MYSQL_ASSOC);
 if ( $line ) {
 	# Login successful.
 	$_SESSION['auth'] = 'owner';
-	header( "Location: $CFG_IDENTITY" );
+	header( "Location: $USER_PATH/" );
 }
 else {
-	echo "<center>\n";
-	echo "LOGIN FAILED<br><br>\n";
-	loginForm();
-	echo "</center>\n";
+	?>
+	<center>
+	LOGIN FAILED<br><br>
+	<form method="post" action="slogin.php">
+	Owner Login to Iduri:
+	<input type="password" name="password">
+	<input type="submit">
+	</form>
+	</center>
+	<?php
 }
 ?>

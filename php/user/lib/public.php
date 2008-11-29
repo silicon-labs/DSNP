@@ -24,7 +24,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 # Look for the user/pass combination.
 $query = sprintf("SELECT user FROM user WHERE user='%s'",
-    mysql_real_escape_string($CFG_USER)
+    mysql_real_escape_string($USER_NAME)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 

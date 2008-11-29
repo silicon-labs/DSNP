@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
+$path = "$CFG_PATH/admin/";
 session_set_cookie_params( 0, $path );
 session_start();
 

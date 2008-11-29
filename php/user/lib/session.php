@@ -17,10 +17,11 @@
 
 # Requires config.php to have beein included.
 
-$CFG_USER = $_GET['u'];
-$CFG_IDENTITY = "${CFG_INSTALLATION}u/$CFG_USER/";
+# Note that these are globals used by the user code. 
+$USER_NAME = $_GET['u'];
+$USER_PATH = "$CFG_PATH/u/$USER_NAME";
+$USER_URI = "$CFG_URI/u/$USER_NAME";
 
-$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
+$path = "$CFG_PATH/u/$USER/";
 session_set_cookie_params( 0, $path );
 session_start();
-

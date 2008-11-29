@@ -48,4 +48,3 @@ if ( !$line ) {
 <a href="becomefriend.php">become friend</a>
 
 </html>
-

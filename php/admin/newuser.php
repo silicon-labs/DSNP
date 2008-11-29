@@ -1,5 +1,6 @@
-/*
- * Copyright (c) 2008, Adrian Thurston <thurston@cs.queensu.ca>
+<?php
+/* 
+ * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,20 +15,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _SPPD_H
-#define _SPPD_H
+include('../config.php');
+include('lib/session.php');
 
-int parse_loop();
-int create_user( const char *key, const char *user, const char *pass, const char *email );
-int rcfile_parse( const char *data, long length );
+$fp = fsockopen( 'localhost', 7070 );
+if ( !$fp )
+	exit(1);
 
-extern char *CFG_URI;
-extern char *CFG_HOST;
-extern char *CFG_PATH;
-extern char *CFG_DB_HOST;
-extern char *CFG_DB_DATABASE;
-extern char *CFG_DB_USER;
-extern char *CFG_ADMIN_PASS;
-extern char *CFG_COMM_KEY;
-
-#endif
+$send = 
+	"SPP/0.1\r\n" . 
+	"newuser $CFG_COMM_KEY Adrian.Thurston iduri thurston@complang.org\r\n";
+fwrite($fp, $send);

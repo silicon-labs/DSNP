@@ -88,19 +88,6 @@
 # Hash the password
 #PASSHASH=`echo -n $USER:spp:$PASS | md5sum | awk '{print $1;}'`
 
-#cat > config.php << EOF
-#<?php
-#/* Configuration */
-#\$CFG_IDENTITY = '$URI';
-#\$CFG_FINGERPRINT = '$FINGERPRINT';
-#\$CFG_USER = '$USER';
-#\$CFG_PASS = '$PASSHASH';
-#\$CFG_HTTP_GET_TIMEOUT = 5;
-#
-#putenv( 'GNUPGHOME=./gnupghome/' );
-#?>
-#EOF
-
 #php lib/init.php
 
 #
@@ -180,8 +167,11 @@ create table user (
 );
 EOF
 
+# Make a key for communication from the frontend to backend.
+CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
+
 #
-# Init the config file.
+# Create the php config file.
 #
 
 cat > php/config.php << EOF
@@ -193,8 +183,23 @@ cat > php/config.php << EOF
 \$CFG_DB_DATABASE = 'spp';
 \$CFG_DB_USER = 'spp';
 \$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
-\$CFG_HTTP_GET_TIMEOUT = 5;
+\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 ?>
+EOF
+
+#
+# Create the sppd config file.
+#
+
+cat > sppd/sppd.conf << EOF
+CFG_URI = $CFG_URI
+CFG_HOST = $CFG_HOST
+CFG_PATH = $CFG_PATH
+CFG_DB_HOST = localhost
+CFG_DB_DATABASE = spp
+CFG_DB_USER = spp
+CFG_ADMIN_PASS = $CFG_ADMIN_PASS
+CFG_COMM_KEY = $CFG_COMM_KEY
 EOF
 
 #

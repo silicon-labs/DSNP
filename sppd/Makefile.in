@@ -19,8 +19,8 @@ DEFS +=
 CXXFLAGS += -g -Wall
 LDFLAGS +=
 
-CC_SRCS = main.cpp parser.cpp
-GEN_SRCS = parser.cpp
+CC_SRCS = main.cpp parser.cpp rcfile.cpp
+GEN_SRCS = parser.cpp rcfile.cpp
 
 LIBS = -lssl -lmysqlclient
 
@@ -45,6 +45,9 @@ sppd: $(GEN_SRCS) $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 parser.cpp: parser.rl
+	ragel -G2 -o $@ $<
+
+rcfile.cpp: rcfile.rl
 	ragel -G2 -o $@ $<
 
 #version.h: ../version.mk

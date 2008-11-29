@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "sppd.h"
 
 char *alloc_string( const char *s, const char *e )
@@ -31,47 +32,70 @@ char *alloc_string( const char *s, const char *e )
 %%{
 	machine parser;
 
+	comm_key = [a-f0-9]+   >{k1=p;} %{k2=p;};
 	user = [a-zA-Z0-9_.]+  >{u1=p;} %{u2=p;};
 	pass = graph+          >{p1=p;} %{p2=p;};
 	email = graph+         >{e1=p;} %{e2=p;};
 
+	EOL = '\r'? '\n';
+
 	action newuser {
+		char *key = alloc_string( k1, k2 );
 		char *user = alloc_string( u1, u2 );
 		char *pass = alloc_string( p1, p2 );
 		char *email = alloc_string( e1, e2 );
 
-		create_user( user, pass, email );
+		create_user( key, user, pass, email );
 
+		free( key );
 		free( user );
 		free( pass );
 		free( email );
 	}
 
 	commands := |* 
-		'login'i '\n';
-		'newuser'i ' ' user ' ' pass ' ' email '\n' @newuser;
+		'newuser'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @newuser;
 	*|;
 
-	main := 'SPP'i . '/0.1\n' @{ fgoto commands; };
+	main := 'SPP'i . '/0.1' EOL @{ fgoto commands; };
 }%%
 
 %% write data;
 
-
-int parse( const char *data, long length )
+int parse_loop()
 {
 	long cs, act;
-	const char *p = data, *pe = data + length;
-
+	const char *k1, *k2;
 	const char *ts, *te;
 	const char *u1, *u2;
 	const char *p1, *p2;
 	const char *e1, *e2;
 
 	%% write init;
-	%% write exec;
 
-	if ( cs < parser_first_final )
-		fprintf( stderr, "sppd: parse error\n" );
+	while ( true ) {
+		static char buf[1024];
+		long len = read( 1, buf, 1024 );
+
+		if ( len < 0 ) {
+			fprintf( stderr, "sppd: error reading from socket\n" );
+			exit(1);
+		}
+
+		const char *p = buf, *pe = buf + len;
+		%% write exec;
+
+		if ( cs < parser_first_final ) {
+			if ( cs == parser_error )
+				fprintf( stderr, "sppd: parse error\n" );
+			else
+				fprintf( stderr, "sppd: input not complete\n" );
+			exit(1);
+		}
+
+		if ( len == 0 )
+			break;
+	}
+
 	return 0;
 }

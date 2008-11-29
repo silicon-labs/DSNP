@@ -36,7 +36,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <h1>Secure Personal Publishing</h1>
 
-<p>Installation: <?php print $CFG_INSTALLATION;?>
+<p>Installation: <?php print "$CFG_URI/";?>
 
 <p>
 

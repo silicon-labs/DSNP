@@ -43,7 +43,7 @@ void pass_hash( char *dest, const char *user, const char *pass )
 }
 
 
-int create_user( const char *user, const char *pass, const char *email )
+int create_user( const char *key, const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
@@ -51,6 +51,11 @@ int create_user( const char *user, const char *pass, const char *email )
 	char pass_hashed[33];
 	char *query;
 	int query_res;
+
+	if ( strcmp( key, CFG_COMM_KEY ) != 0 ) {
+		fprintf( stderr, "error: communication key invalid\n" );
+		return -1;
+	}
 
 	RAND_load_file("/dev/urandom", 1024);
 	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
@@ -138,9 +143,26 @@ int create_user( const char *user, const char *pass, const char *email )
 	return 0;
 }
 
+void read_rcfile( const char *confFile )
+{
+	FILE *rcfile = fopen( confFile, "r" );
+	if ( rcfile == NULL ) {
+		fprintf( stderr, "failed to open the config file \"%s\", exiting\n", confFile );
+		exit(1);
+	}
+
+	static char buf[1024];
+	long len = fread( buf, 1, 1024, rcfile );
+	rcfile_parse( buf, len );
+}
+
 int main( int argc, char **argv )
 {
-	static char buf[1024];
-	long len = fread( buf, 1, 1024, stdin );
-	parse( buf, len );
+	if ( argc != 2 ) {
+		fprintf( stderr, "expecting one argument: the conf file\n" );
+		exit(1);
+	}
+
+	read_rcfile( argv[1] );
+	parse_loop();
 }

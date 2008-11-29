@@ -16,7 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-function iduriSessionStart()
+function sppSessionStart()
 {
 	global $CFG_INSTALLATION;
 	$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );

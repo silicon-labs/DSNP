@@ -16,9 +16,9 @@
  */
 
 include('config.php');
-include('user/lib/iduri.php');
+include('lib/common.php');
 
-iduriSessionStart();
+sppSessionStart();
 
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
@@ -43,10 +43,10 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 <?php
 if ( $_SESSION['auth'] == 'admin' ) {
 	echo 'you are admin<br>';
-	echo '<a href="admlogout.php">logout</a>';
+	echo '<a href="alogout.php">logout</a>';
 }
 else
-	echo '<a href="admlogin.php">login</a>'
+	echo '<a href="alogin.php">login</a>'
 ?>
 
 <p>Installation: <?php print $CFG_INSTALLATION;?>

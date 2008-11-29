@@ -17,9 +17,9 @@
  */
 
 include('config.php');
-include('user/lib/iduri.php');
+include('lib/common.php');
 
-iduriSessionStart();
+sppSessionStart();
 
 unset($_SESSION['auth']);
 

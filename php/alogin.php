@@ -17,9 +17,9 @@
  */
 
 include('config.php');
-include('user/lib/iduri.php');
+include('lib/common.php');
 
-iduriSessionStart();
+sppSessionStart();
 
 ?>
 <html>
@@ -32,7 +32,7 @@ iduriSessionStart();
 
 <br>
 <center>
-<form method="post" action="submitadmlogin.php">
+<form method="post" action="salogin.php">
 Admin Login:
 <input type="password" name="password">
 <input type="submit">

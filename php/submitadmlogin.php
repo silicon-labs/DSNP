@@ -16,14 +16,21 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/iduri.php');
+include('config.php');
+include('user/lib/iduri.php');
 
 iduriSessionStart();
 
-unset($_SESSION['auth']);
+$pass = $_POST['password'];
 
-$U = $_GET['u'];
-header( "Location: ${CFG_INSTALLATION}u/$U/" );
-
+if ( $pass == $CFG_ADMIN_PASS ) {
+	# Login successful.
+	$_SESSION['auth'] = 'admin';
+	header( "Location: $CFG_INSTALLATION" );
+}
+else {
+	echo "<center>\n";
+	echo "ADMIN LOGIN FAILED<br><br>\n";
+	echo "</center>\n";
+}
 ?>

@@ -16,14 +16,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/iduri.php');
+include('config.php');
+include('user/lib/iduri.php');
 
 iduriSessionStart();
 
-unset($_SESSION['auth']);
-
-$U = $_GET['u'];
-header( "Location: ${CFG_INSTALLATION}u/$U/" );
-
 ?>
+<html>
+
+<head>
+<title>Admin Login</title>
+</head>
+
+<body>
+
+<br>
+<center>
+<form method="post" action="submitadmlogin.php">
+Admin Login:
+<input type="password" name="password">
+<input type="submit">
+</form>
+</center>
+<body>
+
+</html>

@@ -16,9 +16,12 @@
  */
 
 include('config.php');
+include('user/lib/iduri.php');
+
+iduriSessionStart();
 
 # Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_DB_PASS) or die 
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
 	('Could not connect to database');
 mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
@@ -36,14 +39,24 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <h1>Secure Personal Publishing</h1>
 
-Installation: <?php print $CFG_INSTALLATION;?>
+<p>
+<?php
+if ( $_SESSION['auth'] == 'admin' ) {
+	echo 'you are admin<br>';
+	echo '<a href="admlogout.php">logout</a>';
+}
+else
+	echo '<a href="admlogin.php">login</a>'
+?>
+
+<p>Installation: <?php print $CFG_INSTALLATION;?>
 
 <p>
 
 <?php
 
 while ( $row = mysql_fetch_assoc($result) )
-    echo '<a href="id/' . $row['user'] . '"/>' . $row['user'] . '</a><br>';
+    echo '<a href="u/' . $row['user'] . '/"/>' . $row['user'] . '</a><br>';
 
 ?>
 

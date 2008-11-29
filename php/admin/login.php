@@ -1,4 +1,5 @@
 <?php
+
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -15,36 +16,26 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('lib/config.php');
-
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
-
-# Look for the user/pass combination.
-$query = "SELECT user FROM user";
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+include('../lib/config.php');
+include('../lib/session.php');
 
 ?>
-
 <html>
+
 <head>
-<title><?php print $data['name']?> </title>
+<title>Admin Login</title>
 </head>
 
-<h1>Secure Personal Publishing</h1>
+<body>
 
-<p>Installation: <?php print $CFG_INSTALLATION;?>
-
-<p>
-
-<?php
-
-while ( $row = mysql_fetch_assoc($result) )
-    echo '<a href="u/' . $row['user'] . '/"/>' . $row['user'] . '</a><br>';
-
-?>
+<br>
+<center>
+	<form method="post" action="slogin.php">
+	Admin Login:
+	<input type="password" name="password">
+	<input type="submit">
+	</form>
+</center>
+<body>
 
 </html>

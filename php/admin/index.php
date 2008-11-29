@@ -1,5 +1,4 @@
 <?php
-
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -16,29 +15,30 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('lib/config.php');
-include('lib/session.php');
+include('../lib/config.php');
+include('../lib/session.php');
 
-$pass = $_POST['password'];
-
-if ( $pass == $CFG_ADMIN_PASS ) {
-	# Login successful.
-	$_SESSION['auth'] = 'admin';
-	header( "Location: $CFG_INSTALLATION" );
-}
-else {
-	?>
-
-	<center>
-	ADMIN LOGIN FAILED<br><br>
-
-	<form method="post" action="salogin.php">
-	Admin Login:
-	<input type="password" name="password">
-	<input type="submit">
-	</form>
-	</center>
-
-	<?php
-}
 ?>
+
+<html>
+<head>
+<title><?php print $data['name']?> </title>
+</head>
+
+<h1>Secure Personal Publishing -- Administration</h1>
+
+<p>Installation: <?php print $CFG_INSTALLATION;?>
+
+<p>
+<?php
+if ( $_SESSION['auth'] == 'admin' ) {
+	echo 'you are admin<br>';
+	echo '<a href="logout.php">logout</a>';
+}
+else
+	echo '<a href="login.php">login</a>';
+?>
+
+<p>
+
+</html>

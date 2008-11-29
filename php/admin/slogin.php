@@ -16,26 +16,29 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('lib/config.php');
-include('lib/session.php');
+include('../lib/config.php');
+include('../lib/session.php');
 
-?>
-<html>
+$pass = $_POST['password'];
 
-<head>
-<title>Admin Login</title>
-</head>
+if ( $pass == $CFG_ADMIN_PASS ) {
+	# Login successful.
+	$_SESSION['auth'] = 'admin';
+	header( "Location: ${CFG_INSTALLATION}admin/" );
+}
+else {
+	?>
 
-<body>
+	<center>
+	ADMIN LOGIN FAILED<br><br>
 
-<br>
-<center>
-	<form method="post" action="salogin.php">
+	<form method="post" action="slogin.php">
 	Admin Login:
 	<input type="password" name="password">
 	<input type="submit">
 	</form>
-</center>
-<body>
+	</center>
 
-</html>
+	<?php
+}
+?>

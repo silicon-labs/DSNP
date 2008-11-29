@@ -16,11 +16,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('lib/config.php');
-include('lib/session.php');
+include('../lib/config.php');
+include('../lib/session.php');
 
 unset($_SESSION['auth']);
 
-header( "Location: $CFG_INSTALLATION" );
+header( "Location: ${CFG_INSTALLATION}admin/" );
 
 ?>

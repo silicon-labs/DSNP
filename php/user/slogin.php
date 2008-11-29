@@ -17,9 +17,7 @@
  */
 
 include('../config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('lib/session.php');
 
 $pass = $_POST['password'];
 $md5pass = md5( $CFG_USER . ':spp:' . $pass );

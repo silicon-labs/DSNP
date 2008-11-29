@@ -17,9 +17,7 @@
  */
 
 include('../config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('lib/session.php');
 
 ?>
 <html>
@@ -32,7 +30,13 @@ iduriSessionStart();
 
 <br>
 <center>
-<?php loginForm();?>
+
+	<form method="post" action="slogin.php">
+	Owner Login to Iduri:
+	<input type="password" name="password">
+	<input type="submit">
+	</form>
+
 </center>
 <body>
 

@@ -15,7 +15,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-# Requires config to have beein included.
+# Requires config.php to have beein included.
+
+$CFG_USER = $_GET['u'];
+$CFG_IDENTITY = "${CFG_INSTALLATION}u/$CFG_USER/";
 
 $path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
 session_set_cookie_params( 0, $path );

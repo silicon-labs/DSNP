@@ -185,9 +185,7 @@ EOF
 
 cat > php/config.php << EOF
 <?php
-\$CFG_USER = \$_GET['u'];
 \$CFG_INSTALLATION = '$INSTALLATION';
-\$CFG_IDENTITY = "${INSTALLATION}id/\${CFG_USER}/";
 \$CFG_DB_HOST = 'localhost';
 \$CFG_DB_DATABASE = 'spp';
 \$CFG_DB_USER = 'spp';

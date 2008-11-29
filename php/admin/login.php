@@ -17,7 +17,7 @@
  */
 
 include('../config.php');
-include('session.php');
+include('lib/session.php');
 
 ?>
 <html>

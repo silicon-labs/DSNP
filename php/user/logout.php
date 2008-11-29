@@ -17,9 +17,7 @@
  */
 
 include('../config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('lib/session.php');
 
 unset($_SESSION['auth']);
 

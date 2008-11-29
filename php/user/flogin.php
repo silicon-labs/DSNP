@@ -17,9 +17,7 @@
  */
 
 include('../config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('lib/session.php');
 
 ?>
 <html>
@@ -32,7 +30,11 @@ iduriSessionStart();
 
 <br>
 <center>
-<?php friendLoginForm();?>
+	<form method="post" action="sflogin.php">
+	Friend Login to Iduri:
+	<input type="text" size=70 name="uri">
+	<input type="submit">
+	</form>
 </center>
 <body>
 

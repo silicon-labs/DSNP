@@ -32,11 +32,7 @@ sppSessionStart();
 
 <br>
 <center>
-<form method="post" action="salogin.php">
-Admin Login:
-<input type="password" name="password">
-<input type="submit">
-</form>
+<?php adminLoginForm();?>
 </center>
 <body>
 

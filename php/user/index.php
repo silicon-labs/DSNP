@@ -17,17 +17,17 @@
  */
 
 include('../config.php');
-include('lib/iduri.php');
+include('../lib/common.php');
 
-iduriSessionStart();
+sppSessionStart();
 
 $U = $_REQUEST['u'];
 $R = $_REQUEST['r'];
 
 if ( $_SESSION['auth'] == 'owner' )
-	include('lib/owner.php');
+	include('../lib/owner.php');
 else if ( $_SESSION['auth'] == 'friend' )
-	include('lib/friend.php');
+	include('../lib/friend.php');
 else
-	include('lib/public.php');
+	include('../lib/public.php');
 ?>

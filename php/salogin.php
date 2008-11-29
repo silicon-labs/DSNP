@@ -31,6 +31,7 @@ if ( $pass == $CFG_ADMIN_PASS ) {
 else {
 	echo "<center>\n";
 	echo "ADMIN LOGIN FAILED<br><br>\n";
+	adminLoginForm();
 	echo "</center>\n";
 }
 ?>

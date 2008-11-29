@@ -16,6 +16,24 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
+
+# Look for the user/pass combination.
+$query = sprintf("SELECT user FROM user WHERE user='%s'",
+    mysql_real_escape_string($CFG_USER)
+);
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+# If there is a result then the login is successful. 
+$line = mysql_fetch_array($result, MYSQL_ASSOC);
+if ( !$line ) {
+	die('no such user');
+}
+
 ?>
 
 <html>

@@ -123,19 +123,20 @@ while true; do
 done 
 
 echo
-echo "Please choose a password to protect the database user 'spp'"
+echo "Please choose an admin password. This password to protect the database user"
+echo "'spp' and the admin login page."
 echo
 
 while true; do
-	read -s -p 'password: ' DB_PASS; echo
+	read -s -p 'password: ' ADMIN_PASS; echo
 	read -s -p '   again: ' AGAIN; echo
 
-	if [ "$DB_PASS" != "$AGAIN" ]; then
+	if [ "$ADMIN_PASS" != "$AGAIN" ]; then
 		echo; echo error: passwords do not match; echo
 		continue
 	fi
 
-	if [ -z "$DB_PASS" ]; then
+	if [ -z "$ADMIN_PASS" ]; then
 		echo; echo error: password must not be empty; echo 
 		continue
 	fi
@@ -160,7 +161,7 @@ mysql -f -h localhost -u root -p << EOF
 drop user spp@localhost;
 drop database spp;
 create database spp;
-grant all on spp.* to 'spp'@'localhost' identified by '$DB_PASS';
+grant all on spp.* to 'spp'@'localhost' identified by '$ADMIN_PASS';
 use spp;
 create table user ( 
 	user varchar(20), 
@@ -190,7 +191,7 @@ cat > php/config.php << EOF
 \$CFG_DB_HOST = 'localhost';
 \$CFG_DB_DATABASE = 'spp';
 \$CFG_DB_USER = 'spp';
-\$CFG_DB_PASS = '$DB_PASS';
+\$CFG_ADMIN_PASS = '$ADMIN_PASS';
 \$CFG_HTTP_GET_TIMEOUT = 5;
 ?>
 EOF
@@ -203,7 +204,7 @@ EOF
 cat > php/.htaccess << EOF
 RewriteEngine on
 
-RewriteRule ^u/([a-zA-Z0-9.]+)$ 	${INSTALLATION}id/\$1/ [R,L]
+RewriteRule ^u/([a-zA-Z0-9.]+)$ 	${INSTALLATION}u/\$1/ [R,L]
 
 # Users
 RewriteRule ^u/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1

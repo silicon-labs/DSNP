@@ -18,7 +18,7 @@
 include('../config.php');
 include('lib/session.php');
 
-$fp = fsockopen( 'localhost', 7070 );
+$fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
 	exit(1);
 

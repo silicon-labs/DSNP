@@ -1,5 +1,4 @@
 <?php
-
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -16,11 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('session.php');
+$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
+session_set_cookie_params( 0, $path );
+session_start();
 
-unset($_SESSION['auth']);
-
-header( "Location: ${CFG_INSTALLATION}admin/" );
-
-?>

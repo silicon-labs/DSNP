@@ -16,8 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../lib/config.php');
-include('../lib/session.php');
+include('../config.php');
+include('session.php');
 
 ?>
 <html>

@@ -183,7 +183,7 @@ EOF
 # Init the config file.
 #
 
-cat > php/lib/config.php << EOF
+cat > php/config.php << EOF
 <?php
 \$CFG_USER = \$_GET['u'];
 \$CFG_INSTALLATION = '$INSTALLATION';

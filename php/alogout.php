@@ -16,10 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/common.php');
-
-sppSessionStart();
+include('lib/config.php');
+include('lib/session.php');
 
 unset($_SESSION['auth']);
 

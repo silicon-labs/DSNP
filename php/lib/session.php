@@ -1,5 +1,4 @@
 <?php
-
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -16,29 +15,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('lib/config.php');
-include('lib/session.php');
+# Requires config to have beein included.
 
-$pass = $_POST['password'];
+$path = preg_replace( "/^http:\/\/[^\/]*/", "", $CFG_IDENTITY );
+session_set_cookie_params( 0, $path );
+session_start();
 
-if ( $pass == $CFG_ADMIN_PASS ) {
-	# Login successful.
-	$_SESSION['auth'] = 'admin';
-	header( "Location: $CFG_INSTALLATION" );
-}
-else {
-	?>
-
-	<center>
-	ADMIN LOGIN FAILED<br><br>
-
-	<form method="post" action="salogin.php">
-	Admin Login:
-	<input type="password" name="password">
-	<input type="submit">
-	</form>
-	</center>
-
-	<?php
-}
-?>

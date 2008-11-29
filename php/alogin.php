@@ -16,10 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/common.php');
-
-sppSessionStart();
+include('lib/config.php');
+include('lib/session.php');
 
 ?>
 <html>
@@ -32,7 +30,11 @@ sppSessionStart();
 
 <br>
 <center>
-<?php adminLoginForm();?>
+	<form method="post" action="salogin.php">
+	Admin Login:
+	<input type="password" name="password">
+	<input type="submit">
+	</form>
 </center>
 <body>
 

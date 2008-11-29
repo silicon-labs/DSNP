@@ -16,18 +16,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('../lib/common.php');
-
-sppSessionStart();
+include('../lib/config.php');
+include('../lib/session.php');
 
 $U = $_REQUEST['u'];
-$R = $_REQUEST['r'];
 
 if ( $_SESSION['auth'] == 'owner' )
-	include('../lib/owner.php');
+	include('lib/owner.php');
 else if ( $_SESSION['auth'] == 'friend' )
-	include('../lib/friend.php');
+	include('lib/friend.php');
 else
-	include('../lib/public.php');
+	include('lib/public.php');
 ?>

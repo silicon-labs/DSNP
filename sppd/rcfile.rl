@@ -33,6 +33,7 @@ char *CFG_DB_DATABASE = 0;
 char *CFG_DB_USER = 0;
 char *CFG_ADMIN_PASS = 0;
 char *CFG_COMM_KEY = 0;
+char *CFG_PORT = 0;
 
 ConfigValue cfgVals[] = {
 	{ "CFG_URI", CFG_URI },
@@ -43,6 +44,7 @@ ConfigValue cfgVals[] = {
 	{ "CFG_DB_USER", CFG_DB_USER },
 	{ "CFG_ADMIN_PASS", CFG_ADMIN_PASS },
 	{ "CFG_COMM_KEY", CFG_COMM_KEY },
+	{ "CFG_PORT", CFG_PORT },
 };
 
 void process_value( const char *n, long nl, const char *v, long vl )

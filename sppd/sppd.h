@@ -17,11 +17,20 @@
 #ifndef _SPPD_H
 #define _SPPD_H
 
+struct PublicKey
+{
+	char *n;
+	char *e;
+};
+
 int parse_loop();
 int rcfile_parse( const char *data, long length );
 
 void create_user( const char *key, const char *user, const char *pass, const char *email );
 void public_key( const char *identity );
+void friend_req( const char *user, const char *identity, const char *host );
+long open_inet_connection( const char *hostname, unsigned short port );
+long fetch_public_key( PublicKey &pub, const char *host, const char *user );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;
@@ -31,5 +40,6 @@ extern char *CFG_DB_DATABASE;
 extern char *CFG_DB_USER;
 extern char *CFG_ADMIN_PASS;
 extern char *CFG_COMM_KEY;
+extern char *CFG_PORT;
 
 #endif

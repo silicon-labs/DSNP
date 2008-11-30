@@ -19,8 +19,16 @@
 #include <openssl/bn.h>
 #include <openssl/md5.h>
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <mysql.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
 #include "sppd.h"
 
 char *strend( char *s )
@@ -174,8 +182,62 @@ void public_key( const char *user )
 	else
 		printf( "ERROR\n" );
 
+	fflush(stdout);
 	mysql_free_result( result );
 	mysql_close( mysql );
 
 	free( query );
+}
+
+long open_inet_connection( const char *hostname, unsigned short port )
+{
+	sockaddr_in servername;
+	hostent *hostinfo;
+	long socketFd, connectRes;
+
+	/* Create the socket. */
+	socketFd = socket( PF_INET, SOCK_STREAM, 0 );
+	if ( socketFd < 0 )
+		goto fail;
+
+	/* Lookup the host. */
+	servername.sin_family = AF_INET;
+	servername.sin_port = htons(port);
+	hostinfo = gethostbyname (hostname);
+	if ( hostinfo == NULL )
+		goto close_fail;
+
+	servername.sin_addr = *(in_addr*)hostinfo->h_addr;
+
+	/* Connect to the listener. */
+	connectRes = connect( socketFd, (sockaddr*)&servername, sizeof(servername) );
+	if ( connectRes < 0 )
+		goto close_fail;
+
+	return socketFd;
+
+close_fail:
+	::close( socketFd );
+fail:
+	return -1;
+}
+
+void friend_req( const char *user, const char *identity, const char *host )
+{
+// a) verifies challenge response
+// b) fetches $URI/id.asc (using SSL)
+// c) randomly generates a one-way relationship id ($FR-RELID)
+// d) randomly generates a one-way request id ($FR-REQID)
+// e) encrypts $FR-RELID to friender and signs it
+// f) makes message available at $FR-URI/friend-request/$FR-REQID.asc
+// g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
+
+	PublicKey pub;
+	long fr = fetch_public_key( pub, host, user );
+	if ( fr < 0 ) {
+		printf("fetch failed: %ld\n", fr );
+		return;
+	}
+
+	printf( "pub: %s %s\n", pub.n, pub.e );
 }

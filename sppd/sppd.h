@@ -23,7 +23,7 @@ struct PublicKey
 	char *e;
 };
 
-int parse_loop();
+int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
 void create_user( const char *key, const char *user, const char *pass, const char *email );
@@ -41,5 +41,15 @@ extern char *CFG_DB_USER;
 extern char *CFG_ADMIN_PASS;
 extern char *CFG_COMM_KEY;
 extern char *CFG_PORT;
+
+#define ERR_READ_ERROR         -1
+#define ERR_LINE_TOO_LONG      -2
+#define ERR_PARSE_ERROR        -3
+#define ERR_UNEXPECTED_END     -4
+#define ERR_CONNECTION_FAILED  -5
+#define ERR_SERVER_ERROR       -6
+#define ERR_SOCKET_ALLOC       -7
+#define ERR_RESOLVING_NAME     -8
+#define ERR_CONNECTING         -9
 
 #endif

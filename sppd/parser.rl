@@ -90,7 +90,9 @@ char *alloc_string( const char *s, const char *e )
 
 %% write data;
 
-int parse_loop()
+const long linelen = 1024;
+
+int server_parse_loop()
 {
 	long cs, act;
 	const char *k1, *k2;
@@ -104,28 +106,31 @@ int parse_loop()
 	%% write init;
 
 	while ( true ) {
-		static char buf[1024];
-		char *result = fgets( buf, 1024, stdin );
+		static char buf[linelen];
+		char *result = fgets( buf, linelen, stdin );
 
+		/* Just break when client closes the connection. */
 		if ( feof( stdin ) )
 			break;
 
-		if ( ! result ) {
-			fprintf( stderr, "sppd: error reading from stdin\n" );
-			exit(1);
-		}
+		/* Check for an error in the fgets. */
+		if ( ! result )
+			return -1;
 
+		/* Did we get a full line? */
 		long length = strlen( buf );
+		if ( buf[length-1] != '\n' )
+			return ERR_LINE_TOO_LONG;
+
 		const char *p = buf, *pe = buf + length;
 
 		%% write exec;
 
 		if ( cs < parser_first_final ) {
 			if ( cs == parser_error )
-				fprintf( stderr, "sppd: parse error\n" );
+				return ERR_PARSE_ERROR;
 			else
-				fprintf( stderr, "sppd: input not complete\n" );
-			exit(1);
+				return ERR_UNEXPECTED_END;
 		}
 	}
 
@@ -141,14 +146,14 @@ int parse_loop()
 long fetch_public_key( PublicKey &pub, const char *host, const char *user )
 {
 	static char buf[1024];
-	long result = -1, cs;
+	long result = 0, cs;
 	const char *p, *pe;
 	const char *n1, *n2, *e1, *e2;
 	bool OK = false;
 
 	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
 	if ( socketFd < 0 )
-		return -1;
+		return ERR_CONNECTION_FAILED;
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
@@ -160,8 +165,10 @@ long fetch_public_key( PublicKey &pub, const char *host, const char *user )
 	char *readRes = fgets( buf, 1024, readSocket );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes )
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
 		goto fail;
+	}
 
 	/* Parser for response. */
 	%%{
@@ -183,12 +190,12 @@ long fetch_public_key( PublicKey &pub, const char *host, const char *user )
 
 	/* Did parsing succeed? */
 	if ( cs < public_key_first_final ) {
-		result = -2;
+		result = ERR_PARSE_ERROR;
 		goto fail;
 	}
 	
 	if ( !OK ) {
-		result = -3;
+		result = ERR_SERVER_ERROR;
 		goto fail;
 	}
 	
@@ -198,7 +205,6 @@ long fetch_public_key( PublicKey &pub, const char *host, const char *user )
 	memcpy( pub.e, e1, e2-e1 );
 	pub.n[n2-n1] = 0;
 	pub.e[e2-e1] = 0;
-	result = 0;
 
 fail:
 	fclose( writeSocket );

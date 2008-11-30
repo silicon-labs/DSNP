@@ -39,5 +39,5 @@ int main( int argc, char **argv )
 	}
 
 	read_rcfile( argv[1] );
-	parse_loop();
+	server_parse_loop();
 }

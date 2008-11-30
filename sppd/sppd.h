@@ -26,11 +26,13 @@ struct PublicKey
 int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
-void create_user( const char *key, const char *user, const char *pass, const char *email );
+/* Commands. */
+void new_user( const char *key, const char *user, const char *pass, const char *email );
 void public_key( const char *identity );
 void friend_req( const char *user, const char *identity, const char *host );
-long open_inet_connection( const char *hostname, unsigned short port );
+
 long fetch_public_key( PublicKey &pub, const char *host, const char *user );
+long open_inet_connection( const char *hostname, unsigned short port );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;

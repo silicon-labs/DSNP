@@ -51,7 +51,7 @@ char *alloc_string( const char *s, const char *e )
 		char *pass = alloc_string( p1, p2 );
 		char *email = alloc_string( e1, e2 );
 
-		create_user( key, user, pass, email );
+		new_user( key, user, pass, email );
 
 		free( key );
 		free( user );

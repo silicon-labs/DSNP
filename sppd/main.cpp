@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <openssl/rand.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "sppd.h"
@@ -37,6 +38,8 @@ int main( int argc, char **argv )
 		fprintf( stderr, "expecting one argument: the conf file\n" );
 		exit(1);
 	}
+
+	RAND_load_file("/dev/urandom", 1024);
 
 	read_rcfile( argv[1] );
 	server_parse_loop();

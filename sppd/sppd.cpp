@@ -49,7 +49,7 @@ void pass_hash( char *dest, const char *user, const char *pass )
 		pass_bin[12], pass_bin[13], pass_bin[14], pass_bin[15] );
 }
 
-void create_user( const char *key, const char *user, const char *pass, const char *email )
+void new_user( const char *key, const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
@@ -58,19 +58,20 @@ void create_user( const char *key, const char *user, const char *pass, const cha
 	char *query;
 	long query_res;
 
+	/* Check the authentication. */
 	if ( strcmp( key, CFG_COMM_KEY ) != 0 ) {
-		fprintf( stderr, "error: communication key invalid\n" );
-		return;
+		printf( "ERROR communication key invalid\r\n" );
+		goto flush;
 	}
 
-	RAND_load_file("/dev/urandom", 1024);
+	/* Generate a new key. */
 	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
-
 	if ( rsa == 0 ) {
-		fprintf( stderr, "error: key generation failed\n");
-		return;
+		printf( "ERROR key generation failed\r\n");
+		goto flush;
 	}
 
+	/* Extract the components to hex strings. */
 	n = BN_bn2hex( rsa->n );
 	e = BN_bn2hex( rsa->e );
 	d = BN_bn2hex( rsa->d );
@@ -80,27 +81,20 @@ void create_user( const char *key, const char *user, const char *pass, const cha
 	dmq1 = BN_bn2hex( rsa->dmq1 );
 	iqmp = BN_bn2hex( rsa->iqmp );
 
-	printf( "n\n%s\n\n", n );
-	printf( "e\n%s\n\n", e );
-	printf( "d\n%s\n\n", d );
-	printf( "p\n%s\n\n", p );
-	printf( "q\n%s\n\n", q );
-	printf( "dmp1\n%s\n\n", dmp1 );
-	printf( "dmq1\n%s\n\n", dmq1 );
-	printf( "iqmp\n%s\n\n", iqmp );
-
+	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
 			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
-		fprintf( stderr, "error: failed to connect to the database\n");
-		return;
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
 	}
 
-	query = (char*)malloc( 1024 + 256*15 );
-
+	/* Hash the password. */
 	pass_hash( pass_hashed, user, pass );
 
+	/* Create the query. */
+	query = (char*)malloc( 1024 + 256*15 );
 	strcpy( query, "insert into user values('" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "', '" );
@@ -125,16 +119,18 @@ void create_user( const char *key, const char *user, const char *pass, const cha
 	mysql_real_escape_string( mysql, strend(query), iqmp, strlen(iqmp) );
 	strcat( query, "' );" );
 
-	printf( "query: %s\n", query );
-
+	/* Execute the query. */
 	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
-		fprintf( stderr, "error: insert query failed\n");
-		return;
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+		goto free_query;
 	}
 
-	free( query );
+	printf( "OK\r\n" );
 
+free_query:
+	free( query );
+close:
 	OPENSSL_free( n );
 	OPENSSL_free( e );
 	OPENSSL_free( d );
@@ -146,6 +142,8 @@ void create_user( const char *key, const char *user, const char *pass, const cha
 
 	RSA_free( rsa );
 	mysql_close( mysql );
+flush:
+	fflush( stdout );
 }
 
 void public_key( const char *user )
@@ -153,40 +151,48 @@ void public_key( const char *user )
 	MYSQL *mysql, *connect_res;
 	char *query;
 	long query_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
 
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
 			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
-		fprintf( stderr, "error: failed to connect to the database\n");
-		return;
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
 	}
 
+	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-
 	strcpy( query, "select rsa_n, rsa_e from user where user = '" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "';" );
 
+	/* Execute the query. */
 	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
-		fprintf( stderr, "error: select failed\n");
-		return;
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+		goto query_fail;
 	}
 
-	MYSQL_RES *result = mysql_store_result( mysql );
+	/* Check for a result. */
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf( "ERROR user not found\r\n" );
+		goto free_result;
+	}
 
-	MYSQL_ROW row = mysql_fetch_row( result );
-	if ( row )
-		printf( "OK %s %s\n", row[0], row[1] );
-	else
-		printf( "ERROR\n" );
+	/* Everythings okay. */
+	printf( "OK %s %s\n", row[0], row[1] );
 
-	fflush(stdout);
+free_result:
 	mysql_free_result( result );
-	mysql_close( mysql );
-
+query_fail:
 	free( query );
+close:
+	mysql_close( mysql );
+	fflush(stdout);
 }
 
 long open_inet_connection( const char *hostname, unsigned short port )

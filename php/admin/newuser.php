@@ -24,5 +24,5 @@ if ( !$fp )
 
 $send = 
 	"SPP/0.1\r\n" . 
-	"newuser $CFG_COMM_KEY Adrian.Thurston iduri thurston@complang.org\r\n";
+	"new_user $CFG_COMM_KEY Adrian.Thurston iduri thurston@complang.org\r\n";
 fwrite($fp, $send);

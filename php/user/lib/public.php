@@ -45,6 +45,6 @@ if ( !$line ) {
 
 <a href="login.php">owner login</a><br>
 <a href="flogin.php">friend login</a><br>
-<a href="becomefriend.php">become friend</a>
+<a href="become.php">become friend</a>
 
 </html>

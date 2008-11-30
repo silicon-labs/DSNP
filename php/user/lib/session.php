@@ -22,6 +22,6 @@ $USER_NAME = $_GET['u'];
 $USER_PATH = "$CFG_PATH/u/$USER_NAME";
 $USER_URI = "$CFG_URI/u/$USER_NAME";
 
-$path = "$CFG_PATH/u/$USER/";
+$path = "$CFG_PATH/u/$USER_NAME/";
 session_set_cookie_params( 0, $path );
 session_start();

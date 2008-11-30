@@ -31,8 +31,11 @@ include('lib/session.php');
 <br>
 <center>
 	<form method="post" action="slogin.php">
-	Admin Login:
-	<input type="password" name="password">
+	<table>
+	<tr>
+	<td>Admin Login:</td><td> <input type="text" name="username" value="admin"></td></tr>
+	<td>Admin Pass:</td><td> <input type="password" name="password"></td></tr>
+	</table>
 	<input type="submit">
 	</form>
 </center>

@@ -18,8 +18,10 @@
 #define _SPPD_H
 
 int parse_loop();
-int create_user( const char *key, const char *user, const char *pass, const char *email );
 int rcfile_parse( const char *data, long length );
+
+void create_user( const char *key, const char *user, const char *pass, const char *email );
+void public_key( const char *identity );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;

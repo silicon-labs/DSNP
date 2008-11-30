@@ -19,7 +19,7 @@ DEFS +=
 CXXFLAGS += -g -Wall
 LDFLAGS +=
 
-CC_SRCS = main.cpp parser.cpp rcfile.cpp
+CC_SRCS = main.cpp parser.cpp rcfile.cpp sppd.cpp
 GEN_SRCS = parser.cpp rcfile.cpp
 
 LIBS = -lssl -lmysqlclient
@@ -63,7 +63,7 @@ distclean: clean
 	rm -f Makefile 
 
 clean:
-	rm -f tags .*.d *.o ragel $(EXTRA_CLEAN)
+	rm -f tags .*.d *.o ragel $(GEN_SRCS)
 
 install: all
 	install -d $(DESTDIR)$(prefix)/bin

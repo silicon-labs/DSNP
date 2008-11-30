@@ -53,11 +53,20 @@ char *alloc_string( const char *s, const char *e )
 		free( email );
 	}
 
+	action publickey {
+		char *user = alloc_string( u1, u2 );
+
+		public_key( user );
+
+		free( user );
+	}
+
 	commands := |* 
-		'newuser'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @newuser;
+		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @newuser;
+		'public_key'i ' ' user EOL @publickey;
 	*|;
 
-	main := 'SPP'i . '/0.1' EOL @{ fgoto commands; };
+	main := 'SPP/0.1'i EOL @{ fgoto commands; };
 }%%
 
 %% write data;

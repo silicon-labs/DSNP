@@ -38,13 +38,13 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <p>Installation: <?php print "$CFG_URI/";?>
 
-<p>
+<p><a href="admin/">Administration Pages</a>
 
+<p>
 <?php
 
 while ( $row = mysql_fetch_assoc($result) )
     echo '<a href="u/' . $row['user'] . '/"/>' . $row['user'] . '</a><br>';
-
 ?>
 
 </html>

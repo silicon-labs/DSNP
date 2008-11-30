@@ -22,6 +22,6 @@ include('lib/session.php');
 unset($_SESSION['auth']);
 
 $U = $_GET['u'];
-header( "Location: ${CFG_INSTALLATION}u/$U/" );
+header( "Location: $USER_PATH/" );
 
 ?>

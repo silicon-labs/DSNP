@@ -17,9 +17,7 @@
  */
 
 include('../config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('lib/session.php');
 
 ?>
 <html>
@@ -34,7 +32,7 @@ iduriSessionStart();
 <center>
 First please answer a challenge (TODO).
 <p>
-<form method="post" action="submitbecome.php">
+<form method="post" action="sbecome.php">
 Please submit your identity:
 <input type="text" size=70 name="uri">
 <input type="submit">

@@ -70,24 +70,37 @@ echo
 echo Initializing the database. Please login as root@localhost.
 
 mysql -f -h localhost -u root -p << EOF
-drop user spp@localhost;
-drop database spp;
-create database spp;
-grant all on spp.* to 'spp'@'localhost' identified by '$CFG_ADMIN_PASS';
-use spp;
-create table user ( 
-	user varchar(20), 
-	pass varchar(40), 
-	email varchar(50),
+DROP USER spp@localhost;
+DROP DATABASE spp;
+CREATE DATABASE spp;
+GRANT ALL ON spp.* TO 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+USE spp;
+CREATE TABLE user ( 
+	user VARCHAR(20), 
+	pass VARCHAR(40), 
+	email VARCHAR(50),
 
-	rsa_n text, # 256
-	rsa_e char(6),
-	rsa_d text, # 256
-	rsa_p char(128),
-	rsa_q char(128),
-	rsa_dmp1 char(128),
-	rsa_dmq1 char(128),
-	rsa_iqmp char(128)
+	rsa_n TEXT, # 256
+	rsa_e CHAR(6),
+	rsa_d TEXT, # 256
+	rsa_p CHAR(128),
+	rsa_q CHAR(128),
+	rsa_dmp1 CHAR(128),
+	rsa_dmq1 CHAR(128),
+	rsa_iqmp CHAR(128)
+);
+
+CREATE TABLE public_key (
+	identity TEXT,
+	rsa_n TEXT,
+	rsa_e CHAR(6)
+);
+
+CREATE TABLE friend_req (
+	from_id TEXT,
+	fr_relid CHAR(32),
+	fr_reqid CHAR(32),
+	enc_msg TEXT
 );
 EOF
 
@@ -138,10 +151,13 @@ EOF
 cat > php/.htaccess << EOF
 RewriteEngine on
 
-RewriteRule ^u/([a-zA-Z0-9.]+)$ 	$CFG_PATH/u/\$1/ [R,L]
+# Add trailing slashes to everything.
+RewriteRule ^([a-zA-Z0-9.]+)$          $CFG_PATH/\$1/          [R,L]
+
+# Admin
+RewriteRule ^admin/(.*)$               admin/\$1               [L]
 
 # Users
-RewriteRule ^u/([a-zA-Z0-9.]+)$ 	user/index.php?u=\$1
-RewriteRule ^u/([a-zA-Z0-9.]+)/(.*)$ 	user/\$2?u=\$1          [QSA,L]
+RewriteRule ^([a-zA-Z0-9.]+)/([\/]*)$  user/\$2?u=\$1          [L,QSA]
 EOF
 

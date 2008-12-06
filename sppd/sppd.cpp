@@ -95,7 +95,7 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 
 	/* Create the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "insert into user values('" );
+	strcpy( query, "INSERT INTO user VALUES('" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), pass_hashed, strlen(pass_hashed) );
@@ -164,7 +164,7 @@ void public_key( const char *user )
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "select rsa_n, rsa_e from user where user = '" );
+	strcpy( query, "SELECT rsa_n, rsa_e FROM user WHERE user = '" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "';" );
 
@@ -184,7 +184,7 @@ void public_key( const char *user )
 	}
 
 	/* Everythings okay. */
-	printf( "OK %s %s\n", row[0], row[1] );
+	printf( "OK %s/%s\n", row[0], row[1] );
 
 free_result:
 	mysql_free_result( result );
@@ -227,7 +227,102 @@ long open_inet_connection( const char *hostname, unsigned short port )
 	return socketFd;
 }
 
-void friend_req( const char *user, const char *identity, const char *host )
+long fetch_public_key_db( PublicKey &pub, MYSQL *mysql, const char *identity )
+{
+	long result = 0;
+	char *query;
+	long query_res;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "SELECT rsa_n, rsa_e FROM public_key WHERE identity = '" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		result = ERR_QUERY_ERROR;
+		goto query_fail;
+	}
+
+	/* Check for a result. */
+	select_res= mysql_store_result( mysql );
+	row = mysql_fetch_row( select_res );
+	if ( row ) {
+		pub.n = strdup( row[0] );
+		pub.e = strdup( row[1] );
+		result = 1;
+	}
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+query_fail:
+	free( query );
+	return result;
+}
+
+long store_public_key( MYSQL *mysql, const char *identity, PublicKey &pub )
+{
+	long result = 0, query_res;
+	char *query;
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*3 );
+	strcpy( query, "INSERT INTO public_key VALUES('" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), pub.n, strlen(pub.n) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), pub.e, strlen(pub.e) );
+	strcat( query, "' );" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		result = ERR_QUERY_ERROR;
+		goto query_fail;
+	}
+
+query_fail:
+	free( query );
+	return result;
+}
+
+long fetch_public_key( PublicKey &pub, MYSQL *mysql, const char *identity, 
+		const char *host, const char *user )
+{
+	/* First try to fetch the public key from the database. */
+	long result = fetch_public_key_db( pub, mysql, identity );
+	if ( result < 0 ) {
+		printf("ERROR db fetch error: %ld\n", result );
+		return result;
+	}
+
+	/* If the db fetch failed, get the public key off the net. */
+	if ( result == 0 ) {
+		result = fetch_public_key_net( pub, host, user );
+		if ( result < 0 ) {
+			printf("ERROR net fetch failed: %ld\n", result );
+			return result;
+		}
+
+		/* Store it in the db. */
+		result = store_public_key( mysql, identity, pub );
+		if ( result < 0 ) {
+			printf("ERROR db store fetch failed: %ld\n", result );
+			return result;
+		}
+	}
+
+	return 0;
+}
+
+void friend_req( const char *user, const char *identity, 
+		const char *id_host, const char *id_user )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -238,12 +333,40 @@ void friend_req( const char *user, const char *identity, const char *host )
 	 * g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 	 */
 
-	PublicKey pub;
-	long fr = fetch_public_key( pub, host, user );
-	if ( fr < 0 ) {
-		printf("fetch failed: %ld\n", fr );
-		return;
+	MYSQL *mysql, *connect_res;
+	long fr;
+	unsigned char FR_RELID[16];
+	unsigned char FR_REQID[16];
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
 	}
 
-	printf( "pub: %s %s\n", pub.n, pub.e );
+	PublicKey pub;
+	fr = fetch_public_key( pub, mysql, identity, id_host, id_user );
+	if ( fr < 0 ) {
+		printf("ERROR fetch_public_key failed: %ld\n", fr );
+		goto close;
+	}
+
+	RAND_bytes( FR_RELID, 16 );
+	RAND_bytes( FR_REQID, 16 );
+
+	printf( "relid: " );
+	for ( int i = 0; i < 16; i++ )
+		printf( "%x", FR_RELID[i] );
+	printf( "\nreqid: " );
+	for ( int i = 0; i < 16; i++ )
+		printf( "%x", FR_REQID[i] );
+	printf( "\n" );
+
+close:
+	mysql_close( mysql );
+	fflush( stdout );
 }
+

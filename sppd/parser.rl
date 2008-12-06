@@ -32,12 +32,11 @@ char *alloc_string( const char *s, const char *e )
 %%{
 	machine parser;
 
-	comm_key = [a-f0-9]+   >{k1=p;} %{k2=p;};
-	user = [a-zA-Z0-9_.]+  >{u1=p;} %{u2=p;};
-	pass = graph+          >{p1=p;} %{p2=p;};
-	email = graph+         >{e1=p;} %{e2=p;};
-
-	path_part = (graph-'/')+;
+	comm_key = [a-f0-9]+      >{k1=p;} %{k2=p;};
+	user = [a-zA-Z0-9_.]+     >{u1=p;} %{u2=p;};
+	pass = graph+             >{p1=p;} %{p2=p;};
+	email = graph+            >{e1=p;} %{e2=p;};
+	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
@@ -70,12 +69,15 @@ char *alloc_string( const char *s, const char *e )
 	action friend_req {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
-		char *host = alloc_string( h1, h2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
 
-		friend_req( user, identity, host );
+		friend_req( user, identity, id_host, id_user );
 
-		free( user );
+		free( id_user );
 		free( identity );
+		free( id_host );
+		free( id_user );
 	}
 
 	commands := |* 
@@ -102,6 +104,7 @@ int server_parse_loop()
 	const char *e1, *e2;
 	const char *i1, *i2;
 	const char *h1, *h2;
+	const char *pp1, *pp2;
 
 	%% write init;
 
@@ -143,7 +146,7 @@ int server_parse_loop()
 }%%
 
 
-long fetch_public_key( PublicKey &pub, const char *host, const char *user )
+long fetch_public_key_net( PublicKey &pub, const char *host, const char *user )
 {
 	static char buf[1024];
 	long result = 0, cs;
@@ -178,7 +181,7 @@ long fetch_public_key( PublicKey &pub, const char *host, const char *user )
 		e = [01]+      >{e1 = p;} %{e2 = p;};
 
 		main := 
-			'OK ' n ' ' e EOL @{ OK = true; } |
+			'OK ' n '/' e EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 

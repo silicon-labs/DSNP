@@ -30,8 +30,10 @@ int rcfile_parse( const char *data, long length );
 void new_user( const char *key, const char *user, const char *pass, const char *email );
 void public_key( const char *identity );
 void friend_req( const char *user, const char *identity, const char *host );
+void friend_req( const char *user, const char *identity, 
+		const char *id_host, const char *id_user );
 
-long fetch_public_key( PublicKey &pub, const char *host, const char *user );
+long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
 
 extern char *CFG_URI;
@@ -53,5 +55,6 @@ extern char *CFG_PORT;
 #define ERR_SOCKET_ALLOC       -7
 #define ERR_RESOLVING_NAME     -8
 #define ERR_CONNECTING         -9
+#define ERR_QUERY_ERROR        -10
 
 #endif

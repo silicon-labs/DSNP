@@ -23,6 +23,7 @@
 #include <openssl/err.h>
 
 #include <stdio.h>
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -295,33 +296,34 @@ query_fail:
 	return result;
 }
 
-long fetch_public_key( PublicKey &pub, MYSQL *mysql, const char *identity, 
+RSA *fetch_public_key( MYSQL *mysql, const char *identity, 
 		const char *host, const char *user )
 {
+	PublicKey pub;
+	RSA *rsa;
+
 	/* First try to fetch the public key from the database. */
 	long result = fetch_public_key_db( pub, mysql, identity );
-	if ( result < 0 ) {
-		printf("ERROR db fetch error: %ld\n", result );
-		return result;
-	}
+	if ( result < 0 )
+		return 0;
 
 	/* If the db fetch failed, get the public key off the net. */
 	if ( result == 0 ) {
 		result = fetch_public_key_net( pub, host, user );
-		if ( result < 0 ) {
-			printf("ERROR net fetch failed: %ld\n", result );
-			return result;
-		}
+		if ( result < 0 )
+			return 0;
 
 		/* Store it in the db. */
 		result = store_public_key( mysql, identity, pub );
-		if ( result < 0 ) {
-			printf("ERROR db store fetch failed: %ld\n", result );
-			return result;
-		}
+		if ( result < 0 )
+			return 0;
 	}
 
-	return 0;
+	rsa = RSA_new();
+	BN_hex2bn( &rsa->n, pub.n );
+	BN_hex2bn( &rsa->e, pub.e );
+
+	return rsa;
 }
 
 RSA *load_key( MYSQL *mysql, const char *user )
@@ -353,7 +355,6 @@ RSA *load_key( MYSQL *mysql, const char *user )
 	}
 
 	/* Everythings okay. */
-	printf( "OK %s/%s\n", row[0], row[1] );
 	rsa = RSA_new();
 	BN_hex2bn( &rsa->n,    row[0] );
 	BN_hex2bn( &rsa->e,    row[1] );
@@ -391,12 +392,12 @@ char *bin2hex( unsigned char *data, long len )
 	return res;
 }
 
-void store_friend_req( MYSQL *mysql, const char *identity, unsigned char *fr_relid, 
-		unsigned char *fr_reqid, unsigned char *encrypted, int enclen, 
+long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str, 
+		char *fr_reqid_str, unsigned char *encrypted, int enclen, 
 		unsigned char *signature, int siglen )
 {
-	char *fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
-	char *fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
+	long result = 0;
+
 	char *msg_enc = bin2hex( encrypted, enclen );
 	char *msg_sig = bin2hex( signature, siglen );
 	char *query = (char*)malloc( 1024 + 256*6 );
@@ -414,16 +415,29 @@ void store_friend_req( MYSQL *mysql, const char *identity, unsigned char *fr_rel
 	mysql_real_escape_string( mysql, strend(query), msg_sig, strlen(msg_sig) );
 	strcat( query, "' );" );
 
-	printf("fr_relid: %s\n", fr_relid );
-	printf("fr_reqid: %s\n", fr_reqid );
-	printf("query: %s\n", query );
-
 	/* Execute the query. */
 	int query_res = mysql_query( mysql, query );
-	if ( query_res != 0 ) {
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-	}
+	if ( query_res != 0 )
+		result = ERR_QUERY_ERROR;
+
+	free( msg_enc );
+	free( msg_sig );
+	free( query );
+
+	return result;
 }
+
+//	unsigned char buf[8193];
+//	int s;
+//	s = RSA_private_decrypt( enclen, encrypted, buf, user_priv, RSA_PKCS1_PADDING );
+//	printf( "size: %d\n", s );
+//	assert( s == REQID_SIZE );
+//	assert( memcmp( fr_relid, buf, s ) == 0 );
+//
+//	int v;
+//	v = RSA_verify( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
+//	printf( "verify: %d\n", v );
+
 
 void friend_req( const char *user, const char *identity, 
 		const char *id_host, const char *id_user )
@@ -439,9 +453,9 @@ void friend_req( const char *user, const char *identity,
 
 	MYSQL *mysql, *connect_res;
 	int sigres;
-	long fetchres;
 	RSA *user_priv, *id_pub;
 	unsigned char fr_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
+	char *fr_relid_str, *fr_reqid_str;
 	unsigned char *encrypted, *signature;
 	int enclen;
 	unsigned siglen;
@@ -457,16 +471,11 @@ void friend_req( const char *user, const char *identity,
 	}
 
 	/* Get the public key for the identity. */
-	PublicKey pub;
-	fetchres = fetch_public_key( pub, mysql, identity, id_host, id_user );
-	if ( fetchres < 0 ) {
-		printf("ERROR fetch_public_key failed: %ld\n", fetchres );
+	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
 		goto close;
 	}
-
-	id_pub = RSA_new();
-	BN_hex2bn( &id_pub->n, pub.n );
-	BN_hex2bn( &id_pub->e, pub.e );
 
 	/* Generate the relationship and request ids. */
 	RAND_bytes( fr_relid, RELID_SIZE );
@@ -485,8 +494,18 @@ void friend_req( const char *user, const char *identity,
 	SHA1( fr_relid, RELID_SIZE, relid_sha1 );
 	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
 
-	store_friend_req( mysql, identity, fr_relid, fr_reqid, 
+	/* Store the request. */
+	fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
+
+	store_friend_req( mysql, identity, fr_relid_str, fr_reqid_str, 
 			encrypted, enclen, signature, siglen );
+	
+	/* Return the request id for the requester to use. */
+	printf( "OK %s\r\n", fr_reqid_str );
+
+	free( fr_relid_str );
+	free( fr_reqid_str );
 close:
 	mysql_close( mysql );
 	fflush( stdout );

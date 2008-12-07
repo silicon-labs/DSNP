@@ -19,9 +19,9 @@
 
 # Note that these are globals used by the user code. 
 $USER_NAME = $_GET['u'];
-$USER_PATH = "$CFG_PATH/u/$USER_NAME";
-$USER_URI = "$CFG_URI/u/$USER_NAME";
+$USER_PATH = "$CFG_PATH/$USER_NAME";
+$USER_URI = "$CFG_URI/$USER_NAME";
 
-$path = "$CFG_PATH/u/$USER_NAME/";
+$path = "$CFG_PATH/$USER_NAME/";
 session_set_cookie_params( 0, $path );
 session_start();

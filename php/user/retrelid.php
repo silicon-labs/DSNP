@@ -34,10 +34,10 @@ fwrite($fp, $send);
 $res = fgets($fp);
 
 if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
-	$arg_uri = 'identity=' . urlencode( $USER_URI ) . '/';
+	$arg_identity = 'identity=' . urlencode( $USER_URI ) . '/';
 	$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 
-	header("Location: ${uri}frfinal.php?${arg_uri}&${arg_reqid}" );
+	header("Location: ${identity}frfinal.php?${arg_identity}&${arg_reqid}" );
 }
 else {
 	echo "FAILURE\n";

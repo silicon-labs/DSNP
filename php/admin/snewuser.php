@@ -18,29 +18,19 @@
 include('../config.php');
 include('lib/session.php');
 
-?>
+$user = $_POST['user'];
+$pass1 = $_POST['pass1'];
+$pass2 = $_POST['pass2'];
+$email = $_POST['email'];
 
-<html>
+if ( $pass1 != $pass2 )
+	die("password mismatch");
 
-<head>
-<title>Create User</title>
-</head>
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-<body>
-
-<br>
-<center>
-	<form method="post" action="snewuser.php">
-	<table>
-	<tr>
-	<td>Desired User:</td>   <td> <input type="text"     name="user"></td></tr>
-	<td>Admin Pass:</td>     <td> <input type="password" name="pass1"></td></tr>
-	<td>Again:</td>          <td> <input type="password" name="pass2"></td></tr>
-	<td>Email:</td>          <td> <input type="text"     name="email"></td></tr>
-	</table>
-	<input type="submit">
-	</form>
-</center>
-<body>
-
-</html>
+$send = 
+	"SPP/0.1\r\n" . 
+	"new_user $CFG_COMM_KEY $user $pass1 $email\r\n";
+fwrite($fp, $send);

@@ -100,7 +100,8 @@ CREATE TABLE friend_req (
 	from_id TEXT,
 	fr_relid CHAR(32),
 	fr_reqid CHAR(32),
-	enc_msg TEXT
+	msg_enc TEXT,
+	msg_sig TEXT
 );
 EOF
 
@@ -158,6 +159,6 @@ RewriteRule ^([a-zA-Z0-9.]+)$          $CFG_PATH/\$1/          [R,L]
 RewriteRule ^admin/(.*)$               admin/\$1               [L]
 
 # Users
-RewriteRule ^([a-zA-Z0-9.]+)/([\/]*)$  user/\$2?u=\$1          [L,QSA]
+RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$  user/\$2?u=\$1          [L,QSA]
 EOF
 

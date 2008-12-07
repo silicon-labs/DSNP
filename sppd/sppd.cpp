@@ -790,7 +790,6 @@ long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 	strcpy( query, "SELECT from_id FROM friend_req WHERE fr_relid = '" );
 	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
 	strcat( query, "';" );
-	printf("query: %s\n", query );
 
 	/* Execute the query. */
 	query_res = mysql_query( mysql, query );

@@ -16,35 +16,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/iduri.php');
+include('../config.php');
+include('lib/session.php');
 
-iduriSessionStart();
-
-$furi = $_GET['uri'];
+$identity = $_GET['identity'];
 $reqid = $_GET['reqid'];
-$gnupg = new gnupg();
 
-# Fetch and decrypt the get and put relids.
-$message = fetchMessage( $furi, 'relids', $reqid );
-$relids = decryptVerify( $gnupg, $message );
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-# Get individual relids.
-$s = split(' ', $relids);
-$putrelid = $s[0];
-$getrelid = $s[1];
+$send = 
+	"SPP/0.1\r\n" . 
+	"friend_final $USER_NAME $reqid $identity\r\n";
+fwrite($fp, $send);
 
-# Store getrelid.
-$data = readData();
-$fp = $data['fingerprints'][$furi];
-$data['getrelids'][$fp] = $getrelid;
+$res = fgets($fp);
 
-if ( $putrelid == $data['putrelids'][$fp] ) {
+echo $res;
+
+if ( ereg("^OK", $res) ) {
 	echo "friend request submitted<br>\n";
 	echo "<a href=\"$CFG_IDENTITY\">back to profile</a>";
-
-	/* Store the request for review. */
-	$data['requests'][$furi] = 1;
 }
 else {
 	echo "<center>\n";
@@ -52,4 +45,4 @@ else {
 	echo "</center>\n";
 }
 
-writeData( $data );
+?>

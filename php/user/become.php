@@ -34,7 +34,7 @@ First please answer a challenge (TODO).
 <p>
 <form method="post" action="sbecome.php">
 Please submit your identity:
-<input type="text" size=70 name="uri">
+<input type="text" size=70 name="identity">
 <input type="submit">
 </form>
 

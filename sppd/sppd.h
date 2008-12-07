@@ -57,4 +57,7 @@ extern char *CFG_PORT;
 #define ERR_CONNECTING         -9
 #define ERR_QUERY_ERROR        -10
 
+#define RELID_SIZE 16
+#define REQID_SIZE 16
+
 #endif

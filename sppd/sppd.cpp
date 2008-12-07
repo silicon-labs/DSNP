@@ -15,9 +15,12 @@
  */
 
 #include <openssl/rand.h>
+#include <openssl/objects.h>
 #include <openssl/rsa.h>
 #include <openssl/bn.h>
 #include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <openssl/err.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -321,6 +324,107 @@ long fetch_public_key( PublicKey &pub, MYSQL *mysql, const char *identity,
 	return 0;
 }
 
+RSA *load_key( MYSQL *mysql, const char *user )
+{
+	char *query;
+	long query_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	RSA *rsa;
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*1 );
+	strcpy( query, "SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
+		"FROM user WHERE user = '" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		goto query_fail;
+	}
+
+	/* Check for a result. */
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		goto free_result;
+	}
+
+	/* Everythings okay. */
+	printf( "OK %s/%s\n", row[0], row[1] );
+	rsa = RSA_new();
+	BN_hex2bn( &rsa->n,    row[0] );
+	BN_hex2bn( &rsa->e,    row[1] );
+	BN_hex2bn( &rsa->d,    row[2] );
+	BN_hex2bn( &rsa->p,    row[3] );
+	BN_hex2bn( &rsa->q,    row[4] );
+	BN_hex2bn( &rsa->dmp1, row[5] );
+	BN_hex2bn( &rsa->dmq1, row[6] );
+	BN_hex2bn( &rsa->iqmp, row[7] );
+
+free_result:
+	mysql_free_result( result );
+query_fail:
+	free( query );
+	return rsa;
+}
+
+char *bin2hex( unsigned char *data, long len )
+{
+	char *res = (char*)malloc( len*2 + 1 );
+	for ( int i = 0; i < len; i++ ) {
+		unsigned char l = data[i] & 0xf;
+		if ( l < 10 )
+			res[i*2] = '0' + l;
+		else
+			res[i*2] = 'a' + (l-10);
+
+		unsigned char h = data[i] >> 4;
+		if ( h < 10 )
+			res[i*2+1] = '0' + h;
+		else
+			res[i*2+1] = 'a' + (h-10);
+	}
+	res[len*2] = 0;
+	return res;
+}
+
+void store_friend_req( MYSQL *mysql, const char *identity, unsigned char *fr_relid, 
+		unsigned char *fr_reqid, unsigned char *encrypted, int enclen, 
+		unsigned char *signature, int siglen )
+{
+	char *fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	char *fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
+	char *msg_enc = bin2hex( encrypted, enclen );
+	char *msg_sig = bin2hex( signature, siglen );
+	char *query = (char*)malloc( 1024 + 256*6 );
+
+	/* Make the query. */
+	strcpy( query, "INSERT INTO friend_req VALUES('" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), fr_reqid_str, strlen(fr_reqid_str) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), msg_enc, strlen(msg_enc) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), msg_sig, strlen(msg_sig) );
+	strcat( query, "' );" );
+
+	printf("fr_relid: %s\n", fr_relid );
+	printf("fr_reqid: %s\n", fr_reqid );
+	printf("query: %s\n", query );
+
+	/* Execute the query. */
+	int query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	}
+}
+
 void friend_req( const char *user, const char *identity, 
 		const char *id_host, const char *id_user )
 {
@@ -334,9 +438,14 @@ void friend_req( const char *user, const char *identity,
 	 */
 
 	MYSQL *mysql, *connect_res;
-	long fr;
-	unsigned char FR_RELID[16];
-	unsigned char FR_REQID[16];
+	int sigres;
+	long fetchres;
+	RSA *user_priv, *id_pub;
+	unsigned char fr_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
+	unsigned char *encrypted, *signature;
+	int enclen;
+	unsigned siglen;
+	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -347,24 +456,37 @@ void friend_req( const char *user, const char *identity,
 		goto close;
 	}
 
+	/* Get the public key for the identity. */
 	PublicKey pub;
-	fr = fetch_public_key( pub, mysql, identity, id_host, id_user );
-	if ( fr < 0 ) {
-		printf("ERROR fetch_public_key failed: %ld\n", fr );
+	fetchres = fetch_public_key( pub, mysql, identity, id_host, id_user );
+	if ( fetchres < 0 ) {
+		printf("ERROR fetch_public_key failed: %ld\n", fetchres );
 		goto close;
 	}
 
-	RAND_bytes( FR_RELID, 16 );
-	RAND_bytes( FR_REQID, 16 );
+	id_pub = RSA_new();
+	BN_hex2bn( &id_pub->n, pub.n );
+	BN_hex2bn( &id_pub->e, pub.e );
 
-	printf( "relid: " );
-	for ( int i = 0; i < 16; i++ )
-		printf( "%x", FR_RELID[i] );
-	printf( "\nreqid: " );
-	for ( int i = 0; i < 16; i++ )
-		printf( "%x", FR_REQID[i] );
-	printf( "\n" );
+	/* Generate the relationship and request ids. */
+	RAND_bytes( fr_relid, RELID_SIZE );
+	RAND_bytes( fr_reqid, REQID_SIZE );
+	
+	/* Encrypt it. */
+	encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
+	enclen = RSA_public_encrypt( RELID_SIZE, fr_relid, encrypted, 
+			id_pub, RSA_PKCS1_PADDING );
 
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+
+	/* Sign the relationship id. */
+	signature = (unsigned char*)malloc( RSA_size(user_priv) );
+	SHA1( fr_relid, RELID_SIZE, relid_sha1 );
+	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
+
+	store_friend_req( mysql, identity, fr_relid, fr_reqid, 
+			encrypted, enclen, signature, siglen );
 close:
 	mysql_close( mysql );
 	fflush( stdout );

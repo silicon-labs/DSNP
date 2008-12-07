@@ -74,7 +74,7 @@ char *alloc_string( const char *s, const char *e )
 
 		friend_req( user, identity, id_host, id_user );
 
-		free( id_user );
+		free( user );
 		free( identity );
 		free( id_host );
 		free( id_user );

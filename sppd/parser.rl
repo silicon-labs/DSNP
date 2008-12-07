@@ -37,6 +37,7 @@ char *alloc_string( const char *s, const char *e )
 	pass = graph+             >{p1=p;} %{p2=p;};
 	email = graph+            >{e1=p;} %{e2=p;};
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
+	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
@@ -49,9 +50,7 @@ char *alloc_string( const char *s, const char *e )
 		char *user = alloc_string( u1, u2 );
 		char *pass = alloc_string( p1, p2 );
 		char *email = alloc_string( e1, e2 );
-
 		new_user( key, user, pass, email );
-
 		free( key );
 		free( user );
 		free( pass );
@@ -60,9 +59,7 @@ char *alloc_string( const char *s, const char *e )
 
 	action public_key {
 		char *user = alloc_string( u1, u2 );
-
 		public_key( user );
-
 		free( user );
 	}
 
@@ -71,10 +68,28 @@ char *alloc_string( const char *s, const char *e )
 		char *identity = alloc_string( i1, i2 );
 		char *id_host = alloc_string( h1, h2 );
 		char *id_user = alloc_string( pp1, pp2 );
-
 		friend_req( user, identity, id_host, id_user );
-
 		free( user );
+		free( identity );
+		free( id_host );
+		free( id_user );
+	}
+
+	action fetch_fr_relid {
+		char *reqid = alloc_string( r1, r2 );
+		fetch_fr_relid( reqid );
+		free( reqid );
+	}
+
+	action return_relid {
+		char *user = alloc_string( u1, u2 );
+		char *reqid = alloc_string( r1, r2 );
+		char *identity = alloc_string( i1, i2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
+		return_relid( user, reqid, identity, id_host, id_user );
+		free( user );
+		free( reqid );
 		free( identity );
 		free( id_host );
 		free( id_user );
@@ -83,7 +98,8 @@ char *alloc_string( const char *s, const char *e )
 	commands := |* 
 		'public_key'i ' ' user EOL @public_key;
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
-
+		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
+		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @return_relid;
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 	*|;
 
@@ -105,6 +121,7 @@ int server_parse_loop()
 	const char *i1, *i2;
 	const char *h1, *h2;
 	const char *pp1, *pp2;
+	const char *r1, *r2;
 
 	%% write init;
 
@@ -144,7 +161,6 @@ int server_parse_loop()
 	machine public_key;
 	write data;
 }%%
-
 
 long fetch_public_key_net( PublicKey &pub, const char *host, const char *user )
 {
@@ -208,6 +224,82 @@ long fetch_public_key_net( PublicKey &pub, const char *host, const char *user )
 	memcpy( pub.e, e1, e2-e1 );
 	pub.n[n2-n1] = 0;
 	pub.e[e2-e1] = 0;
+
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}
+
+%%{
+	machine relid;
+	write data;
+}%%
+
+
+long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	const char *e1, *e2, *s1, *s2;
+	bool OK = false;
+
+	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, "SPP/0.1\r\nfetch_fr_relid %s\r\n", reqid );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
+		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
+
+		main := 
+			'OK ' enc ' ' sig EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < relid_first_final ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+	encsig.enc = (char*)malloc( e2-e1+1 );
+	encsig.sig = (char*)malloc( s2-s1+1 );
+	memcpy( encsig.enc, e1, e2-e1 );
+	memcpy( encsig.sig, s1, s2-s1 );
+	encsig.enc[e2-e1] = 0;
+	encsig.sig[s2-s1] = 0;
 
 fail:
 	fclose( writeSocket );

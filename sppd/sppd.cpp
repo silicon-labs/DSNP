@@ -326,6 +326,7 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity,
 	return rsa;
 }
 
+
 RSA *load_key( MYSQL *mysql, const char *user )
 {
 	char *query;
@@ -378,18 +379,41 @@ char *bin2hex( unsigned char *data, long len )
 	for ( int i = 0; i < len; i++ ) {
 		unsigned char l = data[i] & 0xf;
 		if ( l < 10 )
-			res[i*2] = '0' + l;
+			res[i*2+1] = '0' + l;
 		else
-			res[i*2] = 'a' + (l-10);
+			res[i*2+1] = 'a' + (l-10);
 
 		unsigned char h = data[i] >> 4;
 		if ( h < 10 )
-			res[i*2+1] = '0' + h;
+			res[i*2] = '0' + h;
 		else
-			res[i*2+1] = 'a' + (h-10);
+			res[i*2] = 'a' + (h-10);
 	}
 	res[len*2] = 0;
 	return res;
+}
+
+long hex2bin( unsigned char *dest, long len, char *src )
+{
+	long slen = strlen( src ) / 2;
+	if ( len < slen )
+		return 0;
+	
+	for ( int i = 0; i < slen; i++ ) {
+		char l = src[i*2+1];
+		char h = src[i*2];
+
+		if ( '0' <= l && l <= '9' )
+			dest[i] = l - '0';
+		else
+			dest[i] = 10 + (l - 'a');
+			
+		if ( '0' <= h && h <= '9' )
+			dest[i] |= (h - '0') << 4;
+		else
+			dest[i] |= (10 + (h - 'a')) << 4;
+	}
+	return slen;
 }
 
 long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str, 
@@ -426,17 +450,6 @@ long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str,
 
 	return result;
 }
-
-//	unsigned char buf[8193];
-//	int s;
-//	s = RSA_private_decrypt( enclen, encrypted, buf, user_priv, RSA_PKCS1_PADDING );
-//	printf( "size: %d\n", s );
-//	assert( s == REQID_SIZE );
-//	assert( memcmp( fr_relid, buf, s ) == 0 );
-//
-//	int v;
-//	v = RSA_verify( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
-//	printf( "verify: %d\n", v );
 
 
 void friend_req( const char *user, const char *identity, 
@@ -511,3 +524,211 @@ close:
 	fflush( stdout );
 }
 
+void fetch_fr_relid( const char *reqid )
+{
+	MYSQL *mysql, *connect_res;
+	char *query;
+	long query_res;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "SELECT msg_enc, msg_sig FROM friend_req WHERE fr_reqid = '" );
+	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		printf("ERR\r\n");
+		goto query_fail;
+	}
+
+	/* Check for a result. */
+	select_res = mysql_store_result( mysql );
+	row = mysql_fetch_row( select_res );
+	if ( row )
+		printf( "OK %s %s\r\n", row[0], row[1] );
+	else
+		printf( "ERR\r\n" );
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+query_fail:
+	free( query );
+close:
+	mysql_close( mysql );
+	fflush( stdout );
+}
+
+long store_return_relid( MYSQL *mysql, const char *identity, 
+		const char *fr_relid_str, const char *fr_reqid_str, 
+		const char *relid_str, const char *reqid_str, 
+		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
+{
+	long result = 0;
+
+	char *msg_enc = bin2hex( encrypted, enclen );
+	char *msg_sig = bin2hex( signature, siglen );
+	char *query = (char*)malloc( 1024 + 256*6 );
+
+	/* Make the query. */
+	strcpy( query, "INSERT INTO return_relid VALUES('" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), fr_reqid_str, strlen(fr_reqid_str) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), relid_str, strlen(relid_str) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), reqid_str, strlen(reqid_str) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), msg_enc, strlen(msg_enc) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), msg_sig, strlen(msg_sig) );
+	strcat( query, "' );" );
+
+	/* Execute the query. */
+	int query_res = mysql_query( mysql, query );
+	if ( query_res != 0 )
+		result = ERR_QUERY_ERROR;
+
+	free( msg_enc );
+	free( msg_sig );
+	free( query );
+
+	return result;
+}
+
+
+
+void return_relid( const char *user, const char *fr_reqid_str, const char *identity, 
+		const char *id_host, const char *id_user )
+{
+	/*  a) verifies browser is logged in as owner
+	 *  b) fetches $FR-URI/id.asc (using SSL)
+	 *  c) fetches $FR-URI/friend-request/$FR-REQID.asc 
+	 *  d) decrypts and verifies $FR-RELID
+	 *  e) randomly generates $RELID
+	 *  f) randomly generates $REQID
+	 *  g) encrypts "$FR-RELID $RELID" to friendee and signs it
+	 *  h) makes message available at $URI/request-return/$REQID.asc
+	 *  i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
+	 */
+
+	MYSQL *mysql, *connect_res;
+	int verifyres, fetchres, decryptres, sigres;
+	RSA *user_priv, *id_pub;
+	unsigned char *fr_relid;
+	unsigned char *encrypted, *signature;
+	int enclen;
+	unsigned siglen;
+	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
+	unsigned char relid[RELID_SIZE], reqid[REQID_SIZE];
+	char *fr_relid_str, *relid_str, *reqid_str;
+	unsigned char message[RELID_SIZE*2];
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Get the public key for the identity. */
+	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
+		goto close;
+	}
+
+	RelidEncSig encsig;
+	fetchres = fetch_fr_relid_net( encsig, id_host, fr_reqid_str );
+	if ( fetchres < 0 ) {
+		printf("ERROR fetch_fr_relid failed %d\n", fetchres );
+		goto close;
+	}
+	
+	/* Convert the encrypted string to binary. */
+	encrypted = (unsigned char*)malloc( strlen(encsig.enc) );
+	enclen = hex2bin( encrypted, RSA_size(id_pub), encsig.enc );
+	if ( enclen <= 0 ) {
+		printf("ERROR converting encsig.enc to binary\n" );
+		goto close;
+	}
+
+	/* Convert the sig to binary. */
+	signature = (unsigned char*)malloc( strlen(encsig.sig) );
+	siglen = hex2bin( signature, RSA_size(id_pub), encsig.sig );
+	if ( siglen <= 0 ) {
+		printf("ERROR converting encsig.sig to binary\n" );
+		goto close;
+	}
+
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+
+	/* Decrypt the fr_relid. */
+	fr_relid = (unsigned char*) malloc( RSA_size( user_priv ) );
+	decryptres = RSA_private_decrypt( enclen, encrypted, fr_relid, user_priv, RSA_PKCS1_PADDING );
+	assert( decryptres == REQID_SIZE );
+	if ( decryptres != REQID_SIZE ) {
+		printf("ERROR failed to decrypt fr_reqid\n" );
+		goto close;
+	}
+
+	/* Verify the fr_relid. */
+	SHA1( fr_relid, RELID_SIZE, relid_sha1 );
+	verifyres = RSA_verify( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
+	if ( verifyres != 1 ) {
+		printf("ERROR failed to verify fr_reqid\n" );
+		goto close;
+	}
+
+	/* Generate the relationship and request ids. */
+	RAND_bytes( relid, RELID_SIZE );
+	RAND_bytes( reqid, REQID_SIZE );
+
+	memcpy( message, fr_relid, RELID_SIZE );
+	memcpy( message+RELID_SIZE, relid, RELID_SIZE );
+
+	/* Encrypt it. */
+	enclen = RSA_public_encrypt( RELID_SIZE*2, message, encrypted, 
+			id_pub, RSA_PKCS1_PADDING );
+
+	/* Sign the relationship id. */
+	SHA1( message, RELID_SIZE*2, relid_sha1 );
+	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
+
+	/* Store the request. */
+	fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	relid_str = bin2hex( relid, RELID_SIZE );
+	reqid_str = bin2hex( reqid, REQID_SIZE );
+
+	store_return_relid( mysql, identity, fr_relid_str, fr_reqid_str, 
+			relid_str, reqid_str,
+			encrypted, enclen, signature, siglen );
+	
+	/* Return the request id for the requester to use. */
+	printf( "OK %s\r\n", reqid_str );
+
+	free( relid_str );
+	free( reqid_str );
+close:
+	mysql_close( mysql );
+	fflush( stdout );
+}

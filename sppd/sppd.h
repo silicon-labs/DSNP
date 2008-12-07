@@ -23,18 +23,27 @@ struct PublicKey
 	char *e;
 };
 
+struct RelidEncSig
+{
+	char *enc;
+	char *sig;
+};
+
 int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
 /* Commands. */
 void new_user( const char *key, const char *user, const char *pass, const char *email );
 void public_key( const char *identity );
-void friend_req( const char *user, const char *identity, const char *host );
 void friend_req( const char *user, const char *identity, 
 		const char *id_host, const char *id_user );
+void fetch_fr_relid( const char *reqid );
+void return_relid( const char *user, const char *reqid, 
+		const char *identity, const char *id_host, const char *id_user );
 
 long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
+long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *reqid );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;

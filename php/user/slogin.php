@@ -19,7 +19,7 @@
 include('../config.php');
 include('lib/session.php');
 
-$pass = $_POST['password'];
+$pass = $_POST['pass'];
 $md5pass = md5( $USER_NAME . ':spp:' . $pass );
 
 # Connect to the database.
@@ -33,6 +33,7 @@ $query = sprintf("SELECT user FROM user WHERE user='%s' AND pass='%s'",
     mysql_real_escape_string($USER_NAME),
     mysql_real_escape_string($md5pass)
 );
+
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 # If there is a result then the login is successful. 

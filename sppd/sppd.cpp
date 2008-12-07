@@ -39,17 +39,57 @@ char *strend( char *s )
 	return s + strlen(s);
 }
 
-void pass_hash( char *dest, const char *user, const char *pass )
+char *bin2hex( unsigned char *data, long len )
 {
-	unsigned char pass_bin[16];
+	char *res = (char*)malloc( len*2 + 1 );
+	for ( int i = 0; i < len; i++ ) {
+		unsigned char l = data[i] & 0xf;
+		if ( l < 10 )
+			res[i*2+1] = '0' + l;
+		else
+			res[i*2+1] = 'a' + (l-10);
+
+		unsigned char h = data[i] >> 4;
+		if ( h < 10 )
+			res[i*2] = '0' + h;
+		else
+			res[i*2] = 'a' + (h-10);
+	}
+	res[len*2] = 0;
+	return res;
+}
+
+long hex2bin( unsigned char *dest, long len, char *src )
+{
+	long slen = strlen( src ) / 2;
+	if ( len < slen )
+		return 0;
+	
+	for ( int i = 0; i < slen; i++ ) {
+		char l = src[i*2+1];
+		char h = src[i*2];
+
+		if ( '0' <= l && l <= '9' )
+			dest[i] = l - '0';
+		else
+			dest[i] = 10 + (l - 'a');
+			
+		if ( '0' <= h && h <= '9' )
+			dest[i] |= (h - '0') << 4;
+		else
+			dest[i] |= (10 + (h - 'a')) << 4;
+	}
+	return slen;
+}
+
+
+char *pass_hash( const char *user, const char *pass )
+{
+	unsigned char pass_bin[MD5_DIGEST_LENGTH];
 	char pass_comb[1024];
 	sprintf( pass_comb, "%s:spp:%s", user, pass );
 	MD5( (unsigned char*)pass_comb, strlen(pass_comb), pass_bin );
-	sprintf( dest, "%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x", 
-		pass_bin[0], pass_bin[1], pass_bin[2], pass_bin[3],
-		pass_bin[4], pass_bin[5], pass_bin[6], pass_bin[7],
-		pass_bin[8], pass_bin[9], pass_bin[10], pass_bin[11],
-		pass_bin[12], pass_bin[13], pass_bin[14], pass_bin[15] );
+	return bin2hex( pass_bin, MD5_DIGEST_LENGTH );
 }
 
 void new_user( const char *key, const char *user, const char *pass, const char *email )
@@ -57,7 +97,7 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
 	MYSQL *mysql, *connect_res;
-	char pass_hashed[33];
+	char *pass_hashed;
 	char *query;
 	long query_res;
 
@@ -94,7 +134,7 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 	}
 
 	/* Hash the password. */
-	pass_hash( pass_hashed, user, pass );
+	pass_hashed = pass_hash( user, pass );
 
 	/* Create the query. */
 	query = (char*)malloc( 1024 + 256*15 );
@@ -370,49 +410,6 @@ free_result:
 query_fail:
 	free( query );
 	return rsa;
-}
-
-char *bin2hex( unsigned char *data, long len )
-{
-	char *res = (char*)malloc( len*2 + 1 );
-	for ( int i = 0; i < len; i++ ) {
-		unsigned char l = data[i] & 0xf;
-		if ( l < 10 )
-			res[i*2+1] = '0' + l;
-		else
-			res[i*2+1] = 'a' + (l-10);
-
-		unsigned char h = data[i] >> 4;
-		if ( h < 10 )
-			res[i*2] = '0' + h;
-		else
-			res[i*2] = 'a' + (h-10);
-	}
-	res[len*2] = 0;
-	return res;
-}
-
-long hex2bin( unsigned char *dest, long len, char *src )
-{
-	long slen = strlen( src ) / 2;
-	if ( len < slen )
-		return 0;
-	
-	for ( int i = 0; i < slen; i++ ) {
-		char l = src[i*2+1];
-		char h = src[i*2];
-
-		if ( '0' <= l && l <= '9' )
-			dest[i] = l - '0';
-		else
-			dest[i] = 10 + (l - 'a');
-			
-		if ( '0' <= h && h <= '9' )
-			dest[i] |= (h - '0') << 4;
-		else
-			dest[i] |= (10 + (h - 'a')) << 4;
-	}
-	return slen;
 }
 
 long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str, 

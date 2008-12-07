@@ -33,7 +33,8 @@ include('lib/session.php');
 
 	<form method="post" action="slogin.php">
 	Owner Login to Iduri:
-	<input type="password" name="password">
+	<input type="text" name="user"><br>
+	<input type="password" name="pass">
 	<input type="submit">
 	</form>
 

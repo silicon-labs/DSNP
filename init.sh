@@ -113,6 +113,13 @@ CREATE TABLE return_relid (
 	msg_enc TEXT,
 	msg_sig TEXT
 );
+
+CREATE TABLE user_friend_req (
+	user VARCHAR(20), 
+	from_id TEXT,
+	fr_relid CHAR(32),
+	relid CHAR(32)
+);
 EOF
 
 # Make a key for communication from the frontend to backend.

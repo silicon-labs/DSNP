@@ -40,10 +40,14 @@ void friend_req( const char *user, const char *identity,
 void fetch_fr_relid( const char *reqid );
 void return_relid( const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
+void fetch_relid( const char *reqid );
+void friend_final( const char *user, const char *reqid, 
+		const char *identity, const char *id_host, const char *id_user );
 
 long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
-long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *reqid );
+long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_reqid );
+long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;

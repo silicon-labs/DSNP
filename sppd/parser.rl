@@ -95,11 +95,33 @@ char *alloc_string( const char *s, const char *e )
 		free( id_user );
 	}
 
+	action fetch_relid {
+		char *reqid = alloc_string( r1, r2 );
+		fetch_relid( reqid );
+		free( reqid );
+	}
+
+	action friend_final {
+		char *user = alloc_string( u1, u2 );
+		char *reqid = alloc_string( r1, r2 );
+		char *identity = alloc_string( i1, i2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
+		friend_final( user, reqid, identity, id_host, id_user );
+		free( user );
+		free( reqid );
+		free( identity );
+		free( id_host );
+		free( id_user );
+	}
+
 	commands := |* 
 		'public_key'i ' ' user EOL @public_key;
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
 		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
 		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @return_relid;
+		'fetch_relid'i ' ' reqid EOL @fetch_relid;
+		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 	*|;
 
@@ -233,12 +255,12 @@ fail:
 }
 
 %%{
-	machine relid;
+	machine fr_relid;
 	write data;
 }%%
 
 
-long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
+long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_reqid )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -252,7 +274,83 @@ long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *reqi
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1\r\nfetch_fr_relid %s\r\n", reqid );
+	fprintf( writeSocket, "SPP/0.1\r\nfetch_fr_relid %s\r\n", fr_reqid );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
+		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
+
+		main := 
+			'OK ' enc ' ' sig EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < fr_relid_first_final ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+	encsig.enc = (char*)malloc( e2-e1+1 );
+	encsig.sig = (char*)malloc( s2-s1+1 );
+	memcpy( encsig.enc, e1, e2-e1 );
+	memcpy( encsig.sig, s1, s2-s1 );
+	encsig.enc[e2-e1] = 0;
+	encsig.sig[s2-s1] = 0;
+
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}
+
+
+%%{
+	machine relid;
+	write data;
+}%%
+
+long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	const char *e1, *e2, *s1, *s2;
+	bool OK = false;
+
+	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, "SPP/0.1\r\nfetch_relid %s\r\n", reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */

@@ -44,15 +44,6 @@ if ( $line ) {
 	header( "Location: $USER_PATH/" );
 }
 else {
-	?>
-	<center>
-	LOGIN FAILED<br><br>
-	<form method="post" action="slogin.php">
-	Owner Login to Iduri:
-	<input type="password" name="password">
-	<input type="submit">
-	</form>
-	</center>
-	<?php
+	include('lib/loginfailed.php');
 }
 ?>

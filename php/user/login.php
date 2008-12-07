@@ -30,13 +30,9 @@ include('lib/session.php');
 
 <br>
 <center>
-
-	<form method="post" action="slogin.php">
 	Owner Login to Iduri:
-	<input type="text" name="user"><br>
-	<input type="password" name="pass">
-	<input type="submit">
-	</form>
+
+	<? include('lib/loginform.php'); ?>
 
 </center>
 <body>

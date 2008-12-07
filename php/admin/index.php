@@ -33,14 +33,15 @@ include('lib/session.php');
 
 <p>
 <?php
-if ( $_SESSION['auth'] == 'admin' ) {
-	echo 'you are admin<br>';
-	echo '<a href="logout.php">logout</a>';
-}
-else
+if ( $_SESSION['auth'] != 'admin' ) {
 	echo '<a href="login.php">login</a>';
+	echo '</html>';
+	exit;
+}
 ?>
 
-<p>
+you are admin<br>
+<a href="logout.php">logout</a><br>
+<a href="newuser.php">new user</a>
 
 </html>

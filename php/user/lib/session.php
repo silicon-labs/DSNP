@@ -25,3 +25,16 @@ $USER_URI = "$CFG_URI/$USER_NAME";
 $path = "$CFG_PATH/$USER_NAME/";
 session_set_cookie_params( 0, $path );
 session_start();
+
+function requireFriend()
+{
+	if ( $_SESSION['auth'] != 'friend' )
+		exit("You do not have permission to access this page\n");
+}
+
+function requireOwner()
+{
+	if ( $_SESSION['auth'] != 'owner' )
+		exit("You do not have permission to access this page\n");
+}
+

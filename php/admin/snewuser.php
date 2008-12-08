@@ -32,7 +32,7 @@ if ( !$fp )
 
 $send = 
 	"SPP/0.1\r\n" . 
-	"new_user a$CFG_COMM_KEY $user $pass1 $email\r\n";
+	"new_user $CFG_COMM_KEY $user $pass1 $email\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

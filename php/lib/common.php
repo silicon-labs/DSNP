@@ -169,16 +169,4 @@ function showFriendRequests( $data )
 	}
 }
 
-function requireFriend()
-{
-	if ( $_SESSION['auth'] != 'friend' )
-		exit("You do not have permission to access this page\n");
-}
-
-function requireOwner()
-{
-	if ( $_SESSION['auth'] != 'owner' )
-		exit("You do not have permission to access this page\n");
-}
-
 ?>

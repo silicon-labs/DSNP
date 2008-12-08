@@ -16,24 +16,30 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('../config.php');
+include('lib/session.php');
 
 requireOwner();
 
-$furi = $_GET['uri'];
+$uri = $_GET['uri'];
 
-$data = readData();
-$fp = $data['fingerprints'][$furi];
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
 
-if ( $_GET['a'] == 'yes' )
-	$data['friends'][$furi] = $fp;
+# Look for the user/pass combination.
+$query = sprintf("SELECT * FROM user_friend_req " .
+	"WHERE user = '%s' AND from_id = '%s';",
+	mysql_real_escape_string($USER_NAME),
+	mysql_real_escape_string($uri)
+);
 
-# Remove the request.
-unset( $data['requests'][$furi] );
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-writeData( $data );
+if ( $row = mysql_fetch_assoc($result) ) {
 
-header( "Location: $CFG_IDENTITY" );
+}
+
+header( "Location: $USER_URI/" );

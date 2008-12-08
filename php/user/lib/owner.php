@@ -20,13 +20,36 @@
 
 <html>
 <head>
-<title><?php print $data['name']?> </title>
+<title><?php print $USER_NAME;?> </title>
 </head>
-<h1>Owner Page -- <?php print $U;?></h1>
+<h1>Owner Page -- <?php print $USER_NAME;?></h1>
 
 <a href="logout.php">logout</a><br>
 
-<?php #showFriendRequests( $data ); ?>
+<?php
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
+
+# Look for the user/pass combination.
+$query = "SELECT from_id FROM user_friend_req;";
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+while ( $row = mysql_fetch_assoc($result) ) {
+	$id = $row['from_id'];
+    echo "friend request: <a href=\"$id/\"/>$id</a>&nbsp;&nbsp;&nbsp;\n";
+	echo "<a href=\"answer.php?uri=" . urlencode($id) . "&a=yes\">yes</a>&nbsp;&nbsp;\n";
+	echo "<a href=\"answer.php?uri=" . urlencode($id) . "&a=no\">no</a><br>\n";
+}
+
+//		echo "<b>Friend Request:</b> <a href=\"$furi\">$furi</a>&nbsp;&nbsp;<a\n";
+//		echo "href=\"answer.php?uri=" . urlencode($furi) . "&a=yes\">yes</a>&nbsp;&nbsp;<a\n";
+//		echo "href=\"answer.php?uri=" . urlencode($furi) . "&a=no\">no</a><br>\n";
+?>
+
+
 
 <h1>Friend List</h1>
 

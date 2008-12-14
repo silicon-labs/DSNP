@@ -120,6 +120,13 @@ CREATE TABLE user_friend_req (
 	fr_relid CHAR(32),
 	relid CHAR(32)
 );
+
+CREATE TABLE friend_claim (
+	user VARCHAR(20), 
+	friend_id TEXT,
+	fr_relid CHAR(32),
+	relid CHAR(32)
+);
 EOF
 
 # Make a key for communication from the frontend to backend.

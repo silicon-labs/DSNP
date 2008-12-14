@@ -34,7 +34,7 @@ include('lib/session.php');
 	<table>
 	<tr>
 	<td>Desired User:</td>   <td> <input type="text"     name="user"></td></tr>
-	<td>Admin Pass:</td>     <td> <input type="password" name="pass1"></td></tr>
+	<td>Password:</td>       <td> <input type="password" name="pass1"></td></tr>
 	<td>Again:</td>          <td> <input type="password" name="pass2"></td></tr>
 	<td>Email:</td>          <td> <input type="text"     name="email"></td></tr>
 	</table>

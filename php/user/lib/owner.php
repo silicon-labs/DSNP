@@ -24,6 +24,9 @@
 </head>
 <h1>Owner Page -- <?php print $USER_NAME;?></h1>
 
+<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
+
+<p>
 <a href="logout.php">logout</a><br>
 
 <?php

@@ -27,9 +27,7 @@ include('lib/session.php');
 
 <h1>Secure Personal Publishing -- Administration</h1>
 
-<p>Installation: <?php print $CFG_URI;?>
-
-<p><a href="../">Installation Home</a>
+<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
 
 <p>
 <?php

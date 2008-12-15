@@ -124,8 +124,8 @@ CREATE TABLE user_friend_req (
 CREATE TABLE friend_claim (
 	user VARCHAR(20), 
 	friend_id TEXT,
-	fr_relid CHAR(32),
-	relid CHAR(32)
+	put_relid CHAR(32),
+	get_relid CHAR(32)
 );
 EOF
 

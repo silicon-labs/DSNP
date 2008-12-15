@@ -609,7 +609,7 @@ long store_return_relid( MYSQL *mysql, const char *identity,
 }
 
 long store_friend_claim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *fr_relid_str, const char *relid_str )
+		const char *identity, const char *put_relid, const char *get_relid )
 {
 	long result = 0;
 	char *query = (char*)malloc( 1024 + 256*6 );
@@ -621,9 +621,9 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
 	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
+	mysql_real_escape_string( mysql, strend(query), put_relid, strlen(put_relid) );
 	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), relid_str, strlen(relid_str) );
+	mysql_real_escape_string( mysql, strend(query), get_relid, strlen(get_relid) );
 	strcat( query, "');" );
 
 	/* Execute the query. */
@@ -743,7 +743,8 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 			relid_str, reqid_str,
 			encrypted, enclen, signature, siglen );
 
-	store_friend_claim( mysql, user, identity, fr_relid_str, relid_str );
+	/* The relid is the one we made on this end. It becomes the put_relid. */
+	store_friend_claim( mysql, user, identity, relid_str, fr_relid_str );
 	
 	/* Return the request id for the requester to use. */
 	printf( "OK %s\r\n", reqid_str );
@@ -969,6 +970,28 @@ close:
 	fflush( stdout );
 }
 
+long delete_user_friend_req( MYSQL *mysql, const char *user, const char *identity )
+{
+	long result = 0;
+	char *query = (char*)malloc( 1024 + 256*6 );
+
+	/* Insert the friend claim. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "DELETE FROM user_friend_req WHERE user = '" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "' AND from_id = '" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	int query_res = mysql_query( mysql, query );
+	if ( query_res != 0 )
+		result = ERR_QUERY_ERROR;
+
+	free( query );
+	return result;
+}
+
 void accept_friend( const char *key, const char *user, const char *identity )
 {
 	MYSQL *mysql, *connect_res;
@@ -1015,22 +1038,12 @@ void accept_friend( const char *key, const char *user, const char *identity )
 		goto query_fail;
 	}
 
+	/* The friendship has been accepted. Store the claim. The fr_relid is the
+	 * one that we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, identity, row[0], row[1] );
 
-	/* Delete the friend request. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "DELETE FROM user_friend_req WHERE user = '" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "' AND from_id = '" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "';" );
-
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
-	if ( query_res != 0 ) {
-		printf( "ERROR could not delete entries: %s %d\r\n", __FILE__, __LINE__ );
-		goto query_fail;
-	}
+	/* Remove the user friend request. */
+	delete_user_friend_req( mysql, user, identity );
 
 	printf( "ERR found it\r\n" );
 

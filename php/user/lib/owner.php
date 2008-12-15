@@ -42,7 +42,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {
 	$id = $row['from_id'];
-    echo "friend request: <a href=\"$id/\"/>$id</a>&nbsp;&nbsp;&nbsp;\n";
+    echo "friend request: <a href=\"$id\">$id</a>&nbsp;&nbsp;&nbsp;\n";
 	echo "<a href=\"answer.php?uri=" . urlencode($id) . "&a=yes\">yes</a>&nbsp;&nbsp;\n";
 	echo "<a href=\"answer.php?uri=" . urlencode($id) . "&a=no\">no</a><br>\n";
 }
@@ -56,6 +56,20 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 <h1>Friend List</h1>
 
-<?php #friendList( $data ); ?>
+<?php
+
+# Look for the user/pass combination.
+$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
+    mysql_real_escape_string($USER_NAME)
+);
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+while ( $row = mysql_fetch_assoc($result) ) {
+	$id = $row['friend_id'];
+    echo "friend: <a href=\"$id\">$id</a> <br>\n";
+}
+
+?>
 
 </html>

@@ -115,6 +115,16 @@ char *alloc_string( const char *s, const char *e )
 		free( id_user );
 	}
 
+	action accept_friend {
+		char *key = alloc_string( k1, k2 );
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		accept_friend( key, user, identity );
+		free( key );
+		free( user );
+		free( identity );
+	}
+
 	commands := |* 
 		'public_key'i ' ' user EOL @public_key;
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
@@ -123,6 +133,7 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
+		'accept_friend'i ' ' comm_key ' ' user ' ' identity EOL @accept_friend;
 	*|;
 
 	main := 'SPP/0.1'i EOL @{ fgoto commands; };

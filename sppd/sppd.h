@@ -43,6 +43,7 @@ void return_relid( const char *user, const char *reqid,
 void fetch_relid( const char *reqid );
 void friend_final( const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
+void accept_friend( const char *key, const char *user, const char *identity );
 
 long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );

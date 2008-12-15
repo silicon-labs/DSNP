@@ -23,23 +23,23 @@ requireOwner();
 
 $uri = $_GET['uri'];
 
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-# Look for the user/pass combination.
-$query = sprintf("SELECT * FROM user_friend_req " .
-	"WHERE user = '%s' AND from_id = '%s';",
-	mysql_real_escape_string($USER_NAME),
-	mysql_real_escape_string($uri)
-);
+$send = 
+	"SPP/0.1\r\n" . 
+	"accept_friend $CFG_COMM_KEY $USER_NAME $uri\r\n";
+fwrite($fp, $send);
 
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-if ( $row = mysql_fetch_assoc($result) ) {
-
+$res = fgets($fp);
+if ( ereg("^OK", $res) ) {
+	echo "Success";
+	echo "<p><a href=\"$CFG_PATH/admin/\">admin home</a>";
+	echo "<p><a href=\"$CFG_PATH/admin/newuser.php\">another new user</a>";
 }
-
-header( "Location: $USER_URI/" );
+else
+{
+	echo "FAILURE *** Friend accept failed with: <br>";
+	echo $res;
+}

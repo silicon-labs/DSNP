@@ -939,3 +939,97 @@ close:
 	mysql_close( mysql );
 	fflush( stdout );
 }
+
+void accept_friend( const char *key, const char *user, const char *identity )
+{
+	MYSQL *mysql, *connect_res;
+	char *query;
+	long query_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+
+	/* Check the authentication. */
+	if ( strcmp( key, CFG_COMM_KEY ) != 0 ) {
+		printf( "ERROR communication key invalid\r\n" );
+		goto flush;
+	}
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "SELECT fr_relid, relid FROM user_friend_req WHERE user = '" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "' AND from_id = '" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+		goto query_fail;
+	}
+
+	/* Check for a result. */
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf( "ERROR request not found\r\n" );
+		goto query_fail;
+	}
+
+	/* Insert the friend claim. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "INSERT INTO friend_claim VALUES ( '" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), row[0], strlen(row[0]) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), row[1], strlen(row[1]) );
+	strcat( query, "');" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+		goto query_fail;
+	}
+
+	printf( "%s\r\n", query );
+
+	/* Delete the friend request. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "DELETE FROM user_friend_req WHERE user = '" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "' AND from_id = '" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		printf( "ERROR could not delete entries: %s %d\r\n", __FILE__, __LINE__ );
+		goto query_fail;
+	}
+
+	printf( "ERR found it\r\n" );
+
+free_result:
+	mysql_free_result( result );
+query_fail:
+	free( query );
+close:
+	mysql_close( mysql );
+flush:
+	fflush( stdout );
+}

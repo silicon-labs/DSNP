@@ -21,7 +21,7 @@ include('lib/session.php');
 
 requireOwner();
 
-$uri = $_GET['uri'];
+$user_reqid = $_GET['user_reqid'];
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
@@ -29,7 +29,7 @@ if ( !$fp )
 
 $send = 
 	"SPP/0.1\r\n" . 
-	"accept_friend $CFG_COMM_KEY $USER_NAME $uri\r\n";
+	"accept_friend $CFG_COMM_KEY $USER_NAME $user_reqid\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

@@ -117,6 +117,7 @@ CREATE TABLE return_relid (
 CREATE TABLE user_friend_req (
 	user VARCHAR(20), 
 	from_id TEXT,
+	user_reqid CHAR(32),
 	fr_relid CHAR(32),
 	relid CHAR(32)
 );

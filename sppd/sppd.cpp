@@ -1064,3 +1064,99 @@ close:
 flush:
 	fflush( stdout );
 }
+
+long store_flogin_tok( MYSQL *mysql, const char *user, 
+		const char *identity, char *flogin_tok_str, 
+		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
+{
+	long result = 0;
+
+	char *msg_enc = bin2hex( encrypted, enclen );
+	char *msg_sig = bin2hex( signature, siglen );
+	char *query = (char*)malloc( 1024 + 256*6 );
+
+	/* Make the query. */
+	strcpy( query, "INSERT INTO flogin_tok VALUES('" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), flogin_tok_str, strlen(flogin_tok_str));
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), msg_enc, strlen(msg_enc) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), msg_sig, strlen(msg_sig) );
+	strcat( query, "' );" );
+
+	/* Execute the query. */
+	int query_res = mysql_query( mysql, query );
+	if ( query_res != 0 )
+		result = ERR_QUERY_ERROR;
+
+	free( msg_enc );
+	free( msg_sig );
+	free( query );
+
+	return result;
+}
+
+
+void flogin( const char *user, const char *identity, 
+		const char *id_host, const char *id_user )
+{
+	MYSQL *mysql, *connect_res;
+	int sigres;
+	RSA *user_priv, *id_pub;
+	unsigned char flogin_tok[RELID_SIZE];
+	char *flogin_tok_str;
+	unsigned char *encrypted, *signature;
+	int enclen;
+	unsigned siglen;
+	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Get the public key for the identity. */
+	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
+		goto close;
+	}
+
+	/* Generate the relationship and request ids. */
+	RAND_bytes( flogin_tok, RELID_SIZE );
+	
+	/* Encrypt it. */
+	encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
+	enclen = RSA_public_encrypt( RELID_SIZE, flogin_tok, encrypted, 
+			id_pub, RSA_PKCS1_PADDING );
+
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+
+	/* Sign the relationship id. */
+	signature = (unsigned char*)malloc( RSA_size(user_priv) );
+	SHA1( flogin_tok, RELID_SIZE, relid_sha1 );
+	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
+
+	/* Store the request. */
+	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
+
+	store_flogin_tok( mysql, user, identity, flogin_tok_str, 
+			encrypted, enclen, signature, siglen );
+	
+	/* Return the request id for the requester to use. */
+	printf( "OK\r\n" );
+
+	free( flogin_tok_str );
+close:
+	mysql_close( mysql );
+	fflush( stdout );
+}

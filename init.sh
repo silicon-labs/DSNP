@@ -128,6 +128,15 @@ CREATE TABLE friend_claim (
 	put_relid CHAR(32),
 	get_relid CHAR(32)
 );
+
+CREATE TABLE flogin_tok (
+	user VARCHAR(20), 
+	from_id TEXT,
+	flogin_tok CHAR(32),
+	msg_enc TEXT,
+	msg_sig TEXT
+);
+
 EOF
 
 # Make a key for communication from the frontend to backend.

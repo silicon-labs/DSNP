@@ -16,35 +16,46 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('../config.php');
+include('lib/session.php');
 
 $furi = $_POST['uri'];
 
-$data = readData();
-$friends = $data['friends'];
-$putrelids = $data['putrelids'];
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
 
-if ( !isset( $friends[$furi] ) ) {
+# Look for the user/pass combination.
+$query = sprintf(
+		"SELECT put_relid, get_relid FROM friend_claim " . 
+		"WHERE user='%s' AND friend_id='%s'",
+    mysql_real_escape_string($USER_NAME),
+    mysql_real_escape_string($furi)
+);
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+# If there is a result then the login is successful. 
+$line = mysql_fetch_array($result, MYSQL_ASSOC);
+
+if ( ! $line ) {
 	echo "<center>\n";
 	echo "Not a friend of mine<br><br>\n";
-	friendLoginForm();
 	echo "</center>\n";
 }
 else {
-	$token = sha1( uniqid( mt_rand() ) );
-	$_SESSION['tok'] = $token;
+	$fp = fsockopen( 'localhost', $CFG_PORT );
+	if ( !$fp )
+		exit(1);
 
-	# Get fingerprint and relid.
-	$to_fp = $friends[$furi];
-	$to_relid = $putrelids[$to_fp];
+	$send = 
+		"SPP/0.1\r\n" . 
+		"flogin $USER_NAME $furi\r\n";
+	fwrite($fp, $send);
 
-	# Encrypt and publish the token for the friend to use.
-	$gnupg = new gnupg();
-	$enc = encryptSign( $gnupg, $to_fp, $token );
-	publishMessage( 'tokens', $to_relid, $enc );
+	$res = fgets($fp);
 
-	header('Location: ' . $furi . 'returnftok.php?uri=' . urlencode( $CFG_IDENTITY ) );
+	echo $res;
 }

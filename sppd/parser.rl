@@ -125,6 +125,20 @@ char *alloc_string( const char *s, const char *e )
 		free( reqid );
 	}
 
+	action flogin {
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
+
+		flogin( user, identity, id_host, id_user );
+
+		free( user );
+		free( identity );
+		free( id_host );
+		free( id_user );
+	}
+
 	commands := |* 
 		'public_key'i ' ' user EOL @public_key;
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
@@ -134,6 +148,7 @@ char *alloc_string( const char *s, const char *e )
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;
+		'flogin'i ' ' user ' ' identity EOL @flogin;
 	*|;
 
 	main := 'SPP/0.1'i EOL @{ fgoto commands; };

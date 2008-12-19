@@ -28,7 +28,6 @@ $query = sprintf("SELECT user FROM user WHERE user='%s'",
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-# If there is a result then the login is successful. 
 $line = mysql_fetch_array($result, MYSQL_ASSOC);
 if ( !$line ) {
 	die('no such user');

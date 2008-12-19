@@ -57,5 +57,9 @@ else {
 
 	$res = fgets($fp);
 
-	echo $res;
+	if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+		$arg_uri = 'uri=' . urlencode( $USER_URI ) . '/';
+		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
+		header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
+	}
 }

@@ -38,18 +38,22 @@ void public_key( const char *identity );
 void friend_req( const char *user, const char *identity, 
 		const char *id_host, const char *id_user );
 void fetch_fr_relid( const char *reqid );
-void return_relid( const char *user, const char *reqid, 
+void return_relid( const char *user, const char *fr_reqid_str, 
 		const char *identity, const char *id_host, const char *id_user );
 void fetch_relid( const char *reqid );
 void friend_final( const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
 void accept_friend( const char *key, const char *user, const char *user_reqid );
 void flogin( const char *user, const char *identity, const char *id_host, const char *id_user );
+void return_ftoken( const char *user, const char *flogin_reqid_str, const char *identity,
+		const char *id_host, const char *id_user );
+void fetch_ftoken( const char *reqid );
 
 long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
 long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_reqid );
 long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid );
+long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin_reqid );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;

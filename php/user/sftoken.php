@@ -16,23 +16,33 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/iduri.php');
+include('../config.php');
+include('lib/session.php');
 
-iduriSessionStart();
+$ftoken = $_GET['ftoken'];
 
-$token = $_GET['token'];
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
 
-$data = readData();
-$friends = $data['friends'];
+# Look for the user/pass combination.
+$query = sprintf("SELECT from_id FROM flogin_tok WHERE flogin_tok='%s'",
+    mysql_real_escape_string($ftoken)
+);
 
-if ( $_SESSION['tok'] == $token ) {
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+# If there is a result then the login is successful. 
+$line = mysql_fetch_array($result, MYSQL_ASSOC);
+if ( $line ) {
+	# Login successful.
 	$_SESSION['auth'] = 'friend';
-	header( "Location: $CFG_IDENTITY" );
+	header( "Location: $USER_PATH/" );
 }
 else {
 	echo "<center>\n";
 	echo "FRIEND LOGIN FAILED<br>\n";
-	friendLoginForm();
 	echo "</center>\n";
 }

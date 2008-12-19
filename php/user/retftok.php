@@ -16,23 +16,29 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('config.php');
-include('lib/iduri.php');
-
-iduriSessionStart();
+include('../config.php');
+include('lib/session.php');
 
 requireOwner();
 
-$furi = $_GET['uri'];
+$uri = $_GET['uri'];
+$reqid = $_GET['reqid'];
 
-$data = readData();
-$friends = $data['friends'];
-$getrelids = $data['getrelids'];
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-$gnupg = new gnupg();
-$from_relid = $getrelids[$friends[$furi]];
+$send = 
+	"SPP/0.1\r\n" . 
+	"return_ftoken $USER_NAME $reqid $uri\r\n";
+fwrite($fp, $send);
 
-$message = fetchMessage( $furi, 'tokens', $from_relid );
-$plain = decryptVerify( $gnupg, $message );
+$res = fgets($fp);
 
-header('Location: ' . $furi . 'submitftok.php?token=' . urlencode( $plain ) );
+if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+	$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
+	header("Location: ${uri}sftoken.php?${arg_ftoken}" );
+}
+else {
+	echo "there was an error\n";
+}

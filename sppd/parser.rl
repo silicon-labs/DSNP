@@ -139,6 +139,28 @@ char *alloc_string( const char *s, const char *e )
 		free( id_user );
 	}
 
+	action return_ftoken {
+		char *user = alloc_string( u1, u2 );
+		char *reqid = alloc_string( r1, r2 );
+		char *identity = alloc_string( i1, i2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
+
+		return_ftoken( user, reqid, identity, id_host, id_user );
+
+		free( user );
+		free( reqid );
+		free( identity );
+		free( id_host );
+		free( id_user );
+	}
+
+	action fetch_ftoken {
+		char *reqid = alloc_string( r1, r2 );
+		fetch_ftoken( reqid );
+		free( reqid );
+	}
+
 	commands := |* 
 		'public_key'i ' ' user EOL @public_key;
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
@@ -149,6 +171,8 @@ char *alloc_string( const char *s, const char *e )
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;
 		'flogin'i ' ' user ' ' identity EOL @flogin;
+		'return_ftoken'i ' ' user ' ' reqid ' ' identity EOL @return_ftoken;
+		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 	*|;
 
 	main := 'SPP/0.1'i EOL @{ fgoto commands; };
@@ -204,6 +228,10 @@ int server_parse_loop()
 
 	return 0;
 }
+
+/*
+ * fetch_public_key_net
+ */
 
 %%{
 	machine public_key;
@@ -279,6 +307,10 @@ fail:
 	::close( socketFd );
 	return result;
 }
+
+/*
+ * fetch_fr_relid_net
+ */
 
 %%{
 	machine fr_relid;
@@ -357,6 +389,10 @@ fail:
 }
 
 
+/*
+ * fetch_relid_net
+ */
+
 %%{
 	machine relid;
 	write data;
@@ -431,3 +467,83 @@ fail:
 	::close( socketFd );
 	return result;
 }
+
+/*
+ * fetch_ftoken_net
+ */
+
+%%{
+	machine ftoken;
+	write data;
+}%%
+
+long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin_reqid )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	const char *e1, *e2, *s1, *s2;
+	bool OK = false;
+
+	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, "SPP/0.1\r\nfetch_ftoken %s\r\n", flogin_reqid );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
+		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
+
+		main := 
+			'OK ' enc ' ' sig EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < ftoken_first_final ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+	encsig.enc = (char*)malloc( e2-e1+1 );
+	encsig.sig = (char*)malloc( s2-s1+1 );
+	memcpy( encsig.enc, e1, e2-e1 );
+	memcpy( encsig.sig, s1, s2-s1 );
+	encsig.enc[e2-e1] = 0;
+	encsig.sig[s2-s1] = 0;
+
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}
+

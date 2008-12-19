@@ -16,22 +16,42 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
-$data = readData();
-
 ?>
 
 <html>
 <head>
-<title><?php $data['name']?> </title>
+<title><?php print $USER_NAME;?> </title>
 </head>
+<h1>Friend Page -- <?php print $USER_NAME;?></h1>
 
-<h1>Friend Page -- <?php print $CFG_IDENTITY;?></h1>
-<a href="<?php print $CFG_IDENTITY . 'logout.php';?>">logout</a>
+<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
+
+<p>
+<a href="logout.php">logout</a><br>
+
 
 <h1>Friend List</h1>
 
-<?php friendList( $data ); ?>
+<?php
+
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
+
+# Look for the user/pass combination.
+$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
+    mysql_real_escape_string($USER_NAME)
+);
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+while ( $row = mysql_fetch_assoc($result) ) {
+	$id = $row['friend_id'];
+    echo "friend: <a href=\"$id\">$id</a> <br>\n";
+}
+
+?>
 
 </html>
-

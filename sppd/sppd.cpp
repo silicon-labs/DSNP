@@ -1066,7 +1066,7 @@ flush:
 }
 
 long store_flogin_tok( MYSQL *mysql, const char *user, 
-		const char *identity, char *flogin_tok_str, 
+		const char *identity, char *flogin_tok_str, char *flogin_reqid_str,
 		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
 {
 	long result = 0;
@@ -1082,6 +1082,8 @@ long store_flogin_tok( MYSQL *mysql, const char *user,
 	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), flogin_tok_str, strlen(flogin_tok_str));
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), flogin_reqid_str, strlen(flogin_reqid_str));
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), msg_enc, strlen(msg_enc) );
 	strcat( query, "', '" );
@@ -1100,15 +1102,15 @@ long store_flogin_tok( MYSQL *mysql, const char *user,
 	return result;
 }
 
-
 void flogin( const char *user, const char *identity, 
 		const char *id_host, const char *id_user )
 {
 	MYSQL *mysql, *connect_res;
 	int sigres;
 	RSA *user_priv, *id_pub;
-	unsigned char flogin_tok[RELID_SIZE];
-	char *flogin_tok_str;
+
+	unsigned char flogin_tok[RELID_SIZE], flogin_reqid[RELID_SIZE];
+	char *flogin_tok_str, *flogin_reqid_str;
 	unsigned char *encrypted, *signature;
 	int enclen;
 	unsigned siglen;
@@ -1130,8 +1132,9 @@ void flogin( const char *user, const char *identity,
 		goto close;
 	}
 
-	/* Generate the relationship and request ids. */
+	/* Generate the login request id and relationship and request ids. */
 	RAND_bytes( flogin_tok, RELID_SIZE );
+	RAND_bytes( flogin_reqid, RELID_SIZE );
 	
 	/* Encrypt it. */
 	encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
@@ -1148,12 +1151,150 @@ void flogin( const char *user, const char *identity,
 
 	/* Store the request. */
 	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
+	flogin_reqid_str = bin2hex( flogin_reqid, RELID_SIZE );
 
-	store_flogin_tok( mysql, user, identity, flogin_tok_str, 
+	store_flogin_tok( mysql, user, identity, flogin_tok_str, flogin_reqid_str,
 			encrypted, enclen, signature, siglen );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK\r\n" );
+	printf( "OK %s\r\n", flogin_reqid_str );
+
+	free( flogin_tok_str );
+close:
+	mysql_close( mysql );
+	fflush( stdout );
+}
+
+void fetch_ftoken( const char *reqid )
+{
+	MYSQL *mysql, *connect_res;
+	char *query;
+	long query_res;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "SELECT msg_enc, msg_sig FROM flogin_tok WHERE flogin_reqid = '" );
+	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		printf("ERR\r\n");
+		goto query_fail;
+	}
+
+	/* Check for a result. */
+	select_res = mysql_store_result( mysql );
+	row = mysql_fetch_row( select_res );
+	if ( row )
+		printf( "OK %s %s\r\n", row[0], row[1] );
+	else
+		printf( "ERR\r\n" );
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+query_fail:
+	free( query );
+close:
+	mysql_close( mysql );
+	fflush( stdout );
+}
+
+void return_ftoken( const char *user, const char *flogin_reqid_str, const char *identity,
+		const char *id_host, const char *id_user )
+{
+	/*
+	 * a) checks that $FR-URI is a friend
+	 * b) if browser is not logged in fails the process (no redirect).
+	 * c) fetches $FR-URI/tokens/$FR-RELID.asc
+	 * d) decrypts and verifies the token
+	 * e) redirects the browser to $FP-URI/submit-token?uri=$URI&token=$TOK
+	 */
+	MYSQL *mysql, *connect_res;
+	int verifyres, fetchres, decryptres;
+	RSA *user_priv, *id_pub;
+	unsigned char *flogin_tok;
+	unsigned char *encrypted, *signature;
+	int enclen;
+	unsigned siglen;
+	unsigned char ftoken_sha1[SHA_DIGEST_LENGTH];
+	char *flogin_tok_str;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
+			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Get the public key for the identity. */
+	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
+		goto close;
+	}
+
+	RelidEncSig encsig;
+	fetchres = fetch_ftoken_net( encsig, id_host, flogin_reqid_str );
+	if ( fetchres < 0 ) {
+		printf("ERROR fetch_flogin_relid failed %d\n", fetchres );
+		goto close;
+	}
+	
+	/* Convert the encrypted string to binary. */
+	encrypted = (unsigned char*)malloc( strlen(encsig.enc) );
+	enclen = hex2bin( encrypted, RSA_size(id_pub), encsig.enc );
+	if ( enclen <= 0 ) {
+		printf("ERROR converting encsig.enc to binary\n" );
+		goto close;
+	}
+
+	/* Convert the sig to binary. */
+	signature = (unsigned char*)malloc( strlen(encsig.sig) );
+	siglen = hex2bin( signature, RSA_size(id_pub), encsig.sig );
+	if ( siglen <= 0 ) {
+		printf("ERROR converting encsig.sig to binary\n" );
+		goto close;
+	}
+
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+
+	/* Decrypt the flogin_tok. */
+	flogin_tok = (unsigned char*) malloc( RSA_size( user_priv ) );
+	decryptres = RSA_private_decrypt( enclen, encrypted, flogin_tok, user_priv, RSA_PKCS1_PADDING );
+	if ( decryptres != REQID_SIZE ) {
+		printf("ERROR failed to decrypt flogin_tok\n" );
+		goto close;
+	}
+
+	/* Verify the flogin_tok. */
+	SHA1( flogin_tok, RELID_SIZE, ftoken_sha1 );
+	verifyres = RSA_verify( NID_sha1, ftoken_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
+	if ( verifyres != 1 ) {
+		printf("ERROR failed to verify flogin_tok\n" );
+		goto close;
+	}
+
+	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
+
+	/* Return the login token for the requester to use. */
+	printf( "OK %s\r\n", flogin_tok_str );
 
 	free( flogin_tok_str );
 close:

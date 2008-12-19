@@ -133,6 +133,7 @@ CREATE TABLE flogin_tok (
 	user VARCHAR(20), 
 	from_id TEXT,
 	flogin_tok CHAR(32),
+	flogin_reqid CHAR(32),
 	msg_enc TEXT,
 	msg_sig TEXT
 );

@@ -1,31 +1,39 @@
 
-** To run this package you need a few things.
+DEPENDENCIES
+============
 
-1. The GnuPG package.
+Install and run this package you will need a few things.
 
-$ apt-get install gnupg
+1. Apache with mod_rewrite installed. It must be configured to work in
+   .htaccess files.
 
-2. The gnupg package for PHP (http://pecl.php.net/package/gnupg):
+2. Mysql installed and running.
 
-$ apt-get install php5-dev        # for making extensions
-$ apt-get install php-pear        # provides pecl
-$ apt-get install libgpgme11-dev  # the GNUPG Made Easy library.
-$ pecl install gnupg
-$ echo extension=gnupg.so >> $PHP_CONFIG/php.ini
+3. PHP with Mysql support.
 
-3. The http package for PHP
+4. To build sppd: ragel, libssl and libmysql.
 
-$ apt-get install libcurl3-dev    # or mabye libcurl4-dev
-$ pecl install pecl_http
-$ echo extension=http.so >> $PHP_CONFIG/php.ini
+5. To run sppd: xinetd (or similar).
 
+INTIALIZATION
+=============
 
-** To initialize a new home page you will need to know its public URI. 
-   Then run the init.sh script. GPG key generation can take some time.
-   To speed it up use the mouse, keyboard or disk.
+To initialize a new installation you will need to know its public URI and the
+root@localhost password for the database. You will also need to choose an admin
+password for the installation. This will be used as the password for the spp
+user in the database, as well as for the admin user for web-based
+administration of the installation.
 
+Run the ./init.sh script.
 
-** To look at the keyring of the current installation:
+The installation script will create:
+	./php/config.php
+	./sppd/sppd.conf
 
-$ export GNUPGHOME=./gnupghome
-$ gpg --list-keys
+Copy the PHP scripts (or make an alias) to the public URI you gave to the init
+script.
+
+Set up xinetd (a sample config file is given in sppd/) and make sure it
+receives sppd.conf as the first argument. The port for the spp service in
+/etc/services should be the same as the port specified in the PHP and sppd
+config files.

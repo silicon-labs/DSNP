@@ -36,7 +36,10 @@ $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die
 mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
-$query = "SELECT from_id, user_reqid FROM user_friend_req;";
+/* Display friend requests. */
+$query = sprintf("SELECT from_id, user_reqid FROM user_friend_req WHERE user = '%s';",
+    mysql_real_escape_string($USER_NAME)
+);
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {

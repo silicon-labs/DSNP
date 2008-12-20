@@ -27,7 +27,6 @@ $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die
 mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
-# Look for the user/pass combination.
 $query = sprintf(
 		"SELECT put_relid, get_relid FROM friend_claim " . 
 		"WHERE user='%s' AND friend_id='%s'",
@@ -40,26 +39,19 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 # If there is a result then the login is successful. 
 $line = mysql_fetch_array($result, MYSQL_ASSOC);
 
-if ( ! $line ) {
-	echo "<center>\n";
-	echo "Not a friend of mine<br><br>\n";
-	echo "</center>\n";
-}
-else {
-	$fp = fsockopen( 'localhost', $CFG_PORT );
-	if ( !$fp )
-		exit(1);
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-	$send = 
-		"SPP/0.1\r\n" . 
-		"flogin $USER_NAME $furi\r\n";
-	fwrite($fp, $send);
+$send = 
+	"SPP/0.1\r\n" . 
+	"flogin $USER_NAME $furi\r\n";
+fwrite($fp, $send);
 
-	$res = fgets($fp);
+$res = fgets($fp);
 
-	if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
-		$arg_uri = 'uri=' . urlencode( $USER_URI ) . '/';
-		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
-		header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
-	}
+if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+	$arg_uri = 'uri=' . urlencode( $USER_URI ) . '/';
+	$arg_reqid = 'reqid=' . urlencode( $regs[1] );
+	header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
 }

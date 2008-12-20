@@ -1102,6 +1102,42 @@ long store_flogin_tok( MYSQL *mysql, const char *user,
 	return result;
 }
 
+long check_friend_claim( MYSQL *mysql, const char *user, const char *identity )
+{
+	long result = 0;
+	char *query;
+	long query_res;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	/* Make the query. */
+	query = (char*)malloc( 1024 + 256*15 );
+	strcpy( query, "SELECT put_relid, get_relid FROM friend_claim WHERE user='" );
+	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
+	strcat( query, "' AND friend_id='" );
+	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "';" );
+
+	/* Execute the query. */
+	query_res = mysql_query( mysql, query );
+	if ( query_res != 0 ) {
+		result = ERR_QUERY_ERROR;
+		goto query_fail;
+	}
+
+	select_res = mysql_store_result( mysql );
+	row = mysql_fetch_row( select_res );
+	if ( row )
+		result = 1;
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+query_fail:
+	free( query );
+	return result;
+}
+
 void flogin( const char *user, const char *identity, 
 		const char *id_host, const char *id_user )
 {
@@ -1115,6 +1151,7 @@ void flogin( const char *user, const char *identity,
 	int enclen;
 	unsigned siglen;
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
+	long friend_claim;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1122,6 +1159,18 @@ void flogin( const char *user, const char *identity,
 			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Check if this identity is our friend. */
+	friend_claim = check_friend_claim( mysql, user, identity );
+	if ( friend_claim <= 0 ) {
+		/* No friend claim ... send back a reqid anyways. Don't want to give
+		 * away that there is no claim. */
+		
+		RAND_bytes( flogin_reqid, RELID_SIZE );
+		flogin_reqid_str = bin2hex( flogin_reqid, RELID_SIZE );
+		printf( "OK %s\r\n", flogin_reqid_str );
 		goto close;
 	}
 

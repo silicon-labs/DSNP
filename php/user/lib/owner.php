@@ -53,8 +53,6 @@ while ( $row = mysql_fetch_assoc($result) ) {
 }
 ?>
 
-
-
 <h1>Friend List</h1>
 
 <?php
@@ -66,9 +64,13 @@ $query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
+$mehash = MD5( "$USER_URI/" );
+
 while ( $row = mysql_fetch_assoc($result) ) {
-	$id = $row['friend_id'];
-    echo "friend: <a href=\"$id\">$id</a> <br>\n";
+	$browser_id = "$USER_URI/";
+	$dest_id = $row['friend_id'];
+
+	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . urlencode($browser_id) . "\">$dest_id</a> <br>\n";
 }
 
 ?>

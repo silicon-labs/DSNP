@@ -42,6 +42,10 @@ if ( !$line ) {
 
 <h1>Public Page -- <?php print $U;?></h1>
 
+<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
+
+<p>
+
 <a href="login.php">owner login</a><br>
 <a href="flogin.php">friend login</a><br>
 <a href="become.php">become friend</a>

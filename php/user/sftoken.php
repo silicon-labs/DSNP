@@ -35,10 +35,12 @@ $query = sprintf("SELECT from_id FROM flogin_tok WHERE flogin_tok='%s'",
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 # If there is a result then the login is successful. 
-$line = mysql_fetch_array($result, MYSQL_ASSOC);
-if ( $line ) {
+$row = mysql_fetch_array($result, MYSQL_ASSOC);
+if ( $row ) {
 	# Login successful.
-	$_SESSION['auth'] = 'friend';
+	$_SESSION['auth']     = 'friend';
+	$_SESSION['identity'] = $row['from_id'];
+	$_SESSION['hash']     = MD5($row['from_id']);
 	header( "Location: $USER_PATH/" );
 }
 else {

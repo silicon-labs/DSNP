@@ -19,23 +19,33 @@
 include('../config.php');
 include('lib/session.php');
 
-$furi = $_POST['uri'];
+$furi = $_REQUEST['uri'];
 
-$fp = fsockopen( 'localhost', $CFG_PORT );
-if ( !$fp )
-	exit(1);
+if ( !$furi )
+	die('no uri given');
 
 $hash = md5($furi);
 
-$send = 
-	"SPP/0.1\r\n" . 
-	"flogin $USER_NAME $hash\r\n";
-fwrite($fp, $send);
+/* Maybe we are already logged in as this friend. */
+if ( $_SESSION['auth'] == 'friend' && $_SESSION['hash'] == $hash ) {
+	header( "Location: $USER_PATH/" );
+}
+else {
+	/* Not logged in as the hashed user. */
+	$fp = fsockopen( 'localhost', $CFG_PORT );
+	if ( !$fp )
+		exit(1);
 
-$res = fgets($fp);
+	$send = 
+		"SPP/0.1\r\n" . 
+		"flogin $USER_NAME $hash\r\n";
+	fwrite($fp, $send);
 
-if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
-	$arg_uri = 'uri=' . urlencode( $USER_URI ) . '/';
-	$arg_reqid = 'reqid=' . urlencode( $regs[1] );
-	header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
+	$res = fgets($fp);
+
+	if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+		$arg_uri = 'uri=' . urlencode( $USER_URI ) . '/';
+		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
+		header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
+	}
 }

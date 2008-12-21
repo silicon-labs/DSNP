@@ -16,6 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+$browser_id = $_SESSION['identity'];
 ?>
 
 <html>
@@ -26,8 +27,9 @@
 
 <p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
 
-<p>
-<a href="logout.php">logout</a><br>
+<p>You are: <a href="<?php echo $browser_id; ?>"><?php echo $browser_id?></a>
+
+<p><a href="logout.php">logout</a><br>
 
 
 <h1>Friend List</h1>
@@ -48,8 +50,8 @@ $query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {
-	$id = $row['friend_id'];
-    echo "friend: <a href=\"$id\">$id</a> <br>\n";
+	$dest_id = $row['friend_id'];
+	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . urlencode($browser_id) . "\">$dest_id</a> <br>\n";
 }
 
 ?>

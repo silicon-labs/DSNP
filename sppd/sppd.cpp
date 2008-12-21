@@ -1061,7 +1061,7 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	/* Remove the user friend request. */
 	delete_user_friend_req( mysql, user, user_reqid );
 
-	printf( "ERR found it\r\n" );
+	printf( "OK\r\n" );
 
 	mysql_free_result( result );
 query_fail:
@@ -1307,11 +1307,9 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
-		/* No friend claim ... send back a fake token anyways. We don't want
-		 * to give away that there is no claim. */
-		RAND_bytes( flogin_tok, RELID_SIZE );
-		flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
-		printf( "OK %s\r\n", flogin_tok_str );
+		/* No friend claim ... we can reveal this since return_ftoken requires
+		 * that the user be logged in. */
+		printf( "ERROR not a friend of mine\r\n" );
 		goto close;
 	}
 

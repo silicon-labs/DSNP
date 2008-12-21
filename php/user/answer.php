@@ -33,13 +33,10 @@ $send =
 fwrite($fp, $send);
 
 $res = fgets($fp);
-if ( ereg("^OK", $res) ) {
-	echo "Success";
-	echo "<p><a href=\"$CFG_PATH/admin/\">admin home</a>";
-	echo "<p><a href=\"$CFG_PATH/admin/newuser.php\">another new user</a>";
-}
-else
-{
+if ( !ereg("^OK", $res) ) {
 	echo "FAILURE *** Friend accept failed with: <br>";
 	echo $res;
+}
+else {
+	header("Location: $USER_URI/" );
 }

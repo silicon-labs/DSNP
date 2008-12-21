@@ -41,5 +41,5 @@ if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
 	header("Location: ${uri}sftoken.php?${arg_ftoken}" );
 }
 else {
-	echo "there was an error\n";
+	echo $res;
 }

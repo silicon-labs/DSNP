@@ -52,8 +52,7 @@ void friend_final( const char *user, const char *reqid,
 		const char *identity, const char *id_host, const char *id_user );
 void accept_friend( const char *key, const char *user, const char *user_reqid );
 void flogin( const char *user, const char *hash );
-void return_ftoken( const char *user, const char *flogin_reqid_str, const char *identity,
-		const char *id_host, const char *id_user );
+void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str );
 void fetch_ftoken( const char *reqid );
 
 long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );

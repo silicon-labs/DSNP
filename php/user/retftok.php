@@ -23,6 +23,7 @@ requireOwner();
 
 $uri = $_GET['uri'];
 $reqid = $_GET['reqid'];
+$hash = MD5( $uri );
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
@@ -30,7 +31,7 @@ if ( !$fp )
 
 $send = 
 	"SPP/0.1\r\n" . 
-	"return_ftoken $USER_NAME $reqid $uri\r\n";
+	"return_ftoken $USER_NAME $hash $reqid\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

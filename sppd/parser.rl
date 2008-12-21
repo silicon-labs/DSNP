@@ -143,18 +143,14 @@ char *alloc_string( const char *s, const char *e )
 
 	action return_ftoken {
 		char *user = alloc_string( u1, u2 );
+		char *hash = alloc_string( a1, a2 );
 		char *reqid = alloc_string( r1, r2 );
-		char *identity = alloc_string( i1, i2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
 
-		return_ftoken( user, reqid, identity, id_host, id_user );
+		return_ftoken( user, hash, reqid );
 
 		free( user );
+		free( hash );
 		free( reqid );
-		free( identity );
-		free( id_host );
-		free( id_user );
 	}
 
 	action fetch_ftoken {
@@ -164,16 +160,19 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	commands := |* 
+		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 		'public_key'i ' ' user EOL @public_key;
+
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
 		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
 		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @return_relid;
 		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
-		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
+
 		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;
+
 		'flogin'i ' ' user ' ' hash EOL @flogin;
-		'return_ftoken'i ' ' user ' ' reqid ' ' identity EOL @return_ftoken;
+		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 	*|;
 

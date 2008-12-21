@@ -1274,8 +1274,7 @@ close:
 	fflush( stdout );
 }
 
-void return_ftoken( const char *user, const char *flogin_reqid_str, const char *identity,
-		const char *id_host, const char *id_user )
+void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str )
 {
 	/*
 	 * a) checks that $FR-URI is a friend
@@ -1293,6 +1292,8 @@ void return_ftoken( const char *user, const char *flogin_reqid_str, const char *
 	unsigned siglen;
 	unsigned char ftoken_sha1[SHA_DIGEST_LENGTH];
 	char *flogin_tok_str;
+	long friend_claim;
+	Identity friend_id;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1303,15 +1304,26 @@ void return_ftoken( const char *user, const char *flogin_reqid_str, const char *
 		goto close;
 	}
 
+	/* Check if this identity is our friend. */
+	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
+	if ( friend_claim <= 0 ) {
+		/* No friend claim ... send back a fake token anyways. We don't want
+		 * to give away that there is no claim. */
+		RAND_bytes( flogin_tok, RELID_SIZE );
+		flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
+		printf( "OK %s\r\n", flogin_tok_str );
+		goto close;
+	}
+
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, friend_id.identity, friend_id.id_host, friend_id.id_user );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
 	}
 
 	RelidEncSig encsig;
-	fetchres = fetch_ftoken_net( encsig, id_host, flogin_reqid_str );
+	fetchres = fetch_ftoken_net( encsig, friend_id.id_host, flogin_reqid_str );
 	if ( fetchres < 0 ) {
 		printf("ERROR fetch_flogin_relid failed %d\n", fetchres );
 		goto close;

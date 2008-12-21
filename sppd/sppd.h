@@ -29,6 +29,13 @@ struct RelidEncSig
 	char *sig;
 };
 
+struct Identity
+{
+	char *identity;
+	char *id_host;
+	char *id_user;
+};
+
 int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
@@ -44,7 +51,7 @@ void fetch_relid( const char *reqid );
 void friend_final( const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
 void accept_friend( const char *key, const char *user, const char *user_reqid );
-void flogin( const char *user, const char *identity, const char *id_host, const char *id_user );
+void flogin( const char *user, const char *hash );
 void return_ftoken( const char *user, const char *flogin_reqid_str, const char *identity,
 		const char *id_host, const char *id_user );
 void fetch_ftoken( const char *reqid );
@@ -54,6 +61,7 @@ long open_inet_connection( const char *hostname, unsigned short port );
 long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_reqid );
 long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid );
 long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin_reqid );
+long parse_identity( Identity &identity );
 
 extern char *CFG_URI;
 extern char *CFG_HOST;

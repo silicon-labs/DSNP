@@ -614,12 +614,19 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	long result = 0;
 	char *query = (char*)malloc( 1024 + 256*6 );
 
+	/* Make an md5hash for the identity. */
+	unsigned char friend_hash[MD5_DIGEST_LENGTH];
+	MD5( (unsigned char*)identity, strlen(identity), friend_hash );
+	char *friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
+
 	/* Insert the friend claim. */
 	query = (char*)malloc( 1024 + 256*15 );
 	strcpy( query, "INSERT INTO friend_claim VALUES ( '" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "', '" );
+	mysql_real_escape_string( mysql, strend(query), friend_hash_str, strlen(friend_hash_str) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), put_relid, strlen(put_relid) );
 	strcat( query, "', '" );
@@ -1102,7 +1109,7 @@ long store_flogin_tok( MYSQL *mysql, const char *user,
 	return result;
 }
 
-long check_friend_claim( MYSQL *mysql, const char *user, const char *identity )
+long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user, const char *friend_hash )
 {
 	long result = 0;
 	char *query;
@@ -1112,10 +1119,10 @@ long check_friend_claim( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT put_relid, get_relid FROM friend_claim WHERE user='" );
+	strcpy( query, "SELECT friend_id FROM friend_claim WHERE user='" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "' AND friend_id='" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
+	strcat( query, "' AND friend_hash='" );
+	mysql_real_escape_string( mysql, strend(query), friend_hash, strlen(friend_hash) );
 	strcat( query, "';" );
 
 	/* Execute the query. */
@@ -1127,8 +1134,11 @@ long check_friend_claim( MYSQL *mysql, const char *user, const char *identity )
 
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
-	if ( row )
+	if ( row ) {
+		identity.identity = strdup( row[0] );
+		parse_identity( identity );
 		result = 1;
+	}
 
 	/* Done. */
 	mysql_free_result( select_res );
@@ -1138,8 +1148,7 @@ query_fail:
 	return result;
 }
 
-void flogin( const char *user, const char *identity, 
-		const char *id_host, const char *id_user )
+void flogin( const char *user, const char *hash )
 {
 	MYSQL *mysql, *connect_res;
 	int sigres;
@@ -1152,6 +1161,7 @@ void flogin( const char *user, const char *identity,
 	unsigned siglen;
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
 	long friend_claim;
+	Identity friend_id;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1163,7 +1173,7 @@ void flogin( const char *user, const char *identity,
 	}
 
 	/* Check if this identity is our friend. */
-	friend_claim = check_friend_claim( mysql, user, identity );
+	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
 		/* No friend claim ... send back a reqid anyways. Don't want to give
 		 * away that there is no claim. */
@@ -1175,7 +1185,8 @@ void flogin( const char *user, const char *identity,
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, friend_id.identity, 
+			friend_id.id_host, friend_id.id_user );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -1202,7 +1213,8 @@ void flogin( const char *user, const char *identity,
 	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
 	flogin_reqid_str = bin2hex( flogin_reqid, RELID_SIZE );
 
-	store_flogin_tok( mysql, user, identity, flogin_tok_str, flogin_reqid_str,
+	store_flogin_tok( mysql, user, friend_id.identity, 
+			flogin_tok_str, flogin_reqid_str,
 			encrypted, enclen, signature, siglen );
 	
 	/* Return the request id for the requester to use. */

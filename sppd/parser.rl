@@ -28,9 +28,8 @@ char *alloc_string( const char *s, const char *e )
 	result[length] = 0;
 	return result;
 }
-
 %%{
-	machine parser;
+	machine common;
 
 	comm_key = [a-f0-9]+      >{k1=p;} %{k2=p;};
 	user = [a-zA-Z0-9_.]+     >{u1=p;} %{u2=p;};
@@ -38,10 +37,17 @@ char *alloc_string( const char *s, const char *e )
 	email = graph+            >{e1=p;} %{e2=p;};
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
+	hash = [0-9a-f]+          >{a1=p;} %{a2=p;};
 
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
 		>{i1=p;} %{i2=p;};
+}%%
+
+%%{
+	machine parser;
+
+	include common;
 
 	EOL = '\r'? '\n';
 
@@ -127,16 +133,12 @@ char *alloc_string( const char *s, const char *e )
 
 	action flogin {
 		char *user = alloc_string( u1, u2 );
-		char *identity = alloc_string( i1, i2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
+		char *hash = alloc_string( a1, a2 );
 
-		flogin( user, identity, id_host, id_user );
+		flogin( user, hash );
 
 		free( user );
-		free( identity );
-		free( id_host );
-		free( id_user );
+		free( hash );
 	}
 
 	action return_ftoken {
@@ -170,7 +172,7 @@ char *alloc_string( const char *s, const char *e )
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;
-		'flogin'i ' ' user ' ' identity EOL @flogin;
+		'flogin'i ' ' user ' ' hash EOL @flogin;
 		'return_ftoken'i ' ' user ' ' reqid ' ' identity EOL @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 	*|;
@@ -194,6 +196,7 @@ int server_parse_loop()
 	const char *h1, *h2;
 	const char *pp1, *pp2;
 	const char *r1, *r2;
+	const char *a1, *a2;
 
 	%% write init;
 
@@ -544,6 +547,47 @@ fail:
 	fclose( writeSocket );
 	fclose( readSocket );
 	::close( socketFd );
+	return result;
+}
+
+
+/*
+ * parse_identity
+ */
+
+%%{
+	machine identity;
+	write data;
+}%%
+
+long parse_identity( Identity &identity )
+{
+	long result = 0, cs;
+	const char *p, *pe, *eof;
+
+	const char *i1, *i2;
+	const char *h1, *h2;
+	const char *pp1, *pp2;
+
+	/* Parser for response. */
+	%%{
+		include common;
+		main := identity;
+	}%%
+
+	p = identity.identity;
+	pe = p + strlen(identity.identity);
+	eof = pe;
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < identity_first_final )
+		return ERR_PARSE_ERROR;
+	
+	identity.id_host = alloc_string( h1, h2 );
+	identity.id_user = alloc_string( pp1, pp2 );
 	return result;
 }
 

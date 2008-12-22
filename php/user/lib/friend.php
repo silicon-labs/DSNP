@@ -23,14 +23,12 @@ $browser_id = $_SESSION['identity'];
 <head>
 <title><?php print $USER_NAME;?> </title>
 </head>
-<h1>Friend Page -- <?php print $USER_NAME;?></h1>
+<h1>SPP: <?php print $USER_NAME;?></h1>
 
 <p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
 
-<p>You are: <a href="<?php echo $browser_id; ?>"><?php echo $browser_id?></a>
-
-<p><a href="logout.php">logout</a><br>
-
+<p>You are logged in as a <b>friend</b> (<a href="logout.php">logout</a>)<br>
+<a href="<?php echo $browser_id;?>"><?php echo $browser_id?></a>
 
 <h1>Friend List</h1>
 

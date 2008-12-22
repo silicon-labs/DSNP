@@ -40,14 +40,13 @@ if ( !$line ) {
 <title><?php print $data['name']?> </title>
 </head>
 
-<h1>Public Page -- <?php print $U;?></h1>
+<h1>SPP: <?php print $USER_NAME;?></h1>
 
 <p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
 
-<p>
+<p><a href="login.php">owner login</a> <a href="flogin.php">friend login</a><br>
 
-<a href="login.php">owner login</a><br>
-<a href="flogin.php">friend login</a><br>
+<h1>Actions</h1>
 <a href="become.php">become friend</a>
 
 </html>

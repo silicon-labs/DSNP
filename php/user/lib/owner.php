@@ -22,12 +22,11 @@
 <head>
 <title><?php print $USER_NAME;?> </title>
 </head>
-<h1>Owner Page -- <?php print $USER_NAME;?></h1>
+<h1>SPP: <?php print $USER_NAME;?></h1>
 
 <p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
 
-<p>
-<a href="logout.php">logout</a><br>
+<p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout.php">logout</a>)
 
 <?php
 # Connect to the database.

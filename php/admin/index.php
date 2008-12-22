@@ -25,21 +25,21 @@ include('lib/session.php');
 <title><?php print $data['name']?> </title>
 </head>
 
-<h1>Secure Personal Publishing -- Administration</h1>
+<h1>SPP: Administration</h1>
 
 <p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
 
 <p>
 <?php
-if ( $_SESSION['auth'] != 'admin' ) {
-	echo '<a href="login.php">login</a>';
-	echo '</html>';
-	exit;
+if ( $_SESSION['auth'] == 'admin' ) {
+	echo 'You are logged in as <b>admin</b> (<a href="logout.php">logout</a>)<br>';
+	echo "<h1>Actions</h1>\n";
+	echo "<a href=\"newuser.php\">new user</a>\n";
 }
-?>
+else {
+	echo '<a href="login.php">login</a>';
+}
 
-you are admin<br>
-<a href="logout.php">logout</a><br>
-<a href="newuser.php">new user</a>
+?>
 
 </html>

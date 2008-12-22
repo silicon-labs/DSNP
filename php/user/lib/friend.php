@@ -51,7 +51,14 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
-	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . urlencode($browser_id) . "\">$dest_id</a> <br>\n";
+	if ( $dest_id == $browser_id ) {
+		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
+	}
+	else {
+		echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . 
+			urlencode($browser_id) . 
+			"\">$dest_id</a> <br>\n";
+	}
 }
 
 ?>

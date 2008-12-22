@@ -16,25 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-$browser_id = $_SESSION['identity'];
-?>
+include('../config.php');
+include('lib/session.php');
 
-<html>
-<head>
-<title><?php print $USER_NAME;?> </title>
-</head>
-<h1>Friend Page -- <?php print $USER_NAME;?></h1>
+requireOwner();
 
-<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
-
-<p>You are: <a href="<?php echo $browser_id; ?>"><?php echo $browser_id?></a>
-
-<p><a href="logout.php">logout</a><br>
-
-
-<h1>Friend List</h1>
-
-<?php
+$uri = $_GET['uri'];
 
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
@@ -42,25 +29,21 @@ $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die
 mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
-# Look for the user/pass combination.
-$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
-    mysql_real_escape_string($USER_NAME)
+$query = sprintf("SELECT friend_hash FROM friend_claim WHERE user='%s' AND friend_id='%s'",
+    mysql_real_escape_string($USER_NAME),
+    mysql_real_escape_string($uri)
 );
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-while ( $row = mysql_fetch_assoc($result) ) {
-	$dest_id = $row['friend_id'];
-	if ( $dest_id == $browser_id ) {
-		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
-	}
-	else {
-		echo "friend: <a href=\"${browser_id}sendmeto.php?uri=" . 
-			urlencode($dest_id) . 
-			"\">$dest_id</a> <br>\n";
-	}
+# If there is a result then the login is successful. 
+$row = mysql_fetch_array($result, MYSQL_ASSOC);
+if ( $row ) {
+	# Is a friend. Send to the submit friend login page.
+	header( "Location: ${uri}sflogin.php?uri=" . urlencode("$USER_URI/") );
 }
-
+else {
+	# Not a friend. Just go to the home page.
+	header( "Location: $uri" );
+}
 ?>
-
-</html>

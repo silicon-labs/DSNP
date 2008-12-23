@@ -37,7 +37,7 @@ echo $res;
 
 if ( ereg("^OK", $res) ) {
 	echo "friend request submitted<br>\n";
-	echo "<a href=\"${USER_URI}/\">back to profile</a>";
+	echo "<a href=\"$USER_URI\">back to profile</a>";
 }
 else {
 	echo "<center>\n";

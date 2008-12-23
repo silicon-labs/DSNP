@@ -41,7 +41,7 @@ if ( $row ) {
 	$_SESSION['auth']     = 'friend';
 	$_SESSION['identity'] = $row['from_id'];
 	$_SESSION['hash']     = MD5($row['from_id']);
-	header( "Location: $USER_PATH/" );
+	header( "Location: $USER_PATH" );
 }
 else {
 	echo "<center>\n";

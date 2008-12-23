@@ -28,7 +28,7 @@ $hash = md5($furi);
 
 /* Maybe we are already logged in as this friend. */
 if ( $_SESSION['auth'] == 'friend' && $_SESSION['hash'] == $hash ) {
-	header( "Location: $USER_PATH/" );
+	header( "Location: $USER_PATH" );
 }
 else {
 	/* Not logged in as the hashed user. */
@@ -44,7 +44,7 @@ else {
 	$res = fgets($fp);
 
 	if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
-		$arg_uri = 'uri=' . urlencode( $USER_URI ) . '/';
+		$arg_uri = 'uri=' . urlencode( $USER_URI );
 		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 		header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
 	}

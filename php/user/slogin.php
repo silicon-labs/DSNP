@@ -41,7 +41,7 @@ $line = mysql_fetch_array($result, MYSQL_ASSOC);
 if ( $line ) {
 	# Login successful.
 	$_SESSION['auth'] = 'owner';
-	header( "Location: $USER_PATH/" );
+	header( "Location: $USER_PATH" );
 }
 else {
 	include('lib/loginfailed.php');

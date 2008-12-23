@@ -63,10 +63,10 @@ $query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-$mehash = MD5( "$USER_URI/" );
+$mehash = MD5( $USER_URI );
 
 while ( $row = mysql_fetch_assoc($result) ) {
-	$browser_id = "$USER_URI/";
+	$browser_id = $USER_URI;
 	$dest_id = $row['friend_id'];
 
 	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . urlencode($browser_id) . "\">$dest_id</a> <br>\n";

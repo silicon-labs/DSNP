@@ -38,5 +38,5 @@ if ( !ereg("^OK", $res) ) {
 	echo $res;
 }
 else {
-	header("Location: $USER_URI/" );
+	header("Location: $USER_URI" );
 }

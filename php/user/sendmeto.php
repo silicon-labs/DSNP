@@ -40,7 +40,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 $row = mysql_fetch_array($result, MYSQL_ASSOC);
 if ( $row ) {
 	# Is a friend. Send to the submit friend login page.
-	header( "Location: ${uri}sflogin.php?uri=" . urlencode("$USER_URI/") );
+	header( "Location: ${uri}sflogin.php?uri=" . urlencode( $USER_URI ) );
 }
 else {
 	# Not a friend. Just go to the home page.

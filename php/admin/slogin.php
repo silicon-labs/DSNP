@@ -24,7 +24,7 @@ $pass = $_POST['password'];
 if ( $pass == $CFG_ADMIN_PASS ) {
 	# Login successful.
 	$_SESSION['auth'] = 'admin';
-	header( "Location: $CFG_PATH/admin/" );
+	header( "Location: ${CFG_PATH}admin/" );
 }
 else {
 	?>

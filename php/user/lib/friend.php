@@ -25,7 +25,7 @@ $browser_id = $_SESSION['identity'];
 </head>
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
-<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
 <p>You are logged in as a <b>friend</b> (<a href="logout.php">logout</a>)<br>
 <a href="<?php echo $browser_id;?>"><?php echo $browser_id?></a>

@@ -15,6 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-$path = "$CFG_PATH/admin/";
+$path = "${CFG_PATH}admin/";
 session_set_cookie_params( 0, $path );
 session_start();

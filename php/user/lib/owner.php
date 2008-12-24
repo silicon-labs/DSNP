@@ -24,7 +24,7 @@
 </head>
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
-<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
 <p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout.php">logout</a>)
 

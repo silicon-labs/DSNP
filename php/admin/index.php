@@ -27,7 +27,7 @@ include('lib/session.php');
 
 <h1>SPP: Administration</h1>
 
-<p>Installation: <a href="../"><?php print "$CFG_URI/";?></a>
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
 <p>
 <?php

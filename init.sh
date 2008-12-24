@@ -34,9 +34,9 @@ while true; do
 	echo; echo error: uri did not validate; echo
 done 
 
-CFG_URI=`echo $URI_IN | sed 's/\/$//;'`
 CFG_HOST=`echo $URI_IN | sed 's/^http:\/\///; s/\/.*$//;'`
-CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//; s/\/$//;'`
+CFG_URI=$URI_IN;
+CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//;'`
 
 echo
 echo "Please choose an admin password. This password to protect the database user"

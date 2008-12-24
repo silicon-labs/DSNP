@@ -21,6 +21,6 @@ include('lib/session.php');
 
 unset($_SESSION['auth']);
 
-header( "Location: $CFG_PATH/admin/" );
+header( "Location: ${CFG_PATH}admin/" );
 
 ?>

@@ -1,0 +1,10 @@
+RewriteEngine on
+
+# Add a trailing slash to all items underneath the root.
+RewriteRule ^([a-zA-Z0-9.]+)$              %{REQUEST_URI}/        [R,L]
+
+# Admin.
+RewriteRule ^admin/(.*)$                   admin/$1               [L]
+
+# Users.
+RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$     user/$2?u=$1           [L,QSA]

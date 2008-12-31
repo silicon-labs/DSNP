@@ -180,21 +180,3 @@ CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
 EOF
 
-#
-# Init the the .htaccess file.
-#
-
-# FIXME: strip the host from the the first rewrite target.
-cat > php/.htaccess << EOF
-RewriteEngine on
-
-# Add trailing slashes to everything.
-RewriteRule ^([a-zA-Z0-9.]+)$          $CFG_PATH/\$1/          [R,L]
-
-# Admin
-RewriteRule ^admin/(.*)$               admin/\$1               [L]
-
-# Users
-RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$  user/\$2?u=\$1          [L,QSA]
-EOF
-

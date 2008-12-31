@@ -14,6 +14,8 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+PHP_CONF=php/config.php
+SPPD_CONF=sppd/sppd.conf
 
 #
 # Config for all sites
@@ -32,34 +34,12 @@ CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 EOF
 
 # Start the PHP config file.
-echo '<?php' > php/config.php 
-
-#
-# Read the installation location.
-#
+echo '<?php' > $PHP_CONF
+rm -f $SPPD_CONF
 
 echo
-echo "Please give the Uniform Resource Identifier (URI) of this installation. This"
-echo "will be the installations public name. It should start with 'http://' and end"
-echo "with '/'."
-echo
-
-while true; do 
-	read -p 'installation uri: ' URI_IN
-
-	if echo $URI_IN | grep '^http:\/\/.*\/$' >/dev/null; then
-		break
-	fi
-	echo; echo error: uri did not validate; echo
-done 
-
-CFG_HOST=`echo $URI_IN | sed 's/^http:\/\///; s/\/.*$//;'`
-CFG_URI=$URI_IN;
-CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//;'`
-
-echo
-echo "Please choose an admin password. This password to protect the database user"
-echo "'spp' and the admin login page."
+echo "Please choose an admin password. This password will protect the database user"
+echo "'spp' and the admin login page of all sites."
 echo
 
 while true; do
@@ -78,9 +58,55 @@ while true; do
 	break;
 done
 
+
+#
+# Start reading installations.
+#
+
 echo
-echo "Thank you, now initializing the installation."
+echo "Thank you. You can now add sites."
+
+while true; do
+
 echo
+echo "Please give a short name for the site. It should contain only letters and"
+echo "numbers and should begin with a letter. This name will be used internally to"
+echo "identify the installation. It will not be visible to the user. If you are"
+echo "finished giving installations just press enter."
+echo
+
+while true; do 
+	read -p 'installation name: ' NAME
+
+	if [ -z "$NAME" ]; then
+		done=yes;
+		break;
+	fi
+	if echo $NAME | grep '^[a-zA-Z][a-zA-Z0-9]*$' >/dev/null; then
+		break
+	fi
+	echo; echo error: name did not validate; echo
+done 
+
+[ -n "$done" ] && break;
+
+echo
+echo "Please give the Uniform Resource Identifier (URI) of this site. This will be"
+echo "the installations public name. It should start with 'http://' and end with '/'."
+echo
+
+while true; do 
+	read -p 'installation uri: ' URI_IN
+
+	if echo $URI_IN | grep '^http:\/\/.*\/$' >/dev/null; then
+		break
+	fi
+	echo; echo error: uri did not validate; echo
+done 
+
+CFG_HOST=`echo $URI_IN | sed 's/^http:\/\///; s/\/.*$//;'`
+CFG_URI=$URI_IN;
+CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//;'`
 
 #
 # Init the database.
@@ -158,10 +184,10 @@ CREATE TABLE flogin_tok (
 EOF
 
 #
-# Create the php config file.
+# Add the site to the PHP config file.
 #
 
-cat >> php/config.php << EOF
+cat >> $PHP_CONF << EOF
 if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
 	\$CFG_URI = '$CFG_URI';
 	\$CFG_HOST = '$CFG_HOST';
@@ -176,10 +202,10 @@ if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
 EOF
 
 #
-# Create the sppd config file.
+# Add the site to the sppd config file.
 #
 
-cat > sppd/sppd.conf << EOF
+cat >> $SPPD_CONF << EOF
 CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
@@ -191,9 +217,20 @@ CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
 EOF
 
-# Finish the PHP config file.
-echo '?>' >> php/config.php 
+done
 
-echo Initializing the database. Please login as root@localhost.
+echo
+echo "Thank you, now initializing the database. Please login as root@localhost."
+echo
+
 mysql -f -h localhost -u root -p < init.sql
 rm init.sql
+
+# Finish the PHP config file.
+cat >> $PHP_CONF << EOF
+else {
+	die('config.php: could not select installation');
+}
+?>
+EOF
+

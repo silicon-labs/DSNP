@@ -25,6 +25,14 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 # Port for the server.
 CFG_PORT=7070
 
+rm -f init.sql
+cat > init.sql p << EOF
+DROP USER spp@localhost;
+CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+EOF
+
+# Start the PHP config file.
+echo '<?php' > php/config.php 
 
 #
 # Read the installation location.
@@ -78,12 +86,7 @@ echo
 # Init the database.
 #
 
-echo Initializing the database. Please login as root@localhost.
-
-mysql -f -h localhost -u root -p << EOF
-DROP USER spp@localhost;
-CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
-
+cat >> init.sql << EOF
 DROP DATABASE spp;
 CREATE DATABASE spp;
 GRANT ALL ON spp.* TO 'spp'@'localhost';
@@ -158,8 +161,7 @@ EOF
 # Create the php config file.
 #
 
-cat > php/config.php << EOF
-<?php
+cat >> php/config.php << EOF
 \$CFG_URI = '$CFG_URI';
 \$CFG_HOST = '$CFG_HOST';
 \$CFG_PATH = '$CFG_PATH';
@@ -169,7 +171,6 @@ cat > php/config.php << EOF
 \$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 \$CFG_COMM_KEY = '$CFG_COMM_KEY';
 \$CFG_PORT = '$CFG_PORT';
-?>
 EOF
 
 #
@@ -188,3 +189,9 @@ CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
 EOF
 
+# Finish the PHP config file.
+echo '?>' >> php/config.php 
+
+echo Initializing the database. Please login as root@localhost.
+mysql -f -h localhost -u root -p < init.sql
+rm init.sql

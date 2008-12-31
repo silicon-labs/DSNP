@@ -162,15 +162,17 @@ EOF
 #
 
 cat >> php/config.php << EOF
-\$CFG_URI = '$CFG_URI';
-\$CFG_HOST = '$CFG_HOST';
-\$CFG_PATH = '$CFG_PATH';
-\$CFG_DB_HOST = 'localhost';
-\$CFG_DB_DATABASE = 'spp';
-\$CFG_DB_USER = 'spp';
-\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
-\$CFG_COMM_KEY = '$CFG_COMM_KEY';
-\$CFG_PORT = '$CFG_PORT';
+if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
+	\$CFG_URI = '$CFG_URI';
+	\$CFG_HOST = '$CFG_HOST';
+	\$CFG_PATH = '$CFG_PATH';
+	\$CFG_DB_HOST = 'localhost';
+	\$CFG_DB_DATABASE = 'spp';
+	\$CFG_DB_USER = 'spp';
+	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
+	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
+	\$CFG_PORT = '$CFG_PORT';
+}
 EOF
 
 #

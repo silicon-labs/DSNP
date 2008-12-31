@@ -16,6 +16,17 @@
 
 
 #
+# Config for all sites
+#
+
+# Make a key for communication from the frontend to backend.
+CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
+
+# Port for the server.
+CFG_PORT=7070
+
+
+#
 # Read the installation location.
 #
 
@@ -71,9 +82,11 @@ echo Initializing the database. Please login as root@localhost.
 
 mysql -f -h localhost -u root -p << EOF
 DROP USER spp@localhost;
+CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+
 DROP DATABASE spp;
 CREATE DATABASE spp;
-GRANT ALL ON spp.* TO 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+GRANT ALL ON spp.* TO 'spp'@'localhost';
 USE spp;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
@@ -140,11 +153,6 @@ CREATE TABLE flogin_tok (
 );
 
 EOF
-
-# Make a key for communication from the frontend to backend.
-CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
-
-CFG_PORT=7070
 
 #
 # Create the php config file.

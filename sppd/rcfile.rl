@@ -59,6 +59,10 @@ void process_value( const char *n, long nl, const char *v, long vl )
 	}
 }
 
+void process_section( const char *n, long nl )
+{
+}
+
 %%{
 	machine rcfile;
 
@@ -83,10 +87,13 @@ void process_value( const char *n, long nl, const char *v, long vl )
 		process_value( n1, n2-n1, v1, v2-v1 );
 	}
 
+	action section { process_section( n1, n2-n1 ); }
+
 	main := (
 		'#' [^\n]* '\n' |
 		ws |
-		value %value
+		value %value |
+		'='+ ws* var >sn %ln %section ws* '='+ '\n'
 	)*;
 }%%
 

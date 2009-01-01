@@ -33,9 +33,9 @@ DROP USER spp@localhost;
 CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 EOF
 
-# Start the PHP config file.
-echo '<?php' > $PHP_CONF
-rm -f $SPPD_CONF
+# start the config files
+{ echo '<?php'; echo; } > $PHP_CONF
+echo > $SPPD_CONF
 
 echo
 echo "Please choose an admin password. This password will protect the database user"
@@ -199,6 +199,7 @@ if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 	\$CFG_PORT = '$CFG_PORT';
 }
+
 EOF
 
 #
@@ -206,6 +207,7 @@ EOF
 #
 
 cat >> $SPPD_CONF << EOF
+===== $NAME =====
 CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
@@ -215,6 +217,7 @@ CFG_DB_USER = spp
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
+
 EOF
 
 done
@@ -228,9 +231,10 @@ rm init.sql
 
 # Finish the PHP config file.
 cat >> $PHP_CONF << EOF
-else {
+if ( !\$CFG_URI ) {
 	die('config.php: could not select installation');
 }
+
 ?>
 EOF
 

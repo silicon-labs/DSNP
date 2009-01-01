@@ -102,7 +102,7 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 	long query_res;
 
 	/* Check the authentication. */
-	if ( strcmp( key, CFG_COMM_KEY ) != 0 ) {
+	if ( strcmp( key, c->CFG_COMM_KEY ) != 0 ) {
 		printf( "ERROR communication key invalid\r\n" );
 		goto flush;
 	}
@@ -126,8 +126,8 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -198,8 +198,8 @@ void public_key( const char *user )
 	MYSQL_ROW row;
 
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -472,8 +472,8 @@ void friend_req( const char *user, const char *identity,
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -530,8 +530,8 @@ void fetch_fr_relid( const char *reqid )
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -670,8 +670,8 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -773,8 +773,8 @@ void fetch_relid( const char *reqid )
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -901,8 +901,8 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -1017,15 +1017,15 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	MYSQL_ROW row;
 
 	/* Check the authentication. */
-	if ( strcmp( key, CFG_COMM_KEY ) != 0 ) {
+	if ( strcmp( key, c->CFG_COMM_KEY ) != 0 ) {
 		printf( "ERROR communication key invalid\r\n" );
 		goto flush;
 	}
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -1165,8 +1165,8 @@ void flogin( const char *user, const char *hash )
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -1236,8 +1236,8 @@ void fetch_ftoken( const char *reqid )
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;
@@ -1297,8 +1297,8 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, CFG_DB_HOST, CFG_DB_USER, 
-			CFG_ADMIN_PASS, CFG_DB_DATABASE, 0, 0, 0 );
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
 		goto close;

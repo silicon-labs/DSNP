@@ -248,7 +248,7 @@ long fetch_public_key_net( PublicKey &pub, const char *host, const char *user )
 	const char *n1, *n2, *e1, *e2;
 	bool OK = false;
 
-	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
@@ -328,7 +328,7 @@ long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_r
 	const char *e1, *e2, *s1, *s2;
 	bool OK = false;
 
-	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
@@ -408,7 +408,7 @@ long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
 	const char *e1, *e2, *s1, *s2;
 	bool OK = false;
 
-	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
@@ -487,7 +487,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin
 	const char *e1, *e2, *s1, *s2;
 	bool OK = false;
 
-	long socketFd = open_inet_connection( host, atoi(CFG_PORT) );
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 

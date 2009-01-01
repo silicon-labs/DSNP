@@ -19,42 +19,31 @@
 #include <stdlib.h>
 #include "sppd.h"
 
-struct ConfigValue
-{
-	const char *name;
-	char *&value;
-};
+Config config;;
+Config *c;
 
-char *CFG_URI = 0;
-char *CFG_HOST = 0;
-char *CFG_PATH = 0;
-char *CFG_DB_HOST = 0;
-char *CFG_DB_DATABASE = 0;
-char *CFG_DB_USER = 0;
-char *CFG_ADMIN_PASS = 0;
-char *CFG_COMM_KEY = 0;
-char *CFG_PORT = 0;
-
-ConfigValue cfgVals[] = {
-	{ "CFG_URI", CFG_URI },
-	{ "CFG_HOST", CFG_HOST  },
-	{ "CFG_PATH", CFG_PATH },
-	{ "CFG_DB_HOST", CFG_HOST },
-	{ "CFG_DB_DATABASE", CFG_DB_DATABASE },
-	{ "CFG_DB_USER", CFG_DB_USER },
-	{ "CFG_ADMIN_PASS", CFG_ADMIN_PASS },
-	{ "CFG_COMM_KEY", CFG_COMM_KEY },
-	{ "CFG_PORT", CFG_PORT },
+const char *cfgVals[] = {
+	/* NOTE: must mirror the Config structure. */
+	"CFG_URI",
+	"CFG_HOST", 
+	"CFG_PATH",
+	"CFG_DB_HOST",
+	"CFG_DB_DATABASE",
+	"CFG_DB_USER",
+	"CFG_ADMIN_PASS",
+	"CFG_COMM_KEY",
+	"CFG_PORT",
 };
 
 void process_value( const char *n, long nl, const char *v, long vl )
 {
-	long numCV = sizeof(cfgVals) / sizeof(ConfigValue);
+	long numCV = sizeof(cfgVals) / sizeof(const char*);
 	for ( long i = 0; i < numCV; i++ ) {
-		if ( strncmp( cfgVals[i].name, n, nl ) == 0 ) {
-			cfgVals[i].value = new char[vl+1];
-			memcpy( cfgVals[i].value, v, vl );
-			cfgVals[i].value[vl] = 0;
+		if ( strncmp( cfgVals[i], n, nl ) == 0 ) {
+			char *dest = new char[vl+1];
+			memcpy( dest, v, vl );
+			dest[vl] = 0;
+			((char**)c)[i] = dest;
 		}
 	}
 }
@@ -107,6 +96,9 @@ int rcfile_parse( const char *data, long length )
 
 	const char *n1, *n2;
 	const char *v1, *v2;
+
+	memset( &config, 0, sizeof(Config) );
+	c = &config;
 
 	%% write init;
 	%% write exec;

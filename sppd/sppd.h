@@ -62,15 +62,21 @@ long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
 long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin_reqid );
 long parse_identity( Identity &identity );
 
-extern char *CFG_URI;
-extern char *CFG_HOST;
-extern char *CFG_PATH;
-extern char *CFG_DB_HOST;
-extern char *CFG_DB_DATABASE;
-extern char *CFG_DB_USER;
-extern char *CFG_ADMIN_PASS;
-extern char *CFG_COMM_KEY;
-extern char *CFG_PORT;
+struct Config
+{
+	/* NOTE: must be mirrored by the cfgVals array. */
+	char *CFG_URI;
+	char *CFG_HOST;
+	char *CFG_PATH;
+	char *CFG_DB_HOST;
+	char *CFG_DB_DATABASE;
+	char *CFG_DB_USER;
+	char *CFG_ADMIN_PASS;
+	char *CFG_COMM_KEY;
+	char *CFG_PORT;
+};
+
+extern Config *c;
 
 #define ERR_READ_ERROR         -1
 #define ERR_LINE_TOO_LONG      -2

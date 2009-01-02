@@ -31,8 +31,44 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
 #include "sppd.h"
+
+int exec_query( MYSQL *mysql, const char *fmt, ... )
+{
+	long vi = 0;
+	va_list vl;
+	const char *src = fmt;
+	va_start(vl, fmt);
+	char *query = (char*)malloc( 1024 + 256*15 );
+	char *dest = query;
+
+	while ( true ) {
+		char *p = strchr( src, '%' );
+		if ( p == 0 ) {
+			/* No more items. Copy the rest. */
+			strcpy( dest, src );
+			break;
+		}
+
+		long len = p-src;
+		memcpy( dest, src, len );
+		dest += len;
+		src += len + 2;
+
+		char *a = va_arg(vl, char*);
+		vi += 1;
+
+		len = strlen(a);
+		len = mysql_real_escape_string( mysql, dest, a, len );
+		dest += len;
+	}
+
+	va_end(vl);
+
+	printf( "%s\n", query );
+
+	return mysql_query( mysql, query );
+}
 
 void set_config( const char *identity )
 {
@@ -120,7 +156,6 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 	RSA *rsa;
 	MYSQL *mysql, *connect_res;
 	char *pass_hashed;
-	char *query;
 	long query_res;
 
 	/* Check the authentication. */
@@ -158,43 +193,19 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 	/* Hash the password. */
 	pass_hashed = pass_hash( user, pass );
 
-	/* Create the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "INSERT INTO user VALUES('" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), pass_hashed, strlen(pass_hashed) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), email, strlen(email) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), n, strlen(n) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), e, strlen(e) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), d, strlen(d) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), p, strlen(p) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), q, strlen(q) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), dmp1, strlen(dmp1) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), dmq1, strlen(dmq1) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), iqmp, strlen(iqmp) );
-	strcat( query, "' );" );
+	/* Execute the insert. */
+	query_res = exec_query( mysql, "INSERT INTO user VALUES("
+		"'%s', '%s', '%s', '%s', '%s', '%s', "
+		"'%s', '%s', '%s', '%s', '%s');", 
+		user, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
 
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
 		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-		goto free_query;
+		goto close;
 	}
 
 	printf( "OK\r\n" );
 
-free_query:
-	free( query );
 close:
 	OPENSSL_free( n );
 	OPENSSL_free( e );

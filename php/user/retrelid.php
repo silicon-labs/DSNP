@@ -27,7 +27,7 @@ if ( !$fp )
 	exit(1);
 
 $send = 
-	"SPP/0.1\r\n" . 
+	"SPP/0.1 $CFG_URI\r\n" . 
 	"return_relid $USER_NAME $fr_reqid $identity\r\n";
 fwrite($fp, $send);
 

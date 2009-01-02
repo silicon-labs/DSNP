@@ -19,8 +19,7 @@
 #include <stdlib.h>
 #include "sppd.h"
 
-Config config;;
-Config *c;
+Config *c = 0, *config_first = 0, *config_last = 0;
 
 const char *cfgVals[] = {
 	/* NOTE: must mirror the Config structure. */
@@ -50,6 +49,22 @@ void process_value( const char *n, long nl, const char *v, long vl )
 
 void process_section( const char *n, long nl )
 {
+	/* Create the config. */
+	c = new Config;
+	memset( c, 0, sizeof(Config) );
+
+	/* Append the config to the config list. */
+	if ( config_first == 0 )
+		config_first = config_last = c;
+	else {
+		config_last->next = c;
+		config_last = c;
+	}
+
+	/* Copy the name in. */
+	c->name = new char[nl+1];
+	memcpy( c->name, n, nl );
+	c->name[nl] = 0;
 }
 
 %%{
@@ -96,9 +111,6 @@ int rcfile_parse( const char *data, long length )
 
 	const char *n1, *n2;
 	const char *v1, *v2;
-
-	memset( &config, 0, sizeof(Config) );
-	c = &config;
 
 	%% write init;
 	%% write exec;

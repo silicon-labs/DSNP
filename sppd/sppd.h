@@ -54,13 +54,19 @@ void accept_friend( const char *key, const char *user, const char *user_reqid );
 void flogin( const char *user, const char *hash );
 void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str );
 void fetch_ftoken( const char *reqid );
+void set_config( const char *identity );
 
-long fetch_public_key_net( PublicKey &pub, const char *host, const char *user );
+long fetch_public_key_net( PublicKey &pub, const char *site,
+		const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
-long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_reqid );
-long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid );
-long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin_reqid );
+long fetch_fr_relid_net( RelidEncSig &encsig, const char *site,
+		const char *host, const char *fr_reqid );
+long fetch_relid_net( RelidEncSig &encsig, const char *site, 
+		const char *host, const char *reqid );
+long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
+		const char *host, const char *flogin_reqid );
 long parse_identity( Identity &identity );
+char *get_site( const char *identity );
 
 struct Config
 {
@@ -74,9 +80,12 @@ struct Config
 	char *CFG_ADMIN_PASS;
 	char *CFG_COMM_KEY;
 	char *CFG_PORT;
+
+	char *name;
+	Config *next;
 };
 
-extern Config *c;
+extern Config *c, *config_first, *config_last;
 
 #define ERR_READ_ERROR         -1
 #define ERR_LINE_TOO_LONG      -2

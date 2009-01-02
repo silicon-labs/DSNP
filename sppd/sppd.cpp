@@ -34,9 +34,31 @@
 
 #include "sppd.h"
 
+void set_config( const char *identity )
+{
+	c = config_first;
+	while ( strcmp( c->CFG_URI, identity ) != 0 )
+		c = c->next;
+
+	if ( c == 0 ) {
+		fprintf(stderr, "bad site\n");
+		exit(1);
+	}
+}
+
 char *strend( char *s )
 {
 	return s + strlen(s);
+}
+
+char *get_site( const char *identity )
+{
+	char *res = strdup( identity );
+	char *last = res + strlen(res) - 1;
+	while ( last[-1] != '/' )
+		last--;
+	*last = 0;
+	return res;
 }
 
 char *bin2hex( unsigned char *data, long len )
@@ -348,7 +370,8 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity,
 
 	/* If the db fetch failed, get the public key off the net. */
 	if ( result == 0 ) {
-		result = fetch_public_key_net( pub, host, user );
+		char *site = get_site( identity );
+		result = fetch_public_key_net( pub, site, host, user );
 		if ( result < 0 )
 			return 0;
 
@@ -667,6 +690,7 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 	unsigned char relid[RELID_SIZE], reqid[REQID_SIZE];
 	char *fr_relid_str, *relid_str, *reqid_str;
 	unsigned char message[RELID_SIZE*2];
+	char *site;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -684,8 +708,10 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 		goto close;
 	}
 
+	site = get_site( identity );
+
 	RelidEncSig encsig;
-	fetchres = fetch_fr_relid_net( encsig, id_host, fr_reqid_str );
+	fetchres = fetch_fr_relid_net( encsig, site, id_host, fr_reqid_str );
 	if ( fetchres < 0 ) {
 		printf("ERROR fetch_fr_relid failed %d\n", fetchres );
 		goto close;
@@ -898,6 +924,7 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 	char *fr_relid_str, *relid_str;
 	unsigned char user_reqid[REQID_SIZE];
 	char *user_reqid_str;
+	char *site;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -915,8 +942,10 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 		goto close;
 	}
 
+	site = get_site( identity );
+
 	RelidEncSig encsig;
-	fetchres = fetch_relid_net( encsig, id_host, reqid_str );
+	fetchres = fetch_relid_net( encsig, site, id_host, reqid_str );
 	if ( fetchres < 0 ) {
 		printf("ERROR fetch_relid failed %d\n", fetchres );
 		goto close;
@@ -1294,6 +1323,7 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	char *flogin_tok_str;
 	long friend_claim;
 	Identity friend_id;
+	char *site;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1320,8 +1350,10 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 		goto close;
 	}
 
+	site = get_site( friend_id.identity );
+
 	RelidEncSig encsig;
-	fetchres = fetch_ftoken_net( encsig, friend_id.id_host, flogin_reqid_str );
+	fetchres = fetch_ftoken_net( encsig, site, friend_id.id_host, flogin_reqid_str );
 	if ( fetchres < 0 ) {
 		printf("ERROR fetch_flogin_relid failed %d\n", fetchres );
 		goto close;

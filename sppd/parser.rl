@@ -159,6 +159,12 @@ char *alloc_string( const char *s, const char *e )
 		free( reqid );
 	}
 
+	action set_config {
+		char *identity = alloc_string( i1, i2 );
+		set_config( identity );
+		free( identity );
+	}
+
 	commands := |* 
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
 		'public_key'i ' ' user EOL @public_key;
@@ -176,7 +182,7 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 	*|;
 
-	main := 'SPP/0.1'i EOL @{ fgoto commands; };
+	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
 }%%
 
 %% write data;
@@ -240,7 +246,8 @@ int server_parse_loop()
 	write data;
 }%%
 
-long fetch_public_key_net( PublicKey &pub, const char *host, const char *user )
+long fetch_public_key_net( PublicKey &pub, const char *site, 
+		const char *host, const char *user )
 {
 	static char buf[1024];
 	long result = 0, cs;
@@ -254,7 +261,7 @@ long fetch_public_key_net( PublicKey &pub, const char *host, const char *user )
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1\r\npublic_key %s\r\n", user );
+	fprintf( writeSocket, "SPP/0.1 %s\r\npublic_key %s\r\n", site, user );
 	fflush( writeSocket );
 
 	/* Read the result. */
@@ -320,7 +327,8 @@ fail:
 }%%
 
 
-long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_reqid )
+long fetch_fr_relid_net( RelidEncSig &encsig, const char *site, 
+		const char *host, const char *fr_reqid )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -334,7 +342,7 @@ long fetch_fr_relid_net( RelidEncSig &encsig, const char *host, const char *fr_r
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1\r\nfetch_fr_relid %s\r\n", fr_reqid );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nfetch_fr_relid %s\r\n", site, fr_reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */
@@ -400,7 +408,8 @@ fail:
 	write data;
 }%%
 
-long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
+long fetch_relid_net( RelidEncSig &encsig, const char *site,
+		const char *host, const char *reqid )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -414,7 +423,7 @@ long fetch_relid_net( RelidEncSig &encsig, const char *host, const char *reqid )
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1\r\nfetch_relid %s\r\n", reqid );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nfetch_relid %s\r\n", site, reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */
@@ -479,7 +488,8 @@ fail:
 	write data;
 }%%
 
-long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin_reqid )
+long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
+		const char *host, const char *flogin_reqid )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -493,7 +503,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *host, const char *flogin
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1\r\nfetch_ftoken %s\r\n", flogin_reqid );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nfetch_ftoken %s\r\n", site, flogin_reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */

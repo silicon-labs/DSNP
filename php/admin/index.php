@@ -18,28 +18,9 @@
 include('../config.php');
 include('lib/session.php');
 
-?>
-
-<html>
-<head>
-<title><?php print $data['name']?> </title>
-</head>
-
-<h1>SPP: Administration</h1>
-
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
-
-<p>
-<?php
-if ( $_SESSION['auth'] == 'admin' ) {
-	echo 'You are logged in as <b>admin</b> (<a href="logout.php">logout</a>)<br>';
-	echo "<h1>Actions</h1>\n";
-	echo "<a href=\"newuser.php\">new user</a>\n";
-}
-else {
-	echo '<a href="login.php">login</a>';
-}
+if ( $_SESSION['auth'] == 'admin' )
+	include( "lib/admin.php" );
+else
+	include( "lib/public.php" );
 
 ?>
-
-</html>

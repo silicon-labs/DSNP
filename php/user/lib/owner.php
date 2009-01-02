@@ -16,6 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
+
 ?>
 
 <html>
@@ -28,12 +34,8 @@
 
 <p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout.php">logout</a>)
 
+<p>
 <?php
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
 
 /* Display friend requests. */
 $query = sprintf("SELECT from_id, user_reqid FROM user_friend_req WHERE user = '%s';",

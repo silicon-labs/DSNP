@@ -29,7 +29,7 @@ CFG_PORT=7070
 
 rm -f init.sql
 cat > init.sql p << EOF
-DROP USER spp@localhost;
+DROP USER 'spp'@'localhost';
 CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 EOF
 
@@ -113,10 +113,10 @@ CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//;'`
 #
 
 cat >> init.sql << EOF
-DROP DATABASE spp;
-CREATE DATABASE spp;
-GRANT ALL ON spp.* TO 'spp'@'localhost';
-USE spp;
+DROP DATABASE $NAME;
+CREATE DATABASE $NAME;
+GRANT ALL ON $NAME.* TO 'spp'@'localhost';
+USE $NAME;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
 	pass VARCHAR(40), 
@@ -193,7 +193,7 @@ if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';
 	\$CFG_DB_HOST = 'localhost';
-	\$CFG_DB_DATABASE = 'spp';
+	\$CFG_DB_DATABASE = '$NAME';
 	\$CFG_DB_USER = 'spp';
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
@@ -212,7 +212,7 @@ CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
-CFG_DB_DATABASE = spp
+CFG_DB_DATABASE = $NAME
 CFG_DB_USER = spp
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY

@@ -27,17 +27,14 @@ if ( !$fp )
 	exit(1);
 
 $send = 
-	"SPP/0.1\r\n" . 
+	"SPP/0.1 $CFG_URI\r\n" . 
 	"friend_final $USER_NAME $reqid $identity\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);
 
-echo $res;
-
 if ( ereg("^OK", $res) ) {
-	echo "friend request submitted<br>\n";
-	echo "<a href=\"$USER_URI\">back to profile</a>";
+	header("Location: ${USER_URI}" );
 }
 else {
 	echo "<center>\n";

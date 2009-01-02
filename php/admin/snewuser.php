@@ -31,15 +31,13 @@ if ( !$fp )
 	exit(1);
 
 $send = 
-	"SPP/0.1\r\n" . 
+	"SPP/0.1 $CFG_URI\r\n" . 
 	"new_user $CFG_COMM_KEY $user $pass1 $email\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);
 if ( ereg("^OK", $res) ) {
-	echo "Success";
-	echo "<p><a href=\"${CFG_PATH}admin/\">admin home</a>";
-	echo "<p><a href=\"${CFG_PATH}admin/newuser.php\">another new user</a>";
+	header("Location: ${CFG_PATH}admin/" );
 }
 else
 {

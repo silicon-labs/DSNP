@@ -1,5 +1,4 @@
 <?php
-
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -16,27 +15,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/session.php');
+?>
 
-requireOwner();
+<html>
+<head>
+<title><?php print $data['name']?> </title>
+</head>
 
-$user_reqid = $_GET['user_reqid'];
+<h1>SPP: Administration</h1>
 
-$fp = fsockopen( 'localhost', $CFG_PORT );
-if ( !$fp )
-	exit(1);
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
-$send = 
-	"SPP/0.1 $CFG_URI\r\n" . 
-	"accept_friend $CFG_COMM_KEY $USER_NAME $user_reqid\r\n";
-fwrite($fp, $send);
+<p><a href="login.php">login</a>
 
-$res = fgets($fp);
-if ( !ereg("^OK", $res) ) {
-	echo "FAILURE *** Friend accept failed with: <br>";
-	echo $res;
-}
-else {
-	header("Location: $USER_URI" );
-}
+</html>
+

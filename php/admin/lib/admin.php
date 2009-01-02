@@ -1,5 +1,4 @@
 <?php
-
 /* 
  * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
  *
@@ -16,30 +15,37 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/session.php');
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
 
-$identity = $_POST['identity'];
-
-$fp = fsockopen( 'localhost', $CFG_PORT );
-if ( !$fp )
-	exit(1);
-
-$send = 
-	"SPP/0.1 $CFG_URI\r\n" . 
-	"friend_req $USER_NAME $identity\r\n";
-fwrite($fp, $send);
-
-$res = fgets($fp);
-
-if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
-	$arg_identity = 'identity=' . urlencode( $USER_URI );
-	$arg_reqid = 'fr_reqid=' . urlencode( $regs[1] );
-
-	header("Location: ${identity}retrelid.php?${arg_identity}&${arg_reqid}" );
-}
-else {
-	echo "FAILURE\n";
-}
+# Look for the user/pass combination.
+$query = "SELECT user FROM user";
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 ?>
+
+<html>
+<head>
+<title><?php print $data['name']?> </title>
+</head>
+
+<h1>SPP: Administration</h1>
+
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
+
+<p>You are logged in as <b>admin</b> (<a href="logout.php">logout</a>)<br>
+<h1>Actions</h1>
+<a href="newuser.php">new user</a>
+
+<h1>Users</h1>
+
+<?php
+while ( $row = mysql_fetch_assoc($result) )
+    echo '<a href="' . $CFG_PATH . $row['user'] . '/"/>' . $row['user'] . '</a><br>';
+?>
+
+</html>
+

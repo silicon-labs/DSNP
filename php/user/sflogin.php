@@ -37,7 +37,7 @@ else {
 		exit(1);
 
 	$send = 
-		"SPP/0.1\r\n" . 
+		"SPP/0.1 $CFG_URI\r\n" . 
 		"flogin $USER_NAME $hash\r\n";
 	fwrite($fp, $send);
 

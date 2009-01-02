@@ -63,7 +63,7 @@ distclean: clean
 	rm -f Makefile 
 
 clean:
-	rm -f tags .*.d *.o ragel $(GEN_SRCS)
+	rm -f tags .*.d *.o sppd $(GEN_SRCS)
 
 install: all
 	install -d $(DESTDIR)$(prefix)/bin

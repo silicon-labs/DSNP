@@ -31,17 +31,51 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <stdarg.h>
 #include "sppd.h"
 
+/*
+ * %e escaped string
+ */
+
+/* Format and execute a query. */
 int exec_query( MYSQL *mysql, const char *fmt, ... )
 {
-	long vi = 0;
+	long len = 0;
 	va_list vl;
 	const char *src = fmt;
-	va_start(vl, fmt);
-	char *query = (char*)malloc( 1024 + 256*15 );
-	char *dest = query;
 
+	/* First calculate the space we need. */
+	va_start(vl, fmt);
+	while ( true ) {
+		char *p = strchr( src, '%' );
+		if ( p == 0 ) {
+			/* No more items. Count the rest. */
+			len += strlen( src );
+			break;
+		}
+
+		long seg_len = p-src;
+
+		/* Add two for the single quotes around the item. */
+		len += seg_len + 2;
+
+		/* Need to skip over the %s. */
+		src += seg_len + 2;
+
+		char *a = va_arg(vl, char*);
+		len += strlen(a) * 2;
+	}
+	va_end(vl);
+
+	/* Room for the terminating null. */
+	len += 1;
+
+	char *query = (char*)malloc( len+1 );
+	char *dest = query;
+	src = fmt;
+
+	va_start(vl, fmt);
 	while ( true ) {
 		char *p = strchr( src, '%' );
 		if ( p == 0 ) {
@@ -49,25 +83,26 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 			strcpy( dest, src );
 			break;
 		}
-
+		
 		long len = p-src;
 		memcpy( dest, src, len );
 		dest += len;
 		src += len + 2;
 
-		char *a = va_arg(vl, char*);
-		vi += 1;
+		*dest++ = '\'';
 
+		char *a = va_arg(vl, char*);
 		len = strlen(a);
 		len = mysql_real_escape_string( mysql, dest, a, len );
 		dest += len;
-	}
 
+		*dest++ = '\'';
+	}
 	va_end(vl);
 
-	printf( "%s\n", query );
-
-	return mysql_query( mysql, query );
+	long query_res = mysql_query( mysql, query );
+	free( query );
+	return query_res;
 }
 
 void set_config( const char *identity )
@@ -195,8 +230,7 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 
 	/* Execute the insert. */
 	query_res = exec_query( mysql, "INSERT INTO user VALUES("
-		"'%s', '%s', '%s', '%s', '%s', '%s', "
-		"'%s', '%s', '%s', '%s', '%s');", 
+		"%e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e);", 
 		user, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
 
 	if ( query_res != 0 ) {
@@ -238,14 +272,8 @@ void public_key( const char *user )
 		goto close;
 	}
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT rsa_n, rsa_e FROM user WHERE user = '" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "';" );
-
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
+	/* Query the user. */
+	query_res = exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
 	if ( query_res != 0 ) {
 		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
 		goto query_fail;

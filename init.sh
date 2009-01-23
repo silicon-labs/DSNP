@@ -27,12 +27,6 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 # Port for the server.
 CFG_PORT=7070
 
-rm -f init.sql
-cat > init.sql p << EOF
-DROP USER 'spp'@'localhost';
-CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
-EOF
-
 # start the config files
 { echo '<?php'; echo; } > $PHP_CONF
 echo > $SPPD_CONF
@@ -58,6 +52,11 @@ while true; do
 	break;
 done
 
+rm -f init.sql
+cat > init.sql << EOF
+DROP USER 'spp'@'localhost';
+CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+EOF
 
 #
 # Start reading installations.

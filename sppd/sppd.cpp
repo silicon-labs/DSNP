@@ -259,7 +259,6 @@ flush:
 void public_key( const char *user )
 {
 	MYSQL *mysql, *connect_res;
-	char *query;
 	long query_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -276,7 +275,7 @@ void public_key( const char *user )
 	query_res = exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
 	if ( query_res != 0 ) {
 		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-		goto query_fail;
+		goto close;
 	}
 
 	/* Check for a result. */
@@ -292,8 +291,6 @@ void public_key( const char *user )
 
 free_result:
 	mysql_free_result( result );
-query_fail:
-	free( query );
 close:
 	mysql_close( mysql );
 	fflush(stdout);

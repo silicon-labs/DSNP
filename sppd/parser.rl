@@ -166,17 +166,23 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	commands := |* 
+		# Admin commands.
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
+
+		# Public key sharing.
 		'public_key'i ' ' user EOL @public_key;
 
+		# Friend Requests.
 		'friend_req'i ' ' user ' ' identity EOL @friend_req;
 		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
 		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @return_relid;
 		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
 
+		# Friend Request Accept
 		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;
 
+		# Friend login. 
 		'flogin'i ' ' user ' ' hash EOL @flogin;
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;

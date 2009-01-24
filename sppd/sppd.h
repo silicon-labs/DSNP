@@ -36,6 +36,7 @@ struct Identity
 	char *id_user;
 };
 
+void run_queue( const char *siteName );
 int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
@@ -54,7 +55,8 @@ void accept_friend( const char *key, const char *user, const char *user_reqid );
 void flogin( const char *user, const char *hash );
 void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str );
 void fetch_ftoken( const char *reqid );
-void set_config( const char *identity );
+void set_config_by_uri( const char *uri );
+void set_config_by_name( const char *name );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user );

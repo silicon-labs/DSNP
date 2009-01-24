@@ -15,6 +15,7 @@
  */
 
 #include <openssl/rand.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "sppd.h"
@@ -32,15 +33,43 @@ void read_rcfile( const char *confFile )
 	rcfile_parse( buf, len );
 }
 
+const char *configFile = 0;
+const char *siteName = 0;
+bool runQueue = false;
+
+int check_args( int argc, char **argv )
+{
+	if ( argc == 2 )
+		configFile = argv[1];
+	else if ( argc == 3 ) {
+		if ( ! ( argv[1][0] == '-' && argv[1][1] == 'q' ) )
+			return -1;
+		runQueue = true;
+		siteName = argv[1] + 2;
+		configFile = argv[2];
+	}
+	else {
+		/* Wrong number of args. */
+		return -1;
+	}
+
+	return 0;
+}
+
 int main( int argc, char **argv )
 {
-	if ( argc != 2 ) {
-		fprintf( stderr, "expecting one argument: the conf file\n" );
+	if ( check_args( argc, argv ) < 0 ) {
+		fprintf( stderr, "expecting: sppd [options] config\n" );
+		fprintf( stderr, "  options: -q<site>    don't listen, run queue\n" );
 		exit(1);
 	}
 
+	read_rcfile( configFile );
+
 	RAND_load_file("/dev/urandom", 1024);
 
-	read_rcfile( argv[1] );
-	server_parse_loop();
+	if ( runQueue )
+		run_queue( siteName );
+	else 
+		server_parse_loop();
 }

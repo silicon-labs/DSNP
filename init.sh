@@ -183,7 +183,7 @@ CREATE TABLE flogin_tok (
 CREATE TABLE msg_queue (
 	from_user VARCHAR(20),
 	to_id TEXT,
-	msg_enc TEXT
+	message TEXT
 );
 
 EOF

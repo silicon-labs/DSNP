@@ -161,7 +161,7 @@ char *alloc_string( const char *s, const char *e )
 
 	action set_config {
 		char *identity = alloc_string( i1, i2 );
-		set_config( identity );
+		set_config_by_uri( identity );
 		free( identity );
 	}
 

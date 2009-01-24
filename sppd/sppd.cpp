@@ -105,10 +105,22 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 	return query_res;
 }
 
-void set_config( const char *identity )
+void set_config_by_uri( const char *uri )
 {
 	c = config_first;
-	while ( strcmp( c->CFG_URI, identity ) != 0 )
+	while ( c != 0 && strcmp( c->CFG_URI, uri ) != 0 )
+		c = c->next;
+
+	if ( c == 0 ) {
+		fprintf(stderr, "bad site\n");
+		exit(1);
+	}
+}
+
+void set_config_by_name( const char *name )
+{
+	c = config_first;
+	while ( c != 0 && strcmp( c->name, name ) != 0 )
 		c = c->next;
 
 	if ( c == 0 ) {
@@ -1042,7 +1054,6 @@ close:
 long delete_user_friend_req( MYSQL *mysql, const char *user, const char *user_reqid )
 {
 	long result = 0;
-	char *query = (char*)malloc( 1024 + 256*6 );
 
 	/* Insert the friend claim. */
 	int query_res = exec_query( mysql, 
@@ -1052,8 +1063,100 @@ long delete_user_friend_req( MYSQL *mysql, const char *user, const char *user_re
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
 
-	free( query );
 	return result;
+}
+
+long queue_message( MYSQL *mysql, const char *user, const char *to_id, const char *message )
+{
+	int result = 0;
+
+	/* Table lock. */
+	int query_res = exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	/* Queue the message. */
+	query_res = exec_query( mysql, 
+		"INSERT INTO msg_queue VALUES ( %e, %e, %e );",
+		user, to_id, message 
+	);
+
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	/* Lock releast. */
+	query_res = exec_query( mysql, "UNLOCK TABLES;");
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	return result;
+}
+
+long run_queue_db( MYSQL *mysql )
+{
+	int result = 0;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	/* Table lock. */
+	int query_res = exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	/* Extract all messages. */
+	query_res = exec_query( mysql, "SELECT from_user, to_id, message FROM msg_queue;" );
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	/* Get the result. */
+	select_res = mysql_store_result( mysql );
+
+	/* Now clear the table. */
+	query_res = exec_query( mysql, "DELETE FROM msg_queue;");
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	/* Free the table lock before we process the select results. */
+	query_res = exec_query( mysql, "UNLOCK TABLES;");
+	if ( query_res != 0 )
+		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+
+	while ( true ) {
+		row = mysql_fetch_row( select_res );
+
+		if ( !row )
+			break;
+
+		printf( "%s %s %s\n", row[0], row[1], row[2] );
+	}
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+	return result;
+}
+
+void run_queue( const char *siteName )
+{
+	MYSQL *mysql, *connect_res;
+
+	set_config_by_name( siteName );
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+//	queue_message( mysql, "age", "http://localhost/spp/pat", "foobar" );
+	run_queue_db( mysql );
+
+close:
+	mysql_close( mysql );
+	fflush( stdout );
 }
 
 void accept_friend( const char *key, const char *user, const char *user_reqid )
@@ -1112,6 +1215,7 @@ close:
 flush:
 	fflush( stdout );
 }
+
 
 long store_flogin_tok( MYSQL *mysql, const char *user, 
 		const char *identity, char *flogin_tok_str, char *flogin_reqid_str,

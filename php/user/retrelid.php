@@ -19,6 +19,10 @@
 include('../config.php');
 include('lib/session.php');
 
+// If not the owner we cannot become someone's friend.
+if ( $_SESSION['auth'] != 'owner' )
+	exit("You must login before you can become someone's friend.");
+
 $identity = $_GET['identity'];
 $fr_reqid = $_GET['fr_reqid'];
 

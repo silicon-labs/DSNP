@@ -180,6 +180,12 @@ CREATE TABLE flogin_tok (
 	msg_sig TEXT
 );
 
+CREATE TABLE msg_queue (
+	from_user VARCHAR(20),
+	to_id TEXT,
+	msg_enc TEXT
+);
+
 EOF
 
 #
@@ -223,6 +229,7 @@ done
 
 echo
 echo "Thank you, now initializing the database. Please login as root@localhost."
+echo "Please ignore any \"Can't drop\" messages."
 echo
 
 mysql -f -h localhost -u root -p < init.sql

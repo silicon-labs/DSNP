@@ -273,6 +273,7 @@ void public_key( const char *user )
 
 	/* Query the user. */
 	query_res = exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
+
 	if ( query_res != 0 ) {
 		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
 		goto close;
@@ -671,7 +672,6 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 		const char *identity, const char *put_relid, const char *get_relid )
 {
 	long result = 0;
-	char *query = (char*)malloc( 1024 + 256*6 );
 
 	/* Make an md5hash for the identity. */
 	unsigned char friend_hash[MD5_DIGEST_LENGTH];
@@ -679,25 +679,13 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	char *friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
 
 	/* Insert the friend claim. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "INSERT INTO friend_claim VALUES ( '" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), friend_hash_str, strlen(friend_hash_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), put_relid, strlen(put_relid) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), get_relid, strlen(get_relid) );
-	strcat( query, "');" );
+	int query_res = exec_query( mysql, 
+		"INSERT INTO friend_claim VALUES ( %e, %e, %e, %e, %e );",
+		user, identity, friend_hash_str, put_relid, get_relid );
 
-	/* Execute the query. */
-	int query_res = mysql_query( mysql, query );
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
 
-	free( query );
 	return result;
 }
 
@@ -1057,15 +1045,10 @@ long delete_user_friend_req( MYSQL *mysql, const char *user, const char *user_re
 	char *query = (char*)malloc( 1024 + 256*6 );
 
 	/* Insert the friend claim. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "DELETE FROM user_friend_req WHERE user = '" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "' AND user_reqid = '" );
-	mysql_real_escape_string( mysql, strend(query), user_reqid, strlen(user_reqid) );
-	strcat( query, "';" );
+	int query_res = exec_query( mysql, 
+		"DELETE FROM user_friend_req WHERE user = %e AND user_reqid = %e;",
+		user, user_reqid );
 
-	/* Execute the query. */
-	int query_res = mysql_query( mysql, query );
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
 
@@ -1076,7 +1059,6 @@ long delete_user_friend_req( MYSQL *mysql, const char *user, const char *user_re
 void accept_friend( const char *key, const char *user, const char *user_reqid )
 {
 	MYSQL *mysql, *connect_res;
-	char *query;
 	long query_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1096,19 +1078,15 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 		goto close;
 	}
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT from_id, fr_relid, relid FROM user_friend_req WHERE user = '" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "' AND user_reqid = '" );
-	mysql_real_escape_string( mysql, strend(query), user_reqid, strlen(user_reqid) );
-	strcat( query, "';" );
-
 	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
+	query_res = exec_query( mysql, "SELECT from_id, fr_relid, relid "
+		"FROM user_friend_req "
+		"WHERE user = %e AND user_reqid = %e;",
+		user, user_reqid );
+
 	if ( query_res != 0 ) {
 		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-		goto query_fail;
+		goto close;
 	}
 
 	/* Check for a result. */
@@ -1116,7 +1094,7 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	row = mysql_fetch_row( result );
 	if ( !row ) {
 		printf( "ERROR request not found\r\n" );
-		goto query_fail;
+		goto close;
 	}
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
@@ -1129,8 +1107,6 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	printf( "OK\r\n" );
 
 	mysql_free_result( result );
-query_fail:
-	free( query );
 close:
 	mysql_close( mysql );
 flush:
@@ -1174,7 +1150,8 @@ long store_flogin_tok( MYSQL *mysql, const char *user,
 	return result;
 }
 
-long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user, const char *friend_hash )
+long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user, 
+		const char *friend_hash )
 {
 	long result = 0;
 	char *query;

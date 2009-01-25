@@ -101,6 +101,12 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 	va_end(vl);
 
 	long query_res = mysql_query( mysql, query );
+
+	if ( query_res != 0 ) {
+		printf( "ERROR mysql_query failed: %s\r\n", query );
+		exit(1);
+	}
+
 	free( query );
 	return query_res;
 }
@@ -245,11 +251,6 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 		"%e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e);", 
 		user, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
 
-	if ( query_res != 0 ) {
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-		goto close;
-	}
-
 	printf( "OK\r\n" );
 
 close:
@@ -285,11 +286,6 @@ void public_key( const char *user )
 
 	/* Query the user. */
 	query_res = exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
-
-	if ( query_res != 0 ) {
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-		goto close;
-	}
 
 	/* Check for a result. */
 	result = mysql_store_result( mysql );
@@ -683,22 +679,17 @@ long store_return_relid( MYSQL *mysql, const char *identity,
 long store_friend_claim( MYSQL *mysql, const char *user, 
 		const char *identity, const char *put_relid, const char *get_relid )
 {
-	long result = 0;
-
 	/* Make an md5hash for the identity. */
 	unsigned char friend_hash[MD5_DIGEST_LENGTH];
 	MD5( (unsigned char*)identity, strlen(identity), friend_hash );
 	char *friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
 
 	/* Insert the friend claim. */
-	int query_res = exec_query( mysql, 
+	exec_query( mysql, 
 		"INSERT INTO friend_claim VALUES ( %e, %e, %e, %e, %e );",
 		user, identity, friend_hash_str, put_relid, get_relid );
 
-	if ( query_res != 0 )
-		result = ERR_QUERY_ERROR;
-
-	return result;
+	return 0;
 }
 
 void return_relid( const char *user, const char *fr_reqid_str, const char *identity, 
@@ -1053,43 +1044,29 @@ close:
 
 long delete_user_friend_req( MYSQL *mysql, const char *user, const char *user_reqid )
 {
-	long result = 0;
-
 	/* Insert the friend claim. */
-	int query_res = exec_query( mysql, 
+	exec_query( mysql, 
 		"DELETE FROM user_friend_req WHERE user = %e AND user_reqid = %e;",
 		user, user_reqid );
 
-	if ( query_res != 0 )
-		result = ERR_QUERY_ERROR;
-
-	return result;
+	return 0;
 }
 
 long queue_message( MYSQL *mysql, const char *user, const char *to_id, const char *message )
 {
-	int result = 0;
-
 	/* Table lock. */
-	int query_res = exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
 
 	/* Queue the message. */
-	query_res = exec_query( mysql, 
+	exec_query( mysql, 
 		"INSERT INTO msg_queue VALUES ( %e, %e, %e );",
 		user, to_id, message 
 	);
 
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-
 	/* Lock releast. */
-	query_res = exec_query( mysql, "UNLOCK TABLES;");
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	exec_query( mysql, "UNLOCK TABLES;");
 
-	return result;
+	return 0;
 }
 
 long run_queue_db( MYSQL *mysql )
@@ -1097,38 +1074,62 @@ long run_queue_db( MYSQL *mysql )
 	int result = 0;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
+	long rows;
 
 	/* Table lock. */
-	int query_res = exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
 
 	/* Extract all messages. */
-	query_res = exec_query( mysql, "SELECT from_user, to_id, message FROM msg_queue;" );
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	exec_query( mysql, "SELECT from_user, to_id, message FROM msg_queue;" );
 
 	/* Get the result. */
 	select_res = mysql_store_result( mysql );
 
 	/* Now clear the table. */
-	query_res = exec_query( mysql, "DELETE FROM msg_queue;");
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	exec_query( mysql, "DELETE FROM msg_queue;");
 
 	/* Free the table lock before we process the select results. */
-	query_res = exec_query( mysql, "UNLOCK TABLES;");
-	if ( query_res != 0 )
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
+	exec_query( mysql, "UNLOCK TABLES;");
 
-	while ( true ) {
+	rows = mysql_num_rows( select_res );
+	bool *sent = new bool[rows];
+	memset( sent, 0, sizeof(bool)*rows );
+	bool unsent = false;
+
+	for ( int i = 0; i < rows; i++ ) {
 		row = mysql_fetch_row( select_res );
 
-		if ( !row )
-			break;
-
 		printf( "%s %s %s\n", row[0], row[1], row[2] );
+		long send_res = send_message( row[0], row[1], row[2] );
+		if ( send_res < 0 ) {
+			printf("ERROR trouble sending message: %ld\n", send_res);
+			sent[i] = false;
+			unsent = true;
+		}
 	}
+
+	if ( unsent ) {
+		/* Table lock. */
+		exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
+
+		mysql_data_seek( select_res, 0 );
+		for ( int i = 0; i < rows; i++ ) {
+			row = mysql_fetch_row( select_res );
+
+			if ( !sent[i] ) {
+				printf("Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
+				/* Queue the message. */
+				exec_query( mysql, 
+					"INSERT INTO msg_queue VALUES ( %e, %e, %e );",
+					row[0], row[1], row[2] 
+				);
+			}
+		}
+		/* Free the table lock before we process the select results. */
+		exec_query( mysql, "UNLOCK TABLES;");
+	}
+
+	delete[] sent;
 
 	/* Done. */
 	mysql_free_result( select_res );
@@ -1151,7 +1152,7 @@ void run_queue( const char *siteName )
 		goto close;
 	}
 
-//	queue_message( mysql, "age", "http://localhost/spp/pat", "foobar" );
+//	queue_message( mysql, "age", "http://localhost/spp/pat/", "foobar" );
 	run_queue_db( mysql );
 
 close:
@@ -1162,7 +1163,6 @@ close:
 void accept_friend( const char *key, const char *user, const char *user_reqid )
 {
 	MYSQL *mysql, *connect_res;
-	long query_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 
@@ -1182,15 +1182,10 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	}
 
 	/* Execute the query. */
-	query_res = exec_query( mysql, "SELECT from_id, fr_relid, relid "
+	exec_query( mysql, "SELECT from_id, fr_relid, relid "
 		"FROM user_friend_req "
 		"WHERE user = %e AND user_reqid = %e;",
 		user, user_reqid );
-
-	if ( query_res != 0 ) {
-		printf( "ERROR internal error: %s %d\r\n", __FILE__, __LINE__ );
-		goto close;
-	}
 
 	/* Check for a result. */
 	result = mysql_store_result( mysql );

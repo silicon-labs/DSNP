@@ -31,9 +31,10 @@ struct RelidEncSig
 
 struct Identity
 {
-	char *identity;
-	char *id_host;
-	char *id_user;
+	const char *identity;
+	const char *id_host;
+	const char *id_user;
+	const char *id_site;
 };
 
 void run_queue( const char *siteName );
@@ -69,6 +70,8 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 long parse_identity( Identity &identity );
 char *get_site( const char *identity );
+
+long send_message( const char *from, const char *to, const char *message );
 
 struct Config
 {

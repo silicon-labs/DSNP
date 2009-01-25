@@ -186,6 +186,9 @@ char *alloc_string( const char *s, const char *e )
 		'flogin'i ' ' user ' ' hash EOL @flogin;
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
+
+		# Mesages
+		'message'i EOL @{ printf("OK\r\n"); fflush(stdout); };
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -232,7 +235,7 @@ int server_parse_loop()
 
 		%% write exec;
 
-		if ( cs < parser_first_final ) {
+		if ( cs < %%{ write first_final; }%% ) {
 			if ( cs == parser_error )
 				return ERR_PARSE_ERROR;
 			else
@@ -299,7 +302,7 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < public_key_first_final ) {
+	if ( cs < %%{ write first_final; }%% ) {
 		result = ERR_PARSE_ERROR;
 		goto fail;
 	}
@@ -380,7 +383,7 @@ long fetch_fr_relid_net( RelidEncSig &encsig, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < fr_relid_first_final ) {
+	if ( cs < %%{ write first_final; }%% ) {
 		result = ERR_PARSE_ERROR;
 		goto fail;
 	}
@@ -461,7 +464,7 @@ long fetch_relid_net( RelidEncSig &encsig, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < relid_first_final ) {
+	if ( cs < %%{ write first_final; }%% ) {
 		result = ERR_PARSE_ERROR;
 		goto fail;
 	}
@@ -541,7 +544,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < ftoken_first_final ) {
+	if ( cs < %%{ write first_final; }%%  ) {
 		result = ERR_PARSE_ERROR;
 		goto fail;
 	}
@@ -598,11 +601,91 @@ long parse_identity( Identity &identity )
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < identity_first_final )
+	if ( cs < %%{ write first_final; }%% )
 		return ERR_PARSE_ERROR;
 	
 	identity.id_host = alloc_string( h1, h2 );
 	identity.id_user = alloc_string( pp1, pp2 );
+
+	/* We can use the last path part to get the site. */
+	identity.id_site = alloc_string( identity.identity, pp1 );
+
 	return result;
 }
 
+/*
+ * send_message
+ */
+
+%%{
+	machine send_message;
+	write data;
+}%%
+
+long send_message( const char *from, const char *to, const char *message )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+
+	/* Need to parse the identity. */
+	Identity toIdent;
+	toIdent.identity = to;
+	pres = parse_identity( toIdent );
+
+	if ( pres < 0 )
+		return pres;
+
+	long socketFd = open_inet_connection( toIdent.id_host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.id_site );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}

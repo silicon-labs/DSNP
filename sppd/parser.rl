@@ -38,6 +38,8 @@ char *alloc_string( const char *s, const char *e )
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 	hash = [0-9a-f]+          >{a1=p;} %{a2=p;};
+	enc = [0-9a-f]+           >{e1= p;} %{e2= p;};
+	sig = [0-9a-f]+           >{s1= p;} %{s2= p;};
 
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
@@ -165,6 +167,46 @@ char *alloc_string( const char *s, const char *e )
 		free( identity );
 	}
 
+	action usr_session_key {
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		char *id_site = alloc_string( pp1, pp2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
+		char *enc = alloc_string( e1, e2 );
+		char *sig = alloc_string( s1, s2 );
+
+		usr_session_key( user, identity, id_site, id_host, id_user, enc, sig );
+
+		free( user );
+		free( identity );
+		free( id_site );
+		free( id_host );
+		free( id_user );
+		free( enc );
+		free( sig );
+	}
+
+	action grp_session_key {
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		char *id_site = alloc_string( pp1, pp2 );
+		char *id_host = alloc_string( h1, h2 );
+		char *id_user = alloc_string( pp1, pp2 );
+		char *enc = alloc_string( e1, e2 );
+		char *sig = alloc_string( s1, s2 );
+
+		grp_session_key( user, identity, id_site, id_host, id_user, enc, sig );
+
+		free( user );
+		free( identity );
+		free( id_site );
+		free( id_host );
+		free( id_user );
+		free( enc );
+		free( sig );
+	}
+
 	commands := |* 
 		# Admin commands.
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
@@ -188,6 +230,9 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
 		# Mesages
+		'usr_session_key'i ' ' user ' ' identity ' ' enc ' ' sig EOL @usr_session_key;
+		'grp_session_key'i ' ' user ' ' identity ' ' enc ' ' sig EOL @grp_session_key;
+
 		'message'i EOL @{ printf("OK\r\n"); fflush(stdout); };
 	*|;
 
@@ -211,6 +256,7 @@ int server_parse_loop()
 	const char *pp1, *pp2;
 	const char *r1, *r2;
 	const char *a1, *a2;
+	const char *s1, *s2;
 
 	%% write init;
 
@@ -367,9 +413,7 @@ long fetch_fr_relid_net( RelidEncSig &encsig, const char *site,
 	/* Parser for response. */
 	%%{
 		EOL = '\r'? '\n';
-
-		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
-		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
+		include common;
 
 		main := 
 			'OK ' enc ' ' sig EOL @{ OK = true; } |
@@ -689,3 +733,81 @@ fail:
 	::close( socketFd );
 	return result;
 }
+
+/*
+ * send_message
+ */
+
+%%{
+	machine send_usr_session_key;
+	write data;
+}%%
+
+long send_usr_session_key( const char *from, const char *to, const char *message )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+
+	/* Need to parse the identity. */
+	Identity toIdent;
+	toIdent.identity = to;
+	pres = parse_identity( toIdent );
+
+	if ( pres < 0 )
+		return pres;
+
+	long socketFd = open_inet_connection( toIdent.id_host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.id_site );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}
+

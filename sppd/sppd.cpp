@@ -170,7 +170,7 @@ char *bin2hex( unsigned char *data, long len )
 	return res;
 }
 
-long hex2bin( unsigned char *dest, long len, char *src )
+long hex2bin( unsigned char *dest, long len, const char *src )
 {
 	long slen = strlen( src ) / 2;
 	if ( len < slen )
@@ -686,7 +686,7 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 
 	/* Insert the friend claim. */
 	exec_query( mysql, 
-		"INSERT INTO friend_claim VALUES ( %e, %e, %e, %e, %e );",
+		"INSERT INTO friend_claim VALUES ( %e, %e, %e, %e, %e, NULL, NULL );",
 		user, identity, friend_hash_str, put_relid, get_relid );
 
 	return 0;
@@ -1515,4 +1515,145 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 close:
 	mysql_close( mysql );
 	fflush( stdout );
+}
+
+void usr_session_key( const char *user, const char *identity,
+		const char *id_site, const char *id_host, const char *id_user, 
+		const char *enc, const char *sig )
+{
+	unsigned char *encrypted, *signature;
+	long enclen, siglen;
+
+	MYSQL *mysql, *connect_res;
+	int verifyres, decryptres;
+	RSA *user_priv, *id_pub;
+	unsigned char *session_key;
+	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Get the public key for the identity. */
+	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
+		goto close;
+	}
+
+	/* Convert the encrypted string to binary. */
+	encrypted = (unsigned char*)malloc( strlen(enc) );
+	enclen = hex2bin( encrypted, RSA_size(id_pub), enc );
+	if ( enclen <= 0 ) {
+		printf("ERROR converting enc to binary\n" );
+		goto close;
+	}
+
+	/* Convert the sig to binary. */
+	signature = (unsigned char*)malloc( strlen(sig) );
+	siglen = hex2bin( signature, RSA_size(id_pub), sig );
+	if ( siglen <= 0 ) {
+		printf("ERROR converting encsig.sig to binary\n" );
+		goto close;
+	}
+
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+
+	/* Decrypt the item. */
+	session_key = (unsigned char*) malloc( RSA_size( user_priv ) );
+	decryptres = RSA_private_decrypt( enclen, encrypted, session_key, 
+			user_priv, RSA_PKCS1_PADDING );
+	if ( decryptres != REQID_SIZE ) {
+		printf("ERROR failed to decrypt usr_session_key\n" );
+		goto close;
+	}
+
+	/* Verify the item. */
+	SHA1( session_key, RELID_SIZE, session_key_sha1 );
+	verifyres = RSA_verify( NID_sha1, session_key_sha1, SHA_DIGEST_LENGTH, 
+			signature, siglen, id_pub );
+	if ( verifyres != 1 ) {
+		printf("ERROR failed to verify usr_session_key\n" );
+		goto close;
+	}
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+}
+
+void grp_session_key( const char *user, const char *identity,
+		const char *id_site, const char *id_host, const char *id_user, 
+		const char *enc, const char *sig )
+{
+	unsigned char *encrypted, *signature;
+	long enclen, siglen;
+
+	MYSQL *mysql, *connect_res;
+	int verifyres, decryptres;
+	RSA *user_priv, *id_pub;
+	unsigned char *session_key;
+	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Get the public key for the identity. */
+	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
+		goto close;
+	}
+
+	/* Convert the encrypted string to binary. */
+	encrypted = (unsigned char*)malloc( strlen(enc) );
+	enclen = hex2bin( encrypted, RSA_size(id_pub), enc );
+	if ( enclen <= 0 ) {
+		printf("ERROR converting enc to binary\n" );
+		goto close;
+	}
+
+	/* Convert the sig to binary. */
+	signature = (unsigned char*)malloc( strlen(sig) );
+	siglen = hex2bin( signature, RSA_size(id_pub), sig );
+	if ( siglen <= 0 ) {
+		printf("ERROR converting encsig.sig to binary\n" );
+		goto close;
+	}
+
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+
+	/* Decrypt the item. */
+	session_key = (unsigned char*) malloc( RSA_size( user_priv ) );
+	decryptres = RSA_private_decrypt( enclen, encrypted, session_key, 
+			user_priv, RSA_PKCS1_PADDING );
+	if ( decryptres != REQID_SIZE ) {
+		printf("ERROR failed to decrypt grp_session_key\n" );
+		goto close;
+	}
+
+	/* Verify the item. */
+	SHA1( session_key, RELID_SIZE, session_key_sha1 );
+	verifyres = RSA_verify( NID_sha1, session_key_sha1, SHA_DIGEST_LENGTH, 
+			signature, siglen, id_pub );
+	if ( verifyres != 1 ) {
+		printf("ERROR failed to verify grp_session_key\n" );
+		goto close;
+	}
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+
 }

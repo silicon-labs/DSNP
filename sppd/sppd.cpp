@@ -402,11 +402,14 @@ query_fail:
 	return result;
 }
 
-RSA *fetch_public_key( MYSQL *mysql, const char *identity, 
-		const char *host, const char *user )
+RSA *fetch_public_key( MYSQL *mysql, const char *identity )
 {
 	PublicKey pub;
 	RSA *rsa;
+
+	Identity id( identity );
+
+	parse_identity( id );
 
 	/* First try to fetch the public key from the database. */
 	long result = fetch_public_key_db( pub, mysql, identity );
@@ -416,7 +419,7 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity,
 	/* If the db fetch failed, get the public key off the net. */
 	if ( result == 0 ) {
 		char *site = get_site( identity );
-		result = fetch_public_key_net( pub, site, host, user );
+		result = fetch_public_key_net( pub, site, id.host, id.user );
 		if ( result < 0 )
 			return 0;
 
@@ -516,8 +519,7 @@ long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str,
 }
 
 
-void friend_req( const char *user, const char *identity, 
-		const char *id_host, const char *id_user )
+void friend_req( const char *user, const char *identity )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -548,7 +550,7 @@ void friend_req( const char *user, const char *identity,
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -729,7 +731,7 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -963,7 +965,7 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -1302,7 +1304,7 @@ void flogin( const char *user, const char *hash )
 	unsigned siglen;
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
 	long friend_claim;
-	Identity friend_id;
+	Identity friend_id(0);
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1326,8 +1328,7 @@ void flogin( const char *user, const char *hash )
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, friend_id.identity, 
-			friend_id.id_host, friend_id.id_user );
+	id_pub = fetch_public_key( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -1434,7 +1435,7 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	unsigned char ftoken_sha1[SHA_DIGEST_LENGTH];
 	char *flogin_tok_str;
 	long friend_claim;
-	Identity friend_id;
+	Identity friend_id(0);
 	char *site;
 
 	/* Open the database connection. */
@@ -1456,7 +1457,7 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, friend_id.identity, friend_id.id_host, friend_id.id_user );
+	id_pub = fetch_public_key( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -1465,7 +1466,7 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	site = get_site( friend_id.identity );
 
 	RelidEncSig encsig;
-	fetchres = fetch_ftoken_net( encsig, site, friend_id.id_host, flogin_reqid_str );
+	fetchres = fetch_ftoken_net( encsig, site, friend_id.host, flogin_reqid_str );
 	if ( fetchres < 0 ) {
 		printf("ERROR fetch_flogin_relid failed %d\n", fetchres );
 		goto close;
@@ -1540,7 +1541,7 @@ void usr_session_key( const char *user, const char *identity,
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;
@@ -1610,7 +1611,7 @@ void grp_session_key( const char *user, const char *identity,
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity, id_host, id_user );
+	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
 		goto close;

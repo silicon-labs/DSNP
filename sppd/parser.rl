@@ -74,13 +74,9 @@ char *alloc_string( const char *s, const char *e )
 	action friend_req {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
-		friend_req( user, identity, id_host, id_user );
+		friend_req( user, identity );
 		free( user );
 		free( identity );
-		free( id_host );
-		free( id_user );
 	}
 
 	action fetch_fr_relid {
@@ -648,11 +644,11 @@ long parse_identity( Identity &identity )
 	if ( cs < %%{ write first_final; }%% )
 		return ERR_PARSE_ERROR;
 	
-	identity.id_host = alloc_string( h1, h2 );
-	identity.id_user = alloc_string( pp1, pp2 );
+	identity.host = alloc_string( h1, h2 );
+	identity.user = alloc_string( pp1, pp2 );
 
 	/* We can use the last path part to get the site. */
-	identity.id_site = alloc_string( identity.identity, pp1 );
+	identity.site = alloc_string( identity.identity, pp1 );
 
 	return result;
 }
@@ -675,20 +671,19 @@ long send_message( const char *from, const char *to, const char *message )
 	long pres;
 
 	/* Need to parse the identity. */
-	Identity toIdent;
-	toIdent.identity = to;
+	Identity toIdent( to );
 	pres = parse_identity( toIdent );
 
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( toIdent.id_host, atoi(c->CFG_PORT) );
+	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.id_site );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.site );
 	fflush( writeSocket );
 
 	/* Read the result. */
@@ -752,20 +747,19 @@ long send_usr_session_key( const char *from, const char *to, const char *message
 	long pres;
 
 	/* Need to parse the identity. */
-	Identity toIdent;
-	toIdent.identity = to;
+	Identity toIdent( to );
 	pres = parse_identity( toIdent );
 
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( toIdent.id_host, atoi(c->CFG_PORT) );
+	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.id_site );
+	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.site );
 	fflush( writeSocket );
 
 	/* Read the result. */

@@ -31,10 +31,14 @@ struct RelidEncSig
 
 struct Identity
 {
+	Identity( const char *identity ) :
+		identity(identity), 
+		host(0), user(0), site(0) {}
+
 	const char *identity;
-	const char *id_host;
-	const char *id_user;
-	const char *id_site;
+	const char *host;
+	const char *user;
+	const char *site;
 };
 
 void run_queue( const char *siteName );
@@ -44,8 +48,7 @@ int rcfile_parse( const char *data, long length );
 /* Commands. */
 void new_user( const char *key, const char *user, const char *pass, const char *email );
 void public_key( const char *identity );
-void friend_req( const char *user, const char *identity, 
-		const char *id_host, const char *id_user );
+void friend_req( const char *user, const char *identity );
 void fetch_fr_relid( const char *reqid );
 void return_relid( const char *user, const char *fr_reqid_str, 
 		const char *identity, const char *id_host, const char *id_user );

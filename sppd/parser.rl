@@ -217,6 +217,8 @@ char *alloc_string( const char *s, const char *e )
 		'usr_session_key'i ' ' user ' ' identity ' ' enc ' ' sig EOL @usr_session_key;
 		'grp_session_key'i ' ' user ' ' identity ' ' enc ' ' sig EOL @grp_session_key;
 
+		'send_all_keys'i EOL @{ send_all_keys(); };
+
 		'message'i EOL @{ printf("OK\r\n"); fflush(stdout); };
 	*|;
 
@@ -718,7 +720,7 @@ fail:
 }
 
 /*
- * send_message
+ * send_usr_session_key
  */
 
 %%{
@@ -726,7 +728,7 @@ fail:
 	write data;
 }%%
 
-long send_usr_session_key( const char *from, const char *to, const char *message )
+long send_usr_session_key( const char *from, const char *to, const char *enc, const char *sig )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -747,15 +749,19 @@ long send_usr_session_key( const char *from, const char *to, const char *message
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.site );
+	fprintf( writeSocket, "SPP/0.1 %s\r\n" "usr_session_key %s %s%s/ %s %s\r\n", 
+		toIdent.site, toIdent.user, c->CFG_URI, from, enc, sig  );
 	fflush( writeSocket );
 
 	/* Read the result. */
 	FILE *readSocket = fdopen( socketFd, "r" );
 	char *readRes = fgets( buf, 8192, readSocket );
 
+	printf("response: %s\n", readRes );
+
 	/* If there was an error then fail the fetch. */
 	if ( !readRes ) {
+		printf("READ ERROR\n" );
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -771,6 +777,7 @@ long send_usr_session_key( const char *from, const char *to, const char *message
 
 	p = buf;
 	pe = buf + strlen(buf);
+
 
 	%% write init;
 	%% write exec;

@@ -82,6 +82,8 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 char *get_site( const char *identity );
 
 long send_message( const char *from, const char *to, const char *message );
+long send_usr_session_key( const char *from, const char *to, const char *enc, const char *sig );
+void send_all_keys();
 
 struct Config
 {

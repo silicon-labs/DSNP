@@ -1528,6 +1528,7 @@ void usr_session_key( const char *user, const char *identity,
 	RSA *user_priv, *id_pub;
 	unsigned char *session_key;
 	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
+	char *sk;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1581,6 +1582,90 @@ void usr_session_key( const char *user, const char *identity,
 		printf("ERROR failed to verify usr_session_key\n" );
 		goto close;
 	}
+
+	sk = bin2hex( session_key, REQID_SIZE );
+
+	printf("OK %s\n", sk);
+	fflush(stdout);
+	return;
+
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+}
+
+void send_all_keys()
+{
+	long query_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+
+	int sigres;
+	RSA *user_priv, *id_pub;
+	unsigned char session_key[RELID_SIZE];
+	unsigned char *encrypted, *signature;
+	int enclen;
+	unsigned siglen;
+	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
+
+	const char *user = "age";
+
+	/* Open the database connection. */
+	MYSQL *mysql = mysql_init(0);
+	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	query_res = exec_query( mysql, 
+		"SELECT friend_id FROM friend_claim WHERE user = %e", user );
+
+	/* Check for a result. */
+	result = mysql_store_result( mysql );
+	while ( true ) {
+		row = mysql_fetch_row( result );
+
+		if ( !row )
+			break;
+
+		char *identity = row[0];
+		printf( "f: %s\n", identity );
+
+		/* Get the public key for the identity. */
+		id_pub = fetch_public_key( mysql, identity );
+		if ( id_pub == 0 ) {
+			printf("ERROR fetch_public_key failed\n" );
+			goto close;
+		}
+
+		/* Generate the relationship and request ids. */
+		RAND_bytes( session_key, RELID_SIZE );
+		printf("sending: %s\n", bin2hex( session_key, RELID_SIZE ) );
+	
+		/* Encrypt it. */
+		encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
+		enclen = RSA_public_encrypt( RELID_SIZE, session_key, encrypted, 
+				id_pub, RSA_PKCS1_PADDING );
+
+		/* Load the private key for the user the request is for. */
+		user_priv = load_key( mysql, user );
+
+		/* Sign the relationship id. */
+		signature = (unsigned char*)malloc( RSA_size(user_priv) );
+		SHA1( session_key, RELID_SIZE, session_key_sha1 );
+		sigres = RSA_sign( NID_sha1, session_key_sha1, SHA_DIGEST_LENGTH, signature, 
+				&siglen, user_priv );
+
+		char *enc = bin2hex( encrypted, enclen );
+		char *sig = bin2hex( signature, siglen );
+
+		send_usr_session_key( user, identity, enc, sig );
+	}
+
+	mysql_free_result( result );
+
 close:
 	mysql_close( mysql );
 	fflush(stdout);
@@ -1653,5 +1738,4 @@ void grp_session_key( const char *user, const char *identity,
 close:
 	mysql_close( mysql );
 	fflush(stdout);
-
 }

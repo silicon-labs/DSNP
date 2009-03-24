@@ -598,7 +598,7 @@ fail:
 
 
 /*
- * parse_identity
+ * Identity::parse()
  */
 
 %%{
@@ -606,7 +606,7 @@ fail:
 	write data;
 }%%
 
-long parse_identity( Identity &identity )
+long Identity::parse()
 {
 	long result = 0, cs;
 	const char *p, *pe, *eof;
@@ -621,8 +621,8 @@ long parse_identity( Identity &identity )
 		main := identity;
 	}%%
 
-	p = identity.identity;
-	pe = p + strlen(identity.identity);
+	p = identity;
+	pe = p + strlen(identity);
 	eof = pe;
 
 	%% write init;
@@ -632,11 +632,11 @@ long parse_identity( Identity &identity )
 	if ( cs < %%{ write first_final; }%% )
 		return ERR_PARSE_ERROR;
 	
-	identity.host = alloc_string( h1, h2 );
-	identity.user = alloc_string( pp1, pp2 );
+	host = alloc_string( h1, h2 );
+	user = alloc_string( pp1, pp2 );
 
 	/* We can use the last path part to get the site. */
-	identity.site = alloc_string( identity.identity, pp1 );
+	site = alloc_string( identity, pp1 );
 
 	return result;
 }
@@ -660,7 +660,7 @@ long send_message( const char *from, const char *to, const char *message )
 
 	/* Need to parse the identity. */
 	Identity toIdent( to );
-	pres = parse_identity( toIdent );
+	pres = toIdent.parse();
 
 	if ( pres < 0 )
 		return pres;
@@ -736,7 +736,7 @@ long send_usr_session_key( const char *from, const char *to, const char *message
 
 	/* Need to parse the identity. */
 	Identity toIdent( to );
-	pres = parse_identity( toIdent );
+	pres = toIdent.parse();
 
 	if ( pres < 0 )
 		return pres;

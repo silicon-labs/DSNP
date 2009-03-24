@@ -35,6 +35,12 @@ struct Identity
 		identity(identity), 
 		host(0), user(0), site(0) {}
 
+	Identity() :
+		identity(0), 
+		host(0), user(0), site(0) {}
+
+	long parse();
+
 	const char *identity;
 	const char *host;
 	const char *user;
@@ -73,7 +79,6 @@ long fetch_relid_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *reqid );
 long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
-long parse_identity( Identity &identity );
 char *get_site( const char *identity );
 
 long send_message( const char *from, const char *to, const char *message );

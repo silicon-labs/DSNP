@@ -408,8 +408,7 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity )
 	RSA *rsa;
 
 	Identity id( identity );
-
-	parse_identity( id );
+	id.parse();
 
 	/* First try to fetch the public key from the database. */
 	long result = fetch_public_key_db( pub, mysql, identity );
@@ -1279,7 +1278,7 @@ long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user,
 	row = mysql_fetch_row( select_res );
 	if ( row ) {
 		identity.identity = strdup( row[0] );
-		parse_identity( identity );
+		identity.parse();
 		result = 1;
 	}
 
@@ -1304,7 +1303,7 @@ void flogin( const char *user, const char *hash )
 	unsigned siglen;
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
 	long friend_claim;
-	Identity friend_id(0);
+	Identity friend_id;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1435,7 +1434,7 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	unsigned char ftoken_sha1[SHA_DIGEST_LENGTH];
 	char *flogin_tok_str;
 	long friend_claim;
-	Identity friend_id(0);
+	Identity friend_id;
 	char *site;
 
 	/* Open the database connection. */

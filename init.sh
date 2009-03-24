@@ -168,7 +168,9 @@ CREATE TABLE friend_claim (
 	friend_id TEXT,
 	friend_hash CHAR(32),
 	put_relid CHAR(32),
-	get_relid CHAR(32)
+	get_relid CHAR(32),
+	usr_session_key TEXT,
+	grp_session_key TEXT
 );
 
 CREATE TABLE flogin_tok (

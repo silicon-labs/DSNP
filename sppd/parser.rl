@@ -166,19 +166,13 @@ char *alloc_string( const char *s, const char *e )
 	action usr_session_key {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
-		char *id_site = alloc_string( pp1, pp2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
 		char *enc = alloc_string( e1, e2 );
 		char *sig = alloc_string( s1, s2 );
 
-		usr_session_key( user, identity, id_site, id_host, id_user, enc, sig );
+		usr_session_key( user, identity, enc, sig );
 
 		free( user );
 		free( identity );
-		free( id_site );
-		free( id_host );
-		free( id_user );
 		free( enc );
 		free( sig );
 	}
@@ -186,19 +180,13 @@ char *alloc_string( const char *s, const char *e )
 	action grp_session_key {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
-		char *id_site = alloc_string( pp1, pp2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
 		char *enc = alloc_string( e1, e2 );
 		char *sig = alloc_string( s1, s2 );
 
-		grp_session_key( user, identity, id_site, id_host, id_user, enc, sig );
+		grp_session_key( user, identity, enc, sig );
 
 		free( user );
 		free( identity );
-		free( id_site );
-		free( id_host );
-		free( id_user );
 		free( enc );
 		free( sig );
 	}

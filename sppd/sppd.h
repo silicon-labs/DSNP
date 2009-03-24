@@ -61,8 +61,8 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 void fetch_ftoken( const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void usr_session_key( const char *user, const char *identity, const char *id_site, const char *id_host, const char *id_user, const char *enc, const char *sig );
-void grp_session_key( const char *user, const char *identity, const char *id_site, const char *id_host, const char *id_user, const char *enc, const char *sig );
+void usr_session_key( const char *user, const char *identity, const char *enc, const char *sig );
+void grp_session_key( const char *user, const char *identity, const char *enc, const char *sig );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user );

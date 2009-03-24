@@ -1519,7 +1519,6 @@ close:
 }
 
 void usr_session_key( const char *user, const char *identity,
-		const char *id_site, const char *id_host, const char *id_user, 
 		const char *enc, const char *sig )
 {
 	unsigned char *encrypted, *signature;
@@ -1589,7 +1588,6 @@ close:
 }
 
 void grp_session_key( const char *user, const char *identity,
-		const char *id_site, const char *id_host, const char *id_user, 
 		const char *enc, const char *sig )
 {
 	unsigned char *encrypted, *signature;

@@ -1517,7 +1517,7 @@ close:
 	fflush( stdout );
 }
 
-void usr_session_key( const char *user, const char *identity,
+void session_key( const char *user, const char *identity,
 		const char *enc, const char *sig )
 {
 	unsigned char *encrypted, *signature;
@@ -1529,6 +1529,7 @@ void usr_session_key( const char *user, const char *identity,
 	unsigned char *session_key;
 	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
 	char *sk;
+	long query_res;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1585,9 +1586,12 @@ void usr_session_key( const char *user, const char *identity,
 
 	sk = bin2hex( session_key, REQID_SIZE );
 
-	printf("OK %s\n", sk);
-	fflush(stdout);
-	return;
+	/* Make the query. */
+	query_res = exec_query( mysql, 
+			"UPDATE friend_claim SET get_session_key = %e "
+			"WHERE user = %e AND friend_id = %e", sk, user, identity );
+	
+	printf("OK\n");
 
 close:
 	mysql_close( mysql );
@@ -1607,7 +1611,7 @@ void send_all_keys()
 	int enclen;
 	unsigned siglen;
 	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
-
+	const char *sk = 0;
 	const char *user = "age";
 
 	/* Open the database connection. */
@@ -1642,7 +1646,8 @@ void send_all_keys()
 
 		/* Generate the relationship and request ids. */
 		RAND_bytes( session_key, RELID_SIZE );
-		printf("sending: %s\n", bin2hex( session_key, RELID_SIZE ) );
+		sk = bin2hex( session_key, RELID_SIZE );
+		printf("sending: %s\n", sk );
 	
 		/* Encrypt it. */
 		encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
@@ -1661,7 +1666,15 @@ void send_all_keys()
 		char *enc = bin2hex( encrypted, enclen );
 		char *sig = bin2hex( signature, siglen );
 
-		send_usr_session_key( user, identity, enc, sig );
+		/* Make the query. */
+		query_res = exec_query( mysql, 
+				"UPDATE friend_claim SET put_session_key = %e "
+				"WHERE user = %e AND friend_id = %e", sk, user, identity );
+
+		int send_res = send_session_key( user, identity, enc, sig );
+		if ( send_res < 0 ) {
+			fprintf(stderr, "sending failed %d\n", send_res );
+		}
 	}
 
 	mysql_free_result( result );
@@ -1671,71 +1684,3 @@ close:
 	fflush(stdout);
 }
 
-void grp_session_key( const char *user, const char *identity,
-		const char *enc, const char *sig )
-{
-	unsigned char *encrypted, *signature;
-	long enclen, siglen;
-
-	MYSQL *mysql, *connect_res;
-	int verifyres, decryptres;
-	RSA *user_priv, *id_pub;
-	unsigned char *session_key;
-	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
-
-	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity );
-	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
-		goto close;
-	}
-
-	/* Convert the encrypted string to binary. */
-	encrypted = (unsigned char*)malloc( strlen(enc) );
-	enclen = hex2bin( encrypted, RSA_size(id_pub), enc );
-	if ( enclen <= 0 ) {
-		printf("ERROR converting enc to binary\n" );
-		goto close;
-	}
-
-	/* Convert the sig to binary. */
-	signature = (unsigned char*)malloc( strlen(sig) );
-	siglen = hex2bin( signature, RSA_size(id_pub), sig );
-	if ( siglen <= 0 ) {
-		printf("ERROR converting encsig.sig to binary\n" );
-		goto close;
-	}
-
-	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
-
-	/* Decrypt the item. */
-	session_key = (unsigned char*) malloc( RSA_size( user_priv ) );
-	decryptres = RSA_private_decrypt( enclen, encrypted, session_key, 
-			user_priv, RSA_PKCS1_PADDING );
-	if ( decryptres != REQID_SIZE ) {
-		printf("ERROR failed to decrypt grp_session_key\n" );
-		goto close;
-	}
-
-	/* Verify the item. */
-	SHA1( session_key, RELID_SIZE, session_key_sha1 );
-	verifyres = RSA_verify( NID_sha1, session_key_sha1, SHA_DIGEST_LENGTH, 
-			signature, siglen, id_pub );
-	if ( verifyres != 1 ) {
-		printf("ERROR failed to verify grp_session_key\n" );
-		goto close;
-	}
-close:
-	mysql_close( mysql );
-	fflush(stdout);
-}

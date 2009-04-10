@@ -91,14 +91,31 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 		dest += len;
 		src += len + 2;
 
-		*dest++ = '\'';
+		switch ( p[1] ) {
+			case 'e': {
+				*dest++ = '\'';
 
-		char *a = va_arg(vl, char*);
-		len = strlen(a);
-		len = mysql_real_escape_string( mysql, dest, a, len );
-		dest += len;
+				char *a = va_arg(vl, char*);
+				len = strlen(a);
+				len = mysql_real_escape_string( mysql, dest, a, len );
+				dest += len;
 
-		*dest++ = '\'';
+				*dest++ = '\'';
+				break;
+			}
+			case 'b': {
+				int b = va_arg(vl, int);
+				if ( b ) {
+					strcpy( dest, "TRUE" );
+					dest += 4;
+				}
+				else {
+					strcpy( dest, "FALSE" );
+					dest += 5;
+				}
+				break;
+			}
+		}
 	}
 	va_end(vl);
 
@@ -519,7 +536,6 @@ long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str,
 	return result;
 }
 
-
 void friend_req( const char *user, const char *identity )
 {
 	/* a) verifies challenge response
@@ -680,7 +696,8 @@ long store_return_relid( MYSQL *mysql, const char *identity,
 }
 
 long store_friend_claim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *put_relid, const char *get_relid )
+		const char *identity, const char *put_relid, const char *get_relid, 
+		bool acknowledged )
 {
 	/* Make an md5hash for the identity. */
 	unsigned char friend_hash[MD5_DIGEST_LENGTH];
@@ -688,9 +705,10 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	char *friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
 
 	/* Insert the friend claim. */
-	exec_query( mysql, 
-		"INSERT INTO friend_claim VALUES ( %e, %e, %e, %e, %e, NULL, NULL );",
-		user, identity, friend_hash_str, put_relid, get_relid );
+	exec_query( mysql, "INSERT INTO friend_claim "
+		"( user, friend_id, friend_hash, put_relid, get_relid, acknowledged ) "
+		"VALUES ( %e, %e, %e, %e, %e, %b );",
+		user, identity, friend_hash_str, put_relid, get_relid, acknowledged );
 
 	return 0;
 }
@@ -807,7 +825,7 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 			encrypted, enclen, signature, siglen );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, identity, relid_str, fr_relid_str );
+	store_friend_claim( mysql, user, identity, relid_str, fr_relid_str, false );
 	
 	/* Return the request id for the requester to use. */
 	printf( "OK %s\r\n", reqid_str );
@@ -1200,7 +1218,7 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, row[0], row[1], row[2] );
+	store_friend_claim( mysql, user, row[0], row[1], row[2], true );
 
 	/* Remove the user friend request. */
 	delete_user_friend_req( mysql, user, user_reqid );

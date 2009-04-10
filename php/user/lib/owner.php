@@ -59,7 +59,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <?php
 
 # Look for the user/pass combination.
-$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
+$query = sprintf("SELECT friend_id, acknowledged FROM friend_claim WHERE user = '%s';",
     mysql_real_escape_string($USER_NAME)
 );
 
@@ -70,8 +70,15 @@ $mehash = MD5( $USER_URI );
 while ( $row = mysql_fetch_assoc($result) ) {
 	$browser_id = $USER_URI;
 	$dest_id = $row['friend_id'];
+	$acknowledged = $row['acknowledged'];
 
-	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . urlencode($browser_id) . "\">$dest_id</a> <br>\n";
+	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . 
+		urlencode($browser_id) . "\">$dest_id</a> ";
+	
+	if ( !$acknowledged )
+		echo "<small>(awaiting confirmation)</small>";
+
+	echo "<br>\n";
 }
 
 ?>

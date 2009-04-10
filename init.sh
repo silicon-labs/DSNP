@@ -128,7 +128,10 @@ CREATE TABLE user (
 	rsa_q CHAR(128),
 	rsa_dmp1 CHAR(128),
 	rsa_dmq1 CHAR(128),
-	rsa_iqmp CHAR(128)
+	rsa_iqmp CHAR(128),
+
+	put_session_key CHAR(32),
+	put_key_generation BIGINT
 );
 
 CREATE TABLE public_key (
@@ -169,8 +172,12 @@ CREATE TABLE friend_claim (
 	friend_hash CHAR(32),
 	put_relid CHAR(32),
 	get_relid CHAR(32),
-	put_session_key CHAR(32),
-	get_session_key CHAR(32)
+	acknowledged BOOL,
+	get_session_key CHAR(32),
+	put_forward1 TEXT,
+	put_forward2 TEXT,
+	get_forward1 TEXT,
+	get_forward2 TEXT
 );
 
 CREATE TABLE flogin_tok (

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Adrian Thurston <thurston@cs.queensu.ca>
+ * Copyright (c) 2008-2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -741,6 +741,8 @@ long send_session_key( const char *from, const char *to, const char *enc, const 
 	/* Read the result. */
 	FILE *readSocket = fdopen( socketFd, "r" );
 	char *readRes = fgets( buf, 8192, readSocket );
+
+	printf( "send_session_key result: %s\n", readRes );
 
 	/* If there was an error then fail the fetch. */
 	if ( !readRes ) {

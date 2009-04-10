@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Adrian Thurston <thurston@cs.queensu.ca>
+ * Copyright (c) 2008-2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -116,5 +116,8 @@ extern Config *c, *config_first, *config_last;
 
 #define RELID_SIZE 16
 #define REQID_SIZE 16
+
+char *bin2hex( unsigned char *data, long len );
+long hex2bin( unsigned char *dest, long len, const char *src );
 
 #endif

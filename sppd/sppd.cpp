@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Adrian Thurston <thurston@cs.queensu.ca>
+ * Copyright (c) 2008-2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -13,6 +13,9 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
+#include "sppd.h"
+#include "encrypt.h"
 
 #include <openssl/rand.h>
 #include <openssl/objects.h>
@@ -32,7 +35,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdarg.h>
-#include "sppd.h"
 
 /*
  * %e escaped string
@@ -1520,16 +1522,12 @@ close:
 void session_key( const char *user, const char *identity,
 		const char *enc, const char *sig )
 {
-	unsigned char *encrypted, *signature;
-	long enclen, siglen;
-
 	MYSQL *mysql, *connect_res;
-	int verifyres, decryptres;
 	RSA *user_priv, *id_pub;
-	unsigned char *session_key;
-	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
 	char *sk;
 	long query_res;
+	Encrypt encrypt;
+	int decryptRes;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1547,44 +1545,15 @@ void session_key( const char *user, const char *identity,
 		goto close;
 	}
 
-	/* Convert the encrypted string to binary. */
-	encrypted = (unsigned char*)malloc( strlen(enc) );
-	enclen = hex2bin( encrypted, RSA_size(id_pub), enc );
-	if ( enclen <= 0 ) {
-		printf("ERROR converting enc to binary\n" );
-		goto close;
-	}
-
-	/* Convert the sig to binary. */
-	signature = (unsigned char*)malloc( strlen(sig) );
-	siglen = hex2bin( signature, RSA_size(id_pub), sig );
-	if ( siglen <= 0 ) {
-		printf("ERROR converting encsig.sig to binary\n" );
-		goto close;
-	}
-
 	/* Load the private key for the user the request is for. */
 	user_priv = load_key( mysql, user );
 
-	/* Decrypt the item. */
-	session_key = (unsigned char*) malloc( RSA_size( user_priv ) );
-	decryptres = RSA_private_decrypt( enclen, encrypted, session_key, 
-			user_priv, RSA_PKCS1_PADDING );
-	if ( decryptres != REQID_SIZE ) {
-		printf("ERROR failed to decrypt usr_session_key\n" );
-		goto close;
-	}
+	encrypt.load( id_pub, user_priv );
+	decryptRes = encrypt.decryptVerify( enc, sig );
+	if ( decryptRes < 0 )
+		printf( "ERROR encryption failed: %s\n", encrypt.err );
 
-	/* Verify the item. */
-	SHA1( session_key, RELID_SIZE, session_key_sha1 );
-	verifyres = RSA_verify( NID_sha1, session_key_sha1, SHA_DIGEST_LENGTH, 
-			signature, siglen, id_pub );
-	if ( verifyres != 1 ) {
-		printf("ERROR failed to verify usr_session_key\n" );
-		goto close;
-	}
-
-	sk = bin2hex( session_key, REQID_SIZE );
+	sk = bin2hex( encrypt.decrypted, encrypt.decLen );
 
 	/* Make the query. */
 	query_res = exec_query( mysql, 
@@ -1604,15 +1573,11 @@ void send_all_keys()
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 
-	int sigres;
 	RSA *user_priv, *id_pub;
 	unsigned char session_key[RELID_SIZE];
-	unsigned char *encrypted, *signature;
-	int enclen;
-	unsigned siglen;
-	unsigned char session_key_sha1[SHA_DIGEST_LENGTH];
 	const char *sk = 0;
 	const char *user = "age";
+	Encrypt encrypt;
 
 	/* Open the database connection. */
 	MYSQL *mysql = mysql_init(0);
@@ -1648,30 +1613,21 @@ void send_all_keys()
 		RAND_bytes( session_key, RELID_SIZE );
 		sk = bin2hex( session_key, RELID_SIZE );
 		printf("sending: %s\n", sk );
-	
-		/* Encrypt it. */
-		encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
-		enclen = RSA_public_encrypt( RELID_SIZE, session_key, encrypted, 
-				id_pub, RSA_PKCS1_PADDING );
 
 		/* Load the private key for the user the request is for. */
 		user_priv = load_key( mysql, user );
-
-		/* Sign the relationship id. */
-		signature = (unsigned char*)malloc( RSA_size(user_priv) );
-		SHA1( session_key, RELID_SIZE, session_key_sha1 );
-		sigres = RSA_sign( NID_sha1, session_key_sha1, SHA_DIGEST_LENGTH, signature, 
-				&siglen, user_priv );
-
-		char *enc = bin2hex( encrypted, enclen );
-		char *sig = bin2hex( signature, siglen );
+	
+		encrypt.load( id_pub, user_priv );
+		int encryptRes = encrypt.encryptSign( session_key, RELID_SIZE );
+		if ( encryptRes < 0 )
+			printf( "encryption failed: %s\n", encrypt.err );
 
 		/* Make the query. */
 		query_res = exec_query( mysql, 
 				"UPDATE friend_claim SET put_session_key = %e "
 				"WHERE user = %e AND friend_id = %e", sk, user, identity );
 
-		int send_res = send_session_key( user, identity, enc, sig );
+		int send_res = send_session_key( user, identity, encrypt.enc, encrypt.sig );
 		if ( send_res < 0 ) {
 			fprintf(stderr, "sending failed %d\n", send_res );
 		}

@@ -72,11 +72,14 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
 	$acknowledged = $row['acknowledged'];
 
-	echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . 
-		urlencode($browser_id) . "\">$dest_id</a> ";
-	
-	if ( !$acknowledged )
+	if ( $acknowledged ) {
+		echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . 
+			urlencode($browser_id) . "\">$dest_id</a> ";
+	}
+	else {
+		echo "friend: <a href=\"${dest_id}\">$dest_id</a> ";
 		echo "<small>(awaiting confirmation)</small>";
+	}
 
 	echo "<br>\n";
 }

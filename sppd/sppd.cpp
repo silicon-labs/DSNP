@@ -65,8 +65,21 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 		/* Need to skip over the %s. */
 		src += seg_len + 2;
 
-		char *a = va_arg(vl, char*);
-		len += strlen(a) * 2;
+		switch ( p[1] ) {
+			case 'e': {
+				char *a = va_arg(vl, char*);
+				len += strlen(a) * 2;
+				break;
+			}
+			case 'l': {
+				len += 32;
+				break;
+			}
+			case 'b': {
+				len += 8;
+				break;
+			}
+		}
 	}
 	va_end(vl);
 
@@ -101,6 +114,12 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				dest += len;
 
 				*dest++ = '\'';
+				break;
+			}
+			case 'l': {
+				long long v = va_arg(vl, long long);
+				sprintf( dest, "%lld", v );
+				dest += strlen(dest);
 				break;
 			}
 			case 'b': {
@@ -222,13 +241,58 @@ char *pass_hash( const char *user, const char *pass )
 	return bin2hex( pass_bin, MD5_DIGEST_LENGTH );
 }
 
+int current_put_sk( MYSQL *mysql, const char *user, char *sk, long long *generation )
+{
+	int retVal = 0;
+
+	exec_query( mysql, 
+		"SELECT session_key, generation "
+		"FROM put_session_key "
+		"WHERE user = %e "
+		"ORDER BY generation DESC LIMIT 1",
+		user );
+	
+	MYSQL_RES *result = mysql_store_result( mysql );
+	MYSQL_ROW row = mysql_fetch_row( result );
+
+	if ( row ) {
+		if ( sk != 0 ) 
+			strcpy( sk, row[0] );
+		if ( generation != 0 )
+			*generation = strtoll( row[1], 0, 10 );
+		retVal = 1;
+	}
+
+	return retVal;
+}
+
+void new_session_key( MYSQL *mysql, const char *user )
+{
+	unsigned char session_key[RELID_SIZE];
+	const char *sk = 0;
+	long long generation = 0;
+
+	/* Get the latest generation. If there is no session key then generation
+	 * is left alone. */
+	current_put_sk( mysql, user, 0, &generation );
+
+	/* Generate the relationship and request ids. */
+	RAND_bytes( session_key, RELID_SIZE );
+	sk = bin2hex( session_key, RELID_SIZE );
+
+	exec_query( mysql, 
+		"INSERT INTO put_session_key "
+		"( user, session_key, generation ) "
+		"VALUES ( %e, %e, %l ) ",
+		user, sk, generation + 1 );
+}
+
 void new_user( const char *key, const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
 	MYSQL *mysql, *connect_res;
 	char *pass_hashed;
-	long query_res;
 
 	/* Check the authentication. */
 	if ( strcmp( key, c->CFG_COMM_KEY ) != 0 ) {
@@ -266,9 +330,12 @@ void new_user( const char *key, const char *user, const char *pass, const char *
 	pass_hashed = pass_hash( user, pass );
 
 	/* Execute the insert. */
-	query_res = exec_query( mysql, "INSERT INTO user VALUES("
+	exec_query( mysql, "INSERT INTO user VALUES("
 		"%e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e);", 
 		user, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
+	
+	/* Make the first session key for the user. */
+	new_session_key( mysql, user );
 
 	printf( "OK\r\n" );
 
@@ -291,7 +358,6 @@ flush:
 void public_key( const char *user )
 {
 	MYSQL *mysql, *connect_res;
-	long query_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 
@@ -304,7 +370,7 @@ void public_key( const char *user )
 	}
 
 	/* Query the user. */
-	query_res = exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
+	exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
 
 	/* Check for a result. */
 	result = mysql_store_result( mysql );
@@ -1181,6 +1247,48 @@ close:
 	fflush( stdout );
 }
 
+int send_current_session_key( MYSQL *mysql, const char *user, const char *identity )
+{
+	RSA *user_priv, *id_pub;
+	unsigned char session_key[RELID_SIZE];
+	char sk[33];
+	Encrypt encrypt;
+	long long generation;
+	int sk_result;
+
+	/* Get the latest put session key. */
+	sk_result = current_put_sk( mysql, user, sk, &generation );
+	if ( sk_result != 1 ) {
+		printf( "ERROR fetching session key\r\n");
+	}
+
+//	printf("sending: %s\n", sk );
+//	printf( "f: %s\n", identity );
+
+	/* Get the public key for the identity. */
+	id_pub = fetch_public_key( mysql, identity );
+	if ( id_pub == 0 ) {
+		printf("ERROR fetch_public_key failed\n" );
+		return -1;
+	}
+
+	/* Load the private key for the user the request is for. */
+	user_priv = load_key( mysql, user );
+	
+	encrypt.load( id_pub, user_priv );
+	int encryptRes = encrypt.encryptSign( session_key, RELID_SIZE );
+	if ( encryptRes < 0 )
+		printf( "encryption failed: %s\n", encrypt.err );
+
+	int send_res = send_session_key( user, identity, encrypt.enc, encrypt.sig, generation );
+	if ( send_res < 0 ) {
+		fprintf(stderr, "sending failed %d\n", send_res );
+	}
+
+	return 0;
+}
+
+
 void accept_friend( const char *key, const char *user, const char *user_reqid )
 {
 	MYSQL *mysql, *connect_res;
@@ -1222,6 +1330,8 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 
 	/* Remove the user friend request. */
 	delete_user_friend_req( mysql, user, user_reqid );
+
+	send_current_session_key( mysql, user, row[0] );
 
 	printf( "OK\r\n" );
 
@@ -1537,8 +1647,29 @@ close:
 	fflush( stdout );
 }
 
+/* Check if we have an acknowledment of a friend claim. */
+bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
+{
+	exec_query( mysql, 
+		"SELECT acknowledged "
+		"FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e",
+		user, identity );
+	
+	MYSQL_RES *result = mysql_store_result( mysql );
+	MYSQL_ROW row = mysql_fetch_row( result );
+
+	if ( row ) {
+		int b = atoi( row[0] );
+		if ( b )
+			return true;
+	}
+
+	return false;
+}
+
 void session_key( const char *user, const char *identity,
-		const char *enc, const char *sig )
+		const char *enc, const char *sig, const char *generation )
 {
 	MYSQL *mysql, *connect_res;
 	RSA *user_priv, *id_pub;
@@ -1546,6 +1677,7 @@ void session_key( const char *user, const char *identity,
 	long query_res;
 	Encrypt encrypt;
 	int decryptRes;
+	bool acknowledged;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1575,83 +1707,24 @@ void session_key( const char *user, const char *identity,
 
 	/* Make the query. */
 	query_res = exec_query( mysql, 
-			"UPDATE friend_claim SET get_session_key = %e "
-			"WHERE user = %e AND friend_id = %e", sk, user, identity );
+			"INSERT INTO get_session_key "
+			"( user, friend_id, session_key, generation ) "
+			"VALUES ( %e, %e, %e, %e ) ",
+			user, identity, sk, generation );
+	
+	/* If this friend claim hasn't been acknowledged then send back
+	 * a session key and acknowledge the claim. */
+	acknowledged = is_acknowledged( mysql, user, identity );
+	if ( !acknowledged ) {
+		exec_query( mysql, 
+			"UPDATE friend_claim SET acknowledged = true "
+			"WHERE user = %e AND friend_id = %e",
+			user, identity );
+
+		send_current_session_key( mysql, user, identity );
+	}
 	
 	printf("OK\n");
-
-close:
-	mysql_close( mysql );
-	fflush(stdout);
-}
-
-void send_all_keys()
-{
-	long query_res;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-
-	RSA *user_priv, *id_pub;
-	unsigned char session_key[RELID_SIZE];
-	const char *sk = 0;
-	const char *user = "age";
-	Encrypt encrypt;
-
-	/* Open the database connection. */
-	MYSQL *mysql = mysql_init(0);
-	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
-
-	query_res = exec_query( mysql, 
-		"SELECT friend_id FROM friend_claim WHERE user = %e", user );
-
-	/* Check for a result. */
-	result = mysql_store_result( mysql );
-	while ( true ) {
-		row = mysql_fetch_row( result );
-
-		if ( !row )
-			break;
-
-		char *identity = row[0];
-		printf( "f: %s\n", identity );
-
-		/* Get the public key for the identity. */
-		id_pub = fetch_public_key( mysql, identity );
-		if ( id_pub == 0 ) {
-			printf("ERROR fetch_public_key failed\n" );
-			goto close;
-		}
-
-		/* Generate the relationship and request ids. */
-		RAND_bytes( session_key, RELID_SIZE );
-		sk = bin2hex( session_key, RELID_SIZE );
-		printf("sending: %s\n", sk );
-
-		/* Load the private key for the user the request is for. */
-		user_priv = load_key( mysql, user );
-	
-		encrypt.load( id_pub, user_priv );
-		int encryptRes = encrypt.encryptSign( session_key, RELID_SIZE );
-		if ( encryptRes < 0 )
-			printf( "encryption failed: %s\n", encrypt.err );
-
-		/* Make the query. */
-		query_res = exec_query( mysql, 
-				"UPDATE friend_claim SET put_session_key = %e "
-				"WHERE user = %e AND friend_id = %e", sk, user, identity );
-
-		int send_res = send_session_key( user, identity, encrypt.enc, encrypt.sig );
-		if ( send_res < 0 ) {
-			fprintf(stderr, "sending failed %d\n", send_res );
-		}
-	}
-
-	mysql_free_result( result );
 
 close:
 	mysql_close( mysql );

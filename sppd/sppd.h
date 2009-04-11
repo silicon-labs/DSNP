@@ -67,7 +67,8 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 void fetch_ftoken( const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void session_key( const char *user, const char *identity, const char *enc, const char *sig );
+void session_key( const char *user, const char *identity, const char *enc,
+	const char *sig, const char *generation );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user );
@@ -81,8 +82,8 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 char *get_site( const char *identity );
 
 long send_message( const char *from, const char *to, const char *message );
-long send_session_key( const char *from, const char *to, const char *enc, const char *sig );
-void send_all_keys();
+long send_session_key( const char *from, const char *to, const char *enc,
+		const char *sig, long long generation );
 
 struct Config
 {

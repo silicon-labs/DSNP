@@ -128,10 +128,7 @@ CREATE TABLE user (
 	rsa_q CHAR(128),
 	rsa_dmp1 CHAR(128),
 	rsa_dmq1 CHAR(128),
-	rsa_iqmp CHAR(128),
-
-	put_session_key CHAR(32),
-	put_key_generation BIGINT
+	rsa_iqmp CHAR(128)
 );
 
 CREATE TABLE public_key (
@@ -166,6 +163,19 @@ CREATE TABLE user_friend_req (
 	relid CHAR(32)
 );
 
+CREATE TABLE get_session_key (
+	user VARCHAR(20), 
+	friend_id TEXT,
+	session_key CHAR(32),
+	generation BIGINT
+);
+
+CREATE TABLE put_session_key (
+	user VARCHAR(20), 
+	session_key CHAR(32),
+	generation BIGINT
+);
+
 CREATE TABLE friend_claim (
 	user VARCHAR(20), 
 	friend_id TEXT,
@@ -173,7 +183,6 @@ CREATE TABLE friend_claim (
 	put_relid CHAR(32),
 	get_relid CHAR(32),
 	acknowledged BOOL,
-	get_session_key CHAR(32),
 	put_forward1 TEXT,
 	put_forward2 TEXT,
 	get_forward1 TEXT,

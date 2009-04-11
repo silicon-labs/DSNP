@@ -38,8 +38,9 @@ char *alloc_string( const char *s, const char *e )
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 	hash = [0-9a-f]+          >{a1=p;} %{a2=p;};
-	enc = [0-9a-f]+           >{e1= p;} %{e2= p;};
-	sig = [0-9a-f]+           >{s1= p;} %{s2= p;};
+	enc = [0-9a-f]+           >{e1=p;} %{e2= p;};
+	sig = [0-9a-f]+           >{s1=p;} %{s2=p;};
+	generation = [0-9]+       >{g1=p;} %{g2=p;};
 
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
@@ -168,13 +169,15 @@ char *alloc_string( const char *s, const char *e )
 		char *identity = alloc_string( i1, i2 );
 		char *enc = alloc_string( e1, e2 );
 		char *sig = alloc_string( s1, s2 );
+		char *generation = alloc_string( g1, g2 );
 
-		session_key( user, identity, enc, sig );
+		session_key( user, identity, enc, sig, generation );
 
 		free( user );
 		free( identity );
 		free( enc );
 		free( sig );
+		free( generation );
 	}
 
 	commands := |* 
@@ -200,9 +203,7 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
 		# Mesages
-		'session_key'i ' ' user ' ' identity ' ' enc ' ' sig EOL @session_key;
-
-		'send_all_keys'i EOL @{ send_all_keys(); };
+		'session_key'i ' ' user ' ' identity ' ' enc ' ' sig ' ' generation EOL @session_key;
 
 		'message'i EOL @{ printf("OK\r\n"); fflush(stdout); };
 	*|;
@@ -228,6 +229,7 @@ int server_parse_loop()
 	const char *r1, *r2;
 	const char *a1, *a2;
 	const char *s1, *s2;
+	const char *g1, *g2;
 
 	%% write init;
 
@@ -713,7 +715,8 @@ fail:
 	write data;
 }%%
 
-long send_session_key( const char *from, const char *to, const char *enc, const char *sig )
+long send_session_key( const char *from, const char *to, const char *enc,
+	const char *sig, long long generation )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -734,15 +737,15 @@ long send_session_key( const char *from, const char *to, const char *enc, const 
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\n" "session_key %s %s%s/ %s %s\r\n", 
-		toIdent.site, toIdent.user, c->CFG_URI, from, enc, sig  );
+	fprintf( writeSocket, "SPP/0.1 %s\r\n" "session_key %s %s%s/ %s %s %lld\r\n", 
+		toIdent.site, toIdent.user, c->CFG_URI, from, enc, sig, generation );
 	fflush( writeSocket );
 
 	/* Read the result. */
 	FILE *readSocket = fdopen( socketFd, "r" );
 	char *readRes = fgets( buf, 8192, readSocket );
 
-	printf( "send_session_key result: %s\n", readRes );
+//	printf( "send_session_key result: %s\n", readRes );
 
 	/* If there was an error then fail the fetch. */
 	if ( !readRes ) {

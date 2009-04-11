@@ -70,7 +70,10 @@ void fetch_ftoken( const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
 void session_key( const char *user, const char *identity, const char *enc,
-	const char *sig, const char *generation );
+		const char *sig, const char *generation );
+
+void forward_to( const char *user, const char *identity,
+		const char *number, const char *identity2 );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user );
@@ -86,6 +89,7 @@ char *get_site( const char *identity );
 long send_message( const char *from, const char *to, const char *message );
 long send_session_key( const char *from, const char *to, const char *enc,
 		const char *sig, long long generation );
+long send_forward_to( const char *from, const char *to, int childNum, const char *forwardTo );
 
 struct Config
 {

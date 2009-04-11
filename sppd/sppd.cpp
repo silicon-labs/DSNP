@@ -1731,3 +1731,39 @@ close:
 	fflush(stdout);
 }
 
+void forward_to( const char *user, const char *identity,
+		const char *number, const char *identity2 )
+{
+	MYSQL *mysql, *connect_res;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	if ( atoi( number ) == 1 ) {
+		exec_query( mysql, 
+				"UPDATE friend_claim "
+				"SET get_forward1 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				identity2, user, identity );
+	}
+	else if ( atoi( number ) == 2 ) {
+		exec_query( mysql, 
+				"UPDATE friend_claim "
+				"SET get_forward2 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				identity2, user, identity );
+	}
+
+	printf("OK\n");
+
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+
+}

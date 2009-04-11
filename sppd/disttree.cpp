@@ -107,6 +107,48 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
+void insert( MYSQL *mysql, const char *user, NodeList &roots, const char *identity )
+{
+	NodeList queue = roots;
+
+	FriendNode *newNode = new FriendNode( identity );
+
+	while ( queue.size() > 0 ) {
+		FriendNode *front = queue.front();
+		if ( front->left != 0 )
+			queue.push_back( front->left );
+		else {
+			printf( "inserting as left of %s\n", front->identity.c_str() );
+			front->left = newNode;
+			exec_query( mysql,
+				"UPDATE friend_claim "
+				"SET put_forward1 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				identity, user, front->identity.c_str() );
+
+			send_forward_to( user, front->identity.c_str(), 1, identity );
+			break;
+		}
+
+		if ( front->right != 0 )
+			queue.push_back( front->right );
+		else {
+			printf( "inserting as right of %s\n", front->identity.c_str() );
+			front->right = newNode;
+			exec_query( mysql,
+				"UPDATE friend_claim "
+				"SET put_forward2 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				identity, user, front->identity.c_str() );
+
+			send_forward_to( user, front->identity.c_str(), 2, identity );
+			break;
+		}
+
+		queue.pop_front();
+	}
+}
+
 void test_tree()
 {
 	set_config_by_name( "spp" );
@@ -119,10 +161,20 @@ void test_tree()
 		printf( "ERROR failed to connect to the database\r\n");
 	}
 
-	NodeList nodeList;
-	load_tree( "age", mysql, nodeList );
+	const char *user = "age";
 
-	for ( NodeList::iterator i = nodeList.begin(); i != nodeList.end(); i++ )
+	NodeList roots;
+	load_tree( user, mysql, roots );
+
+	printf("before:\n");
+	for ( NodeList::iterator i = roots.begin(); i != roots.end(); i++ )
 		print_node( *i, 0 );
+	
+	printf("inserting:\n");
+
+//	insert( mysql, user, roots, "http://localhost/spp/mom/" );
+//	insert( mysql, user, roots, "http://localhost/spp/dad/" );
+//	insert( mysql, user, roots, "http://localhost/spp/anne/" );
+//	insert( mysql, user, roots, "http://localhost/spp/jenn/" );
 }
 

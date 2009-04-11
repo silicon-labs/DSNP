@@ -45,6 +45,12 @@ char *alloc_string( const char *s, const char *e )
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
 		>{i1=p;} %{i2=p;};
+
+	identity2 = 
+		( 'http://' path_part '/' ( path_part '/' )* )
+		>{j1=p;} %{j2=p;};
+
+	num = [a-f0-9]+      >{n1=p;} %{n2=p;};
 }%%
 
 %%{
@@ -180,6 +186,20 @@ char *alloc_string( const char *s, const char *e )
 		free( generation );
 	}
 
+	action forward_to {
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		char *number = alloc_string( n1, n2 );
+		char *identity2 = alloc_string( j1, j2 );
+
+		forward_to( user, identity, number, identity2 );
+
+		free( user );
+		free( identity );
+		free( number );
+		free( identity2 );
+	}
+
 	commands := |* 
 		# Admin commands.
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
@@ -202,8 +222,9 @@ char *alloc_string( const char *s, const char *e )
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
-		# Mesages
+		# Message Sending
 		'session_key'i ' ' user ' ' identity ' ' enc ' ' sig ' ' generation EOL @session_key;
+		'forward_to'i ' ' user ' ' identity ' ' num ' ' identity2  EOL @forward_to;
 
 		'message'i EOL @{ printf("OK\r\n"); fflush(stdout); };
 	*|;
@@ -224,12 +245,14 @@ int server_parse_loop()
 	const char *p1, *p2;
 	const char *e1, *e2;
 	const char *i1, *i2;
+	const char *j1, *j2;
 	const char *h1, *h2;
 	const char *pp1, *pp2;
 	const char *r1, *r2;
 	const char *a1, *a2;
 	const char *s1, *s2;
 	const char *g1, *g2;
+	const char *n1, *n2;
 
 	%% write init;
 
@@ -737,7 +760,9 @@ long send_session_key( const char *from, const char *to, const char *enc,
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\n" "session_key %s %s%s/ %s %s %lld\r\n", 
+	fprintf( writeSocket,
+		"SPP/0.1 %s\r\n"
+		"session_key %s %s%s/ %s %s %lld\r\n", 
 		toIdent.site, toIdent.user, c->CFG_URI, from, enc, sig, generation );
 	fflush( writeSocket );
 
@@ -746,6 +771,87 @@ long send_session_key( const char *from, const char *to, const char *enc,
 	char *readRes = fgets( buf, 8192, readSocket );
 
 //	printf( "send_session_key result: %s\n", readRes );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}
+
+/*
+ * send_session_key
+ */
+
+%%{
+	machine send_forward_to;
+	write data;
+}%%
+
+long send_forward_to( const char *from, const char *to, int childNum, const char *forwardTo )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+
+	/* Need to parse the identity. */
+	Identity toIdent( to );
+	pres = toIdent.parse();
+
+	if ( pres < 0 )
+		return pres;
+
+	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, 
+		"SPP/0.1 %s\r\n" 
+		"forward_to %s %s%s/ %d %s\r\n", 
+		toIdent.site, 
+		toIdent.user, c->CFG_URI, from, childNum, forwardTo );
+	fflush( writeSocket );
+
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
 
 	/* If there was an error then fail the fetch. */
 	if ( !readRes ) {

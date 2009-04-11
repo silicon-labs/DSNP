@@ -17,6 +17,8 @@
 #ifndef _SPPD_H
 #define _SPPD_H
 
+#include <mysql.h>
+
 struct PublicKey
 {
 	char *n;
@@ -120,5 +122,7 @@ extern Config *c, *config_first, *config_last;
 
 char *bin2hex( unsigned char *data, long len );
 long hex2bin( unsigned char *dest, long len, const char *src );
+
+int exec_query( MYSQL *mysql, const char *fmt, ... );
 
 #endif

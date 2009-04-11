@@ -772,9 +772,9 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
-		"( user, friend_id, friend_hash, put_relid, get_relid, acknowledged ) "
-		"VALUES ( %e, %e, %e, %e, %e, %b );",
-		user, identity, friend_hash_str, put_relid, get_relid, acknowledged );
+		"( user, friend_id, friend_hash, put_relid, get_relid, acknowledged, put_root ) "
+		"VALUES ( %e, %e, %e, %e, %e, %b, %b );",
+		user, identity, friend_hash_str, put_relid, get_relid, acknowledged, false );
 
 	return 0;
 }

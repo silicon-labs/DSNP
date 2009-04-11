@@ -183,6 +183,7 @@ CREATE TABLE friend_claim (
 	put_relid CHAR(32),
 	get_relid CHAR(32),
 	acknowledged BOOL,
+	put_root BOOL,
 	put_forward1 TEXT,
 	put_forward2 TEXT,
 	get_forward1 TEXT,

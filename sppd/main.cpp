@@ -18,6 +18,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #include "sppd.h"
 
 void read_rcfile( const char *confFile )
@@ -36,25 +38,38 @@ void read_rcfile( const char *confFile )
 const char *configFile = 0;
 const char *siteName = 0;
 bool runQueue = false;
+bool loadTree = false;
 
 int check_args( int argc, char **argv )
 {
-	if ( argc == 2 )
-		configFile = argv[1];
-	else if ( argc == 3 ) {
-		if ( ! ( argv[1][0] == '-' && argv[1][1] == 'q' ) )
-			return -1;
-		runQueue = true;
-		siteName = argv[1] + 2;
-		configFile = argv[2];
+	while ( true ) {
+		int opt = getopt( argc, argv, "q:l" );
+
+		if ( opt < 0 )
+			break;
+
+		switch ( opt ) {
+			case 'q':
+				runQueue = true;
+				siteName = optarg;
+				break;
+			case 'l':
+				loadTree = true;
+				break;
+		}
 	}
+
+	if ( optind < argc )
+		configFile = argv[optind];
 	else {
-		/* Wrong number of args. */
-		return -1;
+		fprintf( stderr, "expected config file argument\n" );
+		exit(1);
 	}
 
 	return 0;
 }
+
+void test_tree();
 
 int main( int argc, char **argv )
 {
@@ -70,6 +85,8 @@ int main( int argc, char **argv )
 
 	if ( runQueue )
 		run_queue( siteName );
+	else if ( loadTree )
+		test_tree();
 	else 
 		server_parse_loop();
 }

@@ -567,7 +567,7 @@ query_fail:
 	return rsa;
 }
 
-long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str, 
+long store_friend_request( MYSQL *mysql, const char *identity, char *fr_relid_str, 
 		char *fr_reqid_str, unsigned char *encrypted, int enclen, 
 		unsigned char *signature, int siglen )
 {
@@ -578,7 +578,7 @@ long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str,
 	char *query = (char*)malloc( 1024 + 256*6 );
 
 	/* Make the query. */
-	strcpy( query, "INSERT INTO friend_req VALUES('" );
+	strcpy( query, "INSERT INTO friend_request VALUES('" );
 	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
@@ -602,7 +602,7 @@ long store_friend_req( MYSQL *mysql, const char *identity, char *fr_relid_str,
 	return result;
 }
 
-void friend_req( const char *user, const char *identity )
+void friend_request( const char *user, const char *identity )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -660,7 +660,7 @@ void friend_req( const char *user, const char *identity )
 	fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
 	fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
 
-	store_friend_req( mysql, identity, fr_relid_str, fr_reqid_str, 
+	store_friend_request( mysql, identity, fr_relid_str, fr_reqid_str, 
 			encrypted, enclen, signature, siglen );
 	
 	/* Return the request id for the requester to use. */
@@ -692,7 +692,7 @@ void fetch_fr_relid( const char *reqid )
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM friend_req WHERE fr_reqid = '" );
+	strcpy( query, "SELECT msg_enc, msg_sig FROM friend_request WHERE fr_reqid = '" );
 	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
 	strcat( query, "';" );
 
@@ -961,7 +961,7 @@ long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 
 	/* Make the query. */
 	char *query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT from_id FROM friend_req WHERE fr_relid = '" );
+	strcpy( query, "SELECT from_id FROM friend_request WHERE fr_relid = '" );
 	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
 	strcat( query, "';" );
 
@@ -986,7 +986,7 @@ query_fail:
 	return result;
 }
 
-long store_user_friend_req( MYSQL *mysql, const char *user, const char *identity, 
+long store_user_friend_request( MYSQL *mysql, const char *user, const char *identity, 
 		const char *user_reqid_str, const char *fr_relid_str, const char *relid_str )
 {
 	long result = 0, query_res;
@@ -994,7 +994,7 @@ long store_user_friend_req( MYSQL *mysql, const char *user, const char *identity
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*8 );
-	strcpy( query, "INSERT INTO user_friend_req VALUES('" );
+	strcpy( query, "INSERT INTO user_friend_request VALUES('" );
 	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
@@ -1116,7 +1116,7 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 	RAND_bytes( user_reqid, REQID_SIZE );
 	user_reqid_str = bin2hex( user_reqid, REQID_SIZE );
 
-	storeres = store_user_friend_req( mysql, user, identity, 
+	storeres = store_user_friend_request( mysql, user, identity, 
 			user_reqid_str, fr_relid_str, relid_str );
 	
 	/* Return the request id for the requester to use. */
@@ -1129,11 +1129,11 @@ close:
 	fflush( stdout );
 }
 
-long delete_user_friend_req( MYSQL *mysql, const char *user, const char *user_reqid )
+long delete_user_friend_request( MYSQL *mysql, const char *user, const char *user_reqid )
 {
 	/* Insert the friend claim. */
 	exec_query( mysql, 
-		"DELETE FROM user_friend_req WHERE user = %e AND user_reqid = %e;",
+		"DELETE FROM user_friend_request WHERE user = %e AND user_reqid = %e;",
 		user, user_reqid );
 
 	return 0;
@@ -1309,7 +1309,7 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 
 	/* Execute the query. */
 	exec_query( mysql, "SELECT from_id, fr_relid, relid "
-		"FROM user_friend_req "
+		"FROM user_friend_request "
 		"WHERE user = %e AND user_reqid = %e;",
 		user, user_reqid );
 
@@ -1326,7 +1326,7 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	store_friend_claim( mysql, user, row[0], row[1], row[2], true );
 
 	/* Remove the user friend request. */
-	delete_user_friend_req( mysql, user, user_reqid );
+	delete_user_friend_request( mysql, user, user_reqid );
 
 	send_current_session_key( mysql, user, row[0] );
 	forward_tree_insert( mysql, user, row[0] );

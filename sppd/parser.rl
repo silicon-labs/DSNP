@@ -65,31 +65,27 @@ char *alloc_string( const char *s, const char *e )
 		char *user = alloc_string( u1, u2 );
 		char *pass = alloc_string( p1, p2 );
 		char *email = alloc_string( e1, e2 );
+
 		new_user( key, user, pass, email );
-		free( key );
-		free( user );
-		free( pass );
-		free( email );
 	}
 
 	action public_key {
 		char *user = alloc_string( u1, u2 );
+
 		public_key( user );
-		free( user );
 	}
 
-	action friend_req {
+	action friend_request {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
-		friend_req( user, identity );
-		free( user );
-		free( identity );
+
+		friend_request( user, identity );
 	}
 
 	action fetch_fr_relid {
 		char *reqid = alloc_string( r1, r2 );
+
 		fetch_fr_relid( reqid );
-		free( reqid );
 	}
 
 	action return_relid {
@@ -98,18 +94,14 @@ char *alloc_string( const char *s, const char *e )
 		char *identity = alloc_string( i1, i2 );
 		char *id_host = alloc_string( h1, h2 );
 		char *id_user = alloc_string( pp1, pp2 );
+
 		return_relid( user, reqid, identity, id_host, id_user );
-		free( user );
-		free( reqid );
-		free( identity );
-		free( id_host );
-		free( id_user );
 	}
 
 	action fetch_relid {
 		char *reqid = alloc_string( r1, r2 );
+
 		fetch_relid( reqid );
-		free( reqid );
 	}
 
 	action friend_final {
@@ -118,22 +110,16 @@ char *alloc_string( const char *s, const char *e )
 		char *identity = alloc_string( i1, i2 );
 		char *id_host = alloc_string( h1, h2 );
 		char *id_user = alloc_string( pp1, pp2 );
+
 		friend_final( user, reqid, identity, id_host, id_user );
-		free( user );
-		free( reqid );
-		free( identity );
-		free( id_host );
-		free( id_user );
 	}
 
 	action accept_friend {
 		char *key = alloc_string( k1, k2 );
 		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
+
 		accept_friend( key, user, reqid );
-		free( key );
-		free( user );
-		free( reqid );
 	}
 
 	action flogin {
@@ -141,9 +127,6 @@ char *alloc_string( const char *s, const char *e )
 		char *hash = alloc_string( a1, a2 );
 
 		flogin( user, hash );
-
-		free( user );
-		free( hash );
 	}
 
 	action return_ftoken {
@@ -152,22 +135,16 @@ char *alloc_string( const char *s, const char *e )
 		char *reqid = alloc_string( r1, r2 );
 
 		return_ftoken( user, hash, reqid );
-
-		free( user );
-		free( hash );
-		free( reqid );
 	}
 
 	action fetch_ftoken {
 		char *reqid = alloc_string( r1, r2 );
 		fetch_ftoken( reqid );
-		free( reqid );
 	}
 
 	action set_config {
 		char *identity = alloc_string( i1, i2 );
 		set_config_by_uri( identity );
-		free( identity );
 	}
 
 	action session_key {
@@ -178,12 +155,6 @@ char *alloc_string( const char *s, const char *e )
 		char *generation = alloc_string( g1, g2 );
 
 		session_key( user, identity, enc, sig, generation );
-
-		free( user );
-		free( identity );
-		free( enc );
-		free( sig );
-		free( generation );
 	}
 
 	action forward_to {
@@ -193,11 +164,6 @@ char *alloc_string( const char *s, const char *e )
 		char *identity2 = alloc_string( j1, j2 );
 
 		forward_to( user, identity, number, identity2 );
-
-		free( user );
-		free( identity );
-		free( number );
-		free( identity2 );
 	}
 
 	action receive_message {
@@ -206,10 +172,6 @@ char *alloc_string( const char *s, const char *e )
 		char *email = alloc_string( e1, e2 );
 
 		receive_message( user, identity, email );
-
-		free( user );
-		free( identity );
-		free( email );
 	}
 
 	commands := |* 
@@ -219,12 +181,12 @@ char *alloc_string( const char *s, const char *e )
 		# Public key sharing.
 		'public_key'i ' ' user EOL @public_key;
 
-		# Friend Requests.
-		'friend_req'i ' ' user ' ' identity EOL @friend_req;
-		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
+		# Friend Request.
+		'friend_request'i ' ' user ' ' identity EOL @friend_request;
 		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @return_relid;
-		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
+		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
+		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 
 		# Friend Request Accept
 		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;

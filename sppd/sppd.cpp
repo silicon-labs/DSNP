@@ -1262,9 +1262,6 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 		printf( "ERROR fetching session key\r\n");
 	}
 
-//	printf("sending: %s\n", sk );
-//	printf( "f: %s\n", identity );
-
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
@@ -1332,6 +1329,7 @@ void accept_friend( const char *key, const char *user, const char *user_reqid )
 	delete_user_friend_req( mysql, user, user_reqid );
 
 	send_current_session_key( mysql, user, row[0] );
+	forward_tree_insert( mysql, user, row[0] );
 
 	printf( "OK\r\n" );
 
@@ -1722,6 +1720,7 @@ void session_key( const char *user, const char *identity,
 			user, identity );
 
 		send_current_session_key( mysql, user, identity );
+		forward_tree_insert( mysql, user, identity );
 	}
 	
 	printf("OK\n");
@@ -1765,5 +1764,4 @@ void forward_to( const char *user, const char *identity,
 close:
 	mysql_close( mysql );
 	fflush(stdout);
-
 }

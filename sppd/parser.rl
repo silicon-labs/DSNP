@@ -770,8 +770,6 @@ long send_session_key( const char *from, const char *to, const char *enc,
 	FILE *readSocket = fdopen( socketFd, "r" );
 	char *readRes = fgets( buf, 8192, readSocket );
 
-//	printf( "send_session_key result: %s\n", readRes );
-
 	/* If there was an error then fail the fetch. */
 	if ( !readRes ) {
 		result = ERR_READ_ERROR;
@@ -847,7 +845,6 @@ long send_forward_to( const char *from, const char *to, int childNum, const char
 		toIdent.site, 
 		toIdent.user, c->CFG_URI, from, childNum, forwardTo );
 	fflush( writeSocket );
-
 
 	/* Read the result. */
 	FILE *readSocket = fdopen( socketFd, "r" );

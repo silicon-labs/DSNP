@@ -31,7 +31,12 @@ using std::list;
 struct FriendNode
 {
 	FriendNode( string identity )
-		: identity(identity) {}
+	:
+		identity(identity),
+		parent(0),
+		left(0),
+		right(0)
+	{}
 	string identity;
 
 	FriendNode *parent, *left, *right;
@@ -107,45 +112,56 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
-void insert( MYSQL *mysql, const char *user, NodeList &roots, const char *identity )
+void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity )
 {
-	NodeList queue = roots;
+	NodeList roots;
+	load_tree( user, mysql, roots );
 
-	FriendNode *newNode = new FriendNode( identity );
+	if ( roots.size() == 0 ) {
+		/* Set this friend claim to be the root of the put tree. */
+		exec_query( mysql,
+			"UPDATE friend_claim "
+			"SET put_root = true "
+			"WHERE user = %e AND friend_id = %e",
+			user, identity );
+	}
+	else {
+		NodeList queue = roots;
 
-	while ( queue.size() > 0 ) {
-		FriendNode *front = queue.front();
-		if ( front->left != 0 )
-			queue.push_back( front->left );
-		else {
-			printf( "inserting as left of %s\n", front->identity.c_str() );
-			front->left = newNode;
-			exec_query( mysql,
-				"UPDATE friend_claim "
-				"SET put_forward1 = %e "
-				"WHERE user = %e AND friend_id = %e",
-				identity, user, front->identity.c_str() );
+		FriendNode *newNode = new FriendNode( identity );
 
-			send_forward_to( user, front->identity.c_str(), 1, identity );
-			break;
+		while ( queue.size() > 0 ) {
+			FriendNode *front = queue.front();
+			if ( front->left != 0 )
+				queue.push_back( front->left );
+			else {
+				front->left = newNode;
+				exec_query( mysql,
+					"UPDATE friend_claim "
+					"SET put_forward1 = %e "
+					"WHERE user = %e AND friend_id = %e",
+					identity, user, front->identity.c_str() );
+
+				send_forward_to( user, front->identity.c_str(), 1, identity );
+				break;
+			}
+
+			if ( front->right != 0 )
+				queue.push_back( front->right );
+			else {
+				front->right = newNode;
+				exec_query( mysql,
+					"UPDATE friend_claim "
+					"SET put_forward2 = %e "
+					"WHERE user = %e AND friend_id = %e",
+					identity, user, front->identity.c_str() );
+
+				send_forward_to( user, front->identity.c_str(), 2, identity );
+				break;
+			}
+
+			queue.pop_front();
 		}
-
-		if ( front->right != 0 )
-			queue.push_back( front->right );
-		else {
-			printf( "inserting as right of %s\n", front->identity.c_str() );
-			front->right = newNode;
-			exec_query( mysql,
-				"UPDATE friend_claim "
-				"SET put_forward2 = %e "
-				"WHERE user = %e AND friend_id = %e",
-				identity, user, front->identity.c_str() );
-
-			send_forward_to( user, front->identity.c_str(), 2, identity );
-			break;
-		}
-
-		queue.pop_front();
 	}
 }
 
@@ -161,20 +177,6 @@ void test_tree()
 		printf( "ERROR failed to connect to the database\r\n");
 	}
 
-	const char *user = "age";
-
-	NodeList roots;
-	load_tree( user, mysql, roots );
-
-	printf("before:\n");
-	for ( NodeList::iterator i = roots.begin(); i != roots.end(); i++ )
-		print_node( *i, 0 );
-	
-	printf("inserting:\n");
-
-//	insert( mysql, user, roots, "http://localhost/spp/mom/" );
-//	insert( mysql, user, roots, "http://localhost/spp/dad/" );
-//	insert( mysql, user, roots, "http://localhost/spp/anne/" );
-//	insert( mysql, user, roots, "http://localhost/spp/jenn/" );
+	forward_tree_insert( mysql, "pat", "http://localhost/spp/jen/" );
 }
 

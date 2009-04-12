@@ -38,12 +38,12 @@ void read_rcfile( const char *confFile )
 const char *configFile = 0;
 const char *siteName = 0;
 bool runQueue = false;
-bool loadTree = false;
+bool test = false;
 
 int check_args( int argc, char **argv )
 {
 	while ( true ) {
-		int opt = getopt( argc, argv, "q:l" );
+		int opt = getopt( argc, argv, "q:t" );
 
 		if ( opt < 0 )
 			break;
@@ -53,8 +53,8 @@ int check_args( int argc, char **argv )
 				runQueue = true;
 				siteName = optarg;
 				break;
-			case 'l':
-				loadTree = true;
+			case 't':
+				test = true;
 				break;
 		}
 	}
@@ -69,7 +69,25 @@ int check_args( int argc, char **argv )
 	return 0;
 }
 
-void test_tree();
+void test_function()
+{
+	set_config_by_name( "spp" );
+
+	/* Open the database connection. */
+	MYSQL *mysql = mysql_init(0);
+	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+	}
+
+	int result = send_message( "http://localhost/spp/age/",
+			"http://localhost/spp/pat/", "yo@dawg" );
+	if ( result < 0 ) {
+		printf("send_message failed with %d\n", result );
+	}
+}
 
 int main( int argc, char **argv )
 {
@@ -85,8 +103,8 @@ int main( int argc, char **argv )
 
 	if ( runQueue )
 		run_queue( siteName );
-	else if ( loadTree )
-		test_tree();
+	else if ( test )
+		test_function();
 	else 
 		server_parse_loop();
 }

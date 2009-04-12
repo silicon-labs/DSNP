@@ -91,6 +91,7 @@ long send_session_key( const char *from, const char *to, const char *enc,
 		const char *sig, long long generation );
 long send_forward_to( const char *from, const char *to, int childNum, const char *forwardTo );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity );
+void receive_message( const char *user, const char *identity, const char *message );
 
 struct Config
 {

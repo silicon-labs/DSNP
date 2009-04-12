@@ -200,6 +200,18 @@ char *alloc_string( const char *s, const char *e )
 		free( identity2 );
 	}
 
+	action receive_message {
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		char *email = alloc_string( e1, e2 );
+
+		receive_message( user, identity, email );
+
+		free( user );
+		free( identity );
+		free( email );
+	}
+
 	commands := |* 
 		# Admin commands.
 		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
@@ -226,7 +238,7 @@ char *alloc_string( const char *s, const char *e )
 		'session_key'i ' ' user ' ' identity ' ' enc ' ' sig ' ' generation EOL @session_key;
 		'forward_to'i ' ' user ' ' identity ' ' num ' ' identity2  EOL @forward_to;
 
-		'message'i EOL @{ printf("OK\r\n"); fflush(stdout); };
+		'message'i ' ' user ' ' identity ' ' email EOL @receive_message;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -683,7 +695,11 @@ long send_message( const char *from, const char *to, const char *message )
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nmessage\r\n", toIdent.site );
+	fprintf( writeSocket, 
+		"SPP/0.1 %s\r\n"
+		"message %s %s %s\r\n", 
+		toIdent.site,
+		toIdent.user, from, message );
 	fflush( writeSocket );
 
 	/* Read the result. */

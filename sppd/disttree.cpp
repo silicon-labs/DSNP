@@ -164,19 +164,3 @@ void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity )
 		}
 	}
 }
-
-void test_tree()
-{
-	set_config_by_name( "spp" );
-
-	/* Open the database connection. */
-	MYSQL *mysql = mysql_init(0);
-	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-	}
-
-	forward_tree_insert( mysql, "pat", "http://localhost/spp/jen/" );
-}
-

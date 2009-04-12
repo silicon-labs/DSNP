@@ -1765,3 +1765,50 @@ close:
 	mysql_close( mysql );
 	fflush(stdout);
 }
+
+void receive_message( const char *user, const char *identity, const char *message )
+{
+	MYSQL *mysql, *connect_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* TEMP. */
+	exec_query( mysql, 
+		"INSERT INTO received ( user, from_id, message ) "
+		"VALUES ( %e, %e, %e )",
+		user, identity, message );
+
+	/* Who do we forward it to. */
+	exec_query( mysql, 
+		"SELECT get_forward1, get_forward2 "
+		"FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e",
+		user, identity );
+	
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row != 0 ) {
+		if ( row[0] != 0 )
+			send_message( identity, row[0], message );
+
+		if ( row[1] != 0 )
+			send_message( identity, row[1], message );
+	}
+
+	mysql_free_result( result );
+
+	printf("OK\n");
+
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+}

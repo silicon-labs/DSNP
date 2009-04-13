@@ -287,18 +287,17 @@ void new_session_key( MYSQL *mysql, const char *user )
 		user, sk, generation + 1 );
 }
 
-void new_user( const char *key, const char *user, const char *pass, const char *email )
+bool check_comm_key( const char *key )
+{
+	return true;
+}
+
+void new_user( const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
 	MYSQL *mysql, *connect_res;
 	char *pass_hashed;
-
-	/* Check the authentication. */
-	if ( strcmp( key, c->CFG_COMM_KEY ) != 0 ) {
-		printf( "ERROR communication key invalid\r\n" );
-		goto flush;
-	}
 
 	/* Generate a new key. */
 	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
@@ -1286,17 +1285,11 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 }
 
 
-void accept_friend( const char *key, const char *user, const char *user_reqid )
+void accept_friend( const char *user, const char *user_reqid )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-
-	/* Check the authentication. */
-	if ( strcmp( key, c->CFG_COMM_KEY ) != 0 ) {
-		printf( "ERROR communication key invalid\r\n" );
-		goto flush;
-	}
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);

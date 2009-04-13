@@ -54,7 +54,7 @@ int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
 /* Commands. */
-void new_user( const char *key, const char *user, const char *pass, const char *email );
+void new_user( const char *user, const char *pass, const char *email );
 void public_key( const char *identity );
 void friend_request( const char *user, const char *identity );
 void fetch_fr_relid( const char *reqid );
@@ -63,7 +63,7 @@ void return_relid( const char *user, const char *fr_reqid_str,
 void fetch_relid( const char *reqid );
 void friend_final( const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
-void accept_friend( const char *key, const char *user, const char *user_reqid );
+void accept_friend( const char *user, const char *user_reqid );
 void flogin( const char *user, const char *hash );
 void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str );
 void fetch_ftoken( const char *reqid );
@@ -93,6 +93,8 @@ long send_forward_to( const char *from, const char *to, int childNum, const char
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity );
 void receive_message( const char *user, const char *identity, const char *message );
 
+bool check_comm_key( const char *key );
+
 struct Config
 {
 	/* NOTE: must be mirrored by the cfgVals array. */
@@ -111,6 +113,7 @@ struct Config
 };
 
 extern Config *c, *config_first, *config_last;
+extern bool gblKeySubmitted;
 
 #define ERR_READ_ERROR         -1
 #define ERR_LINE_TOO_LONG      -2

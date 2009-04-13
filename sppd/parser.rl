@@ -20,6 +20,8 @@
 #include <unistd.h>
 #include "sppd.h"
 
+bool gblKeySubmitted = false;
+
 char *alloc_string( const char *s, const char *e )
 {
 	long length = e-s;
@@ -61,12 +63,11 @@ char *alloc_string( const char *s, const char *e )
 	EOL = '\r'? '\n';
 
 	action new_user {
-		char *key = alloc_string( k1, k2 );
 		char *user = alloc_string( u1, u2 );
 		char *pass = alloc_string( p1, p2 );
 		char *email = alloc_string( e1, e2 );
 
-		new_user( key, user, pass, email );
+		new_user( user, pass, email );
 	}
 
 	action public_key {
@@ -115,11 +116,10 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action accept_friend {
-		char *key = alloc_string( k1, k2 );
 		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
 
-		accept_friend( key, user, reqid );
+		accept_friend( user, reqid );
 	}
 
 	action flogin {
@@ -174,9 +174,28 @@ char *alloc_string( const char *s, const char *e )
 		receive_message( user, identity, email );
 	}
 
+	action comm_key {
+		char *key = alloc_string( k1, k2 );
+		
+		/* Check the authentication. */
+		if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
+			gblKeySubmitted = true;
+		else
+			fgoto *parser_error;
+	}
+
+	action check_key {
+		if ( !gblKeySubmitted ) {
+			printf("FAILING\n");
+			fgoto *parser_error;
+		}
+	}
+
 	commands := |* 
+		'comm_key'i ' ' comm_key EOL @comm_key;
+
 		# Admin commands.
-		'new_user'i ' ' comm_key ' ' user ' ' pass ' ' email EOL @new_user;
+		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user;
 
 		# Public key sharing.
 		'public_key'i ' ' user EOL @public_key;
@@ -189,7 +208,7 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 
 		# Friend Request Accept
-		'accept_friend'i ' ' comm_key ' ' user ' ' reqid EOL @accept_friend;
+		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
 
 		# Friend login. 
 		'flogin'i ' ' user ' ' hash EOL @flogin;

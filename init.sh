@@ -205,6 +205,12 @@ CREATE TABLE msg_queue (
 	message TEXT
 );
 
+CREATE TABLE received ( 
+	user CHAR(20),
+	from_id TEXT,
+	message TEXT
+);
+
 EOF
 
 #

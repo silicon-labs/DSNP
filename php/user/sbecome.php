@@ -27,7 +27,7 @@ if ( !$fp )
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
-	"friend_req $USER_NAME $identity\r\n";
+	"friend_request $USER_NAME $identity\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

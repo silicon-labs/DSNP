@@ -185,10 +185,8 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action check_key {
-		if ( !gblKeySubmitted ) {
-			printf("FAILING\n");
+		if ( !gblKeySubmitted )
 			fgoto *parser_error;
-		}
 	}
 
 	commands := |* 
@@ -201,9 +199,9 @@ char *alloc_string( const char *s, const char *e )
 		'public_key'i ' ' user EOL @public_key;
 
 		# Friend Request.
-		'friend_request'i ' ' user ' ' identity EOL @friend_request;
-		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @return_relid;
-		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @friend_final;
+		'friend_request'i ' ' user ' ' identity EOL @check_key @friend_request;
+		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @check_key @return_relid;
+		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @check_key @friend_final;
 		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
 		'fetch_relid'i ' ' reqid EOL @fetch_relid;
 
@@ -211,8 +209,8 @@ char *alloc_string( const char *s, const char *e )
 		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
 
 		# Friend login. 
-		'flogin'i ' ' user ' ' hash EOL @flogin;
-		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @return_ftoken;
+		'flogin'i ' ' user ' ' hash EOL @check_key @flogin;
+		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
 		# Message Sending

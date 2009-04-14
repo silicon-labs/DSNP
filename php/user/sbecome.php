@@ -27,6 +27,7 @@ if ( !$fp )
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
+	"comm_key $CFG_COMM_KEY\r\n" .
 	"friend_request $USER_NAME $identity\r\n";
 fwrite($fp, $send);
 

@@ -40,9 +40,11 @@ char *alloc_string( const char *s, const char *e )
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 	hash = [0-9a-f]+          >{a1=p;} %{a2=p;};
-	enc = [0-9a-f]+           >{e1=p;} %{e2= p;};
+	enc = [0-9a-f]+           >{e1=p;} %{e2=p;};
 	sig = [0-9a-f]+           >{s1=p;} %{s2=p;};
+	message = [0-9a-f]+       >{m1=p;} %{m2=p;};
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
+	relid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
@@ -189,6 +191,15 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 	}
 
+	action receive_message2 {
+		char *relid = alloc_string( r1, r2 );
+		char *enc = alloc_string( e1, e2 );
+		char *sig = alloc_string( s1, s2 );
+		char *message = alloc_string( m1, m2 );
+
+		receive_message2( relid, enc, sig, message );
+	}
+
 	commands := |* 
 		'comm_key'i ' ' comm_key EOL @comm_key;
 
@@ -218,6 +229,7 @@ char *alloc_string( const char *s, const char *e )
 		'forward_to'i ' ' user ' ' identity ' ' num ' ' identity2  EOL @forward_to;
 
 		'message'i ' ' user ' ' identity ' ' email EOL @receive_message;
+		'message2'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message2;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -225,7 +237,7 @@ char *alloc_string( const char *s, const char *e )
 
 %% write data;
 
-const long linelen = 1024;
+const long linelen = 2048;
 
 int server_parse_loop()
 {
@@ -244,6 +256,7 @@ int server_parse_loop()
 	const char *s1, *s2;
 	const char *g1, *g2;
 	const char *n1, *n2;
+	const char *m1, *m2;
 
 	%% write init;
 
@@ -805,7 +818,7 @@ fail:
 }
 
 /*
- * send_session_key
+ * send_forward_to
  */
 
 %%{
@@ -857,6 +870,89 @@ long send_forward_to( const char *from, const char *to, int childNum, const char
 
 		main := 
 			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}
+
+/*
+ * send_message2_net
+ */
+
+%%{
+	machine send_message2_net;
+	write data;
+}%%
+
+long send_message2_net( const char *relid, const char *to,
+		const char *enc, const char *sig, const char *message )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+
+	/* Need to parse the identity. */
+	Identity toIdent( to );
+	pres = toIdent.parse();
+
+	if ( pres < 0 )
+		return pres;
+
+	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, 
+		"SPP/0.1 %s\r\n"
+		"message2 %s %s %s %s\r\n", 
+		toIdent.site,
+		relid, enc, sig, message );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	printf( "message2 result: %s\n", buf );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		main := 
+			'OK ' [a-z]* EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 

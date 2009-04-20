@@ -1249,8 +1249,8 @@ close:
 int send_current_session_key( MYSQL *mysql, const char *user, const char *identity )
 {
 	RSA *user_priv, *id_pub;
-	unsigned char session_key[RELID_SIZE];
-	char sk[33];
+	unsigned char session_key[SK_SIZE];
+	char sk[SK_SIZE_HEX];
 	Encrypt encrypt;
 	long long generation;
 	int sk_result;
@@ -1260,6 +1260,9 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 	if ( sk_result != 1 ) {
 		printf( "ERROR fetching session key\r\n");
 	}
+
+	/* FIXME: Must convert to binary and put in session_key. */
+	hex2bin( session_key, SK_SIZE, sk );
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -1272,8 +1275,8 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 	user_priv = load_key( mysql, user );
 	
 	encrypt.load( id_pub, user_priv );
-	int encryptRes = encrypt.encryptSign( session_key, RELID_SIZE );
-	if ( encryptRes < 0 )
+	int encrypt_res = encrypt.encryptSign( session_key, RELID_SIZE );
+	if ( encrypt_res < 0 )
 		printf( "encryption failed: %s\n", encrypt.err );
 
 	int send_res = send_session_key( user, identity, encrypt.enc, encrypt.sig, generation );
@@ -1329,7 +1332,6 @@ void accept_friend( const char *user, const char *user_reqid )
 	mysql_free_result( result );
 close:
 	mysql_close( mysql );
-flush:
 	fflush( stdout );
 }
 
@@ -1805,3 +1807,109 @@ close:
 	mysql_close( mysql );
 	fflush(stdout);
 }
+
+long send_message2( const char *from_user, const char *to_identity, const char *message )
+{
+	MYSQL *mysql, *connect_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+	int encrypt_res;
+	const char *relid;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	exec_query( mysql, 
+		"SELECT put_relid FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e ",
+		from_user, to_identity );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 )
+		goto free_result;
+	relid = row[0];
+
+	id_pub = fetch_public_key( mysql, to_identity );
+	user_priv = load_key( mysql, from_user );
+
+	encrypt.load( id_pub, user_priv );
+	encrypt_res = encrypt.symEncryptSign( (u_char*)message, strlen(message) );
+
+	printf("sending %s %s %s %s %s\n", row[0], to_identity,
+			encrypt.enc, encrypt.sig, encrypt.sym );
+
+	send_message2_net( relid, to_identity, encrypt.enc, encrypt.sig, encrypt.sym );
+	
+free_result:
+	mysql_free_result( result );
+close:
+	mysql_close( mysql );
+	return 0;
+}
+
+void receive_message2( const char *relid, const char *enc,
+		const char *sig, const char *message )
+{
+	MYSQL *mysql, *connect_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+	int decrypt_res;
+	const char *user, *friend_id;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	exec_query( mysql, 
+		"SELECT user, friend_id FROM friend_claim "
+		"WHERE get_relid = %e",
+		relid );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 )
+		goto free_result;
+	user = row[0];
+	friend_id = row[1];
+
+
+	user_priv = load_key( mysql, user );
+	id_pub = fetch_public_key( mysql, friend_id );
+
+	encrypt.load( id_pub, user_priv );
+	decrypt_res = encrypt.symDecryptVerify( enc, sig, message );
+
+	if ( decrypt_res < 0 ) {
+		printf( "ERROR %s", encrypt.err );
+		goto free_result;
+	}
+
+	
+	printf("OK ");
+	fwrite( encrypt.decrypted, 1, encrypt.decLen, stdout );
+	printf("\n");
+
+free_result:
+	mysql_free_result( result );
+close:
+	mysql_close( mysql );
+	fflush( stdout );
+	return;
+}
+

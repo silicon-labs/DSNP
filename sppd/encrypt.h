@@ -18,6 +18,7 @@
 #define _ENCRYPT_H
 
 #include <openssl/rsa.h>
+#include <openssl/rc4.h>
 #include <sys/types.h>
 
 struct Encrypt
@@ -42,6 +43,9 @@ struct Encrypt
 	int encryptSign( u_char *src, long len );
 	int decryptVerify( const char *enc, const char *sig );
 
+	int symEncryptSign( u_char *src, long len );
+	int symDecryptVerify( const char *enc, const char *sig, const char *message );
+
 	void clear()
 	{
 		if ( enc != 0 )
@@ -55,11 +59,14 @@ struct Encrypt
 	RSA *pubEncVer;
 	RSA *privDecSign;
 
-	/* For encryptSign */
+	/* For encryption. */
 	char *enc;
 	char *sig;
+	char *sym;
 
-	/* For decryptVerify */
+	/* For decryption. */
+	u_char *session_key;
+	long skLen;
 	u_char *decrypted;
 	long decLen;
 

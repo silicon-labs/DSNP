@@ -82,8 +82,7 @@ void test_function()
 		printf( "ERROR failed to connect to the database\r\n");
 	}
 
-	int result = send_message( "http://localhost/spp/age/",
-			"http://localhost/spp/pat/", "yo@dawg" );
+	int result = send_message2( "age", "http://localhost/spp/pat/", "foobar" );
 	if ( result < 0 ) {
 		printf("send_message failed with %d\n", result );
 	}

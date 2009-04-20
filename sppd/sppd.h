@@ -93,6 +93,11 @@ long send_forward_to( const char *from, const char *to, int childNum, const char
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity );
 void receive_message( const char *user, const char *identity, const char *message );
 
+void receive_message2( const char *relid, const char *enc, const char *sig, const char *message );
+long send_message2_net( const char *relid, const char *to,
+		const char *enc, const char *sig, const char *message );
+long send_message2( const char *from_user, const char *to_identity, const char *message );
+
 bool check_comm_key( const char *key );
 
 struct Config
@@ -128,6 +133,8 @@ extern bool gblKeySubmitted;
 
 #define RELID_SIZE 16
 #define REQID_SIZE 16
+#define SK_SIZE     16
+#define SK_SIZE_HEX 33
 
 char *bin2hex( unsigned char *data, long len );
 long hex2bin( unsigned char *dest, long len, const char *src );

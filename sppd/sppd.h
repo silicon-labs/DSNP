@@ -86,17 +86,18 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long send_message( const char *from, const char *to, const char *message );
+long send_broadcast( const char *from, const char *to, const char *message );
+long send_broadcast_net( const char *from, const char *to, const char *message );
 long send_session_key( const char *from, const char *to, const char *enc,
 		const char *sig, long long generation );
 long send_forward_to( const char *from, const char *to, int childNum, const char *forwardTo );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity );
-void receive_message( const char *user, const char *identity, const char *message );
+void receive_broadcast( const char *user, const char *identity, const char *message );
 
-void receive_message2( const char *relid, const char *enc, const char *sig, const char *message );
-long send_message2_net( const char *relid, const char *to,
+void receive_message( const char *relid, const char *enc, const char *sig, const char *message );
+long send_message_net( const char *relid, const char *to,
 		const char *enc, const char *sig, const char *message );
-long send_message2( const char *from_user, const char *to_identity, const char *message );
+long send_message( const char *from_user, const char *to_identity, const char *message );
 
 bool check_comm_key( const char *key );
 

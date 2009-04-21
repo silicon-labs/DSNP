@@ -168,12 +168,12 @@ char *alloc_string( const char *s, const char *e )
 		forward_to( user, identity, number, identity2 );
 	}
 
-	action receive_message {
+	action receive_broadcast {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 		char *email = alloc_string( e1, e2 );
 
-		receive_message( user, identity, email );
+		receive_broadcast( user, identity, email );
 	}
 
 	action comm_key {
@@ -191,13 +191,13 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 	}
 
-	action receive_message2 {
+	action receive_message {
 		char *relid = alloc_string( r1, r2 );
 		char *enc = alloc_string( e1, e2 );
 		char *sig = alloc_string( s1, s2 );
 		char *message = alloc_string( m1, m2 );
 
-		receive_message2( relid, enc, sig, message );
+		receive_message( relid, enc, sig, message );
 	}
 
 	commands := |* 
@@ -228,8 +228,8 @@ char *alloc_string( const char *s, const char *e )
 		'session_key'i ' ' user ' ' identity ' ' enc ' ' sig ' ' generation EOL @session_key;
 		'forward_to'i ' ' user ' ' identity ' ' num ' ' identity2  EOL @forward_to;
 
-		'message'i ' ' user ' ' identity ' ' email EOL @receive_message;
-		'message2'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message2;
+		'broadcast'i ' ' user ' ' identity ' ' email EOL @receive_broadcast;
+		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -658,15 +658,15 @@ long Identity::parse()
 }
 
 /*
- * send_message
+ * send_broadcast_net
  */
 
 %%{
-	machine send_message;
+	machine send_broadcast_net;
 	write data;
 }%%
 
-long send_message( const char *from, const char *to, const char *message )
+long send_broadcast_net( const char *from, const char *to, const char *message )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -689,7 +689,7 @@ long send_message( const char *from, const char *to, const char *message )
 	FILE *writeSocket = fdopen( socketFd, "w" );
 	fprintf( writeSocket, 
 		"SPP/0.1 %s\r\n"
-		"message %s %s %s\r\n", 
+		"broadcast %s %s %s\r\n", 
 		toIdent.site,
 		toIdent.user, from, message );
 	fflush( writeSocket );
@@ -898,15 +898,15 @@ fail:
 }
 
 /*
- * send_message2_net
+ * send_message_net
  */
 
 %%{
-	machine send_message2_net;
+	machine send_message_net;
 	write data;
 }%%
 
-long send_message2_net( const char *relid, const char *to,
+long send_message_net( const char *relid, const char *to,
 		const char *enc, const char *sig, const char *message )
 {
 	static char buf[8192];
@@ -930,7 +930,7 @@ long send_message2_net( const char *relid, const char *to,
 	FILE *writeSocket = fdopen( socketFd, "w" );
 	fprintf( writeSocket, 
 		"SPP/0.1 %s\r\n"
-		"message2 %s %s %s %s\r\n", 
+		"message %s %s %s %s\r\n", 
 		toIdent.site,
 		relid, enc, sig, message );
 	fflush( writeSocket );
@@ -939,7 +939,7 @@ long send_message2_net( const char *relid, const char *to,
 	FILE *readSocket = fdopen( socketFd, "r" );
 	char *readRes = fgets( buf, 8192, readSocket );
 
-	printf( "message2 result: %s\n", buf );
+	printf( "message result: %s\n", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( !readRes ) {

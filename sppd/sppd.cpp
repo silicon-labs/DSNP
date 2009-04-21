@@ -1186,7 +1186,7 @@ long run_queue_db( MYSQL *mysql )
 		row = mysql_fetch_row( select_res );
 
 		printf( "%s %s %s\n", row[0], row[1], row[2] );
-		long send_res = send_message( row[0], row[1], row[2] );
+		long send_res = send_broadcast_net( row[0], row[1], row[2] );
 		if ( send_res < 0 ) {
 			printf("ERROR trouble sending message: %ld\n", send_res);
 			sent[i] = false;
@@ -1761,7 +1761,7 @@ close:
 	fflush(stdout);
 }
 
-void receive_message( const char *user, const char *identity, const char *message )
+void receive_broadcast( const char *user, const char *identity, const char *message )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
@@ -1793,10 +1793,10 @@ void receive_message( const char *user, const char *identity, const char *messag
 	row = mysql_fetch_row( result );
 	if ( row != 0 ) {
 		if ( row[0] != 0 )
-			send_message( identity, row[0], message );
+			send_broadcast_net( identity, row[0], message );
 
 		if ( row[1] != 0 )
-			send_message( identity, row[1], message );
+			send_broadcast_net( identity, row[1], message );
 	}
 
 	mysql_free_result( result );
@@ -1808,7 +1808,7 @@ close:
 	fflush(stdout);
 }
 
-long send_message2( const char *from_user, const char *to_identity, const char *message )
+long send_message( const char *from_user, const char *to_identity, const char *message )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
@@ -1847,7 +1847,7 @@ long send_message2( const char *from_user, const char *to_identity, const char *
 	printf("sending %s %s %s %s %s\n", row[0], to_identity,
 			encrypt.enc, encrypt.sig, encrypt.sym );
 
-	send_message2_net( relid, to_identity, encrypt.enc, encrypt.sig, encrypt.sym );
+	send_message_net( relid, to_identity, encrypt.enc, encrypt.sig, encrypt.sym );
 	
 free_result:
 	mysql_free_result( result );
@@ -1856,7 +1856,7 @@ close:
 	return 0;
 }
 
-void receive_message2( const char *relid, const char *enc,
+void receive_message( const char *relid, const char *enc,
 		const char *sig, const char *message )
 {
 	MYSQL *mysql, *connect_res;

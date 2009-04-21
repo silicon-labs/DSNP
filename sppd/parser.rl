@@ -34,13 +34,13 @@ char *alloc_string( const char *s, const char *e )
 %%{
 	machine common;
 
-	comm_key = [a-f0-9]+      >{k1=p;} %{k2=p;};
 	user = [a-zA-Z0-9_.]+     >{u1=p;} %{u2=p;};
 	pass = graph+             >{p1=p;} %{p2=p;};
 	email = graph+            >{e1=p;} %{e2=p;};
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 	hash = [0-9a-f]+          >{a1=p;} %{a2=p;};
+	key = [a-f0-9]+           >{k1=p;} %{k2=p;};
 	enc = [0-9a-f]+           >{e1=p;} %{e2=p;};
 	sig = [0-9a-f]+           >{s1=p;} %{s2=p;};
 	message = [0-9a-f]+       >{m1=p;} %{m2=p;};
@@ -183,7 +183,7 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	commands := |* 
-		'comm_key'i ' ' comm_key EOL @comm_key;
+		'comm_key'i ' ' key EOL @comm_key;
 
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user;
@@ -277,37 +277,31 @@ int server_parse_loop()
 	include common;
 
 	action session_key {
-		char *user = alloc_string( u1, u2 );
-		char *identity = alloc_string( i1, i2 );
-		char *sk = alloc_string( e1, e2 );
+		char *sk = alloc_string( k1, k2 );
 		char *generation = alloc_string( g1, g2 );
 
-		session_key( mysql, user, identity, sk, generation );
+		session_key( mysql, user, friend_id, sk, generation );
 	}
 
 	action forward_to {
-		char *user = alloc_string( u1, u2 );
-		char *identity = alloc_string( i1, i2 );
 		char *number = alloc_string( n1, n2 );
-		char *identity2 = alloc_string( j1, j2 );
+		char *to_identity = alloc_string( i1, i2 );
 
-		forward_to( mysql, user, identity, number, identity2 );
+		forward_to( mysql, user, friend_id, number, to_identity );
 	}
 
 	main :=
-		'session_key'i ' ' user ' ' identity ' ' enc ' ' generation EOL @session_key |
-		'forward_to'i ' ' user ' ' identity ' ' num ' ' identity2  EOL @forward_to;
+		'session_key'i ' ' key ' ' generation EOL @session_key |
+		'forward_to'i ' ' num ' ' identity  EOL @forward_to;
 }%%
 
 %% write data;
 
-int message_parser( MYSQL *mysql, const char *user, const char *from_user, const char *message )
+int message_parser( MYSQL *mysql, const char *user, const char *friend_id, const char *message )
 {
 	long cs;
-	const char *u1, *u2;
-	const char *e1, *e2;
+	const char *k1, *k2;
 	const char *i1, *i2;
-	const char *j1, *j2;
 	const char *h1, *h2;
 	const char *pp1, *pp2;
 	const char *g1, *g2;

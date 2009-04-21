@@ -1681,21 +1681,21 @@ void session_key( MYSQL *mysql, const char *user, const char *identity,
 }
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
-		const char *number, const char *identity2 )
+		const char *number, const char *to_identity )
 {
 	if ( atoi( number ) == 1 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
 				"SET get_forward1 = %e "
 				"WHERE user = %e AND friend_id = %e",
-				identity2, user, identity );
+				to_identity, user, identity );
 	}
 	else if ( atoi( number ) == 2 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
 				"SET get_forward2 = %e "
 				"WHERE user = %e AND friend_id = %e",
-				identity2, user, identity );
+				to_identity, user, identity );
 	}
 
 	printf("OK\n");
@@ -1800,13 +1800,9 @@ long send_session_key( const char *from_user, const char *to_identity,
 {
 	static char buf[8192];
 
-	/* Need to parse the identity. */
-	Identity toIdent( to_identity );
-	toIdent.parse();
-
 	sprintf( buf,
-		"session_key %s %s%s/ %s %lld\r\n", 
-		toIdent.user, c->CFG_URI, from_user, session_key, generation );
+		"session_key %s %lld\r\n", 
+		session_key, generation );
 
 	return send_message( from_user, to_identity, buf );
 }
@@ -1816,13 +1812,9 @@ long send_forward_to( const char *from_user, const char *to_identity,
 {
 	static char buf[8192];
 
-	/* Need to parse the identity. */
-	Identity toIdent( to_identity );
-	toIdent.parse();
-
 	sprintf( buf, 
-		"forward_to %s %s%s/ %d %s\r\n", 
-		toIdent.user, c->CFG_URI, from_user, childNum, forwardTo );
+		"forward_to %d %s\r\n", 
+		childNum, forwardTo );
 
 	return send_message( from_user, to_identity, buf );
 }

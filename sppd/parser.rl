@@ -279,11 +279,10 @@ int server_parse_loop()
 	action session_key {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
-		char *enc = alloc_string( e1, e2 );
-		char *sig = alloc_string( s1, s2 );
+		char *sk = alloc_string( e1, e2 );
 		char *generation = alloc_string( g1, g2 );
 
-		session_key( mysql, user, identity, enc, sig, generation );
+		session_key( mysql, user, identity, sk, generation );
 	}
 
 	action forward_to {
@@ -296,7 +295,7 @@ int server_parse_loop()
 	}
 
 	main :=
-		'session_key'i ' ' user ' ' identity ' ' enc ' ' sig ' ' generation EOL @session_key |
+		'session_key'i ' ' user ' ' identity ' ' enc ' ' generation EOL @session_key |
 		'forward_to'i ' ' user ' ' identity ' ' num ' ' identity2  EOL @forward_to;
 }%%
 
@@ -311,7 +310,6 @@ int message_parser( MYSQL *mysql, const char *user, const char *from_user, const
 	const char *j1, *j2;
 	const char *h1, *h2;
 	const char *pp1, *pp2;
-	const char *s1, *s2;
 	const char *g1, *g2;
 	const char *n1, *n2;
 

@@ -69,8 +69,8 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 void fetch_ftoken( const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void session_key( MYSQL *mysql, const char *user, const char *identity, const char *enc,
-		const char *sig, const char *generation );
+void session_key( MYSQL *mysql, const char *user, const char *identity,
+		const char *sk, const char *generation );
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
 		const char *number, const char *identity2 );
@@ -88,8 +88,8 @@ char *get_site( const char *identity );
 
 long send_broadcast( const char *from, const char *to, const char *message );
 long send_broadcast_net( const char *from, const char *to, const char *message );
-long send_session_key( const char *from, const char *to, const char *enc,
-		const char *sig, long long generation );
+long send_session_key( const char *from_user, const char *to_identity, 
+		const char *session_key, long long generation );
 long send_forward_to( const char *from, const char *to, int childNum, const char *forwardTo );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity );
 void receive_broadcast( const char *user, const char *identity, const char *message );

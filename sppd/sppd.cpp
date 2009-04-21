@@ -1248,8 +1248,6 @@ close:
 
 int send_current_session_key( MYSQL *mysql, const char *user, const char *identity )
 {
-	RSA *user_priv, *id_pub;
-	unsigned char session_key[SK_SIZE];
 	char sk[SK_SIZE_HEX];
 	Encrypt encrypt;
 	long long generation;
@@ -1261,25 +1259,7 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 		printf( "ERROR fetching session key\r\n");
 	}
 
-	/* FIXME: Must convert to binary and put in session_key. */
-	hex2bin( session_key, SK_SIZE, sk );
-
-	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity );
-	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
-		return -1;
-	}
-
-	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
-	
-	encrypt.load( id_pub, user_priv );
-	int encrypt_res = encrypt.encryptSign( session_key, RELID_SIZE );
-	if ( encrypt_res < 0 )
-		printf( "encryption failed: %s\n", encrypt.err );
-
-	int send_res = send_session_key( user, identity, encrypt.enc, encrypt.sig, generation );
+	int send_res = send_session_key( user, identity, sk, generation );
 	if ( send_res < 0 ) {
 		fprintf(stderr, "sending failed %d\n", send_res );
 	}
@@ -1661,13 +1641,10 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 }
 
 void session_key( MYSQL *mysql, const char *user, const char *identity,
-		const char *enc, const char *sig, const char *generation )
+		const char *sk, const char *generation )
 {
 	RSA *user_priv, *id_pub;
-	char *sk;
 	long query_res;
-	Encrypt encrypt;
-	int decryptRes;
 	bool acknowledged;
 
 	/* Get the public key for the identity. */
@@ -1679,13 +1656,6 @@ void session_key( MYSQL *mysql, const char *user, const char *identity,
 
 	/* Load the private key for the user the request is for. */
 	user_priv = load_key( mysql, user );
-
-	encrypt.load( id_pub, user_priv );
-	decryptRes = encrypt.decryptVerify( enc, sig );
-	if ( decryptRes < 0 )
-		printf( "ERROR encryption failed: %s\n", encrypt.err );
-
-	sk = bin2hex( encrypt.decrypted, encrypt.decLen );
 
 	/* Make the query. */
 	query_res = exec_query( mysql, 
@@ -1708,7 +1678,6 @@ void session_key( MYSQL *mysql, const char *user, const char *identity,
 	}
 	
 	printf("OK\n");
-
 }
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
@@ -1826,8 +1795,8 @@ close:
 	return 0;
 }
 
-long send_session_key( const char *from_user, const char *to_identity, const char *enc,
-	const char *sig, long long generation )
+long send_session_key( const char *from_user, const char *to_identity, 
+		const char *session_key, long long generation )
 {
 	static char buf[8192];
 
@@ -1836,8 +1805,8 @@ long send_session_key( const char *from_user, const char *to_identity, const cha
 	toIdent.parse();
 
 	sprintf( buf,
-		"session_key %s %s%s/ %s %s %lld\r\n", 
-		toIdent.user, c->CFG_URI, from_user, enc, sig, generation );
+		"session_key %s %s%s/ %s %lld\r\n", 
+		toIdent.user, c->CFG_URI, from_user, session_key, generation );
 
 	return send_message( from_user, to_identity, buf );
 }

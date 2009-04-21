@@ -114,8 +114,6 @@ int Encrypt::symEncryptSign( u_char *message, long len )
 	unsigned char new_sesion_key[SK_SIZE];
 	RAND_bytes( new_sesion_key, SK_SIZE );
 
-	printf("symEncryptSign session_key: %s\n", bin2hex( new_sesion_key, SK_SIZE ) );
-
 	/* Encrypt the session key. */
 	u_char *encrypted = (u_char*)malloc( RSA_size(pubEncVer) );
 	int encLen = RSA_public_encrypt( SK_SIZE, new_sesion_key, encrypted, 

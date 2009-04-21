@@ -69,10 +69,10 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 void fetch_ftoken( const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void session_key( const char *user, const char *identity, const char *enc,
+void session_key( MYSQL *mysql, const char *user, const char *identity, const char *enc,
 		const char *sig, const char *generation );
 
-void forward_to( const char *user, const char *identity,
+void forward_to( MYSQL *mysql, const char *user, const char *identity,
 		const char *number, const char *identity2 );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
@@ -141,5 +141,6 @@ char *bin2hex( unsigned char *data, long len );
 long hex2bin( unsigned char *dest, long len, const char *src );
 
 int exec_query( MYSQL *mysql, const char *fmt, ... );
+int message_parser( MYSQL *mysql, const char *user, const char *from_user, const char *message );
 
 #endif

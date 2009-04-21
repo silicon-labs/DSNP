@@ -1287,7 +1287,6 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 	return 0;
 }
 
-
 void accept_friend( const char *user, const char *user_reqid )
 {
 	MYSQL *mysql, *connect_res;
@@ -1661,10 +1660,9 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 	return false;
 }
 
-void session_key( const char *user, const char *identity,
+void session_key( MYSQL *mysql, const char *user, const char *identity,
 		const char *enc, const char *sig, const char *generation )
 {
-	MYSQL *mysql, *connect_res;
 	RSA *user_priv, *id_pub;
 	char *sk;
 	long query_res;
@@ -1672,20 +1670,11 @@ void session_key( const char *user, const char *identity,
 	int decryptRes;
 	bool acknowledged;
 
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
-
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
 		printf("ERROR fetch_public_key failed\n" );
-		goto close;
+		return;
 	}
 
 	/* Load the private key for the user the request is for. */
@@ -1720,25 +1709,11 @@ void session_key( const char *user, const char *identity,
 	
 	printf("OK\n");
 
-close:
-	mysql_close( mysql );
-	fflush(stdout);
 }
 
-void forward_to( const char *user, const char *identity,
+void forward_to( MYSQL *mysql, const char *user, const char *identity,
 		const char *number, const char *identity2 )
 {
-	MYSQL *mysql, *connect_res;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
-
 	if ( atoi( number ) == 1 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
@@ -1755,10 +1730,6 @@ void forward_to( const char *user, const char *identity,
 	}
 
 	printf("OK\n");
-
-close:
-	mysql_close( mysql );
-	fflush(stdout);
 }
 
 void receive_broadcast( const char *user, const char *identity, const char *message )
@@ -1842,10 +1813,9 @@ long send_message( const char *from_user, const char *to_identity, const char *m
 	user_priv = load_key( mysql, from_user );
 
 	encrypt.load( id_pub, user_priv );
-	encrypt_res = encrypt.symEncryptSign( (u_char*)message, strlen(message) );
 
-	printf("sending %s %s %s %s %s\n", row[0], to_identity,
-			encrypt.enc, encrypt.sig, encrypt.sym );
+	/* Include the null in the message. */
+	encrypt_res = encrypt.symEncryptSign( (u_char*)message, strlen(message)+1 );
 
 	send_message_net( relid, to_identity, encrypt.enc, encrypt.sig, encrypt.sym );
 	
@@ -1854,6 +1824,38 @@ free_result:
 close:
 	mysql_close( mysql );
 	return 0;
+}
+
+long send_session_key( const char *from_user, const char *to_identity, const char *enc,
+	const char *sig, long long generation )
+{
+	static char buf[8192];
+
+	/* Need to parse the identity. */
+	Identity toIdent( to_identity );
+	toIdent.parse();
+
+	sprintf( buf,
+		"session_key %s %s%s/ %s %s %lld\r\n", 
+		toIdent.user, c->CFG_URI, from_user, enc, sig, generation );
+
+	return send_message( from_user, to_identity, buf );
+}
+
+long send_forward_to( const char *from_user, const char *to_identity, 
+		int childNum, const char *forwardTo )
+{
+	static char buf[8192];
+
+	/* Need to parse the identity. */
+	Identity toIdent( to_identity );
+	toIdent.parse();
+
+	sprintf( buf, 
+		"forward_to %s %s%s/ %d %s\r\n", 
+		toIdent.user, c->CFG_URI, from_user, childNum, forwardTo );
+
+	return send_message( from_user, to_identity, buf );
 }
 
 void receive_message( const char *relid, const char *enc,
@@ -1888,7 +1890,6 @@ void receive_message( const char *relid, const char *enc,
 	user = row[0];
 	friend_id = row[1];
 
-
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, friend_id );
 
@@ -1900,10 +1901,7 @@ void receive_message( const char *relid, const char *enc,
 		goto free_result;
 	}
 
-	
-	printf("OK ");
-	fwrite( encrypt.decrypted, 1, encrypt.decLen, stdout );
-	printf("\n");
+	message_parser( mysql, user, friend_id, (char*)encrypt.decrypted );
 
 free_result:
 	mysql_free_result( result );

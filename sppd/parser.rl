@@ -286,13 +286,14 @@ int server_parse_loop()
 	action forward_to {
 		char *number = alloc_string( n1, n2 );
 		char *to_identity = alloc_string( i1, i2 );
+		char *relid = alloc_string( r1, r2 );
 
-		forward_to( mysql, user, friend_id, number, to_identity );
+		forward_to( mysql, user, friend_id, number, to_identity, relid );
 	}
 
 	main :=
 		'session_key'i ' ' key ' ' generation EOL @session_key |
-		'forward_to'i ' ' num ' ' identity  EOL @forward_to;
+		'forward_to'i ' ' num ' ' identity ' ' relid EOL @forward_to;
 }%%
 
 %% write data;
@@ -306,6 +307,7 @@ int message_parser( MYSQL *mysql, const char *user, const char *friend_id, const
 	const char *pp1, *pp2;
 	const char *g1, *g2;
 	const char *n1, *n2;
+	const char *r1, *r2;
 
 	%% write init;
 

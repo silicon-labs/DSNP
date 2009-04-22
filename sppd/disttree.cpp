@@ -112,7 +112,8 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
-void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity )
+void forward_tree_insert( MYSQL *mysql, const char *user,
+		const char *identity, const char *relid )
 {
 	NodeList roots;
 	load_tree( user, mysql, roots );
@@ -142,7 +143,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity )
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( user, front->identity.c_str(), 1, identity );
+				send_forward_to( user, front->identity.c_str(), 1, identity, relid );
 				break;
 			}
 
@@ -156,7 +157,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity )
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( user, front->identity.c_str(), 2, identity );
+				send_forward_to( user, front->identity.c_str(), 2, identity, relid );
 				break;
 			}
 

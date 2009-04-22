@@ -1304,7 +1304,7 @@ void accept_friend( const char *user, const char *user_reqid )
 	delete_user_friend_request( mysql, user, user_reqid );
 
 	send_current_session_key( mysql, user, row[0] );
-	forward_tree_insert( mysql, user, row[0] );
+	forward_tree_insert( mysql, user, row[0], row[1] );
 
 	printf( "OK\r\n" );
 
@@ -1643,6 +1643,8 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 void session_key( MYSQL *mysql, const char *user, const char *identity,
 		const char *sk, const char *generation )
 {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
 	RSA *user_priv, *id_pub;
 	long query_res;
 	bool acknowledged;
@@ -1673,29 +1675,37 @@ void session_key( MYSQL *mysql, const char *user, const char *identity,
 			"WHERE user = %e AND friend_id = %e",
 			user, identity );
 
+		exec_query( mysql, 
+			"SELECT put_relid from friend_claim "
+			"WHERE user = %e AND friend_id = %e",
+			user, identity );
+
+		result = mysql_store_result( mysql );
+		row = mysql_fetch_row( result );
+
 		send_current_session_key( mysql, user, identity );
-		forward_tree_insert( mysql, user, identity );
+		forward_tree_insert( mysql, user, identity, row[0] );
 	}
 	
 	printf("OK\n");
 }
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
-		const char *number, const char *to_identity )
+		const char *number, const char *to_identity, const char *relid )
 {
 	if ( atoi( number ) == 1 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
-				"SET get_forward1 = %e "
+				"SET get_forward1 = %e, get_fwd_relid1 = %e "
 				"WHERE user = %e AND friend_id = %e",
-				to_identity, user, identity );
+				to_identity, relid, user, identity );
 	}
 	else if ( atoi( number ) == 2 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
-				"SET get_forward2 = %e "
+				"SET get_forward2 = %e, get_fwd_relid2 = %e "
 				"WHERE user = %e AND friend_id = %e",
-				to_identity, user, identity );
+				to_identity, relid, user, identity );
 	}
 
 	printf("OK\n");
@@ -1808,13 +1818,13 @@ long send_session_key( const char *from_user, const char *to_identity,
 }
 
 long send_forward_to( const char *from_user, const char *to_identity, 
-		int childNum, const char *forwardTo )
+		int childNum, const char *forwardTo, const char *relid )
 {
 	static char buf[8192];
 
 	sprintf( buf, 
-		"forward_to %d %s\r\n", 
-		childNum, forwardTo );
+		"forward_to %d %s %s\r\n", 
+		childNum, forwardTo, relid );
 
 	return send_message( from_user, to_identity, buf );
 }

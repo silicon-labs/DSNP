@@ -73,7 +73,7 @@ void session_key( MYSQL *mysql, const char *user, const char *identity,
 		const char *sk, const char *generation );
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
-		const char *number, const char *identity2 );
+		const char *number, const char *relid, const char *to_identity );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user );
@@ -90,8 +90,9 @@ long send_broadcast( const char *from, const char *to, const char *message );
 long send_broadcast_net( const char *from, const char *to, const char *message );
 long send_session_key( const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
-long send_forward_to( const char *from, const char *to, int childNum, const char *forwardTo );
-void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity );
+long send_forward_to( const char *from, const char *to, int childNum, 
+		const char *forwardTo, const char *relid );
+void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 void receive_broadcast( const char *user, const char *identity, const char *message );
 
 void receive_message( const char *relid, const char *enc, const char *sig, const char *message );

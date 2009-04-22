@@ -82,10 +82,10 @@ void test_function()
 		printf( "ERROR failed to connect to the database\r\n");
 	}
 
-	int result = send_message( "age", "http://localhost/spp/pat/", "foobar" );
-	if ( result < 0 ) {
-		printf("send_message failed with %d\n", result );
-	}
+//	int result = send_broadcast( "age", "http://localhost/spp/pat/", "foobar" );
+//	if ( result < 0 ) {
+//		printf("send_message failed with %d\n", result );
+//	}
 }
 
 int main( int argc, char **argv )

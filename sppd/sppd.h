@@ -91,7 +91,7 @@ long send_broadcast_net( const char *from, const char *to, const char *message )
 long send_session_key( const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
 long send_forward_to( const char *from, const char *to, int childNum, 
-		const char *forwardTo, const char *relid );
+		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 void receive_broadcast( const char *user, const char *identity, const char *message );
 

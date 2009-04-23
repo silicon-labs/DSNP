@@ -1696,14 +1696,14 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 	if ( atoi( number ) == 1 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
-				"SET get_forward1 = %e, get_fwd_relid1 = %e "
+				"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
 				"WHERE user = %e AND friend_id = %e",
 				to_identity, relid, user, identity );
 	}
 	else if ( atoi( number ) == 2 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
-				"SET get_forward2 = %e, get_fwd_relid2 = %e "
+				"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
 				"WHERE user = %e AND friend_id = %e",
 				to_identity, relid, user, identity );
 	}
@@ -1734,7 +1734,7 @@ void receive_broadcast( const char *user, const char *identity, const char *mess
 
 	/* Who do we forward it to. */
 	exec_query( mysql, 
-		"SELECT get_forward1, get_forward2 "
+		"SELECT get_fwd_site1, get_fwd_site2 "
 		"FROM friend_claim "
 		"WHERE user = %e AND friend_id = %e",
 		user, identity );
@@ -1818,13 +1818,13 @@ long send_session_key( const char *from_user, const char *to_identity,
 }
 
 long send_forward_to( const char *from_user, const char *to_identity, 
-		int childNum, const char *forwardTo, const char *relid )
+		int childNum, const char *forwardToSite, const char *relid )
 {
 	static char buf[8192];
 
 	sprintf( buf, 
 		"forward_to %d %s %s\r\n", 
-		childNum, forwardTo, relid );
+		childNum, forwardToSite, relid );
 
 	return send_message( from_user, to_identity, buf );
 }

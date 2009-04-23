@@ -118,6 +118,9 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 	NodeList roots;
 	load_tree( user, mysql, roots );
 
+	Identity id( identity );
+	id.parse();
+
 	if ( roots.size() == 0 ) {
 		/* Set this friend claim to be the root of the put tree. */
 		exec_query( mysql,
@@ -143,7 +146,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( user, front->identity.c_str(), 1, identity, relid );
+				send_forward_to( user, front->identity.c_str(), 1, id.site, relid );
 				break;
 			}
 
@@ -157,7 +160,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( user, front->identity.c_str(), 2, identity, relid );
+				send_forward_to( user, front->identity.c_str(), 2, id.site, relid );
 				break;
 			}
 

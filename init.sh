@@ -186,8 +186,10 @@ CREATE TABLE friend_claim (
 	put_root BOOL,
 	put_forward1 TEXT,
 	put_forward2 TEXT,
-	get_forward1 TEXT,
-	get_forward2 TEXT
+	get_fwd_site1 TEXT,
+	get_fwd_site2 TEXT,
+	get_fwd_relid1 CHAR(32),
+	get_fwd_relid2 CHAR(32)
 );
 
 CREATE TABLE flogin_tok (

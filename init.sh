@@ -208,8 +208,7 @@ CREATE TABLE msg_queue (
 );
 
 CREATE TABLE received ( 
-	user CHAR(20),
-	from_id TEXT,
+	get_relid CHAR(32),
 	message TEXT
 );
 

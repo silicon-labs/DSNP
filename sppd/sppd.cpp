@@ -1157,6 +1157,8 @@ long queue_message( MYSQL *mysql, const char *user, const char *to_id, const cha
 
 long run_queue_db( MYSQL *mysql )
 {
+	return 0;
+#if 0
 	int result = 0;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
@@ -1221,6 +1223,7 @@ long run_queue_db( MYSQL *mysql )
 	mysql_free_result( select_res );
 
 	return result;
+#endif
 }
 
 void run_queue( const char *siteName )
@@ -1711,7 +1714,7 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 	printf("OK\n");
 }
 
-void receive_broadcast( const char *user, const char *identity, const char *message )
+void receive_broadcast( const char *relid, const char *message )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
@@ -1728,25 +1731,31 @@ void receive_broadcast( const char *user, const char *identity, const char *mess
 
 	/* TEMP. */
 	exec_query( mysql, 
-		"INSERT INTO received ( user, from_id, message ) "
-		"VALUES ( %e, %e, %e )",
-		user, identity, message );
+		"INSERT INTO received ( get_relid, message ) "
+		"VALUES ( %e, %e )",
+		relid, message );
 
-	/* Who do we forward it to. */
+	/* FIXME: Should have a specific generation number. */
 	exec_query( mysql, 
-		"SELECT get_fwd_site1, get_fwd_site2 "
+		"SELECT friend_claim.user, friend_claim.friend_id, "
+		"    get_fwd_site1, get_fwd_relid1, get_fwd_site2, get_fwd_relid2, "
+		"    session_key, generation "
 		"FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e",
-		user, identity );
+		"JOIN get_session_key "
+		"ON friend_claim.user = get_session_key.user AND "
+		"    friend_claim.friend_id = get_session_key.friend_id "
+		"WHERE get_relid = %e "
+		"ORDER BY generation DESC "
+		"LIMIT 1", relid );
 	
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row != 0 ) {
 		if ( row[0] != 0 )
-			send_broadcast_net( identity, row[0], message );
+			send_broadcast_net( row[2], row[3], message );
 
 		if ( row[1] != 0 )
-			send_broadcast_net( identity, row[1], message );
+			send_broadcast_net( row[4], row[5], message );
 	}
 
 	mysql_free_result( result );

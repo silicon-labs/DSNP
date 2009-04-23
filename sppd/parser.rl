@@ -150,14 +150,6 @@ char *alloc_string( const char *s, const char *e )
 		set_config_by_uri( identity );
 	}
 
-	action receive_broadcast {
-		char *user = alloc_string( u1, u2 );
-		char *identity = alloc_string( i1, i2 );
-		char *email = alloc_string( e1, e2 );
-
-		receive_broadcast( user, identity, email );
-	}
-
 	action comm_key {
 		char *key = alloc_string( k1, k2 );
 		
@@ -171,6 +163,13 @@ char *alloc_string( const char *s, const char *e )
 	action check_key {
 		if ( !gblKeySubmitted )
 			fgoto *parser_error;
+	}
+
+	action receive_broadcast {
+		char *relid = alloc_string( r1, r2 );
+		char *message = alloc_string( m1, m2 );
+
+		receive_broadcast( relid, message );
 	}
 
 	action receive_message {
@@ -206,7 +205,7 @@ char *alloc_string( const char *s, const char *e )
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
-		'broadcast'i ' ' user ' ' identity ' ' email EOL @receive_broadcast;
+		'broadcast'i ' ' relid ' ' message EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
 	*|;
 
@@ -699,7 +698,7 @@ long Identity::parse()
 	write data;
 }%%
 
-long send_broadcast_net( const char *from, const char *to, const char *message )
+long send_broadcast_net( const char *toSite, const char *relid, const char *message )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -708,13 +707,13 @@ long send_broadcast_net( const char *from, const char *to, const char *message )
 	long pres;
 
 	/* Need to parse the identity. */
-	Identity toIdent( to );
-	pres = toIdent.parse();
+	Identity site( toSite );
+	pres = site.parse();
 
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
+	long socketFd = open_inet_connection( site.host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
@@ -722,9 +721,9 @@ long send_broadcast_net( const char *from, const char *to, const char *message )
 	FILE *writeSocket = fdopen( socketFd, "w" );
 	fprintf( writeSocket, 
 		"SPP/0.1 %s\r\n"
-		"broadcast %s %s %s\r\n", 
-		toIdent.site,
-		toIdent.user, from, message );
+		"broadcast %s %s\r\n", 
+		toSite,
+		relid, message );
 	fflush( writeSocket );
 
 	/* Read the result. */

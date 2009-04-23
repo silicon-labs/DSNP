@@ -87,13 +87,13 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 char *get_site( const char *identity );
 
 long send_broadcast( const char *from, const char *to, const char *message );
-long send_broadcast_net( const char *from, const char *to, const char *message );
+long send_broadcast_net( const char *toSite, const char *relid, const char *message );
 long send_session_key( const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
 long send_forward_to( const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
-void receive_broadcast( const char *user, const char *identity, const char *message );
+void receive_broadcast( const char *relid, const char *message );
 
 void receive_message( const char *relid, const char *enc, const char *sig, const char *message );
 long send_message_net( const char *relid, const char *to,

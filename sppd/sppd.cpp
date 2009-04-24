@@ -1643,8 +1643,8 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 	return false;
 }
 
-void session_key( MYSQL *mysql, const char *user, const char *identity,
-		const char *sk, const char *generation )
+void session_key( MYSQL *mysql, const char *relid, const char *user,
+		const char *identity, const char *sk, const char *generation )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1665,9 +1665,9 @@ void session_key( MYSQL *mysql, const char *user, const char *identity,
 	/* Make the query. */
 	query_res = exec_query( mysql, 
 			"INSERT INTO get_session_key "
-			"( user, friend_id, session_key, generation ) "
-			"VALUES ( %e, %e, %e, %e ) ",
-			user, identity, sk, generation );
+			"( get_relid, session_key, generation ) "
+			"VALUES ( %e, %e, %e ) ",
+			relid, sk, generation );
 	
 	/* If this friend claim hasn't been acknowledged then send back
 	 * a session key and acknowledge the claim. */
@@ -1881,7 +1881,7 @@ void receive_message( const char *relid, const char *enc,
 		goto free_result;
 	}
 
-	message_parser( mysql, user, friend_id, (char*)encrypt.decrypted );
+	message_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
 
 free_result:
 	mysql_free_result( result );

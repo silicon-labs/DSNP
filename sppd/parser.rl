@@ -279,7 +279,7 @@ int server_parse_loop()
 		char *sk = alloc_string( k1, k2 );
 		char *generation = alloc_string( g1, g2 );
 
-		session_key( mysql, user, friend_id, sk, generation );
+		session_key( mysql, relid, user, friend_id, sk, generation );
 	}
 
 	action forward_to {
@@ -297,7 +297,8 @@ int server_parse_loop()
 
 %% write data;
 
-int message_parser( MYSQL *mysql, const char *user, const char *friend_id, const char *message )
+int message_parser( MYSQL *mysql, const char *relid,
+		const char *user, const char *friend_id, const char *message )
 {
 	long cs;
 	const char *k1, *k2;

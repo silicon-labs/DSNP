@@ -164,8 +164,7 @@ CREATE TABLE user_friend_request (
 );
 
 CREATE TABLE get_session_key (
-	user VARCHAR(20), 
-	friend_id TEXT,
+	get_relid VARCHAR(32),
 	session_key CHAR(32),
 	generation BIGINT
 );

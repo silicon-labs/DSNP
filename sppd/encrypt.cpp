@@ -214,4 +214,93 @@ int Encrypt::symDecryptVerify( const char *srcEnc, const char *srcSig, const cha
 
 	return 0;
 }
+
+int Encrypt::skEncryptSign( const char *srcSK, u_char *message, long len )
+{
+	RC4_KEY rc4_key;
+	u_char *output;
+
+	/* Convert the session_key to binary. */
+	u_char session_key[SK_SIZE];
+	long skLen = hex2bin( session_key, SK_SIZE, srcSK );
+	if ( skLen <= 0 ) {
+		sprintf( err, "error converting hex-encoded session key string to binary" );
+		return -1;
+	}
+
+	/* Encrypt the message using the session key. */
+	output = (u_char*)malloc( len );
+	RC4_set_key( &rc4_key, SK_SIZE, session_key );
+	RC4( &rc4_key, len, message, output );
+
+	/* FIXME: check results here. */
+
+	/* Sign the message. */
+	u_char msg_sha1[SHA_DIGEST_LENGTH];
+	SHA1( message, len, msg_sha1 );
+
+	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
+	unsigned sigLen;
+	int signRes = RSA_sign( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
+			signature, &sigLen, privDecSign );
+
+	if ( signRes != 1 ) {
+		free( signature );
+		ERR_error_string( ERR_get_error(), err );
+		return -1;
+	}
+
+	sig = bin2hex( signature, sigLen );
+	sym = bin2hex( output, len );
+
+	free( signature );
+	free( output );
+
+	return 0;
+}
 	
+int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char *srcMsg )
+{
+	RC4_KEY rc4_key;
+
+	/* Convert the session_key to binary. */
+	u_char session_key[SK_SIZE];
+	long skLen = hex2bin( session_key, SK_SIZE, srcSK );
+	if ( skLen <= 0 ) {
+		sprintf( err, "error converting hex-encoded session key string to binary" );
+		return -1;
+	}
+
+//	/* Convert the sig to binary. */
+//	u_char *signature = (u_char*)malloc( strlen(srcSig) );
+//	long sigLen = hex2bin( signature, RSA_size(pubEncVer), srcSig );
+//	if ( sigLen <= 0 ) {
+//		sprintf( err, "error converting hex-encoded signature to binary" );
+//		return -1;
+//	}
+
+	/* Convert the message to binary. */
+	u_char *message = (u_char*)malloc( strlen(srcMsg) );
+	long msgLen = hex2bin( message, strlen(srcMsg), srcMsg );
+	if ( msgLen <= 0 ) {
+		sprintf( err, "error converting hex-encoded message to binary" );
+		return -1;
+	}
+
+	decrypted = (u_char*)malloc( msgLen );
+	RC4_set_key( &rc4_key, skLen, session_key );
+	RC4( &rc4_key, msgLen, message, decrypted );
+	decLen = msgLen;
+
+//	/* Verify the message. */
+//	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
+//	SHA1( decrypted, msgLen, decrypted_sha1 );
+//	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
+//			signature, sigLen, pubEncVer );
+//	if ( verifyres != 1 ) {
+//		ERR_error_string( ERR_get_error(), err );
+//		return -1;
+//	}
+
+	return 0;
+}

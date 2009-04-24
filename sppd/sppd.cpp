@@ -71,7 +71,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				len += strlen(a) * 2;
 				break;
 			}
-			case 'l': {
+			case 'L': {
 				len += 32;
 				break;
 			}
@@ -116,7 +116,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				*dest++ = '\'';
 				break;
 			}
-			case 'l': {
+			case 'L': {
 				long long v = va_arg(vl, long long);
 				sprintf( dest, "%lld", v );
 				dest += strlen(dest);
@@ -283,7 +283,7 @@ void new_session_key( MYSQL *mysql, const char *user )
 	exec_query( mysql, 
 		"INSERT INTO put_session_key "
 		"( user, session_key, generation ) "
-		"VALUES ( %e, %e, %l ) ",
+		"VALUES ( %e, %e, %L ) ",
 		user, sk, generation + 1 );
 }
 
@@ -1714,11 +1714,71 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 	printf("OK\n");
 }
 
-void receive_broadcast( const char *relid, const char *message )
+long send_broadcast( MYSQL *mysql, const char *user, const char *message )
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	Encrypt encrypt;
+	RSA *user_priv;
+	char *session_key, *generation;
+	char *friend_id, *put_relid;
+	Identity id;
+
+	/* Find the session key and generation. */
+	exec_query( mysql,
+		"SELECT session_key, generation FROM put_session_key "
+		"WHERE user = %e",
+		user );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf("ERROR bad user\r\n");
+		goto close;
+	}
+	session_key = strdup(row[0]);
+	generation = strdup(row[1]);
+
+	/* Find root user. */
+	exec_query( mysql,
+		"SELECT friend_id, put_relid FROM friend_claim "
+		"WHERE user = %e AND put_root = true",
+		user );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf("ERROR bad user\r\n");
+		goto close;
+	}
+	friend_id = row[0];
+	put_relid = row[1];
+
+	/* Do the encryption. */
+	user_priv = load_key( mysql, user );
+	encrypt.load( 0, user_priv );
+	encrypt.skEncryptSign( session_key, (u_char*)message, strlen(message)+1 );
+
+	/* Find the root user to send to. */
+	id.load( friend_id );
+	id.parse();
+
+	send_broadcast_net( id.site, put_relid, encrypt.sym, strtoll(generation, 0, 10) );
+	
+close:
+	return 0;
+}
+
+void receive_broadcast( const char *relid, const char *message, long long key_generation )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
+	char *user, *friend_id, *session_key;
+	char *get_fwd_site1, *get_fwd_relid1;
+	char *get_fwd_site2, *get_fwd_relid2;
+	RSA *id_pub;
+	Encrypt encrypt;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1729,33 +1789,49 @@ void receive_broadcast( const char *relid, const char *message )
 		goto close;
 	}
 
+	exec_query( mysql, 
+		"SELECT friend_claim.user, friend_claim.friend_id, "
+		"    get_fwd_site1, get_fwd_relid1, get_fwd_site2, get_fwd_relid2, "
+		"    session_key "
+		"FROM friend_claim "
+		"JOIN get_session_key "
+		"ON friend_claim.get_relid = get_session_key.get_relid "
+		"WHERE friend_claim.get_relid = %e AND generation = %L",
+		relid, key_generation );
+	
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf("ERROR bad recipient\r\n");
+		goto close;
+	}
+
+	user = row[0];
+	friend_id = row[1];
+	get_fwd_site1 = row[2];
+	get_fwd_relid1 = row[3];
+	get_fwd_site2 = row[4];
+	get_fwd_relid2 = row[5];
+	session_key = row[6];
+
+	/* Do the decryption. */
+	id_pub = fetch_public_key( mysql, friend_id );
+	encrypt.load( id_pub, 0 );
+	encrypt.skDecryptVerify( session_key, 0, message );
+
+
 	/* TEMP. */
 	exec_query( mysql, 
 		"INSERT INTO received ( get_relid, message ) "
 		"VALUES ( %e, %e )",
-		relid, message );
-
-	/* FIXME: Should have a specific generation number. */
-	exec_query( mysql, 
-		"SELECT friend_claim.user, friend_claim.friend_id, "
-		"    get_fwd_site1, get_fwd_relid1, get_fwd_site2, get_fwd_relid2, "
-		"    session_key, generation "
-		"FROM friend_claim "
-		"JOIN get_session_key "
-		"ON friend_claim.user = get_session_key.user AND "
-		"    friend_claim.friend_id = get_session_key.friend_id "
-		"WHERE get_relid = %e "
-		"ORDER BY generation DESC "
-		"LIMIT 1", relid );
+		relid, encrypt.decrypted );
 	
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
 	if ( row != 0 ) {
 		if ( row[0] != 0 )
-			send_broadcast_net( row[2], row[3], message );
+			send_broadcast_net( get_fwd_site1, get_fwd_relid1, message, key_generation );
 
 		if ( row[1] != 0 )
-			send_broadcast_net( row[4], row[5], message );
+			send_broadcast_net( get_fwd_site2, get_fwd_relid2, message, key_generation );
 	}
 
 	mysql_free_result( result );

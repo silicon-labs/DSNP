@@ -82,8 +82,7 @@ void test_function()
 		printf( "ERROR failed to connect to the database\r\n");
 	}
 
-	int result = send_broadcast_net( "http://localhost/spp/", 
-			"2b875d09f242513ac6d9ef08e402241c", "deadbeef" );
+	int result = send_broadcast( mysql, "age", "this is my message" );
 	if ( result < 0 ) {
 		printf("send_broadcast failed with %d\n", result );
 	}

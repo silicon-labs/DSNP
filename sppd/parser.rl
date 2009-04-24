@@ -55,7 +55,7 @@ char *alloc_string( const char *s, const char *e )
 		( 'http://' path_part '/' ( path_part '/' )* )
 		>{j1=p;} %{j2=p;};
 
-	num = [a-f0-9]+      >{n1=p;} %{n2=p;};
+	number = [0-9]+           >{n1=p;} %{n2=p;};
 
 	EOL = '\r'? '\n';
 }%%
@@ -168,8 +168,10 @@ char *alloc_string( const char *s, const char *e )
 	action receive_broadcast {
 		char *relid = alloc_string( r1, r2 );
 		char *message = alloc_string( m1, m2 );
+		char *number = alloc_string( n1, n2 );
+		long long generation = strtoll( number, 0, 10 );
 
-		receive_broadcast( relid, message );
+		receive_broadcast( relid, message, generation );
 	}
 
 	action receive_message {
@@ -205,7 +207,7 @@ char *alloc_string( const char *s, const char *e )
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
-		'broadcast'i ' ' relid ' ' message EOL @receive_broadcast;
+		'broadcast'i ' ' relid ' ' message ' ' number EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
 	*|;
 
@@ -231,6 +233,7 @@ int server_parse_loop()
 	const char *a1, *a2;
 	const char *s1, *s2;
 	const char *m1, *m2;
+	const char *n1, *n2;
 
 	%% write init;
 
@@ -292,7 +295,7 @@ int server_parse_loop()
 
 	main :=
 		'session_key'i ' ' key ' ' generation EOL @session_key |
-		'forward_to'i ' ' num ' ' identity ' ' relid EOL @forward_to;
+		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to;
 }%%
 
 %% write data;
@@ -699,7 +702,8 @@ long Identity::parse()
 	write data;
 }%%
 
-long send_broadcast_net( const char *toSite, const char *relid, const char *message )
+long send_broadcast_net( const char *toSite, const char *relid,
+		const char *message, long long generation )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -722,9 +726,9 @@ long send_broadcast_net( const char *toSite, const char *relid, const char *mess
 	FILE *writeSocket = fdopen( socketFd, "w" );
 	fprintf( writeSocket, 
 		"SPP/0.1 %s\r\n"
-		"broadcast %s %s\r\n", 
+		"broadcast %s %s %lld\r\n", 
 		toSite,
-		relid, message );
+		relid, message, generation );
 	fflush( writeSocket );
 
 	/* Read the result. */

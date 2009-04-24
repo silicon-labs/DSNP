@@ -271,13 +271,13 @@ int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char 
 		return -1;
 	}
 
-//	/* Convert the sig to binary. */
-//	u_char *signature = (u_char*)malloc( strlen(srcSig) );
-//	long sigLen = hex2bin( signature, RSA_size(pubEncVer), srcSig );
-//	if ( sigLen <= 0 ) {
-//		sprintf( err, "error converting hex-encoded signature to binary" );
-//		return -1;
-//	}
+	/* Convert the sig to binary. */
+	u_char *signature = (u_char*)malloc( strlen(srcSig) );
+	long sigLen = hex2bin( signature, RSA_size(pubEncVer), srcSig );
+	if ( sigLen <= 0 ) {
+		sprintf( err, "error converting hex-encoded signature to binary" );
+		return -1;
+	}
 
 	/* Convert the message to binary. */
 	u_char *message = (u_char*)malloc( strlen(srcMsg) );
@@ -292,15 +292,15 @@ int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char 
 	RC4( &rc4_key, msgLen, message, decrypted );
 	decLen = msgLen;
 
-//	/* Verify the message. */
-//	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-//	SHA1( decrypted, msgLen, decrypted_sha1 );
-//	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
-//			signature, sigLen, pubEncVer );
-//	if ( verifyres != 1 ) {
-//		ERR_error_string( ERR_get_error(), err );
-//		return -1;
-//	}
+	/* Verify the message. */
+	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
+	SHA1( decrypted, msgLen, decrypted_sha1 );
+	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
+			signature, sigLen, pubEncVer );
+	if ( verifyres != 1 ) {
+		ERR_error_string( ERR_get_error(), err );
+		return -1;
+	}
 
 	return 0;
 }

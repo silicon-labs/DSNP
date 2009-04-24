@@ -1763,13 +1763,14 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 	id.load( friend_id );
 	id.parse();
 
-	send_broadcast_net( id.site, put_relid, encrypt.sym, strtoll(generation, 0, 10) );
+	send_broadcast_net( id.site, put_relid, encrypt.sig, encrypt.sym, strtoll(generation, 0, 10) );
 	
 close:
 	return 0;
 }
 
-void receive_broadcast( const char *relid, const char *message, long long key_generation )
+void receive_broadcast( const char *relid, const char *sig,
+		const char *message, long long key_generation )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
@@ -1779,6 +1780,7 @@ void receive_broadcast( const char *relid, const char *message, long long key_ge
 	char *get_fwd_site2, *get_fwd_relid2;
 	RSA *id_pub;
 	Encrypt encrypt;
+	int decryptRes;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
@@ -1817,8 +1819,12 @@ void receive_broadcast( const char *relid, const char *message, long long key_ge
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
-	encrypt.skDecryptVerify( session_key, 0, message );
+	decryptRes = encrypt.skDecryptVerify( session_key, sig, message );
 
+	if ( decryptRes < 0 ) {
+		printf("ERROR\r\n");
+		goto close;
+	}
 
 	/* TEMP. */
 	exec_query( mysql, 
@@ -1828,10 +1834,10 @@ void receive_broadcast( const char *relid, const char *message, long long key_ge
 	
 	if ( row != 0 ) {
 		if ( row[0] != 0 )
-			send_broadcast_net( get_fwd_site1, get_fwd_relid1, message, key_generation );
+			send_broadcast_net( get_fwd_site1, get_fwd_relid1, sig, message, key_generation );
 
 		if ( row[1] != 0 )
-			send_broadcast_net( get_fwd_site2, get_fwd_relid2, message, key_generation );
+			send_broadcast_net( get_fwd_site2, get_fwd_relid2, sig, message, key_generation );
 	}
 
 	mysql_free_result( result );

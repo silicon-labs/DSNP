@@ -167,11 +167,12 @@ char *alloc_string( const char *s, const char *e )
 
 	action receive_broadcast {
 		char *relid = alloc_string( r1, r2 );
+		char *sig = alloc_string( s1, s2 );
 		char *message = alloc_string( m1, m2 );
 		char *number = alloc_string( n1, n2 );
 		long long generation = strtoll( number, 0, 10 );
 
-		receive_broadcast( relid, message, generation );
+		receive_broadcast( relid, sig, message, generation );
 	}
 
 	action receive_message {
@@ -207,7 +208,7 @@ char *alloc_string( const char *s, const char *e )
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
-		'broadcast'i ' ' relid ' ' message ' ' number EOL @receive_broadcast;
+		'broadcast'i ' ' relid ' ' sig ' ' message ' ' number EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
 	*|;
 
@@ -703,7 +704,7 @@ long Identity::parse()
 }%%
 
 long send_broadcast_net( const char *toSite, const char *relid,
-		const char *message, long long generation )
+		const char *sig, const char *message, long long generation )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -726,9 +727,9 @@ long send_broadcast_net( const char *toSite, const char *relid,
 	FILE *writeSocket = fdopen( socketFd, "w" );
 	fprintf( writeSocket, 
 		"SPP/0.1 %s\r\n"
-		"broadcast %s %s %lld\r\n", 
+		"broadcast %s %s %s %lld\r\n", 
 		toSite,
-		relid, message, generation );
+		relid, sig, message, generation );
 	fflush( writeSocket );
 
 	/* Read the result. */

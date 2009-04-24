@@ -1724,10 +1724,13 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 	char *friend_id, *put_relid;
 	Identity id;
 
-	/* Find the session key and generation. */
+	/* Find youngest session key. In the future some sense of current session
+	 * key should be maintained. */
 	exec_query( mysql,
 		"SELECT session_key, generation FROM put_session_key "
-		"WHERE user = %e",
+		"WHERE user = %e "
+		"ORDER BY generation DESC "
+		"LIMIT 1",
 		user );
 
 	result = mysql_store_result( mysql );

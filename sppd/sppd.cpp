@@ -72,19 +72,18 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				break;
 			}
 			case 'L': {
+				va_arg(vl, long long);
 				len += 32;
 				break;
 			}
 			case 'b': {
+				va_arg(vl, int);
 				len += 8;
 				break;
 			}
 		}
 	}
 	va_end(vl);
-
-	/* Room for the terminating null. */
-	len += 1;
 
 	char *query = (char*)malloc( len+1 );
 	char *dest = query;
@@ -1157,24 +1156,23 @@ long queue_message( MYSQL *mysql, const char *user, const char *to_id, const cha
 
 long run_queue_db( MYSQL *mysql )
 {
-	return 0;
-#if 0
 	int result = 0;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 	long rows;
 
 	/* Table lock. */
-	exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
+	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
 
 	/* Extract all messages. */
-	exec_query( mysql, "SELECT from_user, to_id, message FROM msg_queue;" );
+	exec_query( mysql, 
+		"SELECT to_site, relid, sig, generation, message FROM broadcast_queue" );
 
 	/* Get the result. */
 	select_res = mysql_store_result( mysql );
 
 	/* Now clear the table. */
-	exec_query( mysql, "DELETE FROM msg_queue;");
+	exec_query( mysql, "DELETE FROM broadcast_queue");
 
 	/* Free the table lock before we process the select results. */
 	exec_query( mysql, "UNLOCK TABLES;");
@@ -1187,8 +1185,14 @@ long run_queue_db( MYSQL *mysql )
 	for ( int i = 0; i < rows; i++ ) {
 		row = mysql_fetch_row( select_res );
 
-		printf( "%s %s %s\n", row[0], row[1], row[2] );
-		long send_res = send_broadcast_net( row[0], row[1], row[2] );
+		char *to_site = row[0];
+		char *relid = row[1];
+		char *sig = row[2];
+		long long generation = strtoll( row[3], 0, 10 );
+		char *message = row[4];
+
+		//printf( "%s %s %s\n", row[0], row[1], row[2] );
+		long send_res = send_broadcast_net( to_site, relid, sig, generation, message );
 		if ( send_res < 0 ) {
 			printf("ERROR trouble sending message: %ld\n", send_res);
 			sent[i] = false;
@@ -1223,7 +1227,6 @@ long run_queue_db( MYSQL *mysql )
 	mysql_free_result( select_res );
 
 	return result;
-#endif
 }
 
 void run_queue( const char *siteName )
@@ -1241,7 +1244,6 @@ void run_queue( const char *siteName )
 		goto close;
 	}
 
-//	queue_message( mysql, "age", "http://localhost/spp/pat/", "foobar" );
 	run_queue_db( mysql );
 
 close:
@@ -1714,6 +1716,24 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 	printf("OK\n");
 }
 
+long queue_broadcast( MYSQL *mysql, const char *to_site, const char *relid,
+		const char *sig, long long generation, const char *message )
+{
+	/* Table lock. */
+	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
+
+	exec_query( mysql,
+		"INSERT INTO broadcast_queue "
+		"( to_site, relid, sig, generation, message ) "
+		"VALUES ( %e, %e, %e, %L, %e ) ",
+		to_site, relid, sig, generation, message );
+
+	/* UNLOCK reset. */
+	exec_query( mysql, "UNLOCK TABLES");
+
+	return 0;
+}
+
 long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 {
 	MYSQL_RES *result;
@@ -1766,14 +1786,14 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 	id.load( friend_id );
 	id.parse();
 
-	send_broadcast_net( id.site, put_relid, encrypt.sig, encrypt.sym, strtoll(generation, 0, 10) );
-	
+	queue_broadcast( mysql, id.site, put_relid, encrypt.sig,
+			strtoll(generation, 0, 10), encrypt.sym );
 close:
 	return 0;
 }
 
 void receive_broadcast( const char *relid, const char *sig,
-		const char *message, long long key_generation )
+		long long key_generation, const char *message )
 {
 	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
@@ -1829,18 +1849,24 @@ void receive_broadcast( const char *relid, const char *sig,
 		goto close;
 	}
 
-	/* TEMP. */
+	/* Save the message. */
 	exec_query( mysql, 
 		"INSERT INTO received ( get_relid, message ) "
 		"VALUES ( %e, %e )",
 		relid, encrypt.decrypted );
 	
-	if ( row != 0 ) {
-		if ( row[0] != 0 )
-			send_broadcast_net( get_fwd_site1, get_fwd_relid1, sig, message, key_generation );
+	/* 
+	 * Now do the forwarding.
+	 */
 
-		if ( row[1] != 0 )
-			send_broadcast_net( get_fwd_site2, get_fwd_relid2, sig, message, key_generation );
+	if ( get_fwd_site1 != 0 ) {
+		queue_broadcast( mysql, get_fwd_site1, get_fwd_relid1, sig, 
+				key_generation, message );
+	}
+
+	if ( get_fwd_site2 != 0 ) {
+		queue_broadcast( mysql, get_fwd_site2, get_fwd_relid2, sig,
+				key_generation, message );
 	}
 
 	mysql_free_result( result );

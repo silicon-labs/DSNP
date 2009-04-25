@@ -103,9 +103,11 @@ void receive_broadcast( const char *relid, const char *sig,
 		long long key_generation, const char *message );
 
 void receive_message( const char *relid, const char *enc, const char *sig, const char *message );
-long send_message_net( const char *relid, const char *to,
+long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
-long send_message( const char *from_user, const char *to_identity, const char *message );
+long send_message_net( const char *to_identity, const char *relid,
+		const char *enc, const char *sig, const char *message );
+long queue_message( const char *from_user, const char *to_identity, const char *message );
 
 bool check_comm_key( const char *key );
 

@@ -200,9 +200,19 @@ CREATE TABLE flogin_tok (
 	msg_sig TEXT
 );
 
-CREATE TABLE msg_queue (
-	from_user VARCHAR(20),
+CREATE TABLE broadcast_queue (
+	to_site TEXT,
+	relid CHAR(32),
+	sig TEXT,
+	generation BIGINT,
+	message TEXT
+);
+
+CREATE TABLE message_queue (
 	to_id TEXT,
+	relid CHAR(32),
+	enc TEXT,
+	sig TEXT,
 	message TEXT
 );
 

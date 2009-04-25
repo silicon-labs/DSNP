@@ -29,12 +29,10 @@ include('lib/session.php');
 <body>
 
 <br>
-<center>
 	Owner Login to Iduri:
 
 	<? include('lib/loginform.php'); ?>
 
-</center>
 <body>
 
 </html>

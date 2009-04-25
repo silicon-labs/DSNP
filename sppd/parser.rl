@@ -784,7 +784,7 @@ fail:
 	write data;
 }%%
 
-long send_message_net( const char *relid, const char *to,
+long send_message_net( const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message )
 {
 	static char buf[8192];
@@ -794,7 +794,7 @@ long send_message_net( const char *relid, const char *to,
 	long pres;
 
 	/* Need to parse the identity. */
-	Identity toIdent( to );
+	Identity toIdent( to_identity );
 	pres = toIdent.parse();
 
 	if ( pres < 0 )
@@ -828,7 +828,7 @@ long send_message_net( const char *relid, const char *to,
 		EOL = '\r'? '\n';
 
 		main := 
-			'OK ' [a-z]* EOL @{ OK = true; } |
+			'OK' EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 

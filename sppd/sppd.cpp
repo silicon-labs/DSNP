@@ -1185,19 +1185,28 @@ long run_broadcast_queue_db( MYSQL *mysql )
 
 	if ( unsent ) {
 		/* Table lock. */
-		exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
+		exec_query( mysql, "LOCK TABLES broadcast_queue WRITE;");
 
 		mysql_data_seek( select_res, 0 );
 		for ( int i = 0; i < rows; i++ ) {
 			row = mysql_fetch_row( select_res );
 
 			if ( !sent[i] ) {
+				char *to_site = row[0];
+				char *relid = row[1];
+				char *sig = row[2];
+				char *generation = row[3];
+				char *message = row[4];
+
 				printf("Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
+
 				/* Queue the message. */
-				exec_query( mysql, 
-					"INSERT INTO msg_queue VALUES ( %e, %e, %e );",
-					row[0], row[1], row[2] 
-				);
+
+				exec_query( mysql,
+					"INSERT INTO broadcast_queue "
+					"( to_site, relid, sig, generation, message ) "
+					"VALUES ( %e, %e, %e, %e, %e ) ",
+					to_site, relid, sig, generation, message );
 			}
 		}
 		/* Free the table lock before we process the select results. */
@@ -1258,22 +1267,28 @@ long run_message_queue_db( MYSQL *mysql )
 		}
 	}
 
-#if 0
 	if ( unsent ) {
 		/* Table lock. */
-		exec_query( mysql, "LOCK TABLES msg_queue WRITE;");
+		exec_query( mysql, "LOCK TABLES message_queue WRITE;");
 
 		mysql_data_seek( select_res, 0 );
 		for ( int i = 0; i < rows; i++ ) {
 			row = mysql_fetch_row( select_res );
 
+			char *to_id = row[0];
+			char *relid = row[1];
+			char *enc = row[2];
+			char *sig = row[3];
+			char *message = row[4];
+
 			if ( !sent[i] ) {
 				printf("Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
-				/* Queue the message. */
-				exec_query( mysql, 
-					"INSERT INTO msg_queue VALUES ( %e, %e, %e );",
-					row[0], row[1], row[2] 
-				);
+
+				exec_query( mysql,
+					"INSERT INTO message_queue "
+					"( to_id, relid, enc, sig, message ) "
+					"VALUES ( %e, %e, %e, %e, %e ) ",
+					to_id, relid, enc, sig, message );
 			}
 		}
 		/* Free the table lock before we process the select results. */
@@ -1281,7 +1296,6 @@ long run_message_queue_db( MYSQL *mysql )
 	}
 
 	delete[] sent;
-#endif
 
 	/* Done. */
 	mysql_free_result( select_res );

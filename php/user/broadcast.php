@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
+ * Copyright (c) 2009, Adrian Thurston <thurston@cs.queensu.ca>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,26 +19,25 @@
 include('../config.php');
 include('lib/session.php');
 
-?>
-<html>
+requireOwner();
 
-<head>
-<title>Admin Login</title>
-</head>
+$message = $_POST['message'];
 
-<body>
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-<br>
+$send = 
+	"SPP/0.1 $CFG_URI\r\n" . 
+	"comm_key $CFG_COMM_KEY\r\n" .
+	"sbroad $USER_NAME $message\r\n";
+fwrite($fp, $send);
 
-	<form method="post" action="slogin.php">
-	<table>
-	<tr>
-	<td>Admin Login:</td><td> <input type="text" name="username" value="admin"></td></tr>
-	<td>Admin Pass:</td><td> <input type="password" name="password"></td></tr>
-	</table>
-	<input type="submit">
+$res = fgets($fp);
 
-</center>
-<body>
-
-</html>
+if ( ereg("^OK", $res, $regs) )
+	header("Location: ${USER_URI}" );
+else {
+	echo "ERROR";
+	echo $res;
+}

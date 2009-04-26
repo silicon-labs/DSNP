@@ -111,6 +111,8 @@ long queue_message( const char *from_user, const char *to_identity, const char *
 
 bool check_comm_key( const char *key );
 
+long connect_send_broadcast( const char *user, const char *user_message );
+
 struct Config
 {
 	/* NOTE: must be mirrored by the cfgVals array. */

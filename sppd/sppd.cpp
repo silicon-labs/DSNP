@@ -1828,6 +1828,31 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 	return 0;
 }
 
+long connect_send_broadcast( const char *user, const char *user_message )
+{
+	/* Open the database connection. */
+	MYSQL *mysql = mysql_init(0);
+	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+	}
+
+	int result = send_broadcast( mysql, user, user_message );
+	if ( result < 0 ) {
+		printf("ERROR\r\n");
+		goto close;
+	}
+
+	printf("OK\r\n");
+
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+	return 0;
+}
+
 long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 {
 	MYSQL_RES *result;

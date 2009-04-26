@@ -47,6 +47,8 @@ char *alloc_string( const char *s, const char *e )
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
 	relid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 
+	user_message = [^\r\n]+   >{m1=p;} %{m2=p;};
+
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
 		>{i1=p;} %{i2=p;};
@@ -184,6 +186,13 @@ char *alloc_string( const char *s, const char *e )
 		receive_message( relid, enc, sig, message );
 	}
 
+	action sbroad {
+		char *user = alloc_string( u1, u2 );
+		char *user_message = alloc_string( m1, m2 );
+
+		connect_send_broadcast( user, user_message );
+	}
+
 	commands := |* 
 		'comm_key'i ' ' key EOL @comm_key;
 
@@ -207,6 +216,8 @@ char *alloc_string( const char *s, const char *e )
 		'flogin'i ' ' user ' ' hash EOL @check_key @flogin;
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
+
+		'sbroad'i ' ' user ' ' user_message EOL @sbroad;
 
 		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;

@@ -86,4 +86,12 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 ?>
 
+<h1>Broadcast</h1>
+
+<form method="post" action="broadcast.php">
+<table>
+<tr><td>Message:</td><td> <input type="text" name="message"></td></tr>
+</table>
+</form>
+
 </html>

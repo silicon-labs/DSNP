@@ -101,10 +101,11 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 # Look for the user/pass combination.
 $query = sprintf(
-	"SELECT friend_id, message " .
+	"SELECT friend_id, time_published, message " .
 	"FROM friend_claim " .
 	"JOIN received ON friend_claim.get_relid = received.get_relid " .
-	"WHERE user = '%s' ",
+	"WHERE user = '%s' " .
+	"ORDER BY time_published DESC",
     mysql_real_escape_string($USER_NAME)
 );
 
@@ -115,12 +116,13 @@ $mehash = MD5( $USER_URI );
 while ( $row = mysql_fetch_assoc($result) ) {
 	$browser_id = $USER_URI;
 	$friend_id = $row['friend_id'];
+	$time_published = $row['time_published'];
 	$message = $row['message'];
 
 	echo "<p>\n";
-	echo "<a href=\"${dest_id}sflogin.php?uri=" . 
-			urlencode($browser_id) . "\">$dest_id</a> says:<br>";
-	echo $message . "<br>";
+	echo "<small>$time_published <a href=\"${dest_id}sflogin.php?uri=" . 
+			urlencode($browser_id) . "\">$friend_id</a> says:</small><br>";
+	echo "&nbsp;&nbsp;$message<br>";
 }
 
 ?>

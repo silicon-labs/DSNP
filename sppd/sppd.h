@@ -113,6 +113,9 @@ bool check_comm_key( const char *key );
 
 long connect_send_broadcast( const char *user, const char *user_message );
 
+/* Note: decrypted will be written to. */
+int store_message( MYSQL *mysql, const char *relid, char *decrypted );
+
 struct Config
 {
 	/* NOTE: must be mirrored by the cfgVals array. */

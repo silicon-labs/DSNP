@@ -30,7 +30,7 @@ if ( !$fp )
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"sbroad $USER_NAME $message\r\n";
+	"submit_broadcast $USER_NAME $message\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

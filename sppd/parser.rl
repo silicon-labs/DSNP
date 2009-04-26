@@ -186,7 +186,7 @@ char *alloc_string( const char *s, const char *e )
 		receive_message( relid, enc, sig, message );
 	}
 
-	action sbroad {
+	action submit_broadcast {
 		char *user = alloc_string( u1, u2 );
 		char *user_message = alloc_string( m1, m2 );
 
@@ -217,7 +217,7 @@ char *alloc_string( const char *s, const char *e )
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 
-		'sbroad'i ' ' user ' ' user_message EOL @sbroad;
+		'submit_broadcast'i ' ' user ' ' user_message EOL @submit_broadcast;
 
 		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
@@ -867,3 +867,46 @@ fail:
 	return result;
 }
 
+%%{
+	machine store_message;
+	write data;
+}%%
+
+int store_message( MYSQL *mysql, const char *relid, char *decrypted )
+{
+	long result = 0, cs;
+	char *p, *pe;
+	char *eof;
+	char *message = 0;
+
+	%%{
+		main := 
+			digit{4} '-' digit{2} '-' digit{2} ' '
+			digit{2} ':' digit{2} ':' digit{2} ' ' @{*p = 0;}
+			any* >{message = p;} ;
+	}%%
+
+	p = decrypted;
+	pe = p + strlen(decrypted);
+	eof = pe;
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+
+	/* Save the message. */
+	exec_query( mysql, 
+		"INSERT INTO received ( get_relid, time_published, time_received, message ) "
+		"VALUES ( %e, %e, now(), %e )",
+		relid, decrypted, message );
+	
+fail:
+	return result;
+}
+
+	

@@ -1830,6 +1830,14 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 
 long connect_send_broadcast( const char *user, const char *user_message )
 {
+	time_t curTime;
+	struct tm curTM, *tmRes;
+
+	long messageLen;
+	char *full;
+	char timestr[64];
+	long result;
+
 	/* Open the database connection. */
 	MYSQL *mysql = mysql_init(0);
 	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
@@ -1837,9 +1845,30 @@ long connect_send_broadcast( const char *user, const char *user_message )
 
 	if ( connect_res == 0 ) {
 		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
 	}
 
-	int result = send_broadcast( mysql, user, user_message );
+	/* Get the current time. */
+	curTime = time(NULL);
+
+	/* Convert to struct tm. */
+	tmRes = localtime_r( &curTime, &curTM );
+	if ( tmRes == 0 ) {
+		printf("ERROR time error\r\n");
+		goto close;
+	}
+
+	/* Format for the message. */
+	if ( strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0) {
+		printf("ERROR time error\r\n");
+		goto close;
+	}
+
+	messageLen = strlen( user_message );
+	full = new char[64+messageLen];
+	sprintf( full, "%s %s", timestr, user_message );
+
+	result = send_broadcast( mysql, user, full );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
@@ -1968,12 +1997,8 @@ void receive_broadcast( const char *relid, const char *sig,
 		goto close;
 	}
 
-	/* Save the message. */
-	exec_query( mysql, 
-		"INSERT INTO received ( get_relid, message ) "
-		"VALUES ( %e, %e )",
-		relid, encrypt.decrypted );
-	
+	store_message( mysql, relid, (char*)encrypt.decrypted );
+
 	/* 
 	 * Now do the forwarding.
 	 */

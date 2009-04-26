@@ -278,6 +278,10 @@ if ( !\$CFG_URI ) {
 	die('config.php: could not select installation');
 }
 
+if ( get_magic_quotes_gpc() ) {
+	die('the SPP software assumes PHP magic quotes to be off');
+}
+
 ?>
 EOF
 

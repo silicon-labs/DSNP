@@ -875,15 +875,16 @@ fail:
 int store_message( MYSQL *mysql, const char *relid, char *decrypted )
 {
 	long result = 0, cs;
-	char *p, *pe;
-	char *eof;
-	char *message = 0;
+	char *p, *pe, *eof;
+	char *date = 0, *message = 0;
+	long long seq_id;
 
 	%%{
 		main := 
+			digit+ ' '@{*p = 0; date = p + 1;}
 			digit{4} '-' digit{2} '-' digit{2} ' '
-			digit{2} ':' digit{2} ':' digit{2} ' ' @{*p = 0;}
-			any* >{message = p;} ;
+			digit{2} ':' digit{2} ':' digit{2} ' ' @{*p = 0; message = p + 1;}
+			any*;
 	}%%
 
 	p = decrypted;
@@ -899,11 +900,13 @@ int store_message( MYSQL *mysql, const char *relid, char *decrypted )
 		goto fail;
 	}
 
+	seq_id = strtoll( decrypted, 0, 10 );
+
 	/* Save the message. */
 	exec_query( mysql, 
-		"INSERT INTO received ( get_relid, time_published, time_received, message ) "
-		"VALUES ( %e, %e, now(), %e )",
-		relid, decrypted, message );
+		"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
+		"VALUES ( %e, %L, %e, now(), %e )",
+		relid, seq_id, date, message );
 	
 fail:
 	return result;

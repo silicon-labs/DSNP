@@ -218,6 +218,7 @@ CREATE TABLE message_queue (
 
 CREATE TABLE received ( 
 	get_relid CHAR(32),
+	seq_id BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
 	message TEXT
@@ -225,10 +226,10 @@ CREATE TABLE received (
 
 CREATE TABLE publish (
 	user VARCHAR(20),
-	id MEDIUMINT NOT NULL AUTO_INCREMENT,
+	seq_id MEDIUMINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	message TEXT,
-	PRIMARY KEY(user, id)
+	PRIMARY KEY(user, seq_id)
 );
 
 EOF

@@ -1835,8 +1835,11 @@ long connect_send_broadcast( const char *user, const char *user_message )
 
 	long messageLen;
 	char *full;
-	char timestr[64];
-	long result;
+	char timeStr[64];
+	long sendResult;
+	long long seq_id;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
 
 	/* Open the database connection. */
 	MYSQL *mysql = mysql_init(0);
@@ -1859,17 +1862,35 @@ long connect_send_broadcast( const char *user, const char *user_message )
 	}
 
 	/* Format for the message. */
-	if ( strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0) {
+	if ( strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0) {
 		printf("ERROR time error\r\n");
 		goto close;
 	}
 
+	/* Insert the broadcast message into the published table. */
+	exec_query( mysql,
+		"INSERT INTO publish "
+		"( user, time_published, message ) "
+		"VALUES ( %e, %e, %e )",
+		user, timeStr, user_message );
+
+	/* Get the id that was assigned to the message. */
+	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf("ERROR\r\n");
+		goto close;
+	}
+	seq_id = strtoll( row[0], 0, 10 );
+
+	/* Make the full message. */
 	messageLen = strlen( user_message );
 	full = new char[64+messageLen];
-	sprintf( full, "%s %s", timestr, user_message );
+	sprintf( full, "%lld %s %s", seq_id, timeStr, user_message );
 
-	result = send_broadcast( mysql, user, full );
-	if ( result < 0 ) {
+	sendResult = send_broadcast( mysql, user, full );
+	if ( sendResult < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
 	}

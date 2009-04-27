@@ -223,6 +223,14 @@ CREATE TABLE received (
 	message TEXT
 );
 
+CREATE TABLE publish (
+	user VARCHAR(20),
+	id MEDIUMINT NOT NULL AUTO_INCREMENT,
+	time_published TIMESTAMP,
+	message TEXT,
+	PRIMARY KEY(user, id)
+);
+
 EOF
 
 #

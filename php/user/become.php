@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007, Adrian Thurston <thurston@cs.queensu.ca>
+ * Copyright (c) 2007, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

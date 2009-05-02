@@ -36,6 +36,7 @@ if ( !ereg("^OK ([0-9a-f]+) ([0-9]+)", $res, $regs) ) {
 	include('lib/loginfailed.php');
 }
 else {
+	session_name("SPPSESSID");
 	session_set_cookie_params( $regs[2], $USER_PATH );
 	session_start();
 

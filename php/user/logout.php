@@ -19,9 +19,13 @@
 include('../config.php');
 include('lib/session.php');
 
-unset($_SESSION['auth']);
+$_SESSION = array();
 
-$U = $_GET['u'];
+if ( isset( $_COOKIE[session_name()] ) )
+    setcookie( session_name(), "", time() - 3600, $USER_PATH );
+
+session_destroy();
+
 header( "Location: $USER_PATH" );
 
 ?>

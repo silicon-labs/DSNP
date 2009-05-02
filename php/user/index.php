@@ -27,4 +27,9 @@ else if ( $_SESSION['auth'] == 'friend' )
 	include('lib/friend.php');
 else
 	include('lib/public.php');
+
 ?>
+<p>
+<?php echo $_COOKIE[session_name()] ?>
+<p>
+<?php echo session_name() ?>

@@ -17,8 +17,12 @@
 
 # Requires config.php to have beein included.
 
-session_set_cookie_params( 0, $USER_PATH );
-session_start();
+session_name("SPPSESSID");
+
+# Only resume sessions or start a new one when *a* session variable is provided
+# Note that it might not be the right one.
+if ( isset( $_COOKIE[session_name()] ) )
+	session_start();
 
 function requireFriend()
 {

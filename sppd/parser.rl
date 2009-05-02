@@ -193,8 +193,16 @@ char *alloc_string( const char *s, const char *e )
 		connect_send_broadcast( user, user_message );
 	}
 
+	action login {
+		char *user = alloc_string( u1, u2 );
+		char *pass = alloc_string( p1, p2 );
+
+		login( user, pass );
+	}
+
 	commands := |* 
 		'comm_key'i ' ' key EOL @comm_key;
+		'login'i ' ' user ' ' pass EOL @login;
 
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user;

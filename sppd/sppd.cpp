@@ -76,6 +76,11 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				len += 32;
 				break;
 			}
+			case 'l': {
+				va_arg(vl, long);
+				len += 32;
+				break;
+			}
 			case 'b': {
 				va_arg(vl, int);
 				len += 8;
@@ -118,6 +123,12 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 			case 'L': {
 				long long v = va_arg(vl, long long);
 				sprintf( dest, "%lld", v );
+				dest += strlen(dest);
+				break;
+			}
+			case 'l': {
+				long v = va_arg(vl, long);
+				sprintf( dest, "%ld", v );
 				dest += strlen(dest);
 				break;
 			}
@@ -2166,3 +2177,51 @@ close:
 	return;
 }
 
+void login( const char *user, const char *pass )
+{
+	MYSQL *mysql, *connect_res;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	Encrypt encrypt;
+	unsigned char token[RELID_SIZE];
+	char *token_str;
+	char *pass_hashed;
+	long lasts = 86400;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		printf( "ERROR failed to connect to the database\r\n");
+		goto close;
+	}
+
+	/* Hash the password. */
+	pass_hashed = pass_hash( user, pass );
+
+	exec_query( mysql, 
+		"SELECT user FROM user WHERE user = %e AND pass = %e", user, pass_hashed );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		printf("ERROR\r\n");
+		goto free_result;
+	}
+
+	RAND_bytes( token, TOKEN_SIZE );
+	token_str = bin2hex( token, TOKEN_SIZE );
+
+	exec_query( mysql, 
+		"INSERT INTO login_toks ( user, login_token, expires ) "
+		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", user, token_str, lasts );
+
+	printf( "OK %s %ld\r\n", token_str, lasts );
+
+free_result:
+	mysql_free_result( result );
+close:
+	mysql_close( mysql );
+	fflush(stdout);
+}

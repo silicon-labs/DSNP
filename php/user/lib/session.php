@@ -17,11 +17,6 @@
 
 # Requires config.php to have beein included.
 
-# Note that these are globals used by the user code. 
-$USER_NAME = $_GET['u'];
-$USER_PATH = "${CFG_PATH}$USER_NAME/";
-$USER_URI = "${CFG_URI}$USER_NAME/";
-
 session_set_cookie_params( 0, $USER_PATH );
 session_start();
 

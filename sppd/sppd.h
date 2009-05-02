@@ -149,6 +149,7 @@ extern bool gblKeySubmitted;
 
 #define RELID_SIZE 16
 #define REQID_SIZE 16
+#define TOKEN_SIZE 16
 #define SK_SIZE     16
 #define SK_SIZE_HEX 33
 
@@ -158,5 +159,7 @@ long hex2bin( unsigned char *dest, long len, const char *src );
 int exec_query( MYSQL *mysql, const char *fmt, ... );
 int message_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *from_user, const char *message );
+
+void login( const char *user, const char *pass );
 
 #endif

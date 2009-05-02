@@ -17,33 +17,32 @@
  */
 
 include('../config.php');
-include('lib/session.php');
+
+# No session yet. Maybe going to set it up.
 
 $pass = $_POST['pass'];
-$md5pass = md5( $USER_NAME . ':spp:' . $pass );
 
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-# Look for the user/pass combination.
-$query = sprintf("SELECT user FROM user WHERE user='%s' AND pass='%s'",
-    mysql_real_escape_string($USER_NAME),
-    mysql_real_escape_string($md5pass)
-);
+$send = 
+	"SPP/0.1 $CFG_URI\r\n" . 
+	"login $USER_NAME $pass\r\n";
+fwrite($fp, $send);
 
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-# If there is a result then the login is successful. 
-$line = mysql_fetch_array($result, MYSQL_ASSOC);
-if ( $line ) {
-	# Login successful.
-	$_SESSION['auth'] = 'owner';
-	header( "Location: $USER_PATH" );
-}
-else {
+$res = fgets($fp);
+if ( !ereg("^OK ([0-9a-f]+) ([0-9]+)", $res, $regs) ) {
 	include('lib/loginfailed.php');
 }
+else {
+	session_set_cookie_params( $regs[2], $USER_PATH );
+	session_start();
+
+	# Login successful.
+	$_SESSION['auth'] = 'owner';
+	$_SESSION['token'] = $regs[1];
+	header( "Location: $USER_PATH" );
+}
+
 ?>

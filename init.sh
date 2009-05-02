@@ -232,6 +232,12 @@ CREATE TABLE publish (
 	PRIMARY KEY(user, seq_id)
 );
 
+CREATE TABLE login_toks (
+	user VARCHAR(20),
+	login_token CHAR(32),
+	expires TIMESTAMP
+);
+
 EOF
 
 #
@@ -290,6 +296,10 @@ if ( !\$CFG_URI ) {
 if ( get_magic_quotes_gpc() ) {
 	die('the SPP software assumes PHP magic quotes to be off');
 }
+
+\$USER_NAME = \$_GET['u'];
+\$USER_PATH = "\${CFG_PATH}\$USER_NAME/";
+\$USER_URI = "\${CFG_URI}\$USER_NAME/";
 
 ?>
 EOF

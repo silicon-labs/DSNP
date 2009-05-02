@@ -28,6 +28,13 @@ mysql_select_db($CFG_DB_DATABASE) or die
 <head>
 <title><?php print $USER_NAME;?> </title>
 </head>
+
+<body>
+
+<table width = "100%">
+<tr>
+<td width="33%" valign="top">
+
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
 <p>Installation: <a href="../"><?php print $CFG_URI;?></a>
@@ -53,6 +60,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 			"&a=no\">no</a><br>\n";
 }
 ?>
+
 
 <h1>Friend List</h1>
 
@@ -85,6 +93,8 @@ while ( $row = mysql_fetch_assoc($result) ) {
 }
 
 ?>
+</td>
+<td width="33%" valign="top">
 
 <h1>Broadcast</h1>
 
@@ -94,12 +104,36 @@ while ( $row = mysql_fetch_assoc($result) ) {
 </table>
 </form>
 
-</html>
+<?
+$query = sprintf(
+	"SELECT time_published, message " .
+	"FROM publish " .
+	"WHERE user = '%s' " .
+	"ORDER BY seq_id DESC",
+    mysql_real_escape_string($USER_NAME)
+);
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+$mehash = MD5( $USER_URI );
+
+while ( $row = mysql_fetch_assoc($result) ) {
+	$browser_id = $USER_URI;
+	$time_published = $row['time_published'];
+	$message = $row['message'];
+
+	echo "<p>\n";
+	echo "<small>$time_published you said:</small><br>";
+	echo "&nbsp;&nbsp;$message<br>";
+}
+?>
+
+</td>
+<td width="33%" valign="top">
 
 <h1>Messages</h1>
 <?php
 
-# Look for the user/pass combination.
 $query = sprintf(
 	"SELECT friend_id, time_published, message " .
 	"FROM friend_claim " .
@@ -121,8 +155,16 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 	echo "<p>\n";
 	echo "<small>$time_published <a href=\"${dest_id}sflogin.php?uri=" . 
-			urlencode($browser_id) . "\">$friend_id</a> says:</small><br>";
+			urlencode($browser_id) . "\">$friend_id</a> said:</small><br>";
 	echo "&nbsp;&nbsp;$message<br>";
 }
 
 ?>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+

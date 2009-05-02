@@ -23,6 +23,14 @@ $browser_id = $_SESSION['identity'];
 <head>
 <title><?php print $USER_NAME;?> </title>
 </head>
+
+<body>
+
+<table width="100%"
+
+<tr>
+<td valign="top">
+
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
 <p>Installation: <a href="../"><?php print $CFG_URI;?></a>
@@ -60,5 +68,40 @@ while ( $row = mysql_fetch_assoc($result) ) {
 }
 
 ?>
+
+</td>
+<td valign="top">
+
+<h1>Broadcast Messages</h1>
+
+<?
+$query = sprintf(
+	"SELECT time_published, message " .
+	"FROM publish " .
+	"WHERE user = '%s' " .
+	"ORDER BY seq_id DESC",
+    mysql_real_escape_string($USER_NAME)
+);
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+$mehash = MD5( $USER_URI );
+
+while ( $row = mysql_fetch_assoc($result) ) {
+	$browser_id = $USER_URI;
+	$time_published = $row['time_published'];
+	$message = $row['message'];
+
+	echo "<p>\n";
+	echo "<small>$time_published $USER_NAME said:</small><br>";
+	echo "&nbsp;&nbsp;$message<br>";
+}
+?>
+
+</td>
+</tr>
+</table>
+
+</body>
 
 </html>

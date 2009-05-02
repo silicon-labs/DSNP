@@ -1951,23 +1951,25 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row ) {
-		printf("ERROR bad user\r\n");
-		goto close;
+		/* Nothing here means that the user has no friends. */
 	}
-	friend_id = row[0];
-	put_relid = row[1];
+	else {
+		friend_id = row[0];
+		put_relid = row[1];
 
-	/* Do the encryption. */
-	user_priv = load_key( mysql, user );
-	encrypt.load( 0, user_priv );
-	encrypt.skEncryptSign( session_key, (u_char*)message, strlen(message)+1 );
+		/* Do the encryption. */
+		user_priv = load_key( mysql, user );
+		encrypt.load( 0, user_priv );
+		encrypt.skEncryptSign( session_key, (u_char*)message, strlen(message)+1 );
 
-	/* Find the root user to send to. */
-	id.load( friend_id );
-	id.parse();
+		/* Find the root user to send to. */
+		id.load( friend_id );
+		id.parse();
 
-	queue_broadcast_db( mysql, id.site, put_relid, encrypt.sig,
-			strtoll(generation, 0, 10), encrypt.sym );
+		queue_broadcast_db( mysql, id.site, put_relid, encrypt.sig,
+				strtoll(generation, 0, 10), encrypt.sym );
+	}
+
 close:
 	return 0;
 }

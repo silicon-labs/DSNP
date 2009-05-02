@@ -37,7 +37,5 @@ $res = fgets($fp);
 
 if ( ereg("^OK", $res, $regs) )
 	header("Location: ${USER_URI}" );
-else {
-	echo "ERROR";
+else
 	echo $res;
-}

@@ -614,14 +614,14 @@ bool allow_request( MYSQL *mysql, const char *user, const char *identity )
 		"WHERE for_user = %e AND from_id = %e",
 		user, identity );
 	select_res = mysql_store_result( mysql );
-	if ( mysql_num_rows( select_res ) == 0 )
+	if ( mysql_num_rows( select_res ) != 0 )
 		return false;
 
 	exec_query( mysql, "SELECT user, friend_id FROM friend_claim "
 		"WHERE user = %e AND friend_id = %e",
 		user, identity );
 	select_res = mysql_store_result( mysql );
-	if ( mysql_num_rows( select_res ) == 0 )
+	if ( mysql_num_rows( select_res ) != 0 )
 		return false;
 
 	return true;

@@ -571,8 +571,8 @@ query_fail:
 	return rsa;
 }
 
-long store_friend_request( MYSQL *mysql, const char *identity, char *fr_relid_str, 
-		char *fr_reqid_str, unsigned char *encrypted, int enclen, 
+long store_friend_request( MYSQL *mysql, const char *user, const char *identity, 
+		char *fr_relid_str, char *fr_reqid_str, unsigned char *encrypted, int enclen, 
 		unsigned char *signature, int siglen )
 {
 	long result = 0;
@@ -606,6 +606,27 @@ long store_friend_request( MYSQL *mysql, const char *identity, char *fr_relid_st
 	return result;
 }
 
+bool allow_request( MYSQL *mysql, const char *user, const char *identity )
+{
+	MYSQL_RES *select_res;
+
+	exec_query( mysql, "SELECT for_user, from_id FROM friend_request "
+		"WHERE for_user = %e AND from_id = %e",
+		user, identity );
+	select_res = mysql_store_result( mysql );
+	if ( mysql_num_rows( select_res ) == 0 )
+		return false;
+
+	exec_query( mysql, "SELECT user, friend_id FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e",
+		user, identity );
+	select_res = mysql_store_result( mysql );
+	if ( mysql_num_rows( select_res ) == 0 )
+		return false;
+
+	return true;
+}
+
 void friend_request( MYSQL *mysql, const char *user, const char *identity )
 {
 	/* a) verifies challenge response
@@ -625,6 +646,12 @@ void friend_request( MYSQL *mysql, const char *user, const char *identity )
 	int enclen;
 	unsigned siglen;
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
+	char *msg_enc, *msg_sig;
+
+	if ( !allow_request( mysql, user, identity ) ) {
+		printf("ERROR connection exists or is in progress\r\n");
+		goto close;
+	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -654,8 +681,14 @@ void friend_request( MYSQL *mysql, const char *user, const char *identity )
 	fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
 	fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
 
-	store_friend_request( mysql, identity, fr_relid_str, fr_reqid_str, 
-			encrypted, enclen, signature, siglen );
+	msg_enc = bin2hex( encrypted, enclen );
+	msg_sig = bin2hex( signature, siglen );
+
+	exec_query( mysql,
+		"INSERT INTO friend_request "
+		"( for_user, from_id, fr_relid, fr_reqid, msg_enc, msg_sig ) "
+		"VALUES( %e, %e, %e, %e, %e, %e )",
+		user, identity, fr_relid_str, fr_reqid_str, msg_enc, msg_sig );
 	
 	/* Return the request id for the requester to use. */
 	printf( "OK %s\r\n", fr_reqid_str );

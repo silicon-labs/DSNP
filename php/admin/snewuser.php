@@ -16,12 +16,12 @@
  */
 
 include('../config.php');
-include('lib/session.php');
+#include('lib/session.php');
 
 $user = $_POST['user'];
 $pass1 = $_POST['pass1'];
 $pass2 = $_POST['pass2'];
-$email = $_POST['email'];
+#$email = $_POST['email'];
 
 if ( $pass1 != $pass2 )
 	die("password mismatch");
@@ -33,12 +33,12 @@ if ( !$fp )
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"new_user $user $pass1 $email\r\n";
+	"new_user $user $pass1 unused\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);
 if ( ereg("^OK", $res) ) {
-	header("Location: ${CFG_PATH}admin/" );
+	header("Location: ${CFG_PATH}" );
 }
 else
 {

@@ -38,7 +38,8 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <p>Installation: <?php print $CFG_URI;?>
 
-<p><a href="admin/">Administration Pages</a>
+<p>
+<a href="admin/newuser.php">create new user</a>
 
 <p>
 <?php

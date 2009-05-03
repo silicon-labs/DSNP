@@ -16,7 +16,6 @@
  */
 
 include('../config.php');
-include('lib/session.php');
 
 ?>
 
@@ -28,19 +27,18 @@ include('lib/session.php');
 
 <body>
 
-<br>
-<center>
-	<form method="post" action="snewuser.php">
-	<table>
-	<tr>
-	<td>Desired User:</td>   <td> <input type="text"     name="user"></td></tr>
-	<td>Password:</td>       <td> <input type="password" name="pass1"></td></tr>
-	<td>Again:</td>          <td> <input type="password" name="pass2"></td></tr>
-	<td>Email:</td>          <td> <input type="text"     name="email"></td></tr>
-	</table>
-	<input type="submit">
-	</form>
-</center>
+<h1>Create User</h1>
+
+<form method="post" action="snewuser.php">
+<table>
+<tr>
+<td>Desired User:</td>   <td> <input type="text"     name="user"></td></tr>
+<td>Password:</td>       <td> <input type="password" name="pass1"></td></tr>
+<td>Again:</td>          <td> <input type="password" name="pass2"></td></tr>
+</table>
+<input type="submit">
+</form>
+
 <body>
 
 </html>

@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2007-2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,8 @@
  */
 
 include('../config.php');
-include('lib/session.php');
+
+# No session yet. Maybe going to set it up.
 
 $ftoken = $_GET['ftoken'];
 
@@ -37,6 +38,10 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 # If there is a result then the login is successful. 
 $row = mysql_fetch_array($result, MYSQL_ASSOC);
 if ( $row ) {
+	session_name("SPPSESSID");
+	session_set_cookie_params( 86400, $USER_PATH );
+	session_start();
+
 	# Login successful.
 	$_SESSION['auth']     = 'friend';
 	$_SESSION['identity'] = $row['from_id'];

@@ -57,19 +57,20 @@ int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
 /* Commands. */
-void new_user( const char *user, const char *pass, const char *email );
-void public_key( const char *identity );
-void friend_request( const char *user, const char *identity );
-void fetch_fr_relid( const char *reqid );
-void return_relid( const char *user, const char *fr_reqid_str, 
+void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email );
+void public_key( MYSQL *mysql, const char *identity );
+void friend_request( MYSQL *mysql, const char *user, const char *identity );
+void fetch_fr_relid( MYSQL *mysql, const char *reqid );
+void return_relid( MYSQL *mysql, const char *user, const char *fr_reqid_str, 
 		const char *identity, const char *id_host, const char *id_user );
-void fetch_relid( const char *reqid );
-void friend_final( const char *user, const char *reqid, 
+void fetch_relid( MYSQL *mysql, const char *reqid );
+void friend_final( MYSQL *mysql, const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
-void accept_friend( const char *user, const char *user_reqid );
-void flogin( const char *user, const char *hash );
-void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str );
-void fetch_ftoken( const char *reqid );
+void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid );
+void flogin( MYSQL *mysql, const char *user, const char *hash );
+void return_ftoken( MYSQL *mysql, const char *user, const char *hash, 
+		const char *flogin_reqid_str );
+void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
 void session_key( MYSQL *mysql, const char *relid, const char *user, const char *identity,
@@ -99,10 +100,11 @@ long send_session_key( const char *from_user, const char *to_identity,
 long send_forward_to( const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
-void receive_broadcast( const char *relid, const char *sig,
+void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 		long long key_generation, const char *message );
 
-void receive_message( const char *relid, const char *enc, const char *sig, const char *message );
+void receive_message( MYSQL *mysql, const char *relid,
+		const char *enc, const char *sig, const char *message );
 long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
 long send_message_net( const char *to_identity, const char *relid,
@@ -111,7 +113,7 @@ long queue_message( const char *from_user, const char *to_identity, const char *
 
 bool check_comm_key( const char *key );
 
-long connect_send_broadcast( const char *user, const char *user_message );
+long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_message );
 
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );
@@ -160,6 +162,8 @@ int exec_query( MYSQL *mysql, const char *fmt, ... );
 int message_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *from_user, const char *message );
 
-void login( const char *user, const char *pass );
+void login( MYSQL *mysql, const char *user, const char *pass );
+
+MYSQL *db_connect();
 
 #endif

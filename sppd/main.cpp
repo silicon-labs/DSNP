@@ -72,10 +72,11 @@ int check_args( int argc, char **argv )
 void test_function()
 {
 	set_config_by_name( "spp" );
+	MYSQL *mysql, *connect_res;
 
 	/* Open the database connection. */
-	MYSQL *mysql = mysql_init(0);
-	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
 	if ( connect_res == 0 ) {

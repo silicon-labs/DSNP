@@ -72,26 +72,26 @@ char *alloc_string( const char *s, const char *e )
 		char *pass = alloc_string( p1, p2 );
 		char *email = alloc_string( e1, e2 );
 
-		new_user( user, pass, email );
+		new_user( mysql, user, pass, email );
 	}
 
 	action public_key {
 		char *user = alloc_string( u1, u2 );
 
-		public_key( user );
+		public_key( mysql, user );
 	}
 
 	action friend_request {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 
-		friend_request( user, identity );
+		friend_request( mysql, user, identity );
 	}
 
 	action fetch_fr_relid {
 		char *reqid = alloc_string( r1, r2 );
 
-		fetch_fr_relid( reqid );
+		fetch_fr_relid( mysql, reqid );
 	}
 
 	action return_relid {
@@ -101,13 +101,13 @@ char *alloc_string( const char *s, const char *e )
 		char *id_host = alloc_string( h1, h2 );
 		char *id_user = alloc_string( pp1, pp2 );
 
-		return_relid( user, reqid, identity, id_host, id_user );
+		return_relid( mysql, user, reqid, identity, id_host, id_user );
 	}
 
 	action fetch_relid {
 		char *reqid = alloc_string( r1, r2 );
 
-		fetch_relid( reqid );
+		fetch_relid( mysql, reqid );
 	}
 
 	action friend_final {
@@ -117,21 +117,21 @@ char *alloc_string( const char *s, const char *e )
 		char *id_host = alloc_string( h1, h2 );
 		char *id_user = alloc_string( pp1, pp2 );
 
-		friend_final( user, reqid, identity, id_host, id_user );
+		friend_final( mysql, user, reqid, identity, id_host, id_user );
 	}
 
 	action accept_friend {
 		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
 
-		accept_friend( user, reqid );
+		accept_friend( mysql, user, reqid );
 	}
 
 	action flogin {
 		char *user = alloc_string( u1, u2 );
 		char *hash = alloc_string( a1, a2 );
 
-		flogin( user, hash );
+		flogin( mysql, user, hash );
 	}
 
 	action return_ftoken {
@@ -139,17 +139,22 @@ char *alloc_string( const char *s, const char *e )
 		char *hash = alloc_string( a1, a2 );
 		char *reqid = alloc_string( r1, r2 );
 
-		return_ftoken( user, hash, reqid );
+		return_ftoken( mysql, user, hash, reqid );
 	}
 
 	action fetch_ftoken {
 		char *reqid = alloc_string( r1, r2 );
-		fetch_ftoken( reqid );
+		fetch_ftoken( mysql, reqid );
 	}
 
 	action set_config {
 		char *identity = alloc_string( i1, i2 );
 		set_config_by_uri( identity );
+
+		/* Now that we have a config connect to the database. */
+		mysql = db_connect();
+		if ( mysql == 0 )
+			fgoto *parser_error;
 	}
 
 	action comm_key {
@@ -174,7 +179,7 @@ char *alloc_string( const char *s, const char *e )
 		long long generation = strtoll( number, 0, 10 );
 		char *message = alloc_string( m1, m2 );
 
-		receive_broadcast( relid, sig, generation, message );
+		receive_broadcast( mysql, relid, sig, generation, message );
 	}
 
 	action receive_message {
@@ -183,21 +188,21 @@ char *alloc_string( const char *s, const char *e )
 		char *sig = alloc_string( s1, s2 );
 		char *message = alloc_string( m1, m2 );
 
-		receive_message( relid, enc, sig, message );
+		receive_message( mysql, relid, enc, sig, message );
 	}
 
 	action submit_broadcast {
 		char *user = alloc_string( u1, u2 );
 		char *user_message = alloc_string( m1, m2 );
 
-		connect_send_broadcast( user, user_message );
+		connect_send_broadcast( mysql, user, user_message );
 	}
 
 	action login {
 		char *user = alloc_string( u1, u2 );
 		char *pass = alloc_string( p1, p2 );
 
-		login( user, pass );
+		login( mysql, user, pass );
 	}
 
 	commands := |* 
@@ -254,6 +259,8 @@ int server_parse_loop()
 	const char *s1, *s2;
 	const char *m1, *m2;
 	const char *n1, *n2;
+
+	MYSQL *mysql = 0;
 
 	%% write init;
 

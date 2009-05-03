@@ -36,6 +36,21 @@
 #include <netdb.h>
 #include <stdarg.h>
 
+MYSQL *db_connect()
+{
+	/* Open the database connection. */
+	MYSQL *mysql = mysql_init(0);
+	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	if ( connect_res == 0 ) {
+		/* LOG THIS */
+		mysql_close( mysql );
+		mysql = 0;
+	}
+
+	return mysql;
+}
+
 /*
  * %e escaped string
  */
@@ -302,11 +317,10 @@ bool check_comm_key( const char *key )
 	return true;
 }
 
-void new_user( const char *user, const char *pass, const char *email )
+void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
-	MYSQL *mysql, *connect_res;
 	char *pass_hashed;
 
 	/* Generate a new key. */
@@ -326,15 +340,6 @@ void new_user( const char *user, const char *pass, const char *email )
 	dmq1 = BN_bn2hex( rsa->dmq1 );
 	iqmp = BN_bn2hex( rsa->iqmp );
 
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
-
 	/* Hash the password. */
 	pass_hashed = pass_hash( user, pass );
 
@@ -348,7 +353,6 @@ void new_user( const char *user, const char *pass, const char *email )
 
 	printf( "OK\r\n" );
 
-close:
 	OPENSSL_free( n );
 	OPENSSL_free( e );
 	OPENSSL_free( d );
@@ -364,19 +368,10 @@ flush:
 	fflush( stdout );
 }
 
-void public_key( const char *user )
+void public_key( MYSQL *mysql, const char *user )
 {
-	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Query the user. */
 	exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
@@ -394,7 +389,7 @@ void public_key( const char *user )
 
 free_result:
 	mysql_free_result( result );
-close:
+
 	mysql_close( mysql );
 	fflush(stdout);
 }
@@ -611,7 +606,7 @@ long store_friend_request( MYSQL *mysql, const char *identity, char *fr_relid_st
 	return result;
 }
 
-void friend_request( const char *user, const char *identity )
+void friend_request( MYSQL *mysql, const char *user, const char *identity )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -622,7 +617,6 @@ void friend_request( const char *user, const char *identity )
 	 * g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 	 */
 
-	MYSQL *mysql, *connect_res;
 	int sigres;
 	RSA *user_priv, *id_pub;
 	unsigned char fr_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
@@ -631,15 +625,6 @@ void friend_request( const char *user, const char *identity )
 	int enclen;
 	unsigned siglen;
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -682,22 +667,12 @@ close:
 	fflush( stdout );
 }
 
-void fetch_fr_relid( const char *reqid )
+void fetch_fr_relid( MYSQL *mysql, const char *reqid )
 {
-	MYSQL *mysql, *connect_res;
 	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
@@ -725,7 +700,6 @@ void fetch_fr_relid( const char *reqid )
 
 query_fail:
 	free( query );
-close:
 	mysql_close( mysql );
 	fflush( stdout );
 }
@@ -788,7 +762,7 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	return 0;
 }
 
-void return_relid( const char *user, const char *fr_reqid_str, const char *identity, 
+void return_relid( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity, 
 		const char *id_host, const char *id_user )
 {
 	/*  a) verifies browser is logged in as owner
@@ -802,7 +776,6 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 	 *  i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
 	 */
 
-	MYSQL *mysql, *connect_res;
 	int verifyres, fetchres, decryptres, sigres;
 	RSA *user_priv, *id_pub;
 	unsigned char *fr_relid;
@@ -814,15 +787,6 @@ void return_relid( const char *user, const char *fr_reqid_str, const char *ident
 	char *fr_relid_str, *relid_str, *reqid_str;
 	unsigned char message[RELID_SIZE*2];
 	char *site;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -912,22 +876,12 @@ close:
 	fflush( stdout );
 }
 
-void fetch_relid( const char *reqid )
+void fetch_relid( MYSQL *mysql, const char *reqid )
 {
-	MYSQL *mysql, *connect_res;
 	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
@@ -955,7 +909,6 @@ void fetch_relid( const char *reqid )
 
 query_fail:
 	free( query );
-close:
 	mysql_close( mysql );
 	fflush( stdout );
 }
@@ -1027,7 +980,7 @@ query_fail:
 	return result;
 }
 
-void friend_final( const char *user, const char *reqid_str, const char *identity, 
+void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity, 
 		const char *id_host, const char *id_user )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 
@@ -1035,7 +988,6 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 	 * c) stores request for friendee to accept/deny
 	 */
 
-	MYSQL *mysql, *connect_res;
 	int verifyres, fetchres, decryptres, storeres;
 	RSA *user_priv, *id_pub;
 	unsigned char *message;
@@ -1048,15 +1000,6 @@ void friend_final( const char *user, const char *reqid_str, const char *identity
 	unsigned char user_reqid[REQID_SIZE];
 	char *user_reqid_str;
 	char *site;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -1359,20 +1302,10 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 	return 0;
 }
 
-void accept_friend( const char *user, const char *user_reqid )
+void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 {
-	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Execute the query. */
 	exec_query( mysql, "SELECT from_id, fr_relid, relid "
@@ -1484,9 +1417,8 @@ query_fail:
 	return result;
 }
 
-void flogin( const char *user, const char *hash )
+void flogin( MYSQL *mysql, const char *user, const char *hash )
 {
-	MYSQL *mysql, *connect_res;
 	int sigres;
 	RSA *user_priv, *id_pub;
 
@@ -1498,15 +1430,6 @@ void flogin( const char *user, const char *hash )
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
 	long friend_claim;
 	Identity friend_id;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
@@ -1561,22 +1484,12 @@ close:
 	fflush( stdout );
 }
 
-void fetch_ftoken( const char *reqid )
+void fetch_ftoken( MYSQL *mysql, const char *reqid )
 {
-	MYSQL *mysql, *connect_res;
 	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
@@ -1604,12 +1517,12 @@ void fetch_ftoken( const char *reqid )
 
 query_fail:
 	free( query );
-close:
 	mysql_close( mysql );
 	fflush( stdout );
 }
 
-void return_ftoken( const char *user, const char *hash, const char *flogin_reqid_str )
+void return_ftoken( MYSQL *mysql, const char *user, const char *hash, 
+		const char *flogin_reqid_str )
 {
 	/*
 	 * a) checks that $FR-URI is a friend
@@ -1618,7 +1531,6 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	 * d) decrypts and verifies the token
 	 * e) redirects the browser to $FP-URI/submit-token?uri=$URI&token=$TOK
 	 */
-	MYSQL *mysql, *connect_res;
 	int verifyres, fetchres, decryptres;
 	RSA *user_priv, *id_pub;
 	unsigned char *flogin_tok;
@@ -1630,15 +1542,6 @@ void return_ftoken( const char *user, const char *hash, const char *flogin_reqid
 	long friend_claim;
 	Identity friend_id;
 	char *site;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
@@ -1839,7 +1742,7 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 	return 0;
 }
 
-long connect_send_broadcast( const char *user, const char *user_message )
+long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
@@ -1851,16 +1754,6 @@ long connect_send_broadcast( const char *user, const char *user_message )
 	long long seq_id;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-
-	/* Open the database connection. */
-	MYSQL *mysql = mysql_init(0);
-	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Get the current time. */
 	curTime = time(NULL);
@@ -1974,10 +1867,9 @@ close:
 	return 0;
 }
 
-void receive_broadcast( const char *relid, const char *sig,
+void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 		long long key_generation, const char *message )
 {
-	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	char *user, *friend_id, *session_key;
@@ -1986,15 +1878,6 @@ void receive_broadcast( const char *relid, const char *sig,
 	RSA *id_pub;
 	Encrypt encrypt;
 	int decryptRes;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	exec_query( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
@@ -2126,25 +2009,15 @@ long send_forward_to( const char *from_user, const char *to_identity,
 	return queue_message( from_user, to_identity, buf );
 }
 
-void receive_message( const char *relid, const char *enc,
+void receive_message( MYSQL *mysql, const char *relid, const char *enc,
 		const char *sig, const char *message )
 {
-	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
 	int decrypt_res;
 	const char *user, *friend_id;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	exec_query( mysql, 
 		"SELECT user, friend_id FROM friend_claim "
@@ -2173,15 +2046,13 @@ void receive_message( const char *relid, const char *enc,
 
 free_result:
 	mysql_free_result( result );
-close:
 	mysql_close( mysql );
 	fflush( stdout );
 	return;
 }
 
-void login( const char *user, const char *pass )
+void login( MYSQL *mysql, const char *user, const char *pass )
 {
-	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	Encrypt encrypt;
@@ -2189,15 +2060,6 @@ void login( const char *user, const char *pass )
 	char *token_str;
 	char *pass_hashed;
 	long lasts = 86400;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	/* Hash the password. */
 	pass_hashed = pass_hash( user, pass );
@@ -2223,7 +2085,6 @@ void login( const char *user, const char *pass )
 
 free_result:
 	mysql_free_result( result );
-close:
 	mysql_close( mysql );
 	fflush(stdout);
 }

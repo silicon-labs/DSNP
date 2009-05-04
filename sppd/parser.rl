@@ -293,6 +293,11 @@ int server_parse_loop()
 		}
 	}
 
+	if ( mysql != 0 ) {
+		run_broadcast_queue_db( mysql );
+		run_message_queue_db( mysql );
+	}
+
 	return 0;
 }
 

@@ -146,7 +146,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( user, front->identity.c_str(), 1, id.site, relid );
+				send_forward_to( mysql, user, front->identity.c_str(), 1, id.site, relid );
 				break;
 			}
 
@@ -160,7 +160,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( user, front->identity.c_str(), 2, id.site, relid );
+				send_forward_to( mysql, user, front->identity.c_str(), 2, id.site, relid );
 				break;
 			}
 

@@ -363,7 +363,6 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	OPENSSL_free( iqmp );
 
 	RSA_free( rsa );
-	mysql_close( mysql );
 flush:
 	fflush( stdout );
 }
@@ -390,7 +389,6 @@ void public_key( MYSQL *mysql, const char *user )
 free_result:
 	mysql_free_result( result );
 
-	mysql_close( mysql );
 	fflush(stdout);
 }
 
@@ -696,7 +694,6 @@ void friend_request( MYSQL *mysql, const char *user, const char *identity )
 	free( fr_relid_str );
 	free( fr_reqid_str );
 close:
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -733,7 +730,6 @@ void fetch_fr_relid( MYSQL *mysql, const char *reqid )
 
 query_fail:
 	free( query );
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -905,7 +901,6 @@ void return_relid( MYSQL *mysql, const char *user, const char *fr_reqid_str, con
 	free( relid_str );
 	free( reqid_str );
 close:
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -942,7 +937,6 @@ void fetch_relid( MYSQL *mysql, const char *reqid )
 
 query_fail:
 	free( query );
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -1110,7 +1104,6 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	free( fr_relid_str );
 	free( relid_str );
 close:
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -1327,7 +1320,7 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 		printf( "ERROR fetching session key\r\n");
 	}
 
-	int send_res = send_session_key( user, identity, sk, generation );
+	int send_res = send_session_key( mysql, user, identity, sk, generation );
 	if ( send_res < 0 ) {
 		fprintf(stderr, "sending failed %d\n", send_res );
 	}
@@ -1368,7 +1361,6 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 
 	mysql_free_result( result );
 close:
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -1513,7 +1505,6 @@ void flogin( MYSQL *mysql, const char *user, const char *hash )
 
 	free( flogin_tok_str );
 close:
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -1550,7 +1541,6 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 
 query_fail:
 	free( query );
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -1643,7 +1633,6 @@ void return_ftoken( MYSQL *mysql, const char *user, const char *hash,
 
 	free( flogin_tok_str );
 close:
-	mysql_close( mysql );
 	fflush( stdout );
 }
 
@@ -1835,7 +1824,6 @@ long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_me
 	printf("OK\r\n");
 
 close:
-	mysql_close( mysql );
 	fflush(stdout);
 	return 0;
 }
@@ -1968,28 +1956,18 @@ void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 	printf("OK\n");
 
 close:
-	mysql_close( mysql );
 	fflush(stdout);
 }
 
-long queue_message( const char *from_user, const char *to_identity, const char *message )
+long queue_message( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *message )
 {
-	MYSQL *mysql, *connect_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
 	int encrypt_res;
 	const char *relid;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
 
 	exec_query( mysql, 
 		"SELECT put_relid FROM friend_claim "
@@ -2013,12 +1991,10 @@ long queue_message( const char *from_user, const char *to_identity, const char *
 	queue_message_db( mysql, to_identity, relid, encrypt.enc, encrypt.sig, encrypt.sym );
 free_result:
 	mysql_free_result( result );
-close:
-	mysql_close( mysql );
 	return 0;
 }
 
-long send_session_key( const char *from_user, const char *to_identity, 
+long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation )
 {
 	static char buf[8192];
@@ -2027,10 +2003,10 @@ long send_session_key( const char *from_user, const char *to_identity,
 		"session_key %s %lld\r\n", 
 		session_key, generation );
 
-	return queue_message( from_user, to_identity, buf );
+	return queue_message( mysql, from_user, to_identity, buf );
 }
 
-long send_forward_to( const char *from_user, const char *to_identity, 
+long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		int childNum, const char *forwardToSite, const char *relid )
 {
 	static char buf[8192];
@@ -2039,7 +2015,7 @@ long send_forward_to( const char *from_user, const char *to_identity,
 		"forward_to %d %s %s\r\n", 
 		childNum, forwardToSite, relid );
 
-	return queue_message( from_user, to_identity, buf );
+	return queue_message( mysql, from_user, to_identity, buf );
 }
 
 void receive_message( MYSQL *mysql, const char *relid, const char *enc,
@@ -2079,7 +2055,6 @@ void receive_message( MYSQL *mysql, const char *relid, const char *enc,
 
 free_result:
 	mysql_free_result( result );
-	mysql_close( mysql );
 	fflush( stdout );
 	return;
 }
@@ -2118,6 +2093,5 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 
 free_result:
 	mysql_free_result( result );
-	mysql_close( mysql );
 	fflush(stdout);
 }

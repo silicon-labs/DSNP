@@ -53,6 +53,8 @@ struct Identity
 };
 
 void run_queue( const char *siteName );
+long run_broadcast_queue_db( MYSQL *mysql );
+long run_message_queue_db( MYSQL *mysql );
 int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 
@@ -95,9 +97,9 @@ long queue_broadcast( MYSQL *mysql, const char *to_site, const char *relid,
 		const char *sig, long long generation, const char *message );
 long send_broadcast_net( const char *toSite, const char *relid,
 		const char *sig, long long generation, const char *message );
-long send_session_key( const char *from_user, const char *to_identity, 
+long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
-long send_forward_to( const char *from, const char *to, int childNum, 
+long send_forward_to( MYSQL *mysql, const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
@@ -109,7 +111,8 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
 long send_message_net( const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
-long queue_message( const char *from_user, const char *to_identity, const char *message );
+long queue_message( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *message );
 
 bool check_comm_key( const char *key );
 

@@ -138,6 +138,7 @@ CREATE TABLE public_key (
 );
 
 CREATE TABLE friend_request (
+	for_user VARCHAR(20),
 	from_id TEXT,
 	fr_relid CHAR(32),
 	fr_reqid CHAR(32),

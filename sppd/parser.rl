@@ -46,6 +46,7 @@ char *alloc_string( const char *s, const char *e )
 	message = [0-9a-f]+       >{m1=p;} %{m2=p;};
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
 	relid = [0-9a-f]+         >{r1=p;} %{r2=p;};
+	token = [0-9a-f]+         >{t1=p;} %{t2=p;};
 
 	user_message = [^\r\n]+   >{m1=p;} %{m2=p;};
 
@@ -205,6 +206,11 @@ char *alloc_string( const char *s, const char *e )
 		login( mysql, user, pass );
 	}
 
+	action sftoken {
+		char *token = alloc_string( t1, t2 );
+		sftoken( mysql, token );
+	}
+
 	commands := |* 
 		'comm_key'i ' ' key EOL @comm_key;
 		'login'i ' ' user ' ' pass EOL @login;
@@ -229,6 +235,7 @@ char *alloc_string( const char *s, const char *e )
 		'flogin'i ' ' user ' ' hash EOL @check_key @flogin;
 		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
+		'sftoken'i ' ' token EOL @sftoken;
 
 		'submit_broadcast'i ' ' user ' ' user_message EOL @submit_broadcast;
 
@@ -259,6 +266,7 @@ int server_parse_loop()
 	const char *s1, *s2;
 	const char *m1, *m2;
 	const char *n1, *n2;
+	const char *t1, *t2;
 
 	MYSQL *mysql = 0;
 

@@ -113,6 +113,8 @@ long send_message_net( const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
+void sftoken( MYSQL *mysql, const char *token );
+
 
 bool check_comm_key( const char *key );
 

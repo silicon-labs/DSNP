@@ -154,7 +154,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$message = $row['message'];
 
 	echo "<p>\n";
-	echo "<small>$time_published <a href=\"${dest_id}sflogin.php?uri=" . 
+	echo "<small>$time_published <a href=\"${friend_id}sflogin.php?uri=" . 
 			urlencode($browser_id) . "\">$friend_id</a> said:</small><br>";
 	echo "&nbsp;&nbsp;$message<br>";
 }

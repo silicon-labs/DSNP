@@ -22,29 +22,27 @@ include('../config.php');
 
 $ftoken = $_GET['ftoken'];
 
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
 
-# Look for the user/pass combination.
-$query = sprintf("SELECT from_id FROM flogin_tok WHERE flogin_tok='%s'",
-    mysql_real_escape_string($ftoken)
-);
+$send = 
+	"SPP/0.1 $CFG_URI\r\n" . 
+	"comm_key $CFG_COMM_KEY\r\n" .
+	"sftoken $ftoken\r\n";
+fwrite($fp, $send);
 
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+$res = fgets($fp);
 
 # If there is a result then the login is successful. 
-$row = mysql_fetch_array($result, MYSQL_ASSOC);
-if ( $row ) {
+if ( ereg("^OK ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	session_name("SPPSESSID");
-	session_set_cookie_params( 86400, $USER_PATH );
+	session_set_cookie_params( $regs[1], $USER_PATH );
 	session_start();
 
 	# Login successful.
 	$_SESSION['auth']     = 'friend';
-	$_SESSION['identity'] = $row['from_id'];
+	$_SESSION['identity'] = $regs[2];
 	$_SESSION['hash']     = MD5($row['from_id']);
 	header( "Location: $USER_PATH" );
 }

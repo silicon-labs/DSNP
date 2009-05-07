@@ -36,6 +36,8 @@
 #include <netdb.h>
 #include <stdarg.h>
 
+#define LOGIN_TOKEN_LASTS 86400
+
 MYSQL *db_connect()
 {
 	/* Open the database connection. */
@@ -2067,7 +2069,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	unsigned char token[RELID_SIZE];
 	char *token_str;
 	char *pass_hashed;
-	long lasts = 86400;
+	long lasts = LOGIN_TOKEN_LASTS;
 
 	/* Hash the password. */
 	pass_hashed = pass_hash( user, pass );
@@ -2090,6 +2092,30 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", user, token_str, lasts );
 
 	printf( "OK %s %ld\r\n", token_str, lasts );
+
+free_result:
+	mysql_free_result( result );
+	fflush(stdout);
+}
+
+void sftoken( MYSQL *mysql, const char *token )
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	long lasts = LOGIN_TOKEN_LASTS;
+
+	exec_query( mysql,
+		"SELECT from_id FROM flogin_tok WHERE flogin_tok = %e",
+		token );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		printf("ERROR\r\n");
+		goto free_result;
+	}
+
+	printf( "OK %ld %s\r\n", lasts, row[0] );
 
 free_result:
 	mysql_free_result( result );

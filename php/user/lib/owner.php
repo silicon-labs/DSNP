@@ -124,7 +124,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 	echo "<p>\n";
 	echo "<small>$time_published you said:</small><br>";
-	echo "&nbsp;&nbsp;$message<br>";
+	echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
 }
 ?>
 
@@ -156,7 +156,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	echo "<p>\n";
 	echo "<small>$time_published <a href=\"${friend_id}sflogin.php?uri=" . 
 			urlencode($browser_id) . "\">$friend_id</a> said:</small><br>";
-	echo "&nbsp;&nbsp;$message<br>";
+	echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
 }
 
 ?>

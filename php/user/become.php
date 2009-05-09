@@ -30,10 +30,11 @@ include('lib/session.php');
 
 <br>
 <center>
-First please answer a challenge (TODO).
+<!--First please answer a challenge (TODO).-->
 <p>
 <form method="post" action="sbecome.php">
-Please submit your identity:
+Please submit your identity.<br><br>
+For example, <code>http://www.complang.org/spp/first/sarah/</code><br><br>
 <input type="text" size=70 name="identity">
 <input type="submit">
 </form>

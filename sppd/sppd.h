@@ -62,10 +62,10 @@ int rcfile_parse( const char *data, long length );
 void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email );
 void public_key( MYSQL *mysql, const char *identity );
 void relid_request( MYSQL *mysql, const char *user, const char *identity );
-void fetch_fr_relid( MYSQL *mysql, const char *reqid );
+void fetch_requested_relid( MYSQL *mysql, const char *reqid );
 void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str, 
 		const char *identity, const char *id_host, const char *id_user );
-void fetch_relid( MYSQL *mysql, const char *reqid );
+void fetch_response_relid( MYSQL *mysql, const char *reqid );
 void friend_final( MYSQL *mysql, const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
 void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid );
@@ -84,9 +84,9 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
-long fetch_fr_relid_net( RelidEncSig &encsig, const char *site,
+long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid );
-long fetch_relid_net( RelidEncSig &encsig, const char *site, 
+long fetch_response_relid_net( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *reqid );
 long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );

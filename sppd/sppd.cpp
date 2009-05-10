@@ -664,7 +664,7 @@ close:
 	fflush( stdout );
 }
 
-void fetch_fr_relid( MYSQL *mysql, const char *reqid )
+void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 {
 	char *query;
 	long query_res;
@@ -794,9 +794,9 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	site = get_site( identity );
 
 	RelidEncSig encsig;
-	fetchres = fetch_fr_relid_net( encsig, site, id_host, fr_reqid_str );
+	fetchres = fetch_requested_relid_net( encsig, site, id_host, fr_reqid_str );
 	if ( fetchres < 0 ) {
-		printf("ERROR fetch_fr_relid failed %d\n", fetchres );
+		printf("ERROR fetch_requested_relid failed %d\n", fetchres );
 		goto close;
 	}
 	
@@ -871,7 +871,7 @@ close:
 	fflush( stdout );
 }
 
-void fetch_relid( MYSQL *mysql, const char *reqid )
+void fetch_response_relid( MYSQL *mysql, const char *reqid )
 {
 	char *query;
 	long query_res;
@@ -1005,9 +1005,9 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	site = get_site( identity );
 
 	RelidEncSig encsig;
-	fetchres = fetch_relid_net( encsig, site, id_host, reqid_str );
+	fetchres = fetch_response_relid_net( encsig, site, id_host, reqid_str );
 	if ( fetchres < 0 ) {
-		printf("ERROR fetch_relid failed %d\n", fetchres );
+		printf("ERROR fetch_response_relid failed %d\n", fetchres );
 		goto close;
 	}
 	

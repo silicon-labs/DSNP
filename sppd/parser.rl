@@ -89,10 +89,10 @@ char *alloc_string( const char *s, const char *e )
 		relid_request( mysql, user, identity );
 	}
 
-	action fetch_fr_relid {
+	action fetch_requested_relid {
 		char *reqid = alloc_string( r1, r2 );
 
-		fetch_fr_relid( mysql, reqid );
+		fetch_requested_relid( mysql, reqid );
 	}
 
 	action relid_response {
@@ -105,10 +105,10 @@ char *alloc_string( const char *s, const char *e )
 		relid_response( mysql, user, reqid, identity, id_host, id_user );
 	}
 
-	action fetch_relid {
+	action fetch_response_relid {
 		char *reqid = alloc_string( r1, r2 );
 
-		fetch_relid( mysql, reqid );
+		fetch_response_relid( mysql, reqid );
 	}
 
 	action friend_final {
@@ -225,8 +225,8 @@ char *alloc_string( const char *s, const char *e )
 		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request;
 		'relid_response'i ' ' user ' ' reqid ' ' identity EOL @check_key @relid_response;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @check_key @friend_final;
-		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
-		'fetch_relid'i ' ' reqid EOL @fetch_relid;
+		'fetch_requested_relid'i ' ' reqid EOL @fetch_requested_relid;
+		'fetch_response_relid'i ' ' reqid EOL @fetch_response_relid;
 
 		# Friend Request Accept
 		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
@@ -450,7 +450,7 @@ fail:
 }
 
 /*
- * fetch_fr_relid_net
+ * fetch_requested_relid_net
  */
 
 %%{
@@ -459,7 +459,7 @@ fail:
 }%%
 
 
-long fetch_fr_relid_net( RelidEncSig &encsig, const char *site, 
+long fetch_requested_relid_net( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *fr_reqid )
 {
 	static char buf[8192];
@@ -474,7 +474,9 @@ long fetch_fr_relid_net( RelidEncSig &encsig, const char *site,
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nfetch_fr_relid %s\r\n", site, fr_reqid );
+	fprintf( writeSocket,
+		"SPP/0.1 %s\r\n"
+		"fetch_requested_relid %s\r\n", site, fr_reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */
@@ -529,7 +531,7 @@ fail:
 
 
 /*
- * fetch_relid_net
+ * fetch_response_relid_net
  */
 
 %%{
@@ -537,7 +539,7 @@ fail:
 	write data;
 }%%
 
-long fetch_relid_net( RelidEncSig &encsig, const char *site,
+long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *reqid )
 {
 	static char buf[8192];
@@ -552,7 +554,9 @@ long fetch_relid_net( RelidEncSig &encsig, const char *site,
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nfetch_relid %s\r\n", site, reqid );
+	fprintf( writeSocket,
+		"SPP/0.1 %s\r\n"
+		"fetch_response_relid %s\r\n", site, reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */

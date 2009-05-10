@@ -82,11 +82,11 @@ char *alloc_string( const char *s, const char *e )
 		public_key( mysql, user );
 	}
 
-	action friend_request {
+	action relid_request {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 
-		friend_request( mysql, user, identity );
+		relid_request( mysql, user, identity );
 	}
 
 	action fetch_fr_relid {
@@ -222,7 +222,7 @@ char *alloc_string( const char *s, const char *e )
 		'public_key'i ' ' user EOL @public_key;
 
 		# Friend Request.
-		'friend_request'i ' ' user ' ' identity EOL @check_key @friend_request;
+		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request;
 		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @check_key @return_relid;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @check_key @friend_final;
 		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;

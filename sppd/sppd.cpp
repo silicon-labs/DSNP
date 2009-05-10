@@ -575,8 +575,8 @@ bool allow_request( MYSQL *mysql, const char *user, const char *identity )
 {
 	MYSQL_RES *select_res;
 
-	exec_query( mysql, "SELECT user, from_id FROM friend_request "
-		"WHERE user = %e AND from_id = %e",
+	exec_query( mysql, "SELECT for_user, from_id FROM friend_request "
+		"WHERE for_user = %e AND from_id = %e",
 		user, identity );
 	select_res = mysql_store_result( mysql );
 	if ( mysql_num_rows( select_res ) != 0 )
@@ -1078,7 +1078,7 @@ long delete_friend_request( MYSQL *mysql, const char *user, const char *user_req
 {
 	/* Insert the friend claim. */
 	exec_query( mysql, 
-		"DELETE FROM friend_request WHERE user = %e AND user_reqid = %e;",
+		"DELETE FROM friend_request WHERE for_user = %e AND user_reqid = %e;",
 		user, user_reqid );
 
 	return 0;
@@ -1303,7 +1303,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Execute the query. */
 	exec_query( mysql, "SELECT from_id, fr_relid, relid "
 		"FROM friend_request "
-		"WHERE user = %e AND user_reqid = %e;",
+		"WHERE for_user = %e AND user_reqid = %e;",
 		user, user_reqid );
 
 	/* Check for a result. */

@@ -157,7 +157,7 @@ CREATE TABLE relid_response (
 );
 
 CREATE TABLE friend_request (
-	user VARCHAR(20), 
+	for_user VARCHAR(20), 
 	from_id TEXT,
 	user_reqid CHAR(32),
 	fr_relid CHAR(32),

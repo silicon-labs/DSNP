@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2007-2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -85,7 +85,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 			urlencode($browser_id) . "\"><small>$dest_id</small></a> ";
 	}
 	else {
-		echo "friend: <a href=\"${dest_id}\">$dest_id</a> ";
+		echo "friend: <a href=\"${dest_id}\"><small>$dest_id</small></a> ";
 		echo "<small>(awaiting confirmation)</small>";
 	}
 
@@ -101,7 +101,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <small> Messages typed here are sent to all of your friends. At present, only
 text messages are supported. However, one can imagine many different types of
 notifications being implemented, including picutre uploads, tag notifications,
-status changes, and contact information changes</small>
+status changes, and contact information changes.</small>
 <hr>
 <p>
 
@@ -140,7 +140,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 <h1>Messages</h1>
 
-<small> These are the messages written by your friends. This is your 'feed'. </small>
+<small> These are the messages written by your friends. This is your news feed. </small>
 
 <hr>
 <?php

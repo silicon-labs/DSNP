@@ -17,7 +17,7 @@ INCS += -I../aapl -I/usr/include/mysql
 DEFS +=
 
 CXXFLAGS += -g -Wall
-LDFLAGS +=
+LDFLAGS += -L/usr/lib/mysql
 
 CC_SRCS = main.cpp parser.cpp rcfile.cpp encrypt.cpp disttree.cpp sppd.cpp 
 GEN_SRCS = parser.cpp rcfile.cpp

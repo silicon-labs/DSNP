@@ -31,7 +31,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 <body>
 
-<table width = "100%">
+<table width="100%" cellpadding=12 cellspacing=0>
 <tr>
 <td width="33%" valign="top">
 
@@ -82,7 +82,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 	if ( $acknowledged ) {
 		echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . 
-			urlencode($browser_id) . "\">$dest_id</a> ";
+			urlencode($browser_id) . "\"><small>$dest_id</small></a> ";
 	}
 	else {
 		echo "friend: <a href=\"${dest_id}\">$dest_id</a> ";
@@ -97,6 +97,13 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <td width="33%" valign="top">
 
 <h1>Broadcast</h1>
+
+<small> Messages typed here are sent to all of your friends. At present, only
+text messages are supported. However, one can imagine many different types of
+notifications being implemented, including picutre uploads, tag notifications,
+status changes, and contact information changes</small>
+<hr>
+<p>
 
 <form method="post" action="broadcast.php">
 <table>
@@ -132,6 +139,10 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <td width="33%" valign="top">
 
 <h1>Messages</h1>
+
+<small> These are the messages written by your friends. This is your 'feed'. </small>
+
+<hr>
 <?php
 
 $query = sprintf(

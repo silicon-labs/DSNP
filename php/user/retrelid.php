@@ -33,7 +33,7 @@ if ( !$fp )
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"return_relid $USER_NAME $fr_reqid $identity\r\n";
+	"relid_response $USER_NAME $fr_reqid $identity\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

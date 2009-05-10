@@ -137,7 +137,7 @@ CREATE TABLE public_key (
 	rsa_e CHAR(6)
 );
 
-CREATE TABLE friend_request (
+CREATE TABLE relid_request (
 	for_user VARCHAR(20),
 	from_id TEXT,
 	fr_relid CHAR(32),
@@ -146,7 +146,7 @@ CREATE TABLE friend_request (
 	msg_sig TEXT
 );
 
-CREATE TABLE return_relid (
+CREATE TABLE relid_response (
 	from_id TEXT,
 	fr_relid CHAR(32),
 	fr_reqid CHAR(32),
@@ -156,7 +156,7 @@ CREATE TABLE return_relid (
 	msg_sig TEXT
 );
 
-CREATE TABLE user_friend_request (
+CREATE TABLE friend_request (
 	user VARCHAR(20), 
 	from_id TEXT,
 	user_reqid CHAR(32),

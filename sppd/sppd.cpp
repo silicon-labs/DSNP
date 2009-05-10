@@ -700,7 +700,7 @@ query_fail:
 	fflush( stdout );
 }
 
-long store_return_relid( MYSQL *mysql, const char *identity, 
+long store_relid_response( MYSQL *mysql, const char *identity, 
 		const char *fr_relid_str, const char *fr_reqid_str, 
 		const char *relid_str, const char *reqid_str, 
 		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
@@ -712,7 +712,7 @@ long store_return_relid( MYSQL *mysql, const char *identity,
 	char *query = (char*)malloc( 1024 + 256*6 );
 
 	/* Make the query. */
-	strcpy( query, "INSERT INTO return_relid VALUES('" );
+	strcpy( query, "INSERT INTO relid_response VALUES('" );
 	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
 	strcat( query, "', '" );
 	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
@@ -758,8 +758,8 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	return 0;
 }
 
-void return_relid( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity, 
-		const char *id_host, const char *id_user )
+void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
+		const char *identity, const char *id_host, const char *id_user )
 {
 	/*  a) verifies browser is logged in as owner
 	 *  b) fetches $FR-URI/id.asc (using SSL)
@@ -855,7 +855,7 @@ void return_relid( MYSQL *mysql, const char *user, const char *fr_reqid_str, con
 	relid_str = bin2hex( relid, RELID_SIZE );
 	reqid_str = bin2hex( reqid, REQID_SIZE );
 
-	store_return_relid( mysql, identity, fr_relid_str, fr_reqid_str, 
+	store_relid_response( mysql, identity, fr_relid_str, fr_reqid_str, 
 			relid_str, reqid_str,
 			encrypted, enclen, signature, siglen );
 
@@ -880,7 +880,7 @@ void fetch_relid( MYSQL *mysql, const char *reqid )
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM return_relid WHERE reqid = '" );
+	strcpy( query, "SELECT msg_enc, msg_sig FROM relid_response WHERE reqid = '" );
 	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
 	strcat( query, "';" );
 

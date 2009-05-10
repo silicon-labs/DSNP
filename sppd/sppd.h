@@ -63,7 +63,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 void public_key( MYSQL *mysql, const char *identity );
 void relid_request( MYSQL *mysql, const char *user, const char *identity );
 void fetch_fr_relid( MYSQL *mysql, const char *reqid );
-void return_relid( MYSQL *mysql, const char *user, const char *fr_reqid_str, 
+void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str, 
 		const char *identity, const char *id_host, const char *id_user );
 void fetch_relid( MYSQL *mysql, const char *reqid );
 void friend_final( MYSQL *mysql, const char *user, const char *reqid, 

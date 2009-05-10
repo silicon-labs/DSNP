@@ -95,14 +95,14 @@ char *alloc_string( const char *s, const char *e )
 		fetch_fr_relid( mysql, reqid );
 	}
 
-	action return_relid {
+	action relid_response {
 		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
 		char *identity = alloc_string( i1, i2 );
 		char *id_host = alloc_string( h1, h2 );
 		char *id_user = alloc_string( pp1, pp2 );
 
-		return_relid( mysql, user, reqid, identity, id_host, id_user );
+		relid_response( mysql, user, reqid, identity, id_host, id_user );
 	}
 
 	action fetch_relid {
@@ -223,7 +223,7 @@ char *alloc_string( const char *s, const char *e )
 
 		# Friend Request.
 		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request;
-		'return_relid'i ' ' user ' ' reqid ' ' identity EOL @check_key @return_relid;
+		'relid_response'i ' ' user ' ' reqid ' ' identity EOL @check_key @relid_response;
 		'friend_final'i ' ' user ' ' reqid ' ' identity EOL @check_key @friend_final;
 		'fetch_fr_relid'i ' ' reqid EOL @fetch_fr_relid;
 		'fetch_relid'i ' ' reqid EOL @fetch_relid;

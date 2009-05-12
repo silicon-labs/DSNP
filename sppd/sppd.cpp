@@ -705,38 +705,16 @@ long store_relid_response( MYSQL *mysql, const char *identity,
 		const char *relid_str, const char *reqid_str, 
 		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
 {
-	long result = 0;
-
 	char *msg_enc = bin2hex( encrypted, enclen );
 	char *msg_sig = bin2hex( signature, siglen );
-	char *query = (char*)malloc( 1024 + 256*6 );
 
-	/* Make the query. */
-	strcpy( query, "INSERT INTO relid_response VALUES('" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), fr_reqid_str, strlen(fr_reqid_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), relid_str, strlen(relid_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), reqid_str, strlen(reqid_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), msg_enc, strlen(msg_enc) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), msg_sig, strlen(msg_sig) );
-	strcat( query, "' );" );
-
-	/* Execute the query. */
-	int query_res = mysql_query( mysql, query );
-	if ( query_res != 0 )
-		result = ERR_QUERY_ERROR;
-
-	free( msg_enc );
-	free( msg_sig );
-	free( query );
-
+	int result = exec_query( mysql,
+		"INSERT INTO relid_response "
+		"( from_id, fr_relid, fr_reqid, relid, reqid, msg_enc, msg_sig ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e, %e )",
+		identity, fr_relid_str, fr_reqid_str, relid_str, 
+		reqid_str, msg_enc, msg_sig );
+	
 	return result;
 }
 
@@ -942,38 +920,6 @@ query_fail:
 	return result;
 }
 
-long store_friend_request( MYSQL *mysql, const char *user, const char *identity, 
-		const char *user_reqid_str, const char *fr_relid_str, const char *relid_str )
-{
-	long result = 0, query_res;
-	char *query;
-
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*8 );
-	strcpy( query, "INSERT INTO friend_request VALUES('" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), user_reqid_str, strlen(user_reqid_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), relid_str, strlen(relid_str) );
-	strcat( query, "' );" );
-
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
-	if ( query_res != 0 ) {
-		result = ERR_QUERY_ERROR;
-		goto query_fail;
-	}
-
-query_fail:
-	free( query );
-	return result;
-}
-
 void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity, 
 		const char *id_host, const char *id_user )
 {
@@ -982,7 +928,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	 * c) stores request for friendee to accept/deny
 	 */
 
-	int verifyres, fetchres, decryptres, storeres;
+	int verifyres, fetchres, decryptres;
 	RSA *user_priv, *id_pub;
 	unsigned char *message;
 	unsigned char *encrypted, *signature;
@@ -1062,8 +1008,11 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	RAND_bytes( user_reqid, REQID_SIZE );
 	user_reqid_str = bin2hex( user_reqid, REQID_SIZE );
 
-	storeres = store_friend_request( mysql, user, identity, 
-			user_reqid_str, fr_relid_str, relid_str );
+	exec_query( mysql, 
+		"INSERT INTO friend_request "
+		" ( for_user, from_id, user_reqid, fr_relid, relid ) "
+		" VALUES ( %e, %e, %e, %e, %e ) ",
+		user, identity, user_reqid_str, fr_relid_str, relid_str );
 	
 	/* Return the request id for the requester to use. */
 	printf( "OK\r\n" );

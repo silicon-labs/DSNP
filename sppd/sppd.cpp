@@ -605,7 +605,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	int sigres;
 	RSA *user_priv, *id_pub;
-	unsigned char fr_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
+	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
 	char *fr_relid_str, *fr_reqid_str;
 	unsigned char *encrypted, *signature;
 	int enclen;
@@ -626,12 +626,12 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	}
 
 	/* Generate the relationship and request ids. */
-	RAND_bytes( fr_relid, RELID_SIZE );
+	RAND_bytes( requested_relid, RELID_SIZE );
 	RAND_bytes( fr_reqid, REQID_SIZE );
 	
 	/* Encrypt it. */
 	encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
-	enclen = RSA_public_encrypt( RELID_SIZE, fr_relid, encrypted, 
+	enclen = RSA_public_encrypt( RELID_SIZE, requested_relid, encrypted, 
 			id_pub, RSA_PKCS1_PADDING );
 
 	/* Load the private key for the user the request is for. */
@@ -639,11 +639,11 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Sign the relationship id. */
 	signature = (unsigned char*)malloc( RSA_size(user_priv) );
-	SHA1( fr_relid, RELID_SIZE, relid_sha1 );
+	SHA1( requested_relid, RELID_SIZE, relid_sha1 );
 	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
 
 	/* Store the request. */
-	fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	fr_relid_str = bin2hex( requested_relid, RELID_SIZE );
 	fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
 
 	msg_enc = bin2hex( encrypted, enclen );
@@ -651,7 +651,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	exec_query( mysql,
 		"INSERT INTO relid_request "
-		"( for_user, from_id, fr_relid, fr_reqid, msg_enc, msg_sig ) "
+		"( for_user, from_id, requested_relid, reqid, msg_enc, msg_sig ) "
 		"VALUES( %e, %e, %e, %e, %e, %e )",
 		user, identity, fr_relid_str, fr_reqid_str, msg_enc, msg_sig );
 	
@@ -673,7 +673,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM relid_request WHERE fr_reqid = '" );
+	strcpy( query, "SELECT msg_enc, msg_sig FROM relid_request WHERE reqid = '" );
 	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
 	strcat( query, "';" );
 
@@ -710,9 +710,9 @@ long store_relid_response( MYSQL *mysql, const char *identity,
 
 	int result = exec_query( mysql,
 		"INSERT INTO relid_response "
-		"( from_id, fr_relid, fr_reqid, relid, reqid, msg_enc, msg_sig ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e, %e )",
-		identity, fr_relid_str, fr_reqid_str, relid_str, 
+		"( from_id, fr_relid, relid, reqid, msg_enc, msg_sig ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e )",
+		identity, fr_relid_str, relid_str, 
 		reqid_str, msg_enc, msg_sig );
 	
 	return result;
@@ -752,7 +752,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	int verifyres, fetchres, decryptres, sigres;
 	RSA *user_priv, *id_pub;
-	unsigned char *fr_relid;
+	unsigned char *requested_relid;
 	unsigned char *encrypted, *signature;
 	int enclen;
 	unsigned siglen;
@@ -797,16 +797,17 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Load the private key for the user the request is for. */
 	user_priv = load_key( mysql, user );
 
-	/* Decrypt the fr_relid. */
-	fr_relid = (unsigned char*) malloc( RSA_size( user_priv ) );
-	decryptres = RSA_private_decrypt( enclen, encrypted, fr_relid, user_priv, RSA_PKCS1_PADDING );
+	/* Decrypt the requested_relid. */
+	requested_relid = (unsigned char*) malloc( RSA_size( user_priv ) );
+	decryptres = RSA_private_decrypt( enclen, encrypted, requested_relid, 
+			user_priv, RSA_PKCS1_PADDING );
 	if ( decryptres != REQID_SIZE ) {
 		printf("ERROR failed to decrypt fr_reqid\n" );
 		goto close;
 	}
 
-	/* Verify the fr_relid. */
-	SHA1( fr_relid, RELID_SIZE, relid_sha1 );
+	/* Verify the requested_relid. */
+	SHA1( requested_relid, RELID_SIZE, relid_sha1 );
 	verifyres = RSA_verify( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
 	if ( verifyres != 1 ) {
 		printf("ERROR failed to verify fr_reqid\n" );
@@ -817,7 +818,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	RAND_bytes( relid, RELID_SIZE );
 	RAND_bytes( reqid, REQID_SIZE );
 
-	memcpy( message, fr_relid, RELID_SIZE );
+	memcpy( message, requested_relid, RELID_SIZE );
 	memcpy( message+RELID_SIZE, relid, RELID_SIZE );
 
 	/* Encrypt it. */
@@ -829,7 +830,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
 
 	/* Store the request. */
-	fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	fr_relid_str = bin2hex( requested_relid, RELID_SIZE );
 	relid_str = bin2hex( relid, RELID_SIZE );
 	reqid_str = bin2hex( reqid, REQID_SIZE );
 
@@ -895,7 +896,7 @@ long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 
 	/* Make the query. */
 	char *query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT from_id FROM relid_request WHERE fr_relid = '" );
+	strcpy( query, "SELECT from_id FROM relid_request WHERE requested_relid = '" );
 	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
 	strcat( query, "';" );
 

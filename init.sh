@@ -148,8 +148,8 @@ CREATE TABLE relid_request (
 
 CREATE TABLE relid_response (
 	from_id TEXT,
-	fr_relid CHAR(32),
-	relid CHAR(32),
+	requested_relid CHAR(32),
+	returned_relid CHAR(32),
 	reqid CHAR(32),
 	msg_enc TEXT,
 	msg_sig TEXT
@@ -158,9 +158,9 @@ CREATE TABLE relid_response (
 CREATE TABLE friend_request (
 	for_user VARCHAR(20), 
 	from_id TEXT,
-	user_reqid CHAR(32),
-	fr_relid CHAR(32),
-	relid CHAR(32)
+	reqid CHAR(32),
+	requested_relid CHAR(32),
+	returned_relid CHAR(32)
 );
 
 CREATE TABLE get_session_key (

@@ -710,7 +710,7 @@ long store_relid_response( MYSQL *mysql, const char *identity,
 
 	int result = exec_query( mysql,
 		"INSERT INTO relid_response "
-		"( from_id, fr_relid, relid, reqid, msg_enc, msg_sig ) "
+		"( from_id, requested_relid, returned_relid, reqid, msg_enc, msg_sig ) "
 		"VALUES ( %e, %e, %e, %e, %e, %e )",
 		identity, fr_relid_str, relid_str, 
 		reqid_str, msg_enc, msg_sig );
@@ -1011,7 +1011,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 
 	exec_query( mysql, 
 		"INSERT INTO friend_request "
-		" ( for_user, from_id, user_reqid, fr_relid, relid ) "
+		" ( for_user, from_id, reqid, requested_relid, returned_relid ) "
 		" VALUES ( %e, %e, %e, %e, %e ) ",
 		user, identity, user_reqid_str, fr_relid_str, relid_str );
 	
@@ -1028,7 +1028,7 @@ long delete_friend_request( MYSQL *mysql, const char *user, const char *user_req
 {
 	/* Insert the friend claim. */
 	exec_query( mysql, 
-		"DELETE FROM friend_request WHERE for_user = %e AND user_reqid = %e;",
+		"DELETE FROM friend_request WHERE for_user = %e AND reqid = %e;",
 		user, user_reqid );
 
 	return 0;
@@ -1251,9 +1251,9 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	MYSQL_ROW row;
 
 	/* Execute the query. */
-	exec_query( mysql, "SELECT from_id, fr_relid, relid "
+	exec_query( mysql, "SELECT from_id, requested_relid, returned_relid "
 		"FROM friend_request "
-		"WHERE for_user = %e AND user_reqid = %e;",
+		"WHERE for_user = %e AND reqid = %e;",
 		user, user_reqid );
 
 	/* Check for a result. */

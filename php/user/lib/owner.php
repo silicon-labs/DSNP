@@ -45,18 +45,18 @@ mysql_select_db($CFG_DB_DATABASE) or die
 <?php
 
 /* Display friend requests. */
-$query = sprintf("SELECT from_id, user_reqid FROM friend_request WHERE for_user = '%s';",
+$query = sprintf("SELECT from_id, reqid FROM friend_request WHERE for_user = '%s';",
     mysql_real_escape_string($USER_NAME)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {
 	$from_id = $row['from_id'];
-	$user_reqid = $row['user_reqid'];
+	$reqid = $row['reqid'];
     echo "friend request: <a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
-	echo "<a href=\"answer.php?user_reqid=" . urlencode($user_reqid) . 
+	echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
 			"&a=yes\">yes</a>&nbsp;&nbsp;\n";
-	echo "<a href=\"answer.php?user_reqid=" . urlencode($user_reqid) . 
+	echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
 			"&a=no\">no</a><br>\n";
 }
 ?>

@@ -25,7 +25,7 @@ FILE *logFile;
 
 void openLogFile()
 {
-	logFile = fopen( LOG_FILE, "wt" );
+	logFile = fopen( LOG_FILE, "at" );
 	if ( logFile == 0 ) {
 		fprintf( stderr, "could not open logfile %s\n", LOG_FILE );
 		exit(FATAL_EXIT_CODE);

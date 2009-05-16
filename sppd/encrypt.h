@@ -67,9 +67,10 @@ struct Encrypt
 	char *sig;
 	char *sym;
 
-	/* For decryption. */
 	u_char *session_key;
 	long skLen;
+
+	/* For decryption. */
 	u_char *decrypted;
 	long decLen;
 

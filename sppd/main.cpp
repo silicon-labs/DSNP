@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "sppd.h"
 
@@ -89,6 +90,26 @@ void test_function()
 	}
 }
 
+void dieHandler( int signum )
+{
+	error( "caught signal %d, exiting\n", signum );
+	exit(1);
+}
+
+void setupSignals()
+{
+	signal( SIGHUP, &dieHandler );
+	signal( SIGINT, &dieHandler );
+	signal( SIGQUIT, &dieHandler );
+	signal( SIGILL, &dieHandler );
+	signal( SIGABRT, &dieHandler );
+	signal( SIGFPE, &dieHandler );
+	signal( SIGKILL, &dieHandler );
+	signal( SIGSEGV, &dieHandler );
+	signal( SIGPIPE, &dieHandler );
+	signal( SIGTERM, &dieHandler );
+}
+
 int main( int argc, char **argv )
 {
 	if ( check_args( argc, argv ) < 0 ) {
@@ -96,6 +117,8 @@ int main( int argc, char **argv )
 		fprintf( stderr, "  options: -q<site>    don't listen, run queue\n" );
 		exit(1);
 	}
+
+	setupSignals();
 
 	read_rcfile( configFile );
 

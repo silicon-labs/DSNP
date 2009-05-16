@@ -88,6 +88,7 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 	decLen = RSA_private_decrypt( encLen, encrypted, decrypted, 
 			privDecSign, RSA_PKCS1_PADDING );
 	if ( decLen < 0 ) {
+		error("decryption failed\n");
 		ERR_error_string( ERR_get_error(), err );
 		return -1;
 	}
@@ -98,6 +99,7 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
 			signature, sigLen, pubEncVer );
 	if ( verifyres != 1 ) {
+		error("verification failed\n");
 		ERR_error_string( ERR_get_error(), err );
 		return -1;
 	}

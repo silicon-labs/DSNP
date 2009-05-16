@@ -45,7 +45,7 @@ if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
 	header("Location: ${identity}frfinal.php?${arg_identity}&${arg_reqid}" );
 }
 else {
-	echo "FAILURE\n";
+	echo $res;
 }
 
 ?>

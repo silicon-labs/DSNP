@@ -706,17 +706,14 @@ query_fail:
 long store_relid_response( MYSQL *mysql, const char *identity, 
 		const char *fr_relid_str, const char *fr_reqid_str, 
 		const char *relid_str, const char *reqid_str, 
-		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
+		const char *enc, const char *sig )
 {
-	char *msg_enc = bin2hex( encrypted, enclen );
-	char *msg_sig = bin2hex( signature, siglen );
-
 	int result = exec_query( mysql,
 		"INSERT INTO relid_response "
 		"( from_id, requested_relid, returned_relid, reqid, msg_enc, msg_sig ) "
 		"VALUES ( %e, %e, %e, %e, %e, %e )",
 		identity, fr_relid_str, relid_str, 
-		reqid_str, msg_enc, msg_sig );
+		reqid_str, enc, sig );
 	
 	return result;
 }
@@ -753,17 +750,14 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	 *  i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
 	 */
 
-	int verifyres, fetchres, decryptres, sigres;
+	int verifyRes, fetchres, sigRes;
 	RSA *user_priv, *id_pub;
 	unsigned char *requested_relid;
-	unsigned char *encrypted, *signature;
-	int enclen;
-	unsigned siglen;
-	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
-	unsigned char relid[RELID_SIZE], reqid[REQID_SIZE];
-	char *fr_relid_str, *relid_str, *reqid_str;
+	unsigned char response_relid[RELID_SIZE], response_reqid[REQID_SIZE];
+	char *requested_relid_str, *response_relid_str, *response_reqid_str;
 	unsigned char message[RELID_SIZE*2];
 	char *site;
+	Encrypt encrypt;
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -780,75 +774,61 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 		printf("ERROR fetch_requested_relid failed %d\n", fetchres );
 		goto close;
 	}
-	
-	/* Convert the encrypted string to binary. */
-	encrypted = (unsigned char*)malloc( strlen(encsig.enc) );
-	enclen = hex2bin( encrypted, RSA_size(id_pub), encsig.enc );
-	if ( enclen <= 0 ) {
-		printf("ERROR converting encsig.enc to binary\n" );
-		goto close;
-	}
-
-	/* Convert the sig to binary. */
-	signature = (unsigned char*)malloc( strlen(encsig.sig) );
-	siglen = hex2bin( signature, RSA_size(id_pub), encsig.sig );
-	if ( siglen <= 0 ) {
-		printf("ERROR converting encsig.sig to binary\n" );
-		goto close;
-	}
 
 	/* Load the private key for the user the request is for. */
 	user_priv = load_key( mysql, user );
 
-	/* Decrypt the requested_relid. */
-	requested_relid = (unsigned char*) malloc( RSA_size( user_priv ) );
-	decryptres = RSA_private_decrypt( enclen, encrypted, requested_relid, 
-			user_priv, RSA_PKCS1_PADDING );
-	if ( decryptres != REQID_SIZE ) {
-		printf("ERROR failed to decrypt fr_reqid\n" );
+	/* Decrypt and verify the requested_relid. */
+	encrypt.load( id_pub, user_priv );
+
+	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
+	if ( verifyRes < 0 ) {
+		printf("ERROR failed to decrypt/verify requested_relid\n" );
 		goto close;
 	}
 
-	/* Verify the requested_relid. */
-	SHA1( requested_relid, RELID_SIZE, relid_sha1 );
-	verifyres = RSA_verify( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
-	if ( verifyres != 1 ) {
-		printf("ERROR failed to verify fr_reqid\n" );
+	/* Verify the message is the right size. */
+	if ( encrypt.decLen != RELID_SIZE ) {
+		printf("ERROR ecrypted message is the wrong size\n" );
 		goto close;
 	}
 
+	/* This should not be deleted as long as we don't do any more decryption. */
+	requested_relid = encrypt.decrypted;
+	
 	/* Generate the relationship and request ids. */
-	RAND_bytes( relid, RELID_SIZE );
-	RAND_bytes( reqid, REQID_SIZE );
+	RAND_bytes( response_relid, RELID_SIZE );
+	RAND_bytes( response_reqid, REQID_SIZE );
 
 	memcpy( message, requested_relid, RELID_SIZE );
-	memcpy( message+RELID_SIZE, relid, RELID_SIZE );
+	memcpy( message+RELID_SIZE, response_relid, RELID_SIZE );
 
-	/* Encrypt it. */
-	enclen = RSA_public_encrypt( RELID_SIZE*2, message, encrypted, 
-			id_pub, RSA_PKCS1_PADDING );
-
-	/* Sign the relationship id. */
-	SHA1( message, RELID_SIZE*2, relid_sha1 );
-	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
+	/* Encrypt and sign using the same credentials. */
+	sigRes = encrypt.encryptSign( message, RELID_SIZE*2 );
+	if ( sigRes < 0 ) {
+		printf("ERROR failed to encrypt sign the relid response\r\n");
+		goto close;
+	}
 
 	/* Store the request. */
-	fr_relid_str = bin2hex( requested_relid, RELID_SIZE );
-	relid_str = bin2hex( relid, RELID_SIZE );
-	reqid_str = bin2hex( reqid, REQID_SIZE );
+	requested_relid_str = bin2hex( requested_relid, RELID_SIZE );
+	response_relid_str = bin2hex( response_relid, RELID_SIZE );
+	response_reqid_str = bin2hex( response_reqid, REQID_SIZE );
 
-	store_relid_response( mysql, identity, fr_relid_str, fr_reqid_str, 
-			relid_str, reqid_str,
-			encrypted, enclen, signature, siglen );
+	store_relid_response( mysql, identity, requested_relid_str, fr_reqid_str, 
+			response_relid_str, response_reqid_str,
+			encrypt.enc, encrypt.sig );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, identity, relid_str, fr_relid_str, false );
+	store_friend_claim( mysql, user, identity, response_relid_str, requested_relid_str, false );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK %s\r\n", reqid_str );
+	printf( "OK %s\r\n", response_reqid_str );
 
-	free( relid_str );
-	free( reqid_str );
+	free( requested_relid_str );
+	free( response_relid_str );
+	free( response_reqid_str );
+
 close:
 	fflush( stdout );
 }

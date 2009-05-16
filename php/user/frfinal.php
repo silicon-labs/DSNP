@@ -38,9 +38,7 @@ if ( ereg("^OK", $res) ) {
 	header("Location: ${USER_URI}" );
 }
 else {
-	echo "<center>\n";
-	echo "FRIEND REQUEST FAILED<br>\n";
-	echo "</center>\n";
+	echo $res;
 }
 
 ?>

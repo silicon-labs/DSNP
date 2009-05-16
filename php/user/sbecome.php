@@ -23,7 +23,7 @@ $identity = $_POST['identity'];
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
-	exit(1);
+	die( "!!! There was a problem connecting to the local SPP server.");
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
@@ -39,8 +39,14 @@ if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
 
 	header("Location: ${identity}retrelid.php?${arg_identity}&${arg_reqid}" );
 }
+else if ( ereg("^ERROR ([0-9]+)", $res, $regs) ) {
+	die( "!!! There was an error:<br>" .
+		$ERROR[$regs[1]] . "<br>" .
+		"Check that the URI you submitted is correct.");
+}
 else {
-	echo "FAILURE\n";
+	die( "!!! The local SPP server did not respond. How rude.<br>" . 
+		"Check that the URI you submitted is correct.");
 }
 
 ?>

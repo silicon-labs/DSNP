@@ -573,7 +573,22 @@ query_fail:
 	return rsa;
 }
 
-bool allow_request( MYSQL *mysql, const char *user, const char *identity )
+bool friend_claim_exists( MYSQL *mysql, const char *user, const char *identity )
+{
+	MYSQL_RES *select_res;
+
+	/* Check to see if there is already a friend claim. */
+	exec_query( mysql, "SELECT user, friend_id FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e",
+		user, identity );
+	select_res = mysql_store_result( mysql );
+	if ( mysql_num_rows( select_res ) != 0 )
+		return true;
+
+	return false;
+}
+
+bool friend_request_exists( MYSQL *mysql, const char *user, const char *identity )
 {
 	MYSQL_RES *select_res;
 
@@ -582,16 +597,9 @@ bool allow_request( MYSQL *mysql, const char *user, const char *identity )
 		user, identity );
 	select_res = mysql_store_result( mysql );
 	if ( mysql_num_rows( select_res ) != 0 )
-		return false;
+		return true;
 
-	exec_query( mysql, "SELECT user, friend_id FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e",
-		user, identity );
-	select_res = mysql_store_result( mysql );
-	if ( mysql_num_rows( select_res ) != 0 )
-		return false;
-
-	return true;
+	return false;
 }
 
 void relid_request( MYSQL *mysql, const char *user, const char *identity )
@@ -615,15 +623,22 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
 	char *msg_enc, *msg_sig;
 
-	if ( !allow_request( mysql, user, identity ) ) {
-		printf("ERROR connection exists or is in progress\r\n");
+	/* Check for the existence of a friend claim. */
+	if ( friend_claim_exists( mysql, user, identity ) ) {
+		printf( "ERROR %d\r\n", ERROR_FRIEND_CLAIM_EXISTS );
+		goto close;
+	}
+
+	/* Check for the existence of a friend request. */
+	if ( friend_request_exists( mysql, user, identity ) ) {
+		printf( "ERROR %d\r\n", ERROR_FRIEND_REQUEST_EXISTS );
 		goto close;
 	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
+		printf( "ERROR %d\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 

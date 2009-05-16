@@ -301,6 +301,8 @@ if ( get_magic_quotes_gpc() ) {
 \$USER_PATH = "\${CFG_PATH}\$USER_NAME/";
 \$USER_URI = "\${CFG_URI}\$USER_NAME/";
 
+include('error.php');
+
 ?>
 EOF
 

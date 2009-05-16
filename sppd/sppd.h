@@ -177,4 +177,8 @@ void message( const char *fmt, ... );
 void fatal( const char *fmt, ... );
 void openLogFile();
 
+#define ERROR_FRIEND_CLAIM_EXISTS 1
+#define ERROR_FRIEND_REQUEST_EXISTS 2
+#define ERROR_PUBLIC_KEY 3
+
 #endif

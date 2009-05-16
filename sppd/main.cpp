@@ -101,6 +101,8 @@ int main( int argc, char **argv )
 
 	RAND_load_file("/dev/urandom", 1024);
 
+	openLogFile();
+
 	if ( runQueue )
 		run_queue( siteName );
 	else if ( test )

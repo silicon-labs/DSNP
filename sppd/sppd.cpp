@@ -45,6 +45,8 @@ MYSQL *db_connect()
 	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
+		error("failed to connect to the database\n");
+
 		/* LOG THIS */
 		mysql_close( mysql );
 		mysql = 0;

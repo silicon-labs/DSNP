@@ -171,4 +171,10 @@ void login( MYSQL *mysql, const char *user, const char *pass );
 
 MYSQL *db_connect();
 
+void error( const char *fmt, ... );
+void warning( const char *fmt, ... );
+void message( const char *fmt, ... );
+void fatal( const char *fmt, ... );
+void openLogFile();
+
 #endif

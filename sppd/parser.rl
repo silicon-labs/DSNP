@@ -286,19 +286,19 @@ int server_parse_loop()
 
 		/* Did we get a full line? */
 		long length = strlen( buf );
-		if ( buf[length-1] != '\n' )
+		if ( buf[length-1] != '\n' ) {
+			error( "line too long\n" );
 			return ERR_LINE_TOO_LONG;
+		}
 
 		const char *p = buf, *pe = buf + length;
 
 		%% write exec;
 
-		if ( cs < %%{ write first_final; }%% ) {
-			if ( cs == parser_error )
-				return ERR_PARSE_ERROR;
-			else
-				return ERR_UNEXPECTED_END;
-		}
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else if ( cs < %%{ write first_final; }%% )
+			return ERR_UNEXPECTED_END;
 	}
 
 	if ( mysql != 0 ) {

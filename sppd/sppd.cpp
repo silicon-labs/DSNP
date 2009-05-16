@@ -613,15 +613,10 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	 * g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 	 */
 
-	int sigres;
 	RSA *user_priv, *id_pub;
 	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
-	char *fr_relid_str, *fr_reqid_str;
-	unsigned char *encrypted, *signature;
-	int enclen;
-	unsigned siglen;
-	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
-	char *msg_enc, *msg_sig;
+	char *requested_relid_str, *reqid_str;
+	Encrypt encrypt;
 
 	/* Check for the existence of a friend claim. */
 	if ( friend_claim_exists( mysql, user, identity ) ) {
@@ -642,41 +637,32 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 		goto close;
 	}
 
-	/* Generate the relationship and request ids. */
-	RAND_bytes( requested_relid, RELID_SIZE );
-	RAND_bytes( fr_reqid, REQID_SIZE );
-	
-	/* Encrypt it. */
-	encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
-	enclen = RSA_public_encrypt( RELID_SIZE, requested_relid, encrypted, 
-			id_pub, RSA_PKCS1_PADDING );
-
 	/* Load the private key for the user the request is for. */
 	user_priv = load_key( mysql, user );
 
-	/* Sign the relationship id. */
-	signature = (unsigned char*)malloc( RSA_size(user_priv) );
-	SHA1( requested_relid, RELID_SIZE, relid_sha1 );
-	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
+	/* Generate the relationship and request ids. */
+	RAND_bytes( requested_relid, RELID_SIZE );
+	RAND_bytes( fr_reqid, REQID_SIZE );
 
+	/* Encrypt and sign the relationship id. */
+	encrypt.load( id_pub, user_priv );
+	encrypt.encryptSign( requested_relid, RELID_SIZE );
+	
 	/* Store the request. */
-	fr_relid_str = bin2hex( requested_relid, RELID_SIZE );
-	fr_reqid_str = bin2hex( fr_reqid, REQID_SIZE );
-
-	msg_enc = bin2hex( encrypted, enclen );
-	msg_sig = bin2hex( signature, siglen );
+	requested_relid_str = bin2hex( requested_relid, RELID_SIZE );
+	reqid_str = bin2hex( fr_reqid, REQID_SIZE );
 
 	exec_query( mysql,
 		"INSERT INTO relid_request "
 		"( for_user, from_id, requested_relid, reqid, msg_enc, msg_sig ) "
 		"VALUES( %e, %e, %e, %e, %e, %e )",
-		user, identity, fr_relid_str, fr_reqid_str, msg_enc, msg_sig );
+		user, identity, requested_relid_str, reqid_str, encrypt.enc, encrypt.sig );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK %s\r\n", fr_reqid_str );
+	printf( "OK %s\r\n", reqid_str );
 
-	free( fr_relid_str );
-	free( fr_reqid_str );
+	free( requested_relid_str );
+	free( reqid_str );
 close:
 	fflush( stdout );
 }
@@ -1244,7 +1230,6 @@ close:
 int send_current_session_key( MYSQL *mysql, const char *user, const char *identity )
 {
 	char sk[SK_SIZE_HEX];
-	Encrypt encrypt;
 	long long generation;
 	int sk_result;
 

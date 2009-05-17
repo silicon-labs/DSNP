@@ -183,6 +183,8 @@ void openLogFile();
 #define ERROR_FETCH_REQUESTED_RELID     4
 #define ERROR_DECRYPT_VERIFY            5
 #define ERROR_ENCRYPT_SIGN              6
-#define ERROR_ENCRYPTED_SIZE            7
+#define ERROR_DECRYPTED_SIZE            7
+#define ERROR_FETCH_RESPONSE_RELID      8
+#define ERROR_REQUESTED_RELID_MATCH     9
 
 #endif

@@ -69,7 +69,7 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 {
 	/* Convert the encrypted string to binary. */
 	u_char *encrypted = (u_char*)malloc( strlen(srcEnc) );
-	long encLen = hex2bin( encrypted, RSA_size(pubEncVer), srcEnc );
+	long encLen = hex2bin( encrypted, strlen(srcEnc), srcEnc );
 	if ( encLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded encrypted string to binary" );
 		return -1;
@@ -77,7 +77,7 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 
 	/* Convert the sig to binary. */
 	u_char *signature = (u_char*)malloc( strlen(srcSig) );
-	long sigLen = hex2bin( signature, RSA_size(pubEncVer), srcSig );
+	long sigLen = hex2bin( signature, strlen(srcSig), srcSig );
 	if ( sigLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded signature to binary" );
 		return -1;
@@ -95,7 +95,7 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 
 	/* Verify the item. */
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( decrypted, RELID_SIZE, decrypted_sha1 );
+	SHA1( decrypted, decLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
 			signature, sigLen, pubEncVer );
 	if ( verifyres != 1 ) {

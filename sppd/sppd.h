@@ -177,8 +177,12 @@ void message( const char *fmt, ... );
 void fatal( const char *fmt, ... );
 void openLogFile();
 
-#define ERROR_FRIEND_CLAIM_EXISTS 1
-#define ERROR_FRIEND_REQUEST_EXISTS 2
-#define ERROR_PUBLIC_KEY 3
+#define ERROR_FRIEND_CLAIM_EXISTS       1
+#define ERROR_FRIEND_REQUEST_EXISTS     2
+#define ERROR_PUBLIC_KEY                3
+#define ERROR_FETCH_REQUESTED_RELID     4
+#define ERROR_DECRYPT_VERIFY            5
+#define ERROR_ENCRYPT_SIGN              6
+#define ERROR_ENCRYPTED_SIZE            7
 
 #endif

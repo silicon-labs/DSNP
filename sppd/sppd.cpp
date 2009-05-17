@@ -693,7 +693,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	if ( row )
 		printf( "OK %s %s\r\n", row[0], row[1] );
 	else
-		printf( "ERR\r\n" );
+		printf( "ERROR\r\n" );
 
 	/* Done. */
 	mysql_free_result( select_res );
@@ -762,7 +762,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
+		printf( "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
@@ -771,7 +771,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	RelidEncSig encsig;
 	fetchres = fetch_requested_relid_net( encsig, site, id_host, fr_reqid_str );
 	if ( fetchres < 0 ) {
-		printf("ERROR fetch_requested_relid failed %d\n", fetchres );
+		printf( "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
 		goto close;
 	}
 
@@ -783,13 +783,13 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
 	if ( verifyRes < 0 ) {
-		printf("ERROR failed to decrypt/verify requested_relid\n" );
+		printf( "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
 
 	/* Verify the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE ) {
-		printf("ERROR ecrypted message is the wrong size\n" );
+		printf( "ERROR %d\r\n", ERROR_ENCRYPTED_SIZE );
 		goto close;
 	}
 
@@ -806,7 +806,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Encrypt and sign using the same credentials. */
 	sigRes = encrypt.encryptSign( message, RELID_SIZE*2 );
 	if ( sigRes < 0 ) {
-		printf("ERROR failed to encrypt sign the relid response\r\n");
+		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 
@@ -835,19 +835,14 @@ close:
 
 void fetch_response_relid( MYSQL *mysql, const char *reqid )
 {
-	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM relid_response WHERE reqid = '" );
-	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
-	strcat( query, "';" );
-
 	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
+	query_res = exec_query( mysql,
+		"SELECT msg_enc, msg_sig FROM relid_response WHERE reqid = %e;", reqid );
+	
 	if ( query_res != 0 ) {
 		printf("ERR\r\n");
 		goto query_fail;
@@ -865,7 +860,6 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 	mysql_free_result( select_res );
 
 query_fail:
-	free( query );
 	fflush( stdout );
 }
 

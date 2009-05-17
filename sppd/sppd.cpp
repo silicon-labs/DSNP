@@ -780,7 +780,6 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	/* Decrypt and verify the requested_relid. */
 	encrypt.load( id_pub, user_priv );
-	::message("decrypt %s %s\n", encsig.enc, encsig.sig );
 
 	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
 	if ( verifyRes < 0 ) {
@@ -1240,39 +1239,26 @@ close:
 }
 
 
-long store_flogin_tok( MYSQL *mysql, const char *user, 
-		const char *identity, char *flogin_tok_str, char *flogin_reqid_str,
+long store_friend_token( MYSQL *mysql, const char *user, 
+		const char *identity, char *token_str, char *reqid_str,
 		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
 {
 	long result = 0;
 
 	char *msg_enc = bin2hex( encrypted, enclen );
 	char *msg_sig = bin2hex( signature, siglen );
-	char *query = (char*)malloc( 1024 + 256*6 );
 
-	/* Make the query. */
-	strcpy( query, "INSERT INTO flogin_tok VALUES('" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), flogin_tok_str, strlen(flogin_tok_str));
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), flogin_reqid_str, strlen(flogin_reqid_str));
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), msg_enc, strlen(msg_enc) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), msg_sig, strlen(msg_sig) );
-	strcat( query, "' );" );
+	int query_res = exec_query( mysql,
+		"INSERT INTO friend_token_request "
+		"( user, from_id, token, reqid, msg_enc, msg_sig ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e ) ",
+		user, identity, token_str, reqid_str, msg_enc, msg_sig );
 
-	/* Execute the query. */
-	int query_res = mysql_query( mysql, query );
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
 
 	free( msg_enc );
 	free( msg_sig );
-	free( query );
 
 	return result;
 }
@@ -1371,7 +1357,7 @@ void flogin( MYSQL *mysql, const char *user, const char *hash )
 	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
 	flogin_reqid_str = bin2hex( flogin_reqid, RELID_SIZE );
 
-	store_flogin_tok( mysql, user, friend_id.identity, 
+	store_friend_token( mysql, user, friend_id.identity, 
 			flogin_tok_str, flogin_reqid_str,
 			encrypted, enclen, signature, siglen );
 	
@@ -1392,7 +1378,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 
 	/* Make the query. */
 	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM flogin_tok WHERE flogin_reqid = '" );
+	strcpy( query, "SELECT msg_enc, msg_sig FROM friend_token_request WHERE reqid = '" );
 	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
 	strcat( query, "';" );
 
@@ -1978,7 +1964,7 @@ void sftoken( MYSQL *mysql, const char *token )
 	long lasts = LOGIN_TOKEN_LASTS;
 
 	exec_query( mysql,
-		"SELECT from_id FROM flogin_tok WHERE flogin_tok = %e",
+		"SELECT from_id FROM friend_token_request WHERE token = %e",
 		token );
 
 	result = mysql_store_result( mysql );

@@ -191,11 +191,11 @@ CREATE TABLE friend_claim (
 	get_fwd_relid2 CHAR(32)
 );
 
-CREATE TABLE flogin_tok (
+CREATE TABLE friend_token_request (
 	user VARCHAR(20), 
 	from_id TEXT,
-	flogin_tok CHAR(32),
-	flogin_reqid CHAR(32),
+	token CHAR(32),
+	reqid CHAR(32),
 	msg_enc TEXT,
 	msg_sig TEXT
 );

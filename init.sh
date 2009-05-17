@@ -191,7 +191,7 @@ CREATE TABLE friend_claim (
 	get_fwd_relid2 CHAR(32)
 );
 
-CREATE TABLE friend_token_request (
+CREATE TABLE ftoken_request (
 	user VARCHAR(20), 
 	from_id TEXT,
 	token CHAR(32),

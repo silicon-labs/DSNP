@@ -69,8 +69,8 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid );
 void friend_final( MYSQL *mysql, const char *user, const char *reqid, 
 		const char *identity, const char *id_host, const char *id_user );
 void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid );
-void flogin( MYSQL *mysql, const char *user, const char *hash );
-void return_ftoken( MYSQL *mysql, const char *user, const char *hash, 
+void ftoken_request( MYSQL *mysql, const char *user, const char *hash );
+void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str );
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void set_config_by_uri( const char *uri );
@@ -113,7 +113,7 @@ long send_message_net( const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
-void sftoken( MYSQL *mysql, const char *token );
+void submit_ftoken( MYSQL *mysql, const char *token );
 
 
 bool check_comm_key( const char *key );
@@ -154,9 +154,9 @@ extern bool gblKeySubmitted;
 #define ERR_CONNECTING         -9
 #define ERR_QUERY_ERROR        -10
 
-#define RELID_SIZE 16
-#define REQID_SIZE 16
-#define TOKEN_SIZE 16
+#define RELID_SIZE  16
+#define REQID_SIZE  16
+#define TOKEN_SIZE  16
 #define SK_SIZE     16
 #define SK_SIZE_HEX 33
 
@@ -186,5 +186,9 @@ void openLogFile();
 #define ERROR_DECRYPTED_SIZE            7
 #define ERROR_FETCH_RESPONSE_RELID      8
 #define ERROR_REQUESTED_RELID_MATCH     9
+#define ERROR_FETCH_FTOKEN             10
+#define ERROR_NOT_A_FRIEND             11
+#define ERROR_NO_FTOKEN                12
+#define ERROR_DB_ERROR                 13
 
 #endif

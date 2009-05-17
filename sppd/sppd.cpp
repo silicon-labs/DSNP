@@ -613,6 +613,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	 * g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 	 */
 
+	int sigRes;
 	RSA *user_priv, *id_pub;
 	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
 	char *requested_relid_str, *reqid_str;
@@ -646,7 +647,11 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Encrypt and sign the relationship id. */
 	encrypt.load( id_pub, user_priv );
-	encrypt.encryptSign( requested_relid, RELID_SIZE );
+	sigRes = encrypt.encryptSign( requested_relid, RELID_SIZE );
+	if ( sigRes < 0 ) {
+		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		goto close;
+	}
 	
 	/* Store the request. */
 	requested_relid_str = bin2hex( requested_relid, RELID_SIZE );
@@ -750,7 +755,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	 *  i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
 	 */
 
-	int verifyRes, fetchres, sigRes;
+	int verifyRes, fetchRes, sigRes;
 	RSA *user_priv, *id_pub;
 	unsigned char *requested_relid;
 	unsigned char response_relid[RELID_SIZE], response_reqid[REQID_SIZE];
@@ -769,8 +774,8 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	site = get_site( identity );
 
 	RelidEncSig encsig;
-	fetchres = fetch_requested_relid_net( encsig, site, id_host, fr_reqid_str );
-	if ( fetchres < 0 ) {
+	fetchRes = fetch_requested_relid_net( encsig, site, id_host, fr_reqid_str );
+	if ( fetchRes < 0 ) {
 		printf( "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
 		goto close;
 	}
@@ -906,7 +911,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	 * c) stores request for friendee to accept/deny
 	 */
 
-	int verifyRes, fetchres;
+	int verifyRes, fetchRes;
 	RSA *user_priv, *id_pub;
 	unsigned char *message;
 	unsigned char requested_relid[RELID_SIZE], returned_relid[RELID_SIZE];
@@ -926,8 +931,8 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	site = get_site( identity );
 
 	RelidEncSig encsig;
-	fetchres = fetch_response_relid_net( encsig, site, id_host, reqid_str );
-	if ( fetchres < 0 ) {
+	fetchRes = fetch_response_relid_net( encsig, site, id_host, reqid_str );
+	if ( fetchRes < 0 ) {
 		printf( "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
 		goto close;
 	}
@@ -1239,17 +1244,14 @@ close:
 }
 
 
-long store_friend_token( MYSQL *mysql, const char *user, 
+long store_ftoken( MYSQL *mysql, const char *user, 
 		const char *identity, char *token_str, char *reqid_str,
-		unsigned char *encrypted, int enclen, unsigned char *signature, int siglen )
+		char *msg_enc, char *msg_sig )
 {
 	long result = 0;
 
-	char *msg_enc = bin2hex( encrypted, enclen );
-	char *msg_sig = bin2hex( signature, siglen );
-
 	int query_res = exec_query( mysql,
-		"INSERT INTO friend_token_request "
+		"INSERT INTO ftoken_request "
 		"( user, from_id, token, reqid, msg_enc, msg_sig ) "
 		"VALUES ( %e, %e, %e, %e, %e, %e ) ",
 		user, identity, token_str, reqid_str, msg_enc, msg_sig );
@@ -1303,89 +1305,79 @@ query_fail:
 	return result;
 }
 
-void flogin( MYSQL *mysql, const char *user, const char *hash )
+void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 {
-	int sigres;
+	int sigRes;
 	RSA *user_priv, *id_pub;
-
-	unsigned char flogin_tok[RELID_SIZE], flogin_reqid[RELID_SIZE];
-	char *flogin_tok_str, *flogin_reqid_str;
-	unsigned char *encrypted, *signature;
-	int enclen;
-	unsigned siglen;
-	unsigned char relid_sha1[SHA_DIGEST_LENGTH];
+	unsigned char flogin_token[TOKEN_SIZE], reqid[REQID_SIZE];
+	char *flogin_token_str, *reqid_str;
 	long friend_claim;
 	Identity friend_id;
+	Encrypt encrypt;
 
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
 		/* No friend claim ... send back a reqid anyways. Don't want to give
-		 * away that there is no claim. */
-		
-		RAND_bytes( flogin_reqid, RELID_SIZE );
-		flogin_reqid_str = bin2hex( flogin_reqid, RELID_SIZE );
-		printf( "OK %s\r\n", flogin_reqid_str );
+		 * away that there is no claim. FIXME: Would be good to fake this with
+		 * an appropriate time delay. */
+		RAND_bytes( reqid, RELID_SIZE );
+		reqid_str = bin2hex( reqid, RELID_SIZE );
+		printf( "OK %s\r\n", reqid_str );
 		goto close;
 	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
+		printf("ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
-	/* Generate the login request id and relationship and request ids. */
-	RAND_bytes( flogin_tok, RELID_SIZE );
-	RAND_bytes( flogin_reqid, RELID_SIZE );
-	
-	/* Encrypt it. */
-	encrypted = (unsigned char*)malloc( RSA_size(id_pub) );
-	enclen = RSA_public_encrypt( RELID_SIZE, flogin_tok, encrypted, 
-			id_pub, RSA_PKCS1_PADDING );
-
-	/* Load the private key for the user the request is for. */
+	/* Load the private key for the user. */
 	user_priv = load_key( mysql, user );
 
-	/* Sign the relationship id. */
-	signature = (unsigned char*)malloc( RSA_size(user_priv) );
-	SHA1( flogin_tok, RELID_SIZE, relid_sha1 );
-	sigres = RSA_sign( NID_sha1, relid_sha1, SHA_DIGEST_LENGTH, signature, &siglen, user_priv );
+	/* Generate the login request id and relationship and request ids. */
+	RAND_bytes( flogin_token, TOKEN_SIZE );
+	RAND_bytes( reqid, REQID_SIZE );
+
+	encrypt.load( id_pub, user_priv );
+
+	/* Encrypt it. */
+	sigRes = encrypt.encryptSign( flogin_token, TOKEN_SIZE );
+	if ( sigRes < 0 ) {
+		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		goto close;
+	}
 
 	/* Store the request. */
-	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
-	flogin_reqid_str = bin2hex( flogin_reqid, RELID_SIZE );
+	flogin_token_str = bin2hex( flogin_token, TOKEN_SIZE );
+	reqid_str = bin2hex( reqid, REQID_SIZE );
 
-	store_friend_token( mysql, user, friend_id.identity, 
-			flogin_tok_str, flogin_reqid_str,
-			encrypted, enclen, signature, siglen );
+	store_ftoken( mysql, user, friend_id.identity, 
+			flogin_token_str, reqid_str, encrypt.enc, encrypt.sig );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK %s\r\n", flogin_reqid_str );
+	printf( "OK %s\r\n", reqid_str );
 
-	free( flogin_tok_str );
+	free( flogin_token_str );
+	free( reqid_str );
 close:
 	fflush( stdout );
 }
 
 void fetch_ftoken( MYSQL *mysql, const char *reqid )
 {
-	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM friend_token_request WHERE reqid = '" );
-	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
-	strcat( query, "';" );
+	query_res = exec_query( mysql,
+		"SELECT msg_enc, msg_sig FROM ftoken_request WHERE reqid = %e", reqid );
 
 	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
-		printf("ERR\r\n");
+		printf( "ERROR %d\r\n", ERROR_DB_ERROR );
 		goto query_fail;
 	}
 
@@ -1395,17 +1387,16 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	if ( row )
 		printf( "OK %s %s\r\n", row[0], row[1] );
 	else
-		printf( "ERR\r\n" );
+		printf( "ERROR %d\r\n", ERROR_NO_FTOKEN );
 
 	/* Done. */
 	mysql_free_result( select_res );
 
 query_fail:
-	free( query );
 	fflush( stdout );
 }
 
-void return_ftoken( MYSQL *mysql, const char *user, const char *hash, 
+void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str )
 {
 	/*
@@ -1415,84 +1406,65 @@ void return_ftoken( MYSQL *mysql, const char *user, const char *hash,
 	 * d) decrypts and verifies the token
 	 * e) redirects the browser to $FP-URI/submit-token?uri=$URI&token=$TOK
 	 */
-	int verifyres, fetchres, decryptres;
+	int verifyRes, fetchRes;
 	RSA *user_priv, *id_pub;
-	unsigned char *flogin_tok;
-	unsigned char *encrypted, *signature;
-	int enclen;
-	unsigned siglen;
-	unsigned char ftoken_sha1[SHA_DIGEST_LENGTH];
-	char *flogin_tok_str;
+	unsigned char *flogin_token;
+	char *flogin_token_str;
 	long friend_claim;
 	Identity friend_id;
 	char *site;
+	Encrypt encrypt;
 
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
-		/* No friend claim ... we can reveal this since return_ftoken requires
+		/* No friend claim ... we can reveal this since ftoken_response requires
 		 * that the user be logged in. */
-		printf( "ERROR not a friend of mine\r\n" );
+		printf( "ERROR %d\r\n", ERROR_NOT_A_FRIEND );
 		goto close;
 	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
+		printf("ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
 	site = get_site( friend_id.identity );
 
 	RelidEncSig encsig;
-	fetchres = fetch_ftoken_net( encsig, site, friend_id.host, flogin_reqid_str );
-	if ( fetchres < 0 ) {
-		printf("ERROR fetch_flogin_relid failed %d\n", fetchres );
-		goto close;
-	}
-	
-	/* Convert the encrypted string to binary. */
-	encrypted = (unsigned char*)malloc( strlen(encsig.enc) );
-	enclen = hex2bin( encrypted, RSA_size(id_pub), encsig.enc );
-	if ( enclen <= 0 ) {
-		printf("ERROR converting encsig.enc to binary\n" );
-		goto close;
-	}
-
-	/* Convert the sig to binary. */
-	signature = (unsigned char*)malloc( strlen(encsig.sig) );
-	siglen = hex2bin( signature, RSA_size(id_pub), encsig.sig );
-	if ( siglen <= 0 ) {
-		printf("ERROR converting encsig.sig to binary\n" );
+	fetchRes = fetch_ftoken_net( encsig, site, friend_id.host, flogin_reqid_str );
+	if ( fetchRes < 0 ) {
+		printf("ERROR %d\r\n", ERROR_FETCH_FTOKEN );
 		goto close;
 	}
 
 	/* Load the private key for the user the request is for. */
 	user_priv = load_key( mysql, user );
 
-	/* Decrypt the flogin_tok. */
-	flogin_tok = (unsigned char*) malloc( RSA_size( user_priv ) );
-	decryptres = RSA_private_decrypt( enclen, encrypted, flogin_tok, user_priv, RSA_PKCS1_PADDING );
-	if ( decryptres != REQID_SIZE ) {
-		printf("ERROR failed to decrypt flogin_tok\n" );
+	encrypt.load( id_pub, user_priv );
+
+	/* Decrypt the flogin_token. */
+	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
+	if ( verifyRes < 0 ) {
+		printf( "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
 
-	/* Verify the flogin_tok. */
-	SHA1( flogin_tok, RELID_SIZE, ftoken_sha1 );
-	verifyres = RSA_verify( NID_sha1, ftoken_sha1, SHA_DIGEST_LENGTH, signature, siglen, id_pub );
-	if ( verifyres != 1 ) {
-		printf("ERROR failed to verify flogin_tok\n" );
+	/* Check the size. */
+	if ( encrypt.decLen != REQID_SIZE ) {
+		printf( "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		goto close;
 	}
 
-	flogin_tok_str = bin2hex( flogin_tok, RELID_SIZE );
+	flogin_token = encrypt.decrypted;
+	flogin_token_str = bin2hex( flogin_token, RELID_SIZE );
 
 	/* Return the login token for the requester to use. */
-	printf( "OK %s\r\n", flogin_tok_str );
+	printf( "OK %s\r\n", flogin_token_str );
 
-	free( flogin_tok_str );
+	free( flogin_token_str );
 close:
 	fflush( stdout );
 }
@@ -1957,14 +1929,14 @@ free_result:
 	fflush(stdout);
 }
 
-void sftoken( MYSQL *mysql, const char *token )
+void submit_ftoken( MYSQL *mysql, const char *token )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	long lasts = LOGIN_TOKEN_LASTS;
 
 	exec_query( mysql,
-		"SELECT from_id FROM friend_token_request WHERE token = %e",
+		"SELECT from_id FROM ftoken_request WHERE token = %e",
 		token );
 
 	result = mysql_store_result( mysql );

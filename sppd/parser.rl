@@ -128,19 +128,19 @@ char *alloc_string( const char *s, const char *e )
 		accept_friend( mysql, user, reqid );
 	}
 
-	action flogin {
+	action ftoken_request {
 		char *user = alloc_string( u1, u2 );
 		char *hash = alloc_string( a1, a2 );
 
-		flogin( mysql, user, hash );
+		ftoken_request( mysql, user, hash );
 	}
 
-	action return_ftoken {
+	action ftoken_response {
 		char *user = alloc_string( u1, u2 );
 		char *hash = alloc_string( a1, a2 );
 		char *reqid = alloc_string( r1, r2 );
 
-		return_ftoken( mysql, user, hash, reqid );
+		ftoken_response( mysql, user, hash, reqid );
 	}
 
 	action fetch_ftoken {
@@ -206,9 +206,9 @@ char *alloc_string( const char *s, const char *e )
 		login( mysql, user, pass );
 	}
 
-	action sftoken {
+	action submit_ftoken {
 		char *token = alloc_string( t1, t2 );
-		sftoken( mysql, token );
+		submit_ftoken( mysql, token );
 	}
 
 	commands := |* 
@@ -232,10 +232,10 @@ char *alloc_string( const char *s, const char *e )
 		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
 
 		# Friend login. 
-		'flogin'i ' ' user ' ' hash EOL @check_key @flogin;
-		'return_ftoken'i ' ' user ' ' hash ' ' reqid EOL @check_key @return_ftoken;
+		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request;
+		'ftoken_response'i ' ' user ' ' hash ' ' reqid EOL @check_key @ftoken_response;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
-		'sftoken'i ' ' token EOL @sftoken;
+		'submit_ftoken'i ' ' token EOL @submit_ftoken;
 
 		'submit_broadcast'i ' ' user ' ' user_message EOL @submit_broadcast;
 
@@ -636,7 +636,9 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\nfetch_ftoken %s\r\n", site, flogin_reqid );
+	fprintf( writeSocket,
+		"SPP/0.1 %s\r\n"
+		"fetch_ftoken %s\r\n", site, flogin_reqid );
 	fflush( writeSocket );
 
 	/* Read the result. */

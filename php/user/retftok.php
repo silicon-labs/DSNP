@@ -32,7 +32,7 @@ if ( !$fp )
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"return_ftoken $USER_NAME $hash $reqid\r\n";
+	"ftoken_response $USER_NAME $hash $reqid\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

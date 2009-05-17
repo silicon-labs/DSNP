@@ -29,7 +29,7 @@ if ( !$fp )
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"sftoken $ftoken\r\n";
+	"submit_ftoken $ftoken\r\n";
 fwrite($fp, $send);
 
 $res = fgets($fp);

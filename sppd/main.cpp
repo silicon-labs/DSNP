@@ -104,7 +104,6 @@ void setupSignals()
 	signal( SIGILL, &dieHandler );
 	signal( SIGABRT, &dieHandler );
 	signal( SIGFPE, &dieHandler );
-	signal( SIGKILL, &dieHandler );
 	signal( SIGSEGV, &dieHandler );
 	signal( SIGPIPE, &dieHandler );
 	signal( SIGTERM, &dieHandler );

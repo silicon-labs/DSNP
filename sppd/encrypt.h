@@ -17,6 +17,13 @@
 #ifndef _ENCRYPT_H
 #define _ENCRYPT_H
 
+#include <openssl/rand.h>
+#include <openssl/objects.h>
+#include <openssl/rsa.h>
+#include <openssl/bn.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <openssl/err.h>
 #include <openssl/rsa.h>
 #include <openssl/rc4.h>
 #include <sys/types.h>

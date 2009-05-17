@@ -17,14 +17,6 @@
 #include "sppd.h"
 #include "encrypt.h"
 
-#include <openssl/rand.h>
-#include <openssl/objects.h>
-#include <openssl/rsa.h>
-#include <openssl/bn.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include <openssl/err.h>
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -290,19 +282,12 @@ long open_inet_connection( const char *hostname, unsigned short port )
 long fetch_public_key_db( PublicKey &pub, MYSQL *mysql, const char *identity )
 {
 	long result = 0;
-	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT rsa_n, rsa_e FROM public_key WHERE identity = '" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "';" );
-
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
+	query_res = exec_query( mysql, 
+		"SELECT rsa_n, rsa_e FROM public_key WHERE identity = %e", identity );
 	if ( query_res != 0 ) {
 		result = ERR_QUERY_ERROR;
 		goto query_fail;
@@ -321,34 +306,23 @@ long fetch_public_key_db( PublicKey &pub, MYSQL *mysql, const char *identity )
 	mysql_free_result( select_res );
 
 query_fail:
-	free( query );
 	return result;
 }
 
 long store_public_key( MYSQL *mysql, const char *identity, PublicKey &pub )
 {
 	long result = 0, query_res;
-	char *query;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*3 );
-	strcpy( query, "INSERT INTO public_key VALUES('" );
-	mysql_real_escape_string( mysql, strend(query), identity, strlen(identity) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), pub.n, strlen(pub.n) );
-	strcat( query, "', '" );
-	mysql_real_escape_string( mysql, strend(query), pub.e, strlen(pub.e) );
-	strcat( query, "' );" );
+	query_res = exec_query( mysql,
+		"INSERT INTO public_key ( identity, rsa_n, rsa_e ) "
+		"VALUES ( %e, %e, %e ) ", identity, pub.n, pub.e );
 
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
 		result = ERR_QUERY_ERROR;
 		goto query_fail;
 	}
 
 query_fail:
-	free( query );
 	return result;
 }
 
@@ -388,24 +362,17 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity )
 
 RSA *load_key( MYSQL *mysql, const char *user )
 {
-	char *query;
 	long query_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	RSA *rsa;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*1 );
-	strcpy( query, "SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
-		"FROM user WHERE user = '" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "';" );
+	query_res = exec_query( mysql,
+		"SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
+		"FROM user WHERE user = %e", user );
 
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
-	if ( query_res != 0 ) {
+	if ( query_res != 0 )
 		goto query_fail;
-	}
 
 	/* Check for a result. */
 	result = mysql_store_result( mysql );
@@ -428,7 +395,6 @@ RSA *load_key( MYSQL *mysql, const char *user )
 free_result:
 	mysql_free_result( result );
 query_fail:
-	free( query );
 	return rsa;
 }
 
@@ -533,19 +499,13 @@ close:
 
 void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 {
-	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT msg_enc, msg_sig FROM relid_request WHERE reqid = '" );
-	mysql_real_escape_string( mysql, strend(query), reqid, strlen(reqid) );
-	strcat( query, "';" );
+	query_res = exec_query( mysql,
+		"SELECT msg_enc, msg_sig FROM relid_request WHERE reqid = %e", reqid );
 
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
 		printf("ERR\r\n");
 		goto query_fail;
@@ -563,7 +523,6 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	mysql_free_result( select_res );
 
 query_fail:
-	free( query );
 	fflush( stdout );
 }
 
@@ -730,19 +689,16 @@ query_fail:
 long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 {
 	long result = 0;
-	char *fr_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	char *requested_relid_str = bin2hex( fr_relid, RELID_SIZE );
 	int query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 
-	/* Make the query. */
-	char *query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT from_id FROM relid_request WHERE requested_relid = '" );
-	mysql_real_escape_string( mysql, strend(query), fr_relid_str, strlen(fr_relid_str) );
-	strcat( query, "';" );
+	query_res = exec_query( mysql,
+		"SELECT from_id FROM relid_request WHERE requested_relid = %e", 
+		requested_relid_str );
 
 	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
 		result = -1;
 		goto query_fail;
@@ -757,7 +713,6 @@ long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 	mysql_free_result( select_res );
 
 query_fail:
-	free( query );
 	fflush(stdout);
 	return result;
 }
@@ -1108,8 +1063,9 @@ long store_ftoken( MYSQL *mysql, const char *user,
 		char *msg_enc, char *msg_sig )
 {
 	long result = 0;
+	int query_res;
 
-	int query_res = exec_query( mysql,
+	query_res = exec_query( mysql,
 		"INSERT INTO ftoken_request "
 		"( user, from_id, token, reqid, msg_enc, msg_sig ) "
 		"VALUES ( %e, %e, %e, %e, %e, %e ) ",
@@ -1118,9 +1074,6 @@ long store_ftoken( MYSQL *mysql, const char *user,
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
 
-	free( msg_enc );
-	free( msg_sig );
-
 	return result;
 }
 
@@ -1128,21 +1081,14 @@ long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user,
 		const char *friend_hash )
 {
 	long result = 0;
-	char *query;
 	long query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
 
-	/* Make the query. */
-	query = (char*)malloc( 1024 + 256*15 );
-	strcpy( query, "SELECT friend_id FROM friend_claim WHERE user='" );
-	mysql_real_escape_string( mysql, strend(query), user, strlen(user) );
-	strcat( query, "' AND friend_hash='" );
-	mysql_real_escape_string( mysql, strend(query), friend_hash, strlen(friend_hash) );
-	strcat( query, "';" );
+	query_res = exec_query( mysql,
+		"SELECT friend_id FROM friend_claim WHERE user = %e AND friend_hash = %e",
+		user, friend_hash );
 
-	/* Execute the query. */
-	query_res = mysql_query( mysql, query );
 	if ( query_res != 0 ) {
 		result = ERR_QUERY_ERROR;
 		goto query_fail;
@@ -1160,7 +1106,6 @@ long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user,
 	mysql_free_result( select_res );
 
 query_fail:
-	free( query );
 	return result;
 }
 
@@ -1221,6 +1166,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 
 	free( flogin_token_str );
 	free( reqid_str );
+
 close:
 	fflush( stdout );
 }

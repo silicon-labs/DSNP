@@ -1433,7 +1433,7 @@ long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_me
 
 	/* Insert the broadcast message into the published table. */
 	exec_query( mysql,
-		"INSERT INTO publish "
+		"INSERT INTO published "
 		"( user, time_published, message ) "
 		"VALUES ( %e, %e, %e )",
 		user, timeStr, user_message );

@@ -33,7 +33,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 <table width="100%" cellpadding=12 cellspacing=0>
 <tr>
-<td width="33%" valign="top">
+<td valign="top">
 
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
@@ -50,14 +50,17 @@ $query = sprintf("SELECT from_id, reqid FROM friend_request WHERE for_user = '%s
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-while ( $row = mysql_fetch_assoc($result) ) {
-	$from_id = $row['from_id'];
-	$reqid = $row['reqid'];
-    echo "friend request: <a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
-	echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
-			"&a=yes\">yes</a>&nbsp;&nbsp;\n";
-	echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
-			"&a=no\">no</a><br>\n";
+if ( mysql_num_rows( $result ) > 0 ) {
+	echo "<h1>Friend Requests</h1>";
+	while ( $row = mysql_fetch_assoc($result) ) {
+		$from_id = $row['from_id'];
+		$reqid = $row['reqid'];
+		echo "friend request: <a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
+		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
+				"&a=yes\">yes</a>&nbsp;&nbsp;\n";
+		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
+				"&a=no\">no</a><br>\n";
+	}
 }
 ?>
 
@@ -94,7 +97,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 ?>
 </td>
-<td width="33%" valign="top">
+<td width="70%" valign="top">
 
 <h1>Broadcast</h1>
 
@@ -112,45 +115,15 @@ status changes, and contact information changes.</small>
 </form>
 
 <?
-$query = sprintf(
-	"SELECT time_published, message " .
-	"FROM publish " .
-	"WHERE user = '%s' " .
-	"ORDER BY seq_id DESC",
-    mysql_real_escape_string($USER_NAME)
-);
-
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-$mehash = MD5( $USER_URI );
-
-while ( $row = mysql_fetch_assoc($result) ) {
-	$browser_id = $USER_URI;
-	$time_published = $row['time_published'];
-	$message = $row['message'];
-
-	echo "<p>\n";
-	echo "<small>$time_published you said:</small><br>";
-	echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
-}
-?>
-
-</td>
-<td width="33%" valign="top">
-
-<h1>Messages</h1>
-
-<small> These are the messages written by your friends. This is your news feed. </small>
-
-<hr>
-<?php
 
 $query = sprintf(
 	"SELECT friend_id, time_published, message " .
 	"FROM friend_claim " .
 	"JOIN received ON friend_claim.get_relid = received.get_relid " .
 	"WHERE user = '%s' " .
+	"UNION select user, time_published, message from published where user = '%s' " .
 	"ORDER BY time_published DESC",
+    mysql_real_escape_string($USER_NAME),
     mysql_real_escape_string($USER_NAME)
 );
 
@@ -165,8 +138,14 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$message = $row['message'];
 
 	echo "<p>\n";
-	echo "<small>$time_published <a href=\"${friend_id}sflogin.php?uri=" . 
-			urlencode($browser_id) . "\">$friend_id</a> said:</small><br>";
+	echo "<small>$time_published ";
+	if ( $friend_id == $USER_NAME )
+		echo "you";
+	else {
+		echo "<a href=\"${friend_id}sflogin.php?uri=";
+		echo urlencode($browser_id) . "\">$friend_id</a>";
+	}
+	echo " said:</small><br>";
 	echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
 }
 

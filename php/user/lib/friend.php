@@ -58,26 +58,26 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
 	if ( $dest_id == $browser_id ) {
-		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
+		echo "you: <a href=\"${dest_id}\"><small>$dest_id</small></a> <br>\n";
 	}
 	else {
 		echo "friend: <a href=\"${browser_id}sendmeto.php?uri=" . 
 			urlencode($dest_id) . 
-			"\">$dest_id</a> <br>\n";
+			"\"><small>$dest_id</small></a> <br>\n";
 	}
 }
 
 ?>
 
 </td>
-<td valign="top">
+<td width="%70" valign="top">
 
-<h1>Broadcast Messages</h1>
+<h1>Stories about <?php print $USER_NAME;?></h1>
 
 <?
 $query = sprintf(
 	"SELECT time_published, message " .
-	"FROM publish " .
+	"FROM published " .
 	"WHERE user = '%s' " .
 	"ORDER BY seq_id DESC",
     mysql_real_escape_string($USER_NAME)

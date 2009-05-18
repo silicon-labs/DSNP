@@ -224,7 +224,7 @@ CREATE TABLE received (
 	message TEXT
 );
 
-CREATE TABLE publish (
+CREATE TABLE published (
 	user VARCHAR(20),
 	seq_id MEDIUMINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,

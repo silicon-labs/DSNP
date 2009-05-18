@@ -40,6 +40,9 @@ if ( !$line ) {
 <title><?php print $data['name']?> </title>
 </head>
 
+<table width="100%" cellpadding=12 cellspacing=0>
+<tr><td>
+
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
 <p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
@@ -48,5 +51,7 @@ if ( !$line ) {
 
 <h1>Actions</h1>
 <a href="become.php">become friend</a>
+
+</td></tr>
 
 </html>

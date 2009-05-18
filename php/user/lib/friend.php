@@ -26,17 +26,16 @@ $browser_id = $_SESSION['identity'];
 
 <body>
 
-<table width="100%"
+<table width="100%" cellpadding=12 cellspacing=0>
 
 <tr>
 <td valign="top">
 
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
+<p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
-<p>You are logged in as a <b>friend</b> (<a href="logout.php">logout</a>)<br>
-<a href="<?php echo $browser_id;?>"><?php echo $browser_id?></a>
+<p>You are logged in as a <a href="<?php echo $browser_id;?>"><b>friend</b></a> (<a href="logout.php">logout</a>)<br>
 
 <h1>Friend List</h1>
 
@@ -61,7 +60,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 		echo "you: <a href=\"${dest_id}\"><small>$dest_id</small></a> <br>\n";
 	}
 	else {
-		echo "friend: <a href=\"${browser_id}sendmeto.php?uri=" . 
+		echo "<a href=\"${browser_id}sendmeto.php?uri=" . 
 			urlencode($dest_id) . 
 			"\"><small>$dest_id</small></a> <br>\n";
 	}

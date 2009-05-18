@@ -42,7 +42,7 @@ if ( !$line ) {
 
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
+<p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
 <p><a href="login.php">owner login</a>
 

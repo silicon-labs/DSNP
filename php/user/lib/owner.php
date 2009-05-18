@@ -37,7 +37,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 <h1>SPP: <?php print $USER_NAME;?></h1>
 
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
+<p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
 <p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout.php">logout</a>)
 
@@ -84,11 +84,11 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$acknowledged = $row['acknowledged'];
 
 	if ( $acknowledged ) {
-		echo "friend: <a href=\"${dest_id}sflogin.php?uri=" . 
+		echo "<a href=\"${dest_id}sflogin.php?uri=" . 
 			urlencode($browser_id) . "\"><small>$dest_id</small></a> ";
 	}
 	else {
-		echo "friend: <a href=\"${dest_id}\"><small>$dest_id</small></a> ";
+		echo "<a href=\"${dest_id}\"><small>$dest_id</small></a> ";
 		echo "<small>(awaiting confirmation)</small>";
 	}
 
@@ -110,7 +110,7 @@ status changes, and contact information changes.</small>
 
 <form method="post" action="broadcast.php">
 <table>
-<tr><td>Message:</td><td> <input type="text" name="message"></td></tr>
+<tr><td>Message:</td><td> <input type="text" name="message" size="50"></td></tr>
 </table>
 </form>
 

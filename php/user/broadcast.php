@@ -21,7 +21,7 @@ include('lib/session.php');
 
 requireOwner();
 
-$message = $_POST['message'];
+$message = ereg_replace( "[\r\n]+", "", $_POST['message'] );
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )

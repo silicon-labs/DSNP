@@ -132,11 +132,13 @@ $query = sprintf(
 	"FROM friend_claim " .
 	"JOIN received ON friend_claim.get_relid = received.get_relid " .
 	"WHERE user = '%s' " .
-	"UNION select user, time_published, message from published where user = '%s' " .
+	"UNION select null as friend_id, time_published, message " .
+	"FROM published where user = '%s' " .
 	"ORDER BY time_published DESC",
     mysql_real_escape_string($USER_NAME),
     mysql_real_escape_string($USER_NAME)
 );
+
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
@@ -148,7 +150,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$message = $row['message'];
 
 	echo "<p>\n";
-	printMessage( null, $friend_id, $message, $time_published );
+	printMessage( $friend_id, $message, $time_published );
 }
 
 ?>

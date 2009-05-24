@@ -18,7 +18,7 @@
 
 include('lib/functions.php');
 
-$browser_id = $_SESSION['identity'];
+$BROWSER_ID = $_SESSION['identity'];
 
 ?>
 
@@ -38,7 +38,7 @@ $browser_id = $_SESSION['identity'];
 
 <p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
-<p>You are logged in as a <a href="<?php echo $browser_id;?>"><b>friend</b></a> (<a href="logout.php">logout</a>)<br>
+<p>You are logged in as a <a href="<?php echo $BROWSER_ID;?>"><b>friend</b></a> (<a href="logout.php">logout</a>)<br>
 
 <h1>Friend List</h1>
 
@@ -59,11 +59,11 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
-	if ( $dest_id == $browser_id ) {
+	if ( $dest_id == $BROWSER_ID ) {
 		echo "you: <a href=\"${dest_id}\"><small>$dest_id</small></a> <br>\n";
 	}
 	else {
-		echo "<a href=\"${browser_id}sendmeto.php?uri=" . 
+		echo "<a href=\"${BROWSER_ID}sendmeto.php?uri=" . 
 			urlencode($dest_id) . 
 			"\"><small>$dest_id</small></a> <br>\n";
 	}
@@ -74,7 +74,26 @@ while ( $row = mysql_fetch_assoc($result) ) {
 </td>
 <td width="%70" valign="top">
 
-<h1>Stories about <?php print $USER_NAME;?></h1>
+<h1>Stories</h1>
+
+<small> Messages typed here are sent to all of <?php print $USER_NAME;?>'s friends. 
+</small>
+<hr>
+<p>
+<form method="post" action="wall.php">
+<table>
+<tr><td>Write on <?php print $USER_NAME;?>'s wall:</td></tr>
+<!--<input type="text" name="message" size="50">-->
+<tr><td>
+<textarea rows="5" cols="65" name="message" wrap="physical"></textarea>
+</td></tr>
+<tr><td>
+<input value="Submit" type="submit">
+</td></tr>
+
+
+</table>
+</form>
 
 <?
 $query = sprintf(
@@ -90,12 +109,11 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 $mehash = MD5( $USER_URI );
 
 while ( $row = mysql_fetch_assoc($result) ) {
-	$browser_id = $USER_URI;
 	$time_published = $row['time_published'];
 	$message = $row['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_NAME, null, $message, $time_published );
+	printMessage( $USER_URI, $message, $time_published );
 }
 ?>
 

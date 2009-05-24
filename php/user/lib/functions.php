@@ -19,6 +19,9 @@
 
 function printMessage( $user, $identity, $message, $time_published )
 {
+	global $USER_NAME;
+	global $USER_URI;
+
 	$r = new XMLReader();
 	$r->xml( $message );
 	if ( $r->read() ) {
@@ -39,6 +42,5 @@ function printMessage( $user, $identity, $message, $time_published )
 		}
 	}
 }
-
 
 ?>

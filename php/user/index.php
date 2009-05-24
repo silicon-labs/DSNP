@@ -21,10 +21,14 @@ include('lib/session.php');
 
 $U = $_REQUEST['u'];
 
-if ( $_SESSION['auth'] == 'owner' )
-	include('lib/owner.php');
-else if ( $_SESSION['auth'] == 'friend' )
-	include('lib/friend.php');
+if ( isset( $_SESSION ) ) {
+	if ( $_SESSION['auth'] == 'owner' )
+		include('lib/owner.php');
+	else if ( $_SESSION['auth'] == 'friend' )
+		include('lib/friend.php');
+	else 
+		include('lib/public.php');
+}
 else
 	include('lib/public.php');
 

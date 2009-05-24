@@ -37,7 +37,7 @@ if ( !$line ) {
 
 <html>
 <head>
-<title><?php print $data['name']?> </title>
+<title><?php print $USER_NAME?> </title>
 </head>
 
 <table width="100%" cellpadding=12 cellspacing=0>

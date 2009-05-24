@@ -9,7 +9,7 @@ Install and run this package you will need a few things.
 
 2. Mysql installed and running.
 
-3. PHP with Mysql support.
+3. PHP with Mysql and XML support
 
 4. To build sppd: ragel, libssl and libmysql.
 

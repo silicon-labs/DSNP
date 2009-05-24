@@ -20,6 +20,8 @@
 #include <unistd.h>
 #include "sppd.h"
 
+#define MAX_MSG_LEN 16384
+
 bool gblKeySubmitted = false;
 
 char *alloc_string( const char *s, const char *e )
@@ -194,9 +196,17 @@ char *alloc_string( const char *s, const char *e )
 
 	action submit_broadcast {
 		char *user = alloc_string( u1, u2 );
-		char *user_message = alloc_string( m1, m2 );
+		char *number = alloc_string( n1, n2 );
+		int length = atoi( number );
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		char *user_message = new char[length+1];
+		fread( user_message, 1, length, stdin );
+		user_message[length] = 0;
 
 		connect_send_broadcast( mysql, user, user_message );
+		free( user_message );
 	}
 
 	action login {
@@ -237,7 +247,7 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
 		'submit_ftoken'i ' ' token EOL @submit_ftoken;
 
-		'submit_broadcast'i ' ' user ' ' user_message EOL @submit_broadcast;
+		'submit_broadcast'i ' ' user ' ' number EOL @submit_broadcast;
 
 		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
@@ -248,7 +258,7 @@ char *alloc_string( const char *s, const char *e )
 
 %% write data;
 
-const long linelen = 2048;
+const long linelen = 4096;
 
 int server_parse_loop()
 {

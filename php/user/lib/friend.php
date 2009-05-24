@@ -16,7 +16,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+include('lib/functions.php');
+
 $browser_id = $_SESSION['identity'];
+
 ?>
 
 <html>
@@ -92,8 +95,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$message = $row['message'];
 
 	echo "<p>\n";
-	echo "<small>$time_published $USER_NAME said:</small><br>";
-	echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
+	printMessage( $USER_NAME, null, $message, $time_published );
 }
 ?>
 

@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2009, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2007-2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,40 +16,29 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/session.php');
 
-requireOwner();
+function printMessage( $user, $identity, $message, $time_published )
+{
+	$r = new XMLReader();
+	$r->xml( $message );
+	if ( $r->read() ) {
+		if ( $r->name == "text" ) {
+			if ( $r->read() ) {
+				echo "<small>$time_published ";
+				if ( $user ) 
+					echo $user;
+				else if ( $identity == $USER_NAME )
+					echo "you";
+				else {
+					echo "<a href=\"${identity}sflogin.php?uri=";
+					echo urlencode($USER_URI) . "\">$identity</a>";
+				}
+				echo " said:</small><br>";
+				echo "&nbsp;&nbsp;" . htmlspecialchars($r->value) . "<br>";
+			}
+		}
+	}
+}
 
-$message = $_POST['message'];
 
-$fp = fsockopen( 'localhost', $CFG_PORT );
-if ( !$fp )
-	exit(1);
-
-$w = new XMLWriter();
-$w->openMemory();
-$w->startDocument();
-$w->startElement("text");
-$w->text($message);
-$w->endElement();
-$w->endDocument();
-$encoded = $w->outputMemory();
-
-$pos = strpos( $encoded, "\n" );
-$encoded = substr( $encoded, $pos+1 );
-
-$send = 
-	"SPP/0.1 $CFG_URI\r\n" . 
-	"comm_key $CFG_COMM_KEY\r\n" .
-	"submit_broadcast $USER_NAME " . strlen( $encoded ) . "\r\n" .
-	$encoded;
-
-fwrite($fp, $send);
-
-$res = fgets($fp);
-
-if ( ereg("^OK", $res, $regs) )
-	header("Location: ${USER_URI}" );
-else
-	echo $res;
+?>

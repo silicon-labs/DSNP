@@ -8,3 +8,5 @@ RewriteRule ^admin/(.*)$                   admin/$1               [L]
 
 # Users.
 RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$     user/$2?u=$1           [L,QSA]
+
+#php_flag display_errors off

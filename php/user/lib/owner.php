@@ -16,6 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+include( "lib/functions.php" );
+
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
 	('Could not connect to database');
@@ -110,7 +112,16 @@ status changes, and contact information changes.</small>
 
 <form method="post" action="broadcast.php">
 <table>
-<tr><td>Message:</td><td> <input type="text" name="message" size="50"></td></tr>
+<tr><td>Message:</td></tr>
+<!--<input type="text" name="message" size="50">-->
+<tr><td>
+<textarea rows="5" cols="65" name="message" wrap="physical"></textarea>
+</td></tr>
+<tr><td>
+<input value="Submit Message" type="submit">
+</td></tr>
+
+
 </table>
 </form>
 
@@ -132,21 +143,12 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 $mehash = MD5( $USER_URI );
 
 while ( $row = mysql_fetch_assoc($result) ) {
-	$browser_id = $USER_URI;
 	$friend_id = $row['friend_id'];
 	$time_published = $row['time_published'];
 	$message = $row['message'];
 
 	echo "<p>\n";
-	echo "<small>$time_published ";
-	if ( $friend_id == $USER_NAME )
-		echo "you";
-	else {
-		echo "<a href=\"${friend_id}sflogin.php?uri=";
-		echo urlencode($browser_id) . "\">$friend_id</a>";
-	}
-	echo " said:</small><br>";
-	echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
+	printMessage( null, $friend_id, $message, $time_published );
 }
 
 ?>

@@ -97,10 +97,14 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 <?
 $query = sprintf(
-	"SELECT time_published, message " .
+	"SELECT null AS identity, time_published, message " .
 	"FROM published " .
 	"WHERE user = '%s' " .
-	"ORDER BY seq_id DESC",
+	"UNION SELECT identity, time_published, message " .
+	"FROM remote_published " .
+	"WHERE user = '%s' " .
+	"ORDER BY time_published DESC",
+    mysql_real_escape_string($USER_NAME),
     mysql_real_escape_string($USER_NAME)
 );
 
@@ -109,11 +113,15 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 $mehash = MD5( $USER_URI );
 
 while ( $row = mysql_fetch_assoc($result) ) {
+	$identity = $row['identity'];
 	$time_published = $row['time_published'];
 	$message = $row['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_URI, $message, $time_published );
+	$who = $USER_URI;
+	if ( $identity )
+		$who = $identity;
+	printMessage( $who, $message, $time_published );
 }
 ?>
 

@@ -81,13 +81,12 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 $mehash = MD5( $USER_URI );
 
 while ( $row = mysql_fetch_assoc($result) ) {
-	$browser_id = $USER_URI;
 	$dest_id = $row['friend_id'];
 	$acknowledged = $row['acknowledged'];
 
 	if ( $acknowledged ) {
 		echo "<a href=\"${dest_id}sflogin.php?uri=" . 
-			urlencode($browser_id) . "\"><small>$dest_id</small></a> ";
+			urlencode($USER_URI) . "\"><small>$dest_id</small></a> ";
 	}
 	else {
 		echo "<a href=\"${dest_id}\"><small>$dest_id</small></a> ";
@@ -132,7 +131,7 @@ $query = sprintf(
 	"FROM friend_claim " .
 	"JOIN received ON friend_claim.get_relid = received.get_relid " .
 	"WHERE user = '%s' " .
-	"UNION select null as friend_id, time_published, message " .
+	"UNION SELECT null AS friend_id, time_published, message " .
 	"FROM published where user = '%s' " .
 	"ORDER BY time_published DESC",
     mysql_real_escape_string($USER_NAME),

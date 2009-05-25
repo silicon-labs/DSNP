@@ -20,12 +20,9 @@ include('../config.php');
 include('lib/session.php');
 
 requireFriend();
+$BROWSER_ID = $_SESSION['identity'];
 
 $message = $_POST['message'];
-
-$fp = fsockopen( 'localhost', $CFG_PORT );
-if ( !$fp )
-	exit(1);
 
 $w = new XMLWriter();
 $w->openMemory();
@@ -44,13 +41,17 @@ $w->endElement();
 $w->endDocument();
 $encoded = $w->outputMemory();
 
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
+
 $pos = strpos( $encoded, "\n" );
 $encoded = substr( $encoded, $pos+1 );
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"submit_broadcast $USER_NAME " . strlen( $encoded ) . "\r\n" .
+	"submit_fbroadcast $USER_URI $BROWSER_ID " . strlen( $encoded ) . "\r\n" .
 	$encoded;
 
 fwrite($fp, $send);

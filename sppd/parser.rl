@@ -209,6 +209,22 @@ char *alloc_string( const char *s, const char *e )
 		free( user_message );
 	}
 
+	action submit_fbroadcast {
+		char *identity = alloc_string( i1, i2 );
+		char *identity2 = alloc_string( j1, j2 );
+		char *number = alloc_string( n1, n2 );
+		int length = atoi( number );
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		char *user_message = new char[length+1];
+		fread( user_message, 1, length, stdin );
+		user_message[length] = 0;
+
+		submit_fbroadcast( mysql, identity, identity2, user_message );
+		free( user_message );
+	}
+
 	action login {
 		char *user = alloc_string( u1, u2 );
 		char *pass = alloc_string( p1, p2 );
@@ -219,6 +235,22 @@ char *alloc_string( const char *s, const char *e )
 	action submit_ftoken {
 		char *token = alloc_string( t1, t2 );
 		submit_ftoken( mysql, token );
+	}
+
+	action remote_publish {
+		char *user = alloc_string( u1, u2 );
+		char *identity = alloc_string( i1, i2 );
+		char *number = alloc_string( n1, n2 );
+		int length = atoi( number );
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		char *user_message = new char[length+1];
+		fread( user_message, 1, length, stdin );
+		user_message[length] = 0;
+
+		remote_publish( mysql, user, identity, user_message );
+		free( user_message );
 	}
 
 	commands := |* 
@@ -245,12 +277,16 @@ char *alloc_string( const char *s, const char *e )
 		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request;
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid EOL @check_key @ftoken_response;
 		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
-		'submit_ftoken'i ' ' token EOL @submit_ftoken;
+		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
 
-		'submit_broadcast'i ' ' user ' ' number EOL @submit_broadcast;
+		'submit_broadcast'i ' ' user ' ' number EOL @check_key @submit_broadcast;
+		'submit_fbroadcast'i ' ' identity ' ' identity2 ' ' number EOL @check_key @submit_fbroadcast;
 
 		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
+		
+		# FIXME: NOT SECURE. Need to use a login token.
+		'remote_publish'i ' ' user ' ' identity ' ' number EOL @remote_publish;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -277,6 +313,7 @@ int server_parse_loop()
 	const char *m1, *m2;
 	const char *n1, *n2;
 	const char *t1, *t2;
+	const char *j1, *j2;
 
 	MYSQL *mysql = 0;
 
@@ -957,3 +994,83 @@ fail:
 }
 
 	
+/*
+ * send_remote_publish_net
+ */
+
+%%{
+	machine send_remote_publish_net;
+	write data;
+}%%
+
+long send_remote_publish_net( const char *to_identity,
+		const char *from_identity, const char *message )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+
+	/* Need to parse the identity. */
+	Identity toIdent( to_identity );
+	pres = toIdent.parse();
+
+	if ( pres < 0 )
+		return pres;
+
+	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	/* Send the request. */
+	FILE *writeSocket = fdopen( socketFd, "w" );
+	fprintf( writeSocket, 
+		"SPP/0.1 %s\r\n"
+		"remote_publish %s %s %d\r\n%s", 
+		toIdent.site,
+		toIdent.user, from_identity, strlen(message), message );
+	fflush( writeSocket );
+
+	/* Read the result. */
+	FILE *readSocket = fdopen( socketFd, "r" );
+	char *readRes = fgets( buf, 8192, readSocket );
+
+	/* If there was an error then fail the fetch. */
+	if ( !readRes ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		EOL = '\r'? '\n';
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+fail:
+	fclose( writeSocket );
+	fclose( readSocket );
+	::close( socketFd );
+	return result;
+}

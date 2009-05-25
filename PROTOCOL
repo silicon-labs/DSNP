@@ -107,6 +107,15 @@ Friend:   $FR-URI, $FR-FP, $FR-RELID
       a) Verifies ($URI, $TOK)
       b) grants friend credentials to the browser using cookie-based session.
 
+UNFRIENDING
+
+Options:
+ 0. No friend-session key. Relies on friends to stop forwarding messages
+ 1. Use a friend-session key. Gives the sender some control over who can read.
+    Requires sending out session key. Does not stop a bad friend from forwarding a session
+    key. But the protocol doesn't have this. Session keys must be signed.
+ 2. Rolling relationship id.
+
 CHARACTERISTICS
 
 -It is not possible to probe a person's list of friends.

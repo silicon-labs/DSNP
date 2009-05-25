@@ -17,7 +17,7 @@
  */
 
 
-function printName( $identity, $possessive )
+function printName( $identity, $possessive, $known_friend )
 {
 	global $USER_URI;
 	global $USER_NAME;
@@ -37,7 +37,12 @@ function printName( $identity, $possessive )
 			echo "'s";
 	}
 	else {
-		echo "<a href=\"${identity}\">$identity</a>";
+		if ( $known_friend )
+			echo "<a href=\"${identity}sflogin.php?uri=" . urlencode($USER_URI);
+		else
+			echo "<a href=\"${BROWSER_ID}sendmeto.php?uri=" . urlencode($identity);
+
+		echo "\">$identity</a>";
 		if ( $possessive )
 			echo "'s";
 	}
@@ -59,7 +64,7 @@ function printMessage( $identity, $message, $time_published )
 
 			if ( isset( $text ) ) {
 				echo "<small>$time_published ";
-				printName( $identity, false );
+				printName( $identity, false, true );
 				echo " said:</small><br>";
 				echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";
 			}
@@ -83,11 +88,11 @@ function printMessage( $identity, $message, $time_published )
 			if ( isset( $from ) && isset( $text ) ) {
 				echo "<small>$time_published ";
 
-				printName( $from, false );
+				printName( $from, false, false );
 
 				echo " wrote on ";
 
-				printName( $identity, true );
+				printName( $identity, true, true );
 
 				echo " wall:</small><br>";
 				echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";

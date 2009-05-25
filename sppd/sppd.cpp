@@ -1402,6 +1402,16 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 	return 0;
 }
 
+long submit_fbroadcast( MYSQL *mysql, const char *to_identity, 
+		const char *from_identity, const char *user_message )
+{
+	Identity to( to_identity );
+	to.parse();
+	send_remote_publish_net( from_identity, to_identity, user_message );
+	connect_send_broadcast( mysql, to.user, user_message );
+	return 0;
+}
+
 long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 {
 	time_t curTime;
@@ -1755,5 +1765,19 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 
 free_result:
 	mysql_free_result( result );
+	fflush(stdout);
+}
+
+void remote_publish( MYSQL *mysql, const char *user,
+		const char *identity, const char *user_message )
+{
+	exec_query( mysql,
+		"INSERT INTO remote_published "
+		"( user, identity, time_published, message ) "
+		"VALUES ( %e, %e, now(), %e )",
+		user, identity, user_message );
+	
+	printf( "OK\r\n" );
+
 	fflush(stdout);
 }

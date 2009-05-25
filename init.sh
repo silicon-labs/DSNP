@@ -232,6 +232,15 @@ CREATE TABLE published (
 	PRIMARY KEY(user, seq_id)
 );
 
+CREATE TABLE remote_published (
+	user VARCHAR(20),
+	identity TEXT,
+	seq_id MEDIUMINT NOT NULL AUTO_INCREMENT,
+	time_published TIMESTAMP,
+	message TEXT,
+	PRIMARY KEY(user, seq_id)
+);
+
 CREATE TABLE login_toks (
 	user VARCHAR(20),
 	login_token CHAR(32),

@@ -1734,7 +1734,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	token_str = bin2hex( token, TOKEN_SIZE );
 
 	exec_query( mysql, 
-		"INSERT INTO login_toks ( user, login_token, expires ) "
+		"INSERT INTO login_token ( user, login_token, expires ) "
 		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", user, token_str, lasts );
 
 	printf( "OK %s %ld\r\n", token_str, lasts );

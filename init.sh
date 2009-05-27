@@ -241,7 +241,13 @@ CREATE TABLE remote_published (
 	PRIMARY KEY(user, seq_id)
 );
 
-CREATE TABLE login_toks (
+CREATE TABLE login_token (
+	user VARCHAR(20),
+	login_token CHAR(32),
+	expires TIMESTAMP
+);
+
+CREATE TABLE flogin_token (
 	user VARCHAR(20),
 	login_token CHAR(32),
 	expires TIMESTAMP

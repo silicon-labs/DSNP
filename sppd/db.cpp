@@ -153,7 +153,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 	long query_res = mysql_query( mysql, query );
 
 	if ( query_res != 0 ) {
-		printf( "ERROR mysql_query failed: %s\r\n", query );
+		error( "mysql_query failed: %s\r\n", query );
 		exit(1);
 	}
 

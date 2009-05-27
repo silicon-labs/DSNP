@@ -249,6 +249,7 @@ CREATE TABLE login_token (
 
 CREATE TABLE flogin_token (
 	user VARCHAR(20),
+	identity TEXT,
 	login_token CHAR(32),
 	expires TIMESTAMP
 );

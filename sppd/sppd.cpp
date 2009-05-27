@@ -1751,7 +1751,7 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 	long lasts = LOGIN_TOKEN_LASTS;
 
 	exec_query( mysql,
-		"SELECT from_id FROM ftoken_request WHERE token = %e",
+		"SELECT user, from_id FROM ftoken_request WHERE token = %e",
 		token );
 
 	result = mysql_store_result( mysql );
@@ -1761,7 +1761,12 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 		goto free_result;
 	}
 
-	printf( "OK %ld %s\r\n", lasts, row[0] );
+	exec_query( mysql, 
+		"INSERT INTO flogin_token ( user, identity, login_token, expires ) "
+		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
+		row[0], row[1], token, lasts );
+
+	printf( "OK %ld %s\r\n", lasts, row[1] );
 
 free_result:
 	mysql_free_result( result );

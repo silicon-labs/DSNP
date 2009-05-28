@@ -212,6 +212,7 @@ char *alloc_string( const char *s, const char *e )
 	action submit_fbroadcast {
 		char *identity = alloc_string( i1, i2 );
 		char *identity2 = alloc_string( j1, j2 );
+		char *token = alloc_string( t1, t2 );
 		char *number = alloc_string( n1, n2 );
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
@@ -221,7 +222,7 @@ char *alloc_string( const char *s, const char *e )
 		fread( user_message, 1, length, stdin );
 		user_message[length] = 0;
 
-		submit_fbroadcast( mysql, identity, identity2, user_message );
+		submit_fbroadcast( mysql, identity, identity2, token, user_message );
 		free( user_message );
 	}
 
@@ -240,6 +241,7 @@ char *alloc_string( const char *s, const char *e )
 	action remote_publish {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
+		char *token = alloc_string( t1, t2 );
 		char *number = alloc_string( n1, n2 );
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
@@ -249,7 +251,7 @@ char *alloc_string( const char *s, const char *e )
 		fread( user_message, 1, length, stdin );
 		user_message[length] = 0;
 
-		remote_publish( mysql, user, identity, user_message );
+		remote_publish( mysql, user, identity, token, user_message );
 		free( user_message );
 	}
 
@@ -280,13 +282,13 @@ char *alloc_string( const char *s, const char *e )
 		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
 
 		'submit_broadcast'i ' ' user ' ' number EOL @check_key @submit_broadcast;
-		'submit_fbroadcast'i ' ' identity ' ' identity2 ' ' number EOL @check_key @submit_fbroadcast;
+		'submit_fbroadcast'i ' ' identity ' ' identity2 ' ' token ' ' number EOL @check_key @submit_fbroadcast;
 
 		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
 		
 		# FIXME: NOT SECURE. Need to use a login token.
-		'remote_publish'i ' ' user ' ' identity ' ' number EOL @remote_publish;
+		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number EOL @remote_publish;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -342,8 +344,10 @@ int server_parse_loop()
 
 		%% write exec;
 
-		if ( cs == parser_error )
+		if ( cs == parser_error ) {
+			error( "parse error: %s", buf );
 			return ERR_PARSE_ERROR;
+		}
 		else if ( cs < %%{ write first_final; }%% )
 			return ERR_UNEXPECTED_END;
 	}
@@ -1004,7 +1008,7 @@ fail:
 }%%
 
 long send_remote_publish_net( const char *to_identity,
-		const char *from_identity, const char *message )
+		const char *from_identity, const char *token, const char *message )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -1027,9 +1031,9 @@ long send_remote_publish_net( const char *to_identity,
 	FILE *writeSocket = fdopen( socketFd, "w" );
 	fprintf( writeSocket, 
 		"SPP/0.1 %s\r\n"
-		"remote_publish %s %s %d\r\n%s", 
+		"remote_publish %s %s %s %d\r\n%s", 
 		toIdent.site,
-		toIdent.user, from_identity, strlen(message), message );
+		toIdent.user, from_identity, token, strlen(message), message );
 	fflush( writeSocket );
 
 	/* Read the result. */

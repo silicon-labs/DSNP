@@ -42,6 +42,7 @@ if ( ereg("^OK ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 
 	# Login successful.
 	$_SESSION['auth']     = 'friend';
+	$_SESSION['token']    = $ftoken;
 	$_SESSION['identity'] = $regs[2];
 	$_SESSION['hash']     = MD5($row['from_id']);
 	header( "Location: $USER_PATH" );

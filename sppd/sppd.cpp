@@ -1266,6 +1266,12 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	flogin_token = encrypt.decrypted;
 	flogin_token_str = bin2hex( flogin_token, RELID_SIZE );
 
+	exec_query( mysql,
+		"INSERT INTO remote_flogin_token "
+		"( user, identity, login_token ) "
+		"VALUES ( %e, %e, %e )",
+		user, friend_id.identity, flogin_token_str );
+
 	/* Return the login token for the requester to use. */
 	printf( "OK %s\r\n", flogin_token_str );
 
@@ -1403,11 +1409,12 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 }
 
 long submit_fbroadcast( MYSQL *mysql, const char *to_identity, 
-		const char *from_identity, const char *user_message )
+		const char *from_identity, const char *token, const char *user_message )
 {
 	Identity to( to_identity );
 	to.parse();
-	send_remote_publish_net( from_identity, to_identity, user_message );
+
+	send_remote_publish_net( from_identity, to_identity, token, user_message );
 	connect_send_broadcast( mysql, to.user, user_message );
 	return 0;
 }
@@ -1774,13 +1781,15 @@ free_result:
 }
 
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *user_message )
+		const char *identity, const char *token, const char *user_message )
 {
 	exec_query( mysql,
 		"INSERT INTO remote_published "
 		"( user, identity, time_published, message ) "
 		"VALUES ( %e, %e, now(), %e )",
 		user, identity, user_message );
+
+	message( "remote_publish submitted token: %s\n", token );
 	
 	printf( "OK\r\n" );
 

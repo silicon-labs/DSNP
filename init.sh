@@ -254,6 +254,12 @@ CREATE TABLE flogin_token (
 	expires TIMESTAMP
 );
 
+CREATE TABLE remote_flogin_token (
+	user VARCHAR(20),
+	identity TEXT,
+	login_token CHAR(32)
+);
+
 EOF
 
 #

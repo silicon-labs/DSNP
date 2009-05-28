@@ -115,16 +115,15 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *user_message );
-
+		const char *identity, const char *token, const char *user_message );
 
 bool check_comm_key( const char *key );
 
 long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_message );
 long submit_fbroadcast( MYSQL *mysql, const char *user, 
-		const char *identity, const char *user_message );
+		const char *identity, const char *token, const char *user_message );
 long send_remote_publish_net( const char *to_identity,
-		const char *from_identity, const char *message );
+		const char *from_identity, const char *token, const char *message );
 
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );

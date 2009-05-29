@@ -47,6 +47,9 @@ struct Encrypt
 		this->privDecSign = privDecSign;
 	}
 
+	int sign( u_char *src, long len );
+	int verify( u_char *msg, long len, const char *srcSig );
+
 	int encryptSign( u_char *src, long len );
 	int decryptVerify( const char *enc, const char *sig );
 

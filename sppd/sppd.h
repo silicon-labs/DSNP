@@ -92,9 +92,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long send_broadcast( MYSQL *mysql, const char *user, const char *message );
-long queue_broadcast( MYSQL *mysql, const char *to_site, const char *relid,
-		const char *sig, long long generation, const char *message );
+long queue_broadcast( MYSQL *mysql, const char *user, const char *message );
 long send_broadcast_net( const char *toSite, const char *relid,
 		const char *sig, long long generation, const char *message );
 long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
@@ -115,14 +113,15 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, const char *user_message );
+		const char *identity, const char *token,
+		long len, const char *user_message );
 
 bool check_comm_key( const char *key );
 
-long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_message );
+long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message );
 long submit_fbroadcast( MYSQL *mysql, const char *user, 
 		const char *identity, const char *token, const char *user_message );
-long send_remote_publish_net( const char *to_identity,
+long send_remote_publish_net( char *&resultSig, const char *to_identity,
 		const char *from_identity, const char *token, const char *message );
 
 /* Note: decrypted will be written to. */

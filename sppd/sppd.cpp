@@ -1411,79 +1411,34 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 long submit_fbroadcast( MYSQL *mysql, const char *to_identity, 
 		const char *from_identity, const char *token, const char *user_message )
 {
+	int result;
+	char *resultSig;
 	Identity to( to_identity );
 	to.parse();
 
-	send_remote_publish_net( from_identity, to_identity, token, user_message );
-	connect_send_broadcast( mysql, to.user, user_message );
-	return 0;
-}
-
-long connect_send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
-{
-	time_t curTime;
-	struct tm curTM, *tmRes;
-
-	long messageLen;
-	char *full;
-	char timeStr[64];
-	long sendResult;
-	long long seq_id;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-
-	/* Get the current time. */
-	curTime = time(NULL);
-
-	/* Convert to struct tm. */
-	tmRes = localtime_r( &curTime, &curTM );
-	if ( tmRes == 0 ) {
-		printf("ERROR time error\r\n");
-		goto close;
-	}
-
-	/* Format for the message. */
-	if ( strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0) {
-		printf("ERROR time error\r\n");
-		goto close;
-	}
-
-	/* Insert the broadcast message into the published table. */
-	exec_query( mysql,
-		"INSERT INTO published "
-		"( user, time_published, message ) "
-		"VALUES ( %e, %e, %e )",
-		user, timeStr, user_message );
-
-	/* Get the id that was assigned to the message. */
-	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
-		printf("ERROR\r\n");
-		goto close;
-	}
-	seq_id = strtoll( row[0], 0, 10 );
-
-	/* Make the full message. */
-	messageLen = strlen( user_message );
-	full = new char[64+messageLen];
-	sprintf( full, "%lld %s %s", seq_id, timeStr, user_message );
-
-	sendResult = send_broadcast( mysql, user, full );
-	if ( sendResult < 0 ) {
+	result = send_remote_publish_net( resultSig, from_identity,
+			to_identity, token, user_message );
+	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
 	}
 
-	printf("OK\r\n");
+	message("result sig: %s\n");
+
+	result = submit_broadcast( mysql, to.user, user_message );
+	if ( result < 0 ) {
+		printf( "ERROR\r\n" );
+		goto close;
+	}
+	
+	printf("OK %s\r\n" , resultSig );
 
 close:
 	fflush(stdout);
 	return 0;
 }
 
-long send_broadcast( MYSQL *mysql, const char *user, const char *message )
+long queue_broadcast( MYSQL *mysql, const char *user, const char *message )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1542,6 +1497,75 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *message )
 close:
 	return 0;
 }
+
+long send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
+{
+	time_t curTime;
+	struct tm curTM, *tmRes;
+
+	long messageLen;
+	char *full;
+	char timeStr[64];
+	long sendResult;
+	long long seq_id;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+
+	/* Get the current time. */
+	curTime = time(NULL);
+
+	/* Convert to struct tm. */
+	tmRes = localtime_r( &curTime, &curTM );
+	if ( tmRes == 0 )
+		return -1;
+
+	/* Format for the message. */
+	if ( strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
+		return -1;
+
+	/* Insert the broadcast message into the published table. */
+	exec_query( mysql,
+		"INSERT INTO published "
+		"( user, time_published, message ) "
+		"VALUES ( %e, %e, %e )",
+		user, timeStr, user_message );
+
+	/* Get the id that was assigned to the message. */
+	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row )
+		return -1;
+
+	seq_id = strtoll( row[0], 0, 10 );
+
+	/* Make the full message. */
+	messageLen = strlen( user_message );
+	full = new char[64+messageLen];
+	sprintf( full, "%lld %s %s", seq_id, timeStr, user_message );
+
+	sendResult = queue_broadcast( mysql, user, full );
+	if ( sendResult < 0 )
+		return -1;
+
+	return 0;
+}
+
+long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message )
+{
+	int result = send_broadcast( mysql, user, user_message );
+	if ( result < 0 ) {
+		printf("ERROR\r\n");
+		goto close;
+	}
+
+	printf("OK\r\n");
+
+close:
+	fflush(stdout);
+	return 0;
+}
+
 
 void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 		long long key_generation, const char *message )
@@ -1781,17 +1805,51 @@ free_result:
 }
 
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, const char *user_message )
+		const char *identity, const char *token, long len,
+		const char *user_message )
 {
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	Encrypt encrypt;
+	RSA *user_priv, *id_pub;
+	int sigRes;
+
+	message( "remote_publish submitted token: %s\n", token );
+
+	exec_query( mysql,
+		"SELECT user FROM remote_flogin_token "
+		"WHERE user = %e AND identity = %e AND login_token = %e",
+		user, identity, token );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		printf("ERROR\r\n");
+		goto free_result;
+	}
+
 	exec_query( mysql,
 		"INSERT INTO remote_published "
 		"( user, identity, time_published, message ) "
 		"VALUES ( %e, %e, now(), %e )",
 		user, identity, user_message );
-
-	message( "remote_publish submitted token: %s\n", token );
 	
-	printf( "OK\r\n" );
+	user_priv = load_key( mysql, user );
+	id_pub = fetch_public_key( mysql, identity );
 
+	encrypt.load( id_pub, user_priv );
+	sigRes = encrypt.sign( (u_char*)user_message, len );
+	if ( sigRes < 0 ) {
+		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		goto close;
+	}
+
+	message( "remote_publish sig: %s\n", encrypt.sig );
+	
+	printf( "OK %s\r\n", encrypt.sig );
+
+free_result:
+	mysql_free_result( result );
+close:
 	fflush(stdout);
 }

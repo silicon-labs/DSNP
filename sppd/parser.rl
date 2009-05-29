@@ -205,7 +205,7 @@ char *alloc_string( const char *s, const char *e )
 		fread( user_message, 1, length, stdin );
 		user_message[length] = 0;
 
-		connect_send_broadcast( mysql, user, user_message );
+		submit_broadcast( mysql, user, user_message );
 		free( user_message );
 	}
 
@@ -251,7 +251,7 @@ char *alloc_string( const char *s, const char *e )
 		fread( user_message, 1, length, stdin );
 		user_message[length] = 0;
 
-		remote_publish( mysql, user, identity, token, user_message );
+		remote_publish( mysql, user, identity, token, length, user_message );
 		free( user_message );
 	}
 
@@ -1007,7 +1007,7 @@ fail:
 	write data;
 }%%
 
-long send_remote_publish_net( const char *to_identity,
+long send_remote_publish_net( char *&resultSig, const char *to_identity,
 		const char *from_identity, const char *token, const char *message )
 {
 	static char buf[8192];
@@ -1015,6 +1015,8 @@ long send_remote_publish_net( const char *to_identity,
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
+
+	resultSig = 0;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1048,15 +1050,16 @@ long send_remote_publish_net( const char *to_identity,
 
 	/* Parser for response. */
 	%%{
-		EOL = '\r'? '\n';
+		include common;
 
 		main := 
-			'OK' EOL @{ OK = true; } |
+			'OK' ' ' sig EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
 	p = buf;
 	pe = buf + strlen(buf);
+	const char *s1, *s2;
 
 	%% write init;
 	%% write exec;
@@ -1071,6 +1074,8 @@ long send_remote_publish_net( const char *to_identity,
 		result = ERR_SERVER_ERROR;
 		goto fail;
 	}
+
+	resultSig = alloc_string( s1, s2 );
 	
 fail:
 	fclose( writeSocket );

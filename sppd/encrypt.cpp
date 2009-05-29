@@ -27,6 +27,52 @@
 #include <stdlib.h>
 #include <string.h>
 
+int Encrypt::sign( u_char *src, long len )
+{
+	/* Sign the src. */
+	u_char src_sha1[SHA_DIGEST_LENGTH];
+	SHA1( src, len, src_sha1 );
+
+	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
+	unsigned sigLen;
+	int signRes = RSA_sign( NID_sha1, src_sha1, SHA_DIGEST_LENGTH, signature, 
+			&sigLen, privDecSign );
+
+	if ( signRes != 1 ) {
+		free( signature );
+		ERR_error_string( ERR_get_error(), err );
+		return -1;
+	}
+
+	sig = bin2hex( signature, sigLen );
+	free( signature );
+	return 0;
+}
+
+int Encrypt::verify( u_char *msg, long len, const char *srcSig )
+{
+	/* Convert the sig to binary. */
+	u_char *signature = (u_char*)malloc( strlen(srcSig) );
+	long sigLen = hex2bin( signature, strlen(srcSig), srcSig );
+	if ( sigLen <= 0 ) {
+		sprintf( err, "error converting hex-encoded signature to binary" );
+		return -1;
+	}
+
+	/* Verify the item. */
+	u_char msg_sha1[SHA_DIGEST_LENGTH];
+	SHA1( msg, len, msg_sha1 );
+	int verifyres = RSA_verify( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
+			signature, sigLen, pubEncVer );
+	if ( verifyres != 1 ) {
+		error("verification failed\n");
+		ERR_error_string( ERR_get_error(), err );
+		return -1;
+	}
+
+	return 0;
+}
+
 int Encrypt::encryptSign( u_char *src, long len )
 {
 	/* Encrypt the src. */

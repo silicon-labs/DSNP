@@ -47,7 +47,7 @@ void error( const char *fmt, ... )
 
 	time_t t = time(0);
 	localtime_r( &t, &localTm );
-	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M", &localTm );
+	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &localTm );
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
@@ -65,7 +65,7 @@ void warning( const char *fmt, ... )
 
 	time_t t = time(0);
 	localtime_r( &t, &localTm );
-	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M", &localTm );
+	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &localTm );
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
@@ -83,7 +83,7 @@ void message( const char *fmt, ... )
 
 	time_t t = time(0);
 	localtime_r( &t, &localTm );
-	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M", &localTm );
+	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &localTm );
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
@@ -101,7 +101,7 @@ void fatal( const char *fmt, ... )
 
 	time_t t = time(0);
 	localtime_r( &t, &localTm );
-	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M", &localTm );
+	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &localTm );
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );

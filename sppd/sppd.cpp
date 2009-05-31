@@ -1408,24 +1408,24 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 	return 0;
 }
 
-long submit_fbroadcast( MYSQL *mysql, const char *to_identity, 
+long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
 		const char *from_identity, const char *token, const char *user_message )
 {
 	int result;
+	char *resultEnc;
 	char *resultSig;
-	Identity to( to_identity );
-	to.parse();
 
-	result = send_remote_publish_net( resultSig, from_identity,
-			to_identity, token, user_message );
+	result = send_remote_publish_net( resultEnc, resultSig, from_identity,
+			to_user, token, user_message );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
 	}
 
-	message("result sig: %s\n");
+	message("result enc: %s\n", resultEnc );
+	message("result sig: %s\n", resultSig );
 
-	result = submit_broadcast( mysql, to.user, user_message );
+	result = submit_broadcast( mysql, to_user, user_message );
 	if ( result < 0 ) {
 		printf( "ERROR\r\n" );
 		goto close;
@@ -1813,6 +1813,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	Encrypt encrypt;
 	RSA *user_priv, *id_pub;
 	int sigRes;
+	char *session_key, *generation;
 
 	message( "remote_publish submitted token: %s\n", token );
 
@@ -1837,16 +1838,35 @@ void remote_publish( MYSQL *mysql, const char *user,
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, identity );
 
+	/* Find youngest session key. In the future some sense of current session
+	 * key should be maintained. */
+	exec_query( mysql,
+		"SELECT session_key, generation FROM put_session_key "
+		"WHERE user = %e "
+		"ORDER BY generation DESC "
+		"LIMIT 1",
+		user );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		printf("ERROR\r\n");
+		goto close;
+	}
+	session_key = strdup(row[0]);
+	generation = strdup(row[1]);
+
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.sign( (u_char*)user_message, len );
+	sigRes = encrypt.skEncryptSign( session_key, (u_char*)user_message, len );
 	if ( sigRes < 0 ) {
 		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 
+	message( "remote_publish enc: %s\n", encrypt.sym );
 	message( "remote_publish sig: %s\n", encrypt.sig );
 	
-	printf( "OK %s\r\n", encrypt.sig );
+	printf( "OK %s %s\r\n", encrypt.sym, encrypt.sig );
 
 free_result:
 	mysql_free_result( result );

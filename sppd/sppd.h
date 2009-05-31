@@ -119,10 +119,11 @@ void remote_publish( MYSQL *mysql, const char *user,
 bool check_comm_key( const char *key );
 
 long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message );
-long submit_fbroadcast( MYSQL *mysql, const char *user, 
+long submit_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *identity, const char *token, const char *user_message );
-long send_remote_publish_net( char *&resultSig, const char *to_identity,
-		const char *from_identity, const char *token, const char *message );
+long send_remote_publish_net( char *&resultEnc, char *&resultSig,
+		const char *to_identity, const char *from_identity,
+		const char *token, const char *message );
 
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );

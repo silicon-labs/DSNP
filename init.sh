@@ -203,8 +203,11 @@ CREATE TABLE ftoken_request (
 CREATE TABLE broadcast_queue (
 	to_site TEXT,
 	relid CHAR(32),
-	sig TEXT,
-	generation BIGINT,
+	hash CHAR(32),
+	sig1 TEXT,
+	sig2 TEXT,
+	generation1 BIGINT,
+	generation2 BIGINT,
 	message TEXT
 );
 

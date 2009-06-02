@@ -823,7 +823,8 @@ long run_broadcast_queue_db( MYSQL *mysql )
 
 	/* Extract all messages. */
 	exec_query( mysql, 
-		"SELECT to_site, relid, sig, generation, message FROM broadcast_queue" );
+		"SELECT to_site, relid, hash, sig1, sig2, generation1, generation2, message "
+		"FROM broadcast_queue" );
 
 	/* Get the result. */
 	select_res = mysql_store_result( mysql );
@@ -844,12 +845,16 @@ long run_broadcast_queue_db( MYSQL *mysql )
 
 		char *to_site = row[0];
 		char *relid = row[1];
-		char *sig = row[2];
-		long long generation = strtoll( row[3], 0, 10 );
-		char *message = row[4];
+		char *hash = row[2];
+		char *sig1 = row[3];
+		char *sig2 = row[4];
+		long long generation1 = strtoll( row[5], 0, 10 );
+		long long generation2 = row[6] == 0 ? 0 : strtoll( row[6], 0, 10 );
+		char *message = row[7];
 
 		//printf( "%s %s %s\n", row[0], row[1], row[2] );
-		long send_res = send_broadcast_net( to_site, relid, sig, generation, message );
+		long send_res = send_broadcast_net( to_site, relid, hash, sig1, sig2,
+				generation1, generation2, message );
 		if ( send_res < 0 ) {
 			printf("ERROR trouble sending message: %ld\n", send_res);
 			sent[i] = false;
@@ -1373,16 +1378,17 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 }
 
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
-		const char *sig, long long generation, const char *message )
+		const char *hash, const char *sig1, const char *sig2,
+		long long generation1, long long generation2, const char *message )
 {
 	/* Table lock. */
 	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
 
 	exec_query( mysql,
 		"INSERT INTO broadcast_queue "
-		"( to_site, relid, sig, generation, message ) "
-		"VALUES ( %e, %e, %e, %L, %e ) ",
-		to_site, relid, sig, generation, message );
+		"( to_site, relid, hash, sig1, sig2, generation1, generation2, message ) "
+		"VALUES ( %e, %e, %e, %e, %e, %L, %L, %e ) ",
+		to_site, relid, hash, sig1, sig2, generation1, generation2, message );
 
 	/* UNLOCK reset. */
 	exec_query( mysql, "UNLOCK TABLES");
@@ -1408,37 +1414,8 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 	return 0;
 }
 
-long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
-		const char *from_identity, const char *token, const char *user_message )
-{
-	int result;
-	char *resultEnc;
-	char *resultSig;
-
-	result = send_remote_publish_net( resultEnc, resultSig, from_identity,
-			to_user, token, user_message );
-	if ( result < 0 ) {
-		printf("ERROR\r\n");
-		goto close;
-	}
-
-	message("result enc: %s\n", resultEnc );
-	message("result sig: %s\n", resultSig );
-
-	result = submit_broadcast( mysql, to_user, user_message );
-	if ( result < 0 ) {
-		printf( "ERROR\r\n" );
-		goto close;
-	}
-	
-	printf("OK %s\r\n" , resultSig );
-
-close:
-	fflush(stdout);
-	return 0;
-}
-
-long queue_broadcast( MYSQL *mysql, const char *user, const char *message )
+long queue_broadcast( MYSQL *mysql, const char *user, const char *hash,
+		const char *sig2, long long generation2, const char *message )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1490,15 +1467,16 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *message )
 		id.load( friend_id );
 		id.parse();
 
-		queue_broadcast_db( mysql, id.site, put_relid, encrypt.sig,
-				strtoll(generation, 0, 10), encrypt.sym );
+		queue_broadcast_db( mysql, id.site, put_relid, hash, encrypt.sig, sig2,
+				strtoll(generation, 0, 10), generation2, encrypt.sym );
 	}
 
 close:
 	return 0;
 }
 
-long send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
+long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
+		const char *sig2, long long generation2, const char *user_message )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
@@ -1524,11 +1502,14 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 		return -1;
 
 	/* Insert the broadcast message into the published table. */
-	exec_query( mysql,
-		"INSERT INTO published "
-		"( user, time_published, message ) "
-		"VALUES ( %e, %e, %e )",
-		user, timeStr, user_message );
+	if ( hash != 0 ) {
+		/* FIXME: get around fact that it's encrypted. */
+		exec_query( mysql,
+			"INSERT INTO published "
+			"( user, time_published, message ) "
+			"VALUES ( %e, %e, %e )",
+			user, timeStr, user_message );
+	}
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1544,7 +1525,7 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 	full = new char[64+messageLen];
 	sprintf( full, "%lld %s %s", seq_id, timeStr, user_message );
 
-	sendResult = queue_broadcast( mysql, user, full );
+	sendResult = queue_broadcast( mysql, user, hash, sig2, generation2, full );
 	if ( sendResult < 0 )
 		return -1;
 
@@ -1553,7 +1534,7 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 
 long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 {
-	int result = send_broadcast( mysql, user, user_message );
+	int result = send_broadcast( mysql, user, 0, 0, 0, user_message );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
@@ -1566,9 +1547,46 @@ close:
 	return 0;
 }
 
+long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
+		const char *from_identity, const char *token, const char *user_message )
+{
+	int result;
+	char *resultEnc, *resultSig;
+	unsigned char friend_hash[MD5_DIGEST_LENGTH];
+	char *friend_hash_str;
+	long long resultGen;
 
-void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
-		long long key_generation, const char *message )
+	result = send_remote_publish_net( resultEnc, resultSig, resultGen, from_identity,
+			to_user, token, user_message );
+	if ( result < 0 ) {
+		printf("ERROR\r\n");
+		goto close;
+	}
+
+	message("result enc: %s\n", resultEnc );
+	message("result sig: %s\n", resultSig );
+
+	/* Make an md5hash for the identity. */
+	MD5( (unsigned char*)from_identity, strlen(from_identity), friend_hash );
+	friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
+
+	result = send_broadcast( mysql, to_user, friend_hash_str, resultSig, resultGen, resultEnc );
+	if ( result < 0 ) {
+		printf( "ERROR\r\n" );
+		goto close;
+	}
+	
+	printf("OK %s\r\n" , resultSig );
+
+close:
+	fflush(stdout);
+	return 0;
+}
+
+
+void broadcast( MYSQL *mysql, const char *relid, const char *hash,
+		const char *sig1, const char *sig2, 
+		long long generation1, long long generation2, const char *message )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1578,6 +1596,7 @@ void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 	RSA *id_pub;
 	Encrypt encrypt;
 	int decryptRes;
+	char *decrypted;
 
 	exec_query( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
@@ -1587,7 +1606,7 @@ void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 		"JOIN get_session_key "
 		"ON friend_claim.get_relid = get_session_key.get_relid "
 		"WHERE friend_claim.get_relid = %e AND generation = %L",
-		relid, key_generation );
+		relid, generation1 );
 	
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
@@ -1607,27 +1626,69 @@ void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
-	decryptRes = encrypt.skDecryptVerify( session_key, sig, message );
+	decryptRes = encrypt.skDecryptVerify( session_key, sig1, message );
+	decrypted = strdup( (char*)encrypt.decrypted );
 
 	if ( decryptRes < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
 	}
 
-	store_message( mysql, relid, (char*)encrypt.decrypted );
+	if ( hash == 0 ) {
+		/* Message just involves the sender. */
+		store_message( mysql, relid, decrypted );
+	}
+	else {
+		/* Messages has a remote sender and needs to be futher decrypted. */
+		exec_query( mysql, 
+			"SELECT friend_claim.friend_id, session_key "
+			"FROM friend_claim "
+			"JOIN get_session_key "
+			"ON friend_claim.get_relid = get_session_key.get_relid "
+			"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = %L",
+			user, hash, (long long)1 /*generation2*/ );
+
+		result = mysql_store_result( mysql );
+		row = mysql_fetch_row( result );
+		if ( row ) {
+			::message("YES\n");
+
+			friend_id = row[0];
+			session_key = row[1];
+
+			/* Do the decryption. */
+			id_pub = fetch_public_key( mysql, friend_id );
+			encrypt.load( id_pub, 0 );
+
+			/* FIXME: VERY UGLY */
+			decrypted = strchr( strchr( strchr( decrypted, ' ' )+1, ' ' )+1, ' ' )+1;
+			::message("first level decryption: %s\n", decrypted );
+			decryptRes = encrypt.skDecryptVerify( session_key, sig2, decrypted );
+
+			//if ( decryptRes < 0 ) {
+			//	printf("ERROR\r\n");
+			//	goto close;
+			//}
+
+			::message("second level decryption: %s\n", (char*)encrypt.decrypted );
+
+			store_message( mysql, relid, (char*)encrypt.decrypted );
+		}
+	}
+
 
 	/* 
 	 * Now do the forwarding.
 	 */
 
 	if ( get_fwd_site1 != 0 ) {
-		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, sig, 
-				key_generation, message );
+		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, hash, sig1, sig2,
+				generation1, 0, message );
 	}
 
 	if ( get_fwd_site2 != 0 ) {
-		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, sig,
-				key_generation, message );
+		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, hash, sig1, sig2,
+				generation1, 0, message );
 	}
 
 	mysql_free_result( result );
@@ -1866,7 +1927,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	message( "remote_publish enc: %s\n", encrypt.sym );
 	message( "remote_publish sig: %s\n", encrypt.sig );
 	
-	printf( "OK %s %s\r\n", encrypt.sym, encrypt.sig );
+	printf( "OK %s %s %s\r\n", encrypt.sym, encrypt.sig, generation );
 
 free_result:
 	mysql_free_result( result );

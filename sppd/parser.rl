@@ -45,8 +45,12 @@ char *alloc_string( const char *s, const char *e )
 	key = [a-f0-9]+           >{k1=p;} %{k2=p;};
 	enc = [0-9a-f]+           >{e1=p;} %{e2=p;};
 	sig = [0-9a-f]+           >{s1=p;} %{s2=p;};
+	sig1 = [0-9a-f]+          >{s1=p;} %{s2=p;};
+	sig2 = [0-9a-f]+          >{t1=p;} %{t2=p;};
 	message = [0-9a-f]+       >{m1=p;} %{m2=p;};
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
+	generation1 = [0-9]+      >{g1=p;} %{g2=p;};
+	generation2 = [0-9]+      >{h1=p;} %{h2=p;};
 	relid = [0-9a-f]+         >{r1=p;} %{r2=p;};
 	token = [0-9a-f]+         >{t1=p;} %{t2=p;};
 
@@ -175,16 +179,6 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 	}
 
-	action receive_broadcast {
-		char *relid = alloc_string( r1, r2 );
-		char *sig = alloc_string( s1, s2 );
-		char *number = alloc_string( n1, n2 );
-		long long generation = strtoll( number, 0, 10 );
-		char *message = alloc_string( m1, m2 );
-
-		receive_broadcast( mysql, relid, sig, generation, message );
-	}
-
 	action receive_message {
 		char *relid = alloc_string( r1, r2 );
 		char *enc = alloc_string( e1, e2 );
@@ -192,6 +186,30 @@ char *alloc_string( const char *s, const char *e )
 		char *message = alloc_string( m1, m2 );
 
 		receive_message( mysql, relid, enc, sig, message );
+	}
+
+	action broadcast {
+		char *relid = alloc_string( r1, r2 );
+		char *sig = alloc_string( s1, s2 );
+		char *number = alloc_string( n1, n2 );
+		long long generation = strtoll( number, 0, 10 );
+		char *message = alloc_string( m1, m2 );
+
+		broadcast( mysql, relid, 0, sig, 0, generation, 0, message );
+	}
+
+	action remote_broadcast {
+		char *relid = alloc_string( r1, r2 );
+		char *hash = alloc_string( a1, a2 );
+		char *sig1 = alloc_string( s1, s2 );
+		char *sig2 = alloc_string( t1, t2 );
+		char *number1 = alloc_string( g1, g2 );
+		char *number2 = alloc_string( h1, h2 );
+		long long generation1 = strtoll( number1, 0, 10 );
+		long long generation2 = strtoll( number2, 0, 10 );
+		char *message = alloc_string( m1, m2 );
+
+		broadcast( mysql, relid, hash, sig1, sig2, generation1, generation2, message );
 	}
 
 	action submit_broadcast {
@@ -288,9 +306,11 @@ char *alloc_string( const char *s, const char *e )
 		'submit_remote_broadcast'i ' ' user ' ' identity ' ' token ' '
 				number EOL @check_key @submit_remote_broadcast;
 
-		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message
-				EOL @receive_broadcast;
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
+		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message
+				EOL @broadcast;
+		'remote_broadcast'i ' ' relid ' ' hash ' ' sig1 ' ' sig2 ' ' 
+				generation1 ' ' generation2 ' ' message EOL @remote_broadcast;
 		
 		# FIXME: NOT SECURE. Need to use a login token.
 		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number
@@ -321,6 +341,7 @@ int server_parse_loop()
 	const char *m1, *m2;
 	const char *n1, *n2;
 	const char *t1, *t2;
+	const char *g1, *g2;
 
 	MYSQL *mysql = 0;
 
@@ -804,8 +825,9 @@ long Identity::parse()
 	write data;
 }%%
 
-long send_broadcast_net( const char *toSite, const char *relid,
-		const char *sig, long long generation, const char *message )
+long send_broadcast_net( const char *toSite, const char *relid, const char *hash,
+		const char *sig1, const char *sig2, long long generation1, long long generation2,
+		const char *message )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -826,11 +848,20 @@ long send_broadcast_net( const char *toSite, const char *relid,
 
 	/* Send the request. */
 	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, 
-		"SPP/0.1 %s\r\n"
-		"broadcast %s %s %lld %s\r\n", 
-		toSite,
-		relid, sig, generation, message );
+	if ( hash != 0 ) {
+		fprintf( writeSocket, 
+			"SPP/0.1 %s\r\n"
+			"remote_broadcast %s %s %s 012 %lld 1 %s\r\n", 
+			toSite,
+			relid, hash, sig1, generation1, message );
+	}
+	else {
+		fprintf( writeSocket, 
+			"SPP/0.1 %s\r\n"
+			"broadcast %s %s %lld %s\r\n", 
+			toSite,
+			relid, sig1, generation1, message );
+	}
 	fflush( writeSocket );
 
 	/* Read the result. */
@@ -1012,7 +1043,7 @@ fail:
 	write data;
 }%%
 
-long send_remote_publish_net( char *&resultEnc, char *&resultSig, 
+long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &resultGen,
 		const char *to_identity, const char *from_user, 
 		const char *token, const char *message )
 {
@@ -1021,6 +1052,7 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig,
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
+	char *number;
 
 	resultSig = 0;
 
@@ -1060,7 +1092,7 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig,
 		include common;
 
 		main := 
-			'OK' ' ' enc ' ' sig EOL @{ OK = true; } |
+			'OK' ' ' enc ' ' sig ' ' number EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
@@ -1068,6 +1100,7 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig,
 	pe = buf + strlen(buf);
 	const char *e1, *e2;
 	const char *s1, *s2;
+	const char *n1, *n2;
 
 	%% write init;
 	%% write exec;
@@ -1085,6 +1118,10 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig,
 
 	resultEnc = alloc_string( e1, e2 );
 	resultSig = alloc_string( s1, s2 );
+	number = alloc_string( n1, n2 );
+	resultGen = strtoll( number, 0, 10 );
+
+	::message( "resultGen: %lld\n", resultGen );
 	
 fail:
 	fclose( writeSocket );

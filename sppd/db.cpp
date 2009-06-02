@@ -70,7 +70,10 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 		switch ( p[1] ) {
 			case 'e': {
 				char *a = va_arg(vl, char*);
-				len += strlen(a) * 2;
+				if ( a == 0 )
+					len += 4;
+				else
+					len += strlen(a) * 2;
 				break;
 			}
 			case 'L': {
@@ -112,14 +115,18 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 
 		switch ( p[1] ) {
 			case 'e': {
-				*dest++ = '\'';
-
 				char *a = va_arg(vl, char*);
-				len = strlen(a);
-				len = mysql_real_escape_string( mysql, dest, a, len );
-				dest += len;
-
-				*dest++ = '\'';
+				if ( a == 0 ) {
+					strcpy( dest, "NULL" );
+					dest += 4;
+				}
+				else {
+					*dest++ = '\'';
+					len = strlen(a);
+					len = mysql_real_escape_string( mysql, dest, a, len );
+					dest += len;
+					*dest++ = '\'';
+				}
 				break;
 			}
 			case 'L': {

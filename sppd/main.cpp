@@ -84,10 +84,10 @@ void test_function()
 		printf( "ERROR failed to connect to the database\r\n");
 	}
 
-	int result = queue_broadcast( mysql, "age", "message on saturday" );
-	if ( result < 0 ) {
-		printf("send_broadcast failed with %d\n", result );
-	}
+//	int result = queue_broadcast( mysql, "age", 0, "message on saturday" );
+//	if ( result < 0 ) {
+//		printf("send_broadcast failed with %d\n", result );
+//	}
 }
 
 void dieHandler( int signum )

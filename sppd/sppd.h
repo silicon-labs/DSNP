@@ -92,21 +92,25 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long queue_broadcast( MYSQL *mysql, const char *user, const char *message );
-long send_broadcast_net( const char *toSite, const char *relid,
-		const char *sig, long long generation, const char *message );
+long queue_broadcast( MYSQL *mysql, const char *user, const char *hash,
+		const char *sig2, long long generation2, const char *message );
+long send_broadcast_net( const char *toSite, const char *relid, const char *hash,
+		const char *sig1, const char *sig2, long long generation1, long long generation2,
+		const char *message );
 long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
 long send_forward_to( MYSQL *mysql, const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
-void receive_broadcast( MYSQL *mysql, const char *relid, const char *sig,
-		long long key_generation, const char *message );
+void broadcast( MYSQL *mysql, const char *relid, const char *hash,
+		const char *sig1, const char *sig2, long long generation1, long long generation2, 
+		const char *message );
 
 void receive_message( MYSQL *mysql, const char *relid,
 		const char *enc, const char *sig, const char *message );
-long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
-		const char *enc, const char *sig, const char *message );
+long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
+		const char *hash, const char *sig1, const char *sig2,
+		long long generation1, long long generation2, const char *message );
 long send_message_net( const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message );
 long queue_message( MYSQL *mysql, const char *from_user,
@@ -121,7 +125,7 @@ bool check_comm_key( const char *key );
 long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message );
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *identity, const char *token, const char *user_message );
-long send_remote_publish_net( char *&resultEnc, char *&resultSig,
+long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &resultGen,
 		const char *to_identity, const char *from_identity,
 		const char *token, const char *message );
 

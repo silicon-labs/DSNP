@@ -996,11 +996,10 @@ fail:
 	write data;
 }%%
 
-long Message::parse()
+long BroadcastMessage::parse()
 {
 	long result = 0, cs;
 	const char *p, *pe, *eof;
-	long long seq_id;
 	const char *n1, *n2;
 	const char *d1, *d2;
 	const char *pText = 0;

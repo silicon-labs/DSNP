@@ -132,14 +132,14 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );
 
-struct Message
+struct BroadcastMessage
 {
-	Message( const char *message ) :
+	BroadcastMessage( const char *message ) :
 		message(message),
 		seq_id(-1), date(0), text(text)
 	{}
 
-	Message() :
+	BroadcastMessage() :
 		message(0), seq_id(-1), date(0), text(0)
 	{}
 

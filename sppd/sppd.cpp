@@ -1593,11 +1593,11 @@ close:
 
 void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 		const char *sig1, const char *sig2, 
-		long long generation1, long long generation2, const char *message )
+		long long generation1, long long generation2, const char *encrypted )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	char *user, *friend_id, *session_key;
+	char *user, *friend_id, *author_id, *session_key;
 	char *get_fwd_site1, *get_fwd_relid1;
 	char *get_fwd_site2, *get_fwd_relid2;
 	RSA *id_pub;
@@ -1633,7 +1633,7 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
-	decryptRes = encrypt.skDecryptVerify( session_key, sig1, message );
+	decryptRes = encrypt.skDecryptVerify( session_key, sig1, encrypted );
 	decrypted = strdup( (char*)encrypt.decrypted );
 
 	if ( decryptRes < 0 ) {
@@ -1643,11 +1643,11 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 
 	if ( hash == 0 ) {
 		/* Message just involves the sender. */
-		::message( "parsing broadcast_remote message: %s\n", decrypted );
-		Message message( decrypted );
-		int result = message.parse();
+		message( "parsing broadcast_remote message: %s\n", decrypted );
+		BroadcastMessage broadcastMessage( decrypted );
+		int result = broadcastMessage.parse();
 		if ( result < 0 ) {
-			::message("parse of broadcast_remote message failed\n");
+			message("parse of broadcast_remote message failed\n");
 			printf("ERROR\r\n");
 			goto close;
 		}
@@ -1655,9 +1655,12 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 		exec_query( mysql, 
 			"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
 			"VALUES ( %e, %L, %e, now(), %e )",
-			relid, message.seq_id, message.date, message.text );
+			relid, broadcastMessage.seq_id, broadcastMessage.date, broadcastMessage.text );
 	}
 	else {
+		message( "generation1: %lld\n", generation1 );
+		message( "generation2: %lld\n", generation2 );
+
 		/* Messages has a remote sender and needs to be futher decrypted. */
 		exec_query( mysql, 
 			"SELECT friend_claim.friend_id, session_key "
@@ -1665,47 +1668,47 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 			"JOIN get_session_key "
 			"ON friend_claim.get_relid = get_session_key.get_relid "
 			"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = %L",
-			user, hash, (long long)1 /*generation2*/ );
+			user, hash, generation2 );
 
 		result = mysql_store_result( mysql );
 		row = mysql_fetch_row( result );
 		if ( row ) {
-			::message("YES\n");
+			message("YES\n");
 
-			friend_id = row[0];
+			author_id = row[0];
 			session_key = row[1];
 
+			message("first level decryption: %s\n", decrypted );
 
-			::message("first level decryption: %s\n", decrypted );
-
-			Message message( decrypted );
-			int result = message.parse();
+			BroadcastMessage broadcastMessage( decrypted );
+			int result = broadcastMessage.parse();
 			if ( result < 0 ) {
-				::message("parse of broadcast_remote message failed\n");
+				message("parse of broadcast_remote message failed\n");
 				printf("ERROR\r\n");
 				goto close;
 			}
 
-			::message( "second level second_friend_id: %s\n", friend_id );
-			::message( "second level sig2: %s\n", sig2 );
+			message( "second level author_id: %s\n", author_id );
+			message( "second level sig2: %s\n", sig2 );
 
 			/* Do the decryption. */
-			id_pub = fetch_public_key( mysql, friend_id );
+			id_pub = fetch_public_key( mysql, author_id );
 			encrypt.load( id_pub, 0 );
-			decryptRes = encrypt.skDecryptVerify( session_key, sig2, message.text );
+			decryptRes = encrypt.skDecryptVerify( session_key, sig2, broadcastMessage.text );
 
 			if ( decryptRes < 0 ) {
-				::message("second level skDecryptVerify failed\n");
+				message("second level skDecryptVerify failed\n");
 				printf("ERROR\r\n");
 				goto close;
 			}
 
-			::message("second level decryption: %s\n", (char*)encrypt.decrypted );
+			message("second level decryption: %s\n", (char*)encrypt.decrypted );
 
 			exec_query( mysql, 
-				"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
-				"VALUES ( %e, %L, %e, now(), %e )",
-				relid, message.seq_id, message.date, (char*)encrypt.decrypted );
+				"INSERT INTO received ( get_relid, hash, seq_id, time_published, time_received, message ) "
+				"VALUES ( %e, %e, %L, %e, now(), %e )",
+				relid, hash, broadcastMessage.seq_id, broadcastMessage.date,
+				(char*)encrypt.decrypted );
 		}
 	}
 
@@ -1716,12 +1719,12 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 
 	if ( get_fwd_site1 != 0 ) {
 		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, hash, sig1, sig2,
-				generation1, 0, message );
+				generation1, 0, encrypted );
 	}
 
 	if ( get_fwd_site2 != 0 ) {
 		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, hash, sig1, sig2,
-				generation1, 0, message );
+				generation1, 0, encrypted );
 	}
 
 	mysql_free_result( result );

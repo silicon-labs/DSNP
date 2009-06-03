@@ -1476,7 +1476,7 @@ close:
 }
 
 long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
-		const char *sig2, long long generation2, const char *user_message )
+		const char *sig2, long long generation2, const char *user_message, const char *enc_message )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
@@ -1488,6 +1488,7 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 	long long seq_id;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
+	const char *send_message;
 
 	/* Get the current time. */
 	curTime = time(NULL);
@@ -1520,10 +1521,15 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 
 	seq_id = strtoll( row[0], 0, 10 );
 
+	if ( enc_message == 0 )
+		send_message = user_message;
+	else
+		send_message = enc_message;
+
 	/* Make the full message. */
-	messageLen = strlen( user_message );
+	messageLen = strlen( send_message );
 	full = new char[64+messageLen];
-	sprintf( full, "%lld %s %s", seq_id, timeStr, user_message );
+	sprintf( full, "%lld %s %s", seq_id, timeStr, send_message );
 
 	sendResult = queue_broadcast( mysql, user, hash, sig2, generation2, full );
 	if ( sendResult < 0 )
@@ -1534,7 +1540,7 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 
 long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message )
 {
-	int result = send_broadcast( mysql, user, 0, 0, 0, user_message );
+	int result = send_broadcast( mysql, user, 0, 0, 0, user_message, 0 );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
@@ -1570,7 +1576,8 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	MD5( (unsigned char*)from_identity, strlen(from_identity), friend_hash );
 	friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
 
-	result = send_broadcast( mysql, to_user, friend_hash_str, resultSig, resultGen, resultEnc );
+	result = send_broadcast( mysql, to_user, friend_hash_str, resultSig, resultGen,
+			user_message, resultEnc );
 	if ( result < 0 ) {
 		printf( "ERROR\r\n" );
 		goto close;
@@ -1636,7 +1643,19 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 
 	if ( hash == 0 ) {
 		/* Message just involves the sender. */
-		store_message( mysql, relid, decrypted );
+		::message( "parsing broadcast_remote message: %s\n", decrypted );
+		Message message( decrypted );
+		int result = message.parse();
+		if ( result < 0 ) {
+			::message("parse of broadcast_remote message failed\n");
+			printf("ERROR\r\n");
+			goto close;
+		}
+
+		exec_query( mysql, 
+			"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
+			"VALUES ( %e, %L, %e, now(), %e )",
+			relid, message.seq_id, message.date, message.text );
 	}
 	else {
 		/* Messages has a remote sender and needs to be futher decrypted. */
@@ -1656,23 +1675,37 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 			friend_id = row[0];
 			session_key = row[1];
 
+
+			::message("first level decryption: %s\n", decrypted );
+
+			Message message( decrypted );
+			int result = message.parse();
+			if ( result < 0 ) {
+				::message("parse of broadcast_remote message failed\n");
+				printf("ERROR\r\n");
+				goto close;
+			}
+
+			::message( "second level second_friend_id: %s\n", friend_id );
+			::message( "second level sig2: %s\n", sig2 );
+
 			/* Do the decryption. */
 			id_pub = fetch_public_key( mysql, friend_id );
 			encrypt.load( id_pub, 0 );
+			decryptRes = encrypt.skDecryptVerify( session_key, sig2, message.text );
 
-			/* FIXME: VERY UGLY */
-			decrypted = strchr( strchr( strchr( decrypted, ' ' )+1, ' ' )+1, ' ' )+1;
-			::message("first level decryption: %s\n", decrypted );
-			decryptRes = encrypt.skDecryptVerify( session_key, sig2, decrypted );
-
-			//if ( decryptRes < 0 ) {
-			//	printf("ERROR\r\n");
-			//	goto close;
-			//}
+			if ( decryptRes < 0 ) {
+				::message("second level skDecryptVerify failed\n");
+				printf("ERROR\r\n");
+				goto close;
+			}
 
 			::message("second level decryption: %s\n", (char*)encrypt.decrypted );
 
-			store_message( mysql, relid, (char*)encrypt.decrypted );
+			exec_query( mysql, 
+				"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
+				"VALUES ( %e, %L, %e, now(), %e )",
+				relid, message.seq_id, message.date, (char*)encrypt.decrypted );
 		}
 	}
 

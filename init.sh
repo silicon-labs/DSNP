@@ -221,6 +221,7 @@ CREATE TABLE message_queue (
 
 CREATE TABLE received ( 
 	get_relid CHAR(32),
+	hash CHAR(32),
 	seq_id BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,

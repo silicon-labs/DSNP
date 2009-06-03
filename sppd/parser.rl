@@ -56,6 +56,9 @@ char *alloc_string( const char *s, const char *e )
 
 	user_message = [^\r\n]+   >{m1=p;} %{m2=p;};
 
+	date = ( digit{4} '-' digit{2} '-' digit{2} ' '
+			digit{2} ':' digit{2} ':' digit{2} ) >{d1 = p;} %{d2 = p;};
+
 	identity = 
 		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
 		>{i1=p;} %{i2=p;};
@@ -198,7 +201,7 @@ char *alloc_string( const char *s, const char *e )
 		broadcast( mysql, relid, 0, sig, 0, generation, 0, message );
 	}
 
-	action remote_broadcast {
+	action broadcast_remote {
 		char *relid = alloc_string( r1, r2 );
 		char *hash = alloc_string( a1, a2 );
 		char *sig1 = alloc_string( s1, s2 );
@@ -309,8 +312,8 @@ char *alloc_string( const char *s, const char *e )
 		'message'i ' ' relid ' ' enc ' ' sig ' ' message EOL @receive_message;
 		'broadcast'i ' ' relid ' ' sig ' ' number ' ' message
 				EOL @broadcast;
-		'remote_broadcast'i ' ' relid ' ' hash ' ' sig1 ' ' sig2 ' ' 
-				generation1 ' ' generation2 ' ' message EOL @remote_broadcast;
+		'broadcast_remote'i ' ' relid ' ' hash ' ' sig1 ' ' sig2 ' ' 
+				generation1 ' ' generation2 ' ' message EOL @broadcast_remote;
 		
 		# FIXME: NOT SECURE. Need to use a login token.
 		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number
@@ -851,9 +854,9 @@ long send_broadcast_net( const char *toSite, const char *relid, const char *hash
 	if ( hash != 0 ) {
 		fprintf( writeSocket, 
 			"SPP/0.1 %s\r\n"
-			"remote_broadcast %s %s %s 012 %lld 1 %s\r\n", 
+			"broadcast_remote %s %s %s %s %lld 1 %s\r\n", 
 			toSite,
-			relid, hash, sig1, generation1, message );
+			relid, hash, sig1, sig2, generation1, message );
 	}
 	else {
 		fprintf( writeSocket, 
@@ -989,27 +992,28 @@ fail:
 }
 
 %%{
-	machine store_message;
+	machine parse_message;
 	write data;
 }%%
 
-int store_message( MYSQL *mysql, const char *relid, char *decrypted )
+long Message::parse()
 {
 	long result = 0, cs;
-	char *p, *pe, *eof;
-	char *date = 0, *message = 0;
+	const char *p, *pe, *eof;
 	long long seq_id;
+	const char *n1, *n2;
+	const char *d1, *d2;
+	const char *pText = 0;
+	char *seq_id_str;
 
 	%%{
+		include common;
 		main := 
-			digit+ ' '@{*p = 0; date = p + 1;}
-			digit{4} '-' digit{2} '-' digit{2} ' '
-			digit{2} ':' digit{2} ':' digit{2} ' ' @{*p = 0; message = p + 1;}
-			any*;
+			number ' ' date ' ' any* >{ pText = p; };
 	}%%
 
-	p = decrypted;
-	pe = p + strlen(decrypted);
+	p = message;
+	pe = p + strlen(message);
 	eof = pe;
 
 	%% write init;
@@ -1021,14 +1025,11 @@ int store_message( MYSQL *mysql, const char *relid, char *decrypted )
 		goto fail;
 	}
 
-	seq_id = strtoll( decrypted, 0, 10 );
+	seq_id_str = alloc_string( n1, n2 );
+	seq_id = strtoll( seq_id_str, 0, 10 );
+	date = alloc_string( d1, d2 );
+	text = strdup( pText );
 
-	/* Save the message. */
-	exec_query( mysql, 
-		"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
-		"VALUES ( %e, %L, %e, now(), %e )",
-		relid, seq_id, date, message );
-	
 fail:
 	return result;
 }

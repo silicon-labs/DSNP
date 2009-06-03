@@ -132,6 +132,28 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );
 
+struct Message
+{
+	Message( const char *message ) :
+		message(message),
+		seq_id(-1), date(0), text(text)
+	{}
+
+	Message() :
+		message(0), seq_id(-1), date(0), text(0)
+	{}
+
+	void load( const char *message )
+		{ this->message = message; }
+
+	long parse();
+
+	const char *message;
+	long long seq_id;
+	const char *date;
+	const char *text;
+};
+
 struct Config
 {
 	/* NOTE: must be mirrored by the cfgVals array. */

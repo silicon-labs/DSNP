@@ -854,7 +854,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 
 		//printf( "%s %s %s\n", row[0], row[1], row[2] );
 		long send_res = send_broadcast_net( to_site, relid, hash, sig1, sig2,
-				generation1, generation2, message );
+				generation1, generation2, message, strlen(message) );
 		if ( send_res < 0 ) {
 			printf("ERROR trouble sending message: %ld\n", send_res);
 			sent[i] = false;
@@ -938,7 +938,7 @@ long run_message_queue_db( MYSQL *mysql )
 		char *message = row[4];
 
 		//printf( "%s %s %s\n", row[0], row[1], row[2] );
-		long send_res = send_message_net( to_id, relid, enc, sig, message );
+		long send_res = send_message_net( to_id, relid, enc, sig, message, strlen(message) );
 		if ( send_res < 0 ) {
 			printf("ERROR trouble sending message: %ld\n", send_res);
 			sent[i] = false;
@@ -1538,7 +1538,7 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 	return 0;
 }
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message )
+long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message, long length )
 {
 	int result = send_broadcast( mysql, user, 0, 0, 0, user_message, 0 );
 	if ( result < 0 ) {
@@ -1554,7 +1554,7 @@ close:
 }
 
 long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
-		const char *from_identity, const char *token, const char *user_message )
+		const char *from_identity, const char *token, const char *user_message, long mLen )
 {
 	int result;
 	char *resultEnc, *resultSig;
@@ -1563,7 +1563,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	long long resultGen;
 
 	result = send_remote_publish_net( resultEnc, resultSig, resultGen, from_identity,
-			to_user, token, user_message );
+			to_user, token, user_message, mLen );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
@@ -1571,6 +1571,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 
 	message("result enc: %s\n", resultEnc );
 	message("result sig: %s\n", resultSig );
+	message("result gen: %lld\n", resultGen );
 
 	/* Make an md5hash for the identity. */
 	MD5( (unsigned char*)from_identity, strlen(from_identity), friend_hash );
@@ -1604,6 +1605,7 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 	Encrypt encrypt;
 	int decryptRes;
 	char *decrypted;
+	long decLen;
 
 	exec_query( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
@@ -1634,17 +1636,22 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
 	decryptRes = encrypt.skDecryptVerify( session_key, sig1, encrypted );
-	decrypted = strdup( (char*)encrypt.decrypted );
 
 	if ( decryptRes < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
 	}
 
+	/* Take a copy of the decrypted message. */
+	decrypted = new char[encrypt.decLen+1];
+	memcpy( decrypted, encrypt.decrypted, encrypt.decLen );
+	decrypted[encrypt.decLen] = 0;
+	decLen = encrypt.decLen;
+
 	if ( hash == 0 ) {
 		/* Message just involves the sender. */
 		message( "parsing broadcast_remote message: %s\n", decrypted );
-		BroadcastMessage broadcastMessage( decrypted );
+		BroadcastMessage broadcastMessage( decrypted, decLen );
 		int result = broadcastMessage.parse();
 		if ( result < 0 ) {
 			message("parse of broadcast_remote message failed\n");
@@ -1654,8 +1661,9 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 
 		exec_query( mysql, 
 			"INSERT INTO received ( get_relid, seq_id, time_published, time_received, message ) "
-			"VALUES ( %e, %L, %e, now(), %e )",
-			relid, broadcastMessage.seq_id, broadcastMessage.date, broadcastMessage.text );
+			"VALUES ( %e, %L, %e, now(), %d )",
+			relid, broadcastMessage.seq_id, broadcastMessage.date,
+			broadcastMessage.body, broadcastMessage.bodyLen );
 	}
 	else {
 		message( "generation1: %lld\n", generation1 );
@@ -1678,9 +1686,7 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 			author_id = row[0];
 			session_key = row[1];
 
-			message("first level decryption: %s\n", decrypted );
-
-			BroadcastMessage broadcastMessage( decrypted );
+			BroadcastMessage broadcastMessage( decrypted, decLen );
 			int result = broadcastMessage.parse();
 			if ( result < 0 ) {
 				message("parse of broadcast_remote message failed\n");
@@ -1694,7 +1700,7 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 			/* Do the decryption. */
 			id_pub = fetch_public_key( mysql, author_id );
 			encrypt.load( id_pub, 0 );
-			decryptRes = encrypt.skDecryptVerify( session_key, sig2, broadcastMessage.text );
+			decryptRes = encrypt.skDecryptVerify( session_key, sig2, broadcastMessage.body );
 
 			if ( decryptRes < 0 ) {
 				message("second level skDecryptVerify failed\n");
@@ -1702,13 +1708,13 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 				goto close;
 			}
 
-			message("second level decryption: %s\n", (char*)encrypt.decrypted );
+			message( "second level decLen: %d\n", encrypt.decLen );
 
 			exec_query( mysql, 
 				"INSERT INTO received ( get_relid, hash, seq_id, time_published, time_received, message ) "
-				"VALUES ( %e, %e, %L, %e, now(), %e )",
-				relid, hash, broadcastMessage.seq_id, broadcastMessage.date,
-				(char*)encrypt.decrypted );
+				"VALUES ( %e, %e, %L, %e, now(), %d )",
+				relid, hash, broadcastMessage.seq_id, broadcastMessage.date, 
+				encrypt.decrypted, encrypt.decLen );
 		}
 	}
 
@@ -1719,12 +1725,12 @@ void broadcast( MYSQL *mysql, const char *relid, const char *hash,
 
 	if ( get_fwd_site1 != 0 ) {
 		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, hash, sig1, sig2,
-				generation1, 0, encrypted );
+				generation1, generation2, encrypted );
 	}
 
 	if ( get_fwd_site2 != 0 ) {
 		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, hash, sig1, sig2,
-				generation1, 0, encrypted );
+				generation1, generation2, encrypted );
 	}
 
 	mysql_free_result( result );

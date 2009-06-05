@@ -225,7 +225,7 @@ CREATE TABLE received (
 	seq_id BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
-	message TEXT
+	message BLOB
 );
 
 CREATE TABLE published (

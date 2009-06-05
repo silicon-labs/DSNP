@@ -41,21 +41,25 @@ $w->endElement();
 $w->endDocument();
 $encoded = $w->outputMemory();
 
+/* Remove the XML header part and the trailing newline. */
+$pos = strpos( $encoded, "\n" );
+$encoded = substr( $encoded, $pos+1 );
+$encoded = substr( $encoded, 0, strlen($encoded) - 1 );
+
+$len = strlen( $encoded );
+
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
 	exit(1);
-
-$pos = strpos( $encoded, "\n" );
-$encoded = substr( $encoded, $pos+1 );
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
 	"submit_remote_broadcast $USER_NAME $BROWSER_ID " . $_SESSION['token'] .
-			" " . strlen( $encoded ) . "\r\n" .
-	$encoded;
+			" " . $len . "\r\n";
 
-fwrite($fp, $send);
+fwrite( $fp, $send );
+fwrite( $fp, $encoded, $len );
 
 $res = fgets($fp);
 

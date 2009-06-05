@@ -76,6 +76,12 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 					len += strlen(a) * 2;
 				break;
 			}
+			case 'd': {
+				va_arg(vl, char*);
+				long dl = va_arg(vl, long);
+				len += 3 + dl*2;
+				break;
+			}
 			case 'L': {
 				va_arg(vl, long long);
 				len += 32;
@@ -122,23 +128,27 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				}
 				else {
 					*dest++ = '\'';
-					len = strlen(a);
-					len = mysql_real_escape_string( mysql, dest, a, len );
-					dest += len;
+					dest += mysql_real_escape_string( mysql, dest, a, strlen(a) );
 					*dest++ = '\'';
 				}
 				break;
 			}
+			case 'd': {
+				unsigned char *d = va_arg(vl, unsigned char*);
+				long dl = va_arg(vl, long);
+				char *hex = bin2hex( d, dl );
+				dest += sprintf( dest, "x'%s'", hex );
+				free( hex );
+				break;
+			}
 			case 'L': {
 				long long v = va_arg(vl, long long);
-				sprintf( dest, "%lld", v );
-				dest += strlen(dest);
+				dest += sprintf( dest, "%lld", v );
 				break;
 			}
 			case 'l': {
 				long v = va_arg(vl, long);
-				sprintf( dest, "%ld", v );
-				dest += strlen(dest);
+				dest += sprintf( dest, "%ld", v );
 				break;
 			}
 			case 'b': {

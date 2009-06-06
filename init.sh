@@ -203,11 +203,8 @@ CREATE TABLE ftoken_request (
 CREATE TABLE broadcast_queue (
 	to_site TEXT,
 	relid CHAR(32),
-	hash CHAR(32),
-	sig1 TEXT,
-	sig2 TEXT,
-	generation1 BIGINT,
-	generation2 BIGINT,
+	sig TEXT,
+	generation BIGINT,
 	message TEXT
 );
 
@@ -222,7 +219,7 @@ CREATE TABLE message_queue (
 CREATE TABLE received ( 
 	get_relid CHAR(32),
 	hash CHAR(32),
-	seq_id BIGINT,
+	seq_num BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
 	message BLOB
@@ -230,19 +227,19 @@ CREATE TABLE received (
 
 CREATE TABLE published (
 	user VARCHAR(20),
-	seq_id MEDIUMINT NOT NULL AUTO_INCREMENT,
+	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	message TEXT,
-	PRIMARY KEY(user, seq_id)
+	PRIMARY KEY(user, seq_num)
 );
 
 CREATE TABLE remote_published (
 	user VARCHAR(20),
 	identity TEXT,
-	seq_id MEDIUMINT NOT NULL AUTO_INCREMENT,
+	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	message TEXT,
-	PRIMARY KEY(user, seq_id)
+	PRIMARY KEY(user, seq_num)
 );
 
 CREATE TABLE login_token (

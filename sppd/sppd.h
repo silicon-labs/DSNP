@@ -92,25 +92,21 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long queue_broadcast( MYSQL *mysql, const char *user, const char *hash,
-		const char *sig2, long long generation2, const char *message, long mLen );
-long send_broadcast_net( const char *toSite, const char *relid, const char *hash,
-		const char *sig1, const char *sig2, long long generation1, long long generation2,
-		const char *message, long mLen );
+long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
+long send_broadcast_net( const char *toSite, const char *relid,
+		const char *sig, long long generation, const char *message, long mLen );
 long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
 long send_forward_to( MYSQL *mysql, const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
-void broadcast( MYSQL *mysql, const char *relid, const char *hash,
-		const char *sig1, const char *sig2, long long generation1, long long generation2,
-		const char *encrypted );
+void broadcast( MYSQL *mysql, const char *relid, const char *sig,
+		long long generation, const char *encrypted );
 
 void receive_message( MYSQL *mysql, const char *relid,
 		const char *enc, const char *sig, const char *message );
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
-		const char *hash, const char *sig1, const char *sig2,
-		long long generation1, long long generation2, const char *message );
+		const char *sig, long long generation, const char *message );
 long send_message_net( const char *to_identity, const char *relid,
 		const char *enc, const char *sig, const char *message, long mLen );
 long queue_message( MYSQL *mysql, const char *from_user,
@@ -129,32 +125,16 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 		const char *to_identity, const char *from_identity,
 		const char *token, const char *message, long mLen );
 
+int broadcast_parser( MYSQL *mysql, const char *relid,
+		const char *user, const char *friend_id, const char *msg, long mLen );
+void broadcast_publish( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
+		long long seqNum, const char *date, const char *msg, long length );
+void broadcast_remote_publish( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
+		long long seqNum, const char *date, const char *hash, const char *sig,
+		long long generation, const char *msg, long length );
+
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );
-
-struct BroadcastMessage
-{
-	BroadcastMessage( const char *message, long mLen ) :
-		message(message), mLen(mLen),
-		seq_id(-1), date(0),
-		body(0), bodyLen(0)
-	{}
-
-	BroadcastMessage() :
-		message(0), mLen(0),
-		seq_id(-1), date(0),
-		body(0), bodyLen(0)
-	{}
-
-	long parse();
-
-	const char *message;
-	long mLen;
-	long long seq_id;
-	const char *date;
-	char *body;
-	long bodyLen;
-};
 
 struct Config
 {

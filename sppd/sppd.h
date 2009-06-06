@@ -118,7 +118,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
-		long len, const char *user_message );
+		const char *userMessage, long mLen);
 
 bool check_comm_key( const char *key );
 

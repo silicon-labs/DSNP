@@ -36,16 +36,21 @@ $w->endElement();
 $w->endDocument();
 $encoded = $w->outputMemory();
 
+/* Remove the XML header part and the trailing newline. */
 $pos = strpos( $encoded, "\n" );
 $encoded = substr( $encoded, $pos+1 );
+$encoded = substr( $encoded, 0, strlen($encoded) - 1 );
+
+/* Length of the encoded string. */
+$len = strlen( $encoded );
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"submit_broadcast $USER_NAME " . strlen( $encoded ) . "\r\n" .
-	$encoded;
+	"submit_broadcast $USER_NAME " . $len . "\r\n";
 
-fwrite($fp, $send);
+fwrite( $fp, $send );
+fwrite( $fp, $encoded, $len );
 
 $res = fgets($fp);
 

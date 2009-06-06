@@ -46,6 +46,7 @@ $pos = strpos( $encoded, "\n" );
 $encoded = substr( $encoded, $pos+1 );
 $encoded = substr( $encoded, 0, strlen($encoded) - 1 );
 
+/* Length of the encoded string. */
 $len = strlen( $encoded );
 
 $fp = fsockopen( 'localhost', $CFG_PORT );

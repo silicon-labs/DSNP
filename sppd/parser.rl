@@ -293,7 +293,7 @@ char *alloc_string( const char *s, const char *e )
 		fread( user_message, 1, length, stdin );
 		user_message[length] = 0;
 
-		remote_publish( mysql, user, identity, token, length, user_message );
+		remote_publish( mysql, user, identity, token, user_message, length );
 		free( user_message );
 	}
 

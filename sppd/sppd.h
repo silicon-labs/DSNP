@@ -93,7 +93,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 char *get_site( const char *identity );
 
 long queue_broadcast( MYSQL *mysql, const char *user, const char *hash,
-		const char *sig2, long long generation2, const char *message );
+		const char *sig2, long long generation2, const char *message, long mLen );
 long send_broadcast_net( const char *toSite, const char *relid, const char *hash,
 		const char *sig1, const char *sig2, long long generation1, long long generation2,
 		const char *message, long mLen );

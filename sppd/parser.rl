@@ -876,7 +876,6 @@ long send_broadcast_net( const char *toSite, const char *relid, const char *hash
 			"broadcast_remote %s %s %s %s %lld %lld %ld\r\n", 
 			toSite,
 			relid, hash, sig1, sig2, generation1, generation2, mLen );
-		fwrite( message, 1, mLen, writeSocket );
 	}
 	else {
 		fprintf( writeSocket, 
@@ -884,8 +883,8 @@ long send_broadcast_net( const char *toSite, const char *relid, const char *hash
 			"broadcast %s %s %lld %ld\r\n", 
 			toSite,
 			relid, sig1, generation1, mLen );
-		fwrite( message, 1, mLen, writeSocket );
 	}
+	fwrite( message, 1, mLen, writeSocket );
 	fflush( writeSocket );
 
 	/* Read the result. */

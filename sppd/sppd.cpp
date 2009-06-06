@@ -1415,7 +1415,7 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 }
 
 long queue_broadcast( MYSQL *mysql, const char *user, const char *hash,
-		const char *sig2, long long generation2, const char *message )
+		const char *sig2, long long generation2, const char *message, long mLen )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1461,7 +1461,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *hash,
 		/* Do the encryption. */
 		user_priv = load_key( mysql, user );
 		encrypt.load( 0, user_priv );
-		encrypt.skEncryptSign( session_key, (u_char*)message, strlen(message)+1 );
+		encrypt.skEncryptSign( session_key, (u_char*)message, strlen(message) );
 
 		/* Find the root user to send to. */
 		id.load( friend_id );
@@ -1476,19 +1476,20 @@ close:
 }
 
 long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
-		const char *sig2, long long generation2, const char *user_message, const char *enc_message )
+		const char *sig2, long long generation2,
+		const char *userMessage, long userMessageLen, const char *encMessage )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
 
-	long messageLen;
 	char *full;
 	char timeStr[64];
 	long sendResult;
 	long long seq_id;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	const char *send_message;
+	const char *sendMessage;
+	long sendMessageLen, soFar;
 
 	/* Get the current time. */
 	curTime = time(NULL);
@@ -1504,12 +1505,11 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 
 	/* Insert the broadcast message into the published table. */
 	if ( hash != 0 ) {
-		/* FIXME: get around fact that it's encrypted. */
 		exec_query( mysql,
 			"INSERT INTO published "
 			"( user, time_published, message ) "
 			"VALUES ( %e, %e, %e )",
-			user, timeStr, user_message );
+			user, timeStr, userMessage );
 	}
 
 	/* Get the id that was assigned to the message. */
@@ -1521,17 +1521,22 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 
 	seq_id = strtoll( row[0], 0, 10 );
 
-	if ( enc_message == 0 )
-		send_message = user_message;
-	else
-		send_message = enc_message;
+	if ( encMessage == 0 ) {
+		sendMessage = userMessage;
+		sendMessageLen = userMessageLen;
+	}
+	else {
+		sendMessage = encMessage;
+		sendMessageLen = strlen(encMessage);
+	}
 
 	/* Make the full message. */
-	messageLen = strlen( send_message );
-	full = new char[64+messageLen];
-	sprintf( full, "%lld %s %s", seq_id, timeStr, send_message );
+	full = new char[64+sendMessageLen];
+	soFar = sprintf( full, "%lld %s ", seq_id, timeStr );
+	memcpy( full + soFar, sendMessage, sendMessageLen );
+	full[soFar+sendMessageLen] = 0;
 
-	sendResult = queue_broadcast( mysql, user, hash, sig2, generation2, full );
+	sendResult = queue_broadcast( mysql, user, hash, sig2, generation2, full, soFar+sendMessageLen );
 	if ( sendResult < 0 )
 		return -1;
 
@@ -1540,7 +1545,7 @@ long send_broadcast( MYSQL *mysql, const char *user, const char *hash,
 
 long submit_broadcast( MYSQL *mysql, const char *user, const char *user_message, long length )
 {
-	int result = send_broadcast( mysql, user, 0, 0, 0, user_message, 0 );
+	int result = send_broadcast( mysql, user, 0, 0, 0, user_message, length, 0 );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
@@ -1578,7 +1583,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
 
 	result = send_broadcast( mysql, to_user, friend_hash_str, resultSig, resultGen,
-			user_message, resultEnc );
+			user_message, mLen, resultEnc );
 	if ( result < 0 ) {
 		printf( "ERROR\r\n" );
 		goto close;

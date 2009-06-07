@@ -27,7 +27,7 @@ if ( !$furi )
 $hash = md5($furi);
 
 /* Maybe we are already logged in as this friend. */
-if ( $_SESSION['auth'] == 'friend' && $_SESSION['hash'] == $hash ) {
+if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
 	header( "Location: $USER_PATH" );
 }
 else {

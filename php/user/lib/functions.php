@@ -48,7 +48,7 @@ function printName( $identity, $possessive, $known_friend )
 	}
 }
 
-function printMessage( $identity, $message, $time_published )
+function printMessage( $author_id, $subject_id, $message, $time_published )
 {
 	global $USER_NAME;
 	global $USER_URI;
@@ -64,7 +64,7 @@ function printMessage( $identity, $message, $time_published )
 
 			if ( isset( $text ) ) {
 				echo "<small>$time_published ";
-				printName( $identity, false, true );
+				printName( $author_id, false, true );
 				echo " said:</small><br>";
 				echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";
 			}
@@ -85,14 +85,14 @@ function printMessage( $identity, $message, $time_published )
 				}
 			}
 
-			if ( isset( $from ) && isset( $text ) ) {
+			if ( isset( $text ) ) {
 				echo "<small>$time_published ";
 
-				printName( $from, false, false );
+				printName( $author_id, false, true );
 
 				echo " wrote on ";
 
-				printName( $identity, true, true );
+				printName( $subject_id, true, true );
 
 				echo " wall:</small><br>";
 				echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";

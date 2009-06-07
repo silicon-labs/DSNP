@@ -217,8 +217,9 @@ CREATE TABLE message_queue (
 );
 
 CREATE TABLE received ( 
-	get_relid CHAR(32),
-	hash CHAR(32),
+	for_user VARCHAR(20),
+	author_id TEXT,
+	subject_id TEXT,
 	seq_num BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
@@ -227,6 +228,8 @@ CREATE TABLE received (
 
 CREATE TABLE published (
 	user VARCHAR(20),
+	author_id TEXT,
+	subject_id TEXT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	message TEXT,
@@ -235,11 +238,10 @@ CREATE TABLE published (
 
 CREATE TABLE remote_published (
 	user VARCHAR(20),
-	identity TEXT,
-	seq_num BIGINT NOT NULL AUTO_INCREMENT,
+	author_id TEXT,
+	subject_id TEXT,
 	time_published TIMESTAMP,
-	message TEXT,
-	PRIMARY KEY(user, seq_num)
+	message TEXT
 );
 
 CREATE TABLE login_token (

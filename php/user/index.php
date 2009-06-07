@@ -21,7 +21,7 @@ include('lib/session.php');
 
 $U = $_REQUEST['u'];
 
-if ( isset( $_SESSION ) ) {
+if ( isset( $_SESSION ) && isset( $_SESSION['auth'] ) ) {
 	if ( $_SESSION['auth'] == 'owner' )
 		include('lib/owner.php');
 	else if ( $_SESSION['auth'] == 'friend' )

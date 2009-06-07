@@ -515,6 +515,8 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	const char *g1, *g2;
 	const char *q1, *q2;
 
+	message("parsing broadcast string: %s\n", msg );
+
 	%% write init;
 
 	const char *p = msg;

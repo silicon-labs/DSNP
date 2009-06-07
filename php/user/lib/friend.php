@@ -96,16 +96,18 @@ while ( $row = mysql_fetch_assoc($result) ) {
 </form>
 
 <?
+
 $query = sprintf(
-	"SELECT null AS identity, time_published, message " .
-	"FROM published " .
+	"SELECT author_id, subject_id, time_published, message " .
+	"FROM published " . 
 	"WHERE user = '%s' " .
-	"UNION SELECT identity, time_published, message " .
+	"UNION " .
+	"SELECT author_id, subject_id, time_published, message " .
 	"FROM remote_published " .
 	"WHERE user = '%s' " .
 	"ORDER BY time_published DESC",
-    mysql_real_escape_string($USER_NAME),
-    mysql_real_escape_string($USER_NAME)
+	mysql_real_escape_string($USER_NAME),
+	mysql_real_escape_string($USER_NAME)
 );
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -113,15 +115,14 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 $mehash = MD5( $USER_URI );
 
 while ( $row = mysql_fetch_assoc($result) ) {
-	$identity = $row['identity'];
+	$author_id = $row['author_id'];
+	$subject_id = $row['subject_id'];
 	$time_published = $row['time_published'];
 	$message = $row['message'];
 
 	echo "<p>\n";
-	$who = $USER_URI;
-	if ( $identity )
-		$who = $identity;
-	printMessage( $who, $message, $time_published );
+	
+	printMessage( $author_id, $subject_id, $message, $time_published );
 }
 ?>
 

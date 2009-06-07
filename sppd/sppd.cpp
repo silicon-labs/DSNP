@@ -1505,7 +1505,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		"INSERT INTO published "
 		"( user, author_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, %d )",
-		user, authorId, timeStr, msg, msgLen );
+		user, authorId, timeStr, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1583,7 +1583,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 		"INSERT INTO published "
 		"( user, author_id, subject_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
-		user, author_id, subjectId, timeStr, msg, msgLen );
+		user, author_id, subjectId, timeStr, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );

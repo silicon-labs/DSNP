@@ -58,9 +58,8 @@ function printMessage( $author_id, $subject_id, $message, $time_published )
 	if ( $r->read() ) {
 
 		if ( $r->name == "text" ) {
-			if ( $r->read() ) {
+			if ( $r->read() )
 				$text = $r->value;
-			}
 
 			if ( isset( $text ) ) {
 				echo "<small>$time_published ";
@@ -70,22 +69,10 @@ function printMessage( $author_id, $subject_id, $message, $time_published )
 			}
 		}
 		else if ( $r->name == "wall" ) {
-			if ( $r->read() ) {
-				if ( $r->name == "from" ) {
-					if ( $r->read() ) {
-						$from = $r->value;
-						if ( $r->read() && $r->read() ) {
-							if ( $r->name == "text" ) {
-								if ( $r->read() ) {
-									$text = $r->value;
-								}
-							}
-						}
-					}
-				}
-			}
+			if ( $r->read() )
+				$wall = $r->value;
 
-			if ( isset( $text ) ) {
+			if ( isset( $wall ) ) {
 				echo "<small>$time_published ";
 
 				printName( $author_id, false, true );
@@ -95,7 +82,7 @@ function printMessage( $author_id, $subject_id, $message, $time_published )
 				printName( $subject_id, true, true );
 
 				echo " wall:</small><br>";
-				echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";
+				echo "&nbsp;&nbsp;" . htmlspecialchars($wall) . "<br>";
 			}
 		}
 	}

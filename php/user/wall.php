@@ -28,15 +28,7 @@ $w = new XMLWriter();
 $w->openMemory();
 $w->startDocument();
 $w->startElement("wall");
-
-$w->startElement("from");
-$w->text($_SESSION['identity']);
-$w->endElement();
-
-$w->startElement("text");
 $w->text($message);
-$w->endElement();
-
 $w->endElement();
 $w->endDocument();
 $encoded = $w->outputMemory();

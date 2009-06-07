@@ -232,7 +232,7 @@ CREATE TABLE published (
 	subject_id TEXT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
-	message TEXT,
+	message BLOB,
 	PRIMARY KEY(user, seq_num)
 );
 
@@ -241,7 +241,7 @@ CREATE TABLE remote_published (
 	author_id TEXT,
 	subject_id TEXT,
 	time_published TIMESTAMP,
-	message TEXT
+	message BLOB
 );
 
 CREATE TABLE login_token (

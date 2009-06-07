@@ -1504,8 +1504,8 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	exec_query( mysql,
 		"INSERT INTO published "
 		"( user, author_id, time_published, message ) "
-		"VALUES ( %e, %e, %e, %e )",
-		user, authorId, timeStr, msg );
+		"VALUES ( %e, %e, %e, %d )",
+		user, authorId, timeStr, msg, msgLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1582,8 +1582,8 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 	exec_query( mysql,
 		"INSERT INTO published "
 		"( user, author_id, subject_id, time_published, message ) "
-		"VALUES ( %e, %e, %e, %e, %e )",
-		user, author_id, subjectId, timeStr, msg );
+		"VALUES ( %e, %e, %e, %e, %d )",
+		user, author_id, subjectId, timeStr, msg, msgLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1615,14 +1615,14 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 }
 
 long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
-		const char *author_id, const char *token, const char *userMessage, long mLen )
+		const char *author_id, const char *token, const char *msg, long mLen )
 {
 	int result;
 	char *resultEnc, *resultSig;
 	long long resultGen;
 
 	result = send_remote_publish_net( resultEnc, resultSig, resultGen, author_id,
-			to_user, token, userMessage, mLen );
+			to_user, token, msg, mLen );
 	if ( result < 0 ) {
 		printf("ERROR\r\n");
 		goto close;
@@ -1634,7 +1634,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 
 
 	result = send_remote_broadcast( mysql, to_user, author_id, resultSig, resultGen,
-			userMessage, mLen, resultEnc );
+			msg, mLen, resultEnc );
 	if ( result < 0 ) {
 		printf( "ERROR\r\n" );
 		goto close;
@@ -1728,7 +1728,8 @@ void broadcast_publish( MYSQL *mysql, const char *relid, const char *user, const
 		long long seqNum, const char *date, const char *msg, long length )
 {
 	exec_query( mysql, 
-		"INSERT INTO received ( for_user, author_id, seq_num, time_published, time_received, message ) "
+		"INSERT INTO received "
+		"	( for_user, author_id, seq_num, time_published, time_received, message ) "
 		"VALUES ( %e, %e, %L, %e, now(), %d )",
 		user, authorId, seqNum, date, msg, length );
 }
@@ -1782,7 +1783,8 @@ void broadcast_remote_publish( MYSQL *mysql, const char *relid, const char *user
 		message( "second level decLen: %d\n", encrypt.decLen );
 
 		exec_query( mysql, 
-			"INSERT INTO received ( for_user, author_id, subject_id, seq_num, time_published, time_received, message ) "
+			"INSERT INTO received "
+			"	( for_user, author_id, subject_id, seq_num, time_published, time_received, message ) "
 			"VALUES ( %e, %e, %e, %L, %e, now(), %d )",
 			user, author_id, friendId, seqNum, date, encrypt.decrypted, encrypt.decLen );
 	}
@@ -1956,7 +1958,7 @@ free_result:
 
 void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
-		const char *userMessage, long mLen )
+		const char *msg, long mLen )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1987,7 +1989,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 		"INSERT INTO remote_published "
 		"( user, author_id, subject_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, now(), %d )",
-		user, authorId, identity, userMessage, mLen );
+		user, authorId, identity, msg, mLen );
 	
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, identity );
@@ -2011,7 +2013,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	generation = strdup(row[1]);
 
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.skEncryptSign( session_key, (u_char*)userMessage, mLen );
+	sigRes = encrypt.skEncryptSign( session_key, (u_char*)msg, mLen );
 	if ( sigRes < 0 ) {
 		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;

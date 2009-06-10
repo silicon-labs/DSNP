@@ -124,12 +124,7 @@ void sslInitServer()
 	if ( ctx == NULL )
 		fatal("creating context failed\n");
 
-	/* Load the CA certificates that we will use to verify. */
-	int result = SSL_CTX_load_verify_locations( ctx, CA_CERTS, NULL );
-	if ( !result ) 
-		fatal("failed to load " CA_CERTS "\n" );
-
-	result = SSL_CTX_use_certificate_file( ctx, MY_PEM, SSL_FILETYPE_PEM );
+	int result = SSL_CTX_use_certificate_file( ctx, MY_PEM, SSL_FILETYPE_PEM );
 	if ( result != 1 ) 
 		fatal("failed to load " MY_PEM "\n" );
 

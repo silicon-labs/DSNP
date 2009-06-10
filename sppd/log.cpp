@@ -55,6 +55,7 @@ void error( const char *fmt, ... )
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
+	fflush( logFile );
 }
 
 void warning( const char *fmt, ... )
@@ -73,6 +74,7 @@ void warning( const char *fmt, ... )
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
+	fflush( logFile );
 }
 
 void message( const char *fmt, ... )
@@ -91,6 +93,7 @@ void message( const char *fmt, ... )
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
+	fflush( logFile );
 }
 
 void fatal( const char *fmt, ... )
@@ -109,6 +112,7 @@ void fatal( const char *fmt, ... )
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
+	fflush( logFile );
 	exit(1);
 }
 

@@ -36,7 +36,7 @@ void set_config_by_uri( const char *uri )
 		c = c->next;
 
 	if ( c == 0 ) {
-		fprintf(stderr, "bad site\n");
+		fatal( "bad site\n" );
 		exit(1);
 	}
 }
@@ -48,7 +48,7 @@ void set_config_by_name( const char *name )
 		c = c->next;
 
 	if ( c == 0 ) {
-		fprintf(stderr, "bad site\n");
+		fatal( "bad site\n" );
 		exit(1);
 	}
 }
@@ -181,7 +181,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	/* Generate a new key. */
 	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
 	if ( rsa == 0 ) {
-		printf( "ERROR key generation failed\r\n");
+		BIO_printf( bioOut, "ERROR key generation failed\r\n");
 		goto flush;
 	}
 
@@ -206,7 +206,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	/* Make the first session key for the user. */
 	new_session_key( mysql, user );
 
-	printf( "OK\r\n" );
+	BIO_printf( bioOut, "OK\r\n" );
 
 	OPENSSL_free( n );
 	OPENSSL_free( e );
@@ -219,7 +219,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 
 	RSA_free( rsa );
 flush:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 void public_key( MYSQL *mysql, const char *user )
@@ -234,17 +234,17 @@ void public_key( MYSQL *mysql, const char *user )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row ) {
-		printf( "ERROR user not found\r\n" );
+		BIO_printf( bioOut, "ERROR user not found\r\n" );
 		goto free_result;
 	}
 
 	/* Everythings okay. */
-	printf( "OK %s/%s\n", row[0], row[1] );
+	BIO_printf( bioOut, "OK %s/%s\n", row[0], row[1] );
 
 free_result:
 	mysql_free_result( result );
 
-	fflush(stdout);
+	BIO_flush( bioOut );
 }
 
 long open_inet_connection( const char *hostname, unsigned short port )
@@ -446,20 +446,20 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Check for the existence of a friend claim. */
 	if ( friend_claim_exists( mysql, user, identity ) ) {
-		printf( "ERROR %d\r\n", ERROR_FRIEND_CLAIM_EXISTS );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_CLAIM_EXISTS );
 		goto close;
 	}
 
 	/* Check for the existence of a friend request. */
 	if ( friend_request_exists( mysql, user, identity ) ) {
-		printf( "ERROR %d\r\n", ERROR_FRIEND_REQUEST_EXISTS );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_REQUEST_EXISTS );
 		goto close;
 	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
-		printf( "ERROR %d\n", ERROR_PUBLIC_KEY );
+		BIO_printf( bioOut, "ERROR %d\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
@@ -474,7 +474,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	encrypt.load( id_pub, user_priv );
 	sigRes = encrypt.encryptSign( requested_relid, RELID_SIZE );
 	if ( sigRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 	
@@ -489,12 +489,12 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 		user, identity, requested_relid_str, reqid_str, encrypt.enc, encrypt.sig );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK %s\r\n", reqid_str );
+	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 
 	free( requested_relid_str );
 	free( reqid_str );
 close:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 void fetch_requested_relid( MYSQL *mysql, const char *reqid )
@@ -507,7 +507,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 		"SELECT msg_enc, msg_sig FROM relid_request WHERE reqid = %e", reqid );
 
 	if ( query_res != 0 ) {
-		printf("ERR\r\n");
+		BIO_printf( bioOut, "ERR\r\n" );
 		goto query_fail;
 	}
 
@@ -515,15 +515,15 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		printf( "OK %s %s\r\n", row[0], row[1] );
+		BIO_printf( bioOut, "OK %s %s\r\n", row[0], row[1] );
 	else
-		printf( "ERROR\r\n" );
+		BIO_printf( bioOut, "ERROR\r\n" );
 
 	/* Done. */
 	mysql_free_result( select_res );
 
 query_fail:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 long store_relid_response( MYSQL *mysql, const char *identity, 
@@ -585,7 +585,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
-		printf( "ERROR %d\r\n", ERROR_PUBLIC_KEY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
@@ -594,7 +594,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	RelidEncSig encsig;
 	fetchRes = fetch_requested_relid_net( encsig, site, id_host, fr_reqid_str );
 	if ( fetchRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
 		goto close;
 	}
 
@@ -606,13 +606,13 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
 	if ( verifyRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
 
 	/* Verify the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE ) {
-		printf( "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		goto close;
 	}
 
@@ -629,7 +629,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Encrypt and sign using the same credentials. */
 	sigRes = encrypt.encryptSign( message, RELID_SIZE*2 );
 	if ( sigRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 
@@ -646,14 +646,14 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	store_friend_claim( mysql, user, identity, response_relid_str, requested_relid_str, false );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK %s\r\n", response_reqid_str );
+	BIO_printf( bioOut, "OK %s\r\n", response_reqid_str );
 
 	free( requested_relid_str );
 	free( response_relid_str );
 	free( response_reqid_str );
 
 close:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 void fetch_response_relid( MYSQL *mysql, const char *reqid )
@@ -667,7 +667,7 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 		"SELECT msg_enc, msg_sig FROM relid_response WHERE reqid = %e;", reqid );
 	
 	if ( query_res != 0 ) {
-		printf("ERR\r\n");
+		BIO_printf( bioOut, "ERR\r\n" );
 		goto query_fail;
 	}
 
@@ -675,15 +675,15 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		printf( "OK %s %s\r\n", row[0], row[1] );
+		BIO_printf( bioOut, "OK %s %s\r\n", row[0], row[1] );
 	else
-		printf( "ERR\r\n" );
+		BIO_printf( bioOut, "ERR\r\n" );
 
 	/* Done. */
 	mysql_free_result( select_res );
 
 query_fail:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
@@ -713,7 +713,7 @@ long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 	mysql_free_result( select_res );
 
 query_fail:
-	fflush(stdout);
+	BIO_flush(bioOut);
 	return result;
 }
 
@@ -738,7 +738,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
-		printf( "ERROR %d\r\n", ERROR_PUBLIC_KEY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
@@ -747,7 +747,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	RelidEncSig encsig;
 	fetchRes = fetch_response_relid_net( encsig, site, id_host, reqid_str );
 	if ( fetchRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
 		goto close;
 	}
 	
@@ -758,13 +758,13 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 
 	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
 	if ( verifyRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
 
 	/* Verify that the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE*2 ) {
-		printf( "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		goto close;
 	}
 
@@ -775,7 +775,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 
 	verifyRes = verify_returned_fr_relid( mysql, requested_relid );
 	if ( verifyRes != 1 ) {
-		printf( "ERROR %d\r\n", ERROR_REQUESTED_RELID_MATCH );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_REQUESTED_RELID_MATCH );
 		goto close;
 	}
 		
@@ -793,12 +793,12 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK\r\n" );
+	BIO_printf( bioOut, "OK\r\n" );
 
 	free( requested_relid_str );
 	free( returned_relid_str );
 close:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 long delete_friend_request( MYSQL *mysql, const char *user, const char *user_reqid )
@@ -849,11 +849,10 @@ long run_broadcast_queue_db( MYSQL *mysql )
 		long long generation = strtoll( row[3], 0, 10 );
 		char *msg = row[4];
 
-		//printf( "%s %s %s\n", row[0], row[1], row[2] );
 		long send_res = send_broadcast_net( to_site, relid, sig,
 				generation, msg, strlen(msg) );
 		if ( send_res < 0 ) {
-			printf("ERROR trouble sending message: %ld\n", send_res);
+			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
 			unsent = true;
 		}
@@ -874,7 +873,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 				char *generation = row[3];
 				char *message = row[4];
 
-				printf("Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
+				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
 
 				/* Queue the message. */
 
@@ -935,10 +934,9 @@ long run_message_queue_db( MYSQL *mysql )
 		char *sig = row[3];
 		char *message = row[4];
 
-		//printf( "%s %s %s\n", row[0], row[1], row[2] );
 		long send_res = send_message_net( to_id, relid, enc, sig, message, strlen(message) );
 		if ( send_res < 0 ) {
-			printf("ERROR trouble sending message: %ld\n", send_res);
+			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
 			unsent = true;
 		}
@@ -959,7 +957,7 @@ long run_message_queue_db( MYSQL *mysql )
 			char *message = row[4];
 
 			if ( !sent[i] ) {
-				printf("Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
+				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
 
 				exec_query( mysql,
 					"INSERT INTO message_queue "
@@ -992,7 +990,7 @@ void run_queue( const char *siteName )
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
+		BIO_printf( bioOut, "ERROR failed to connect to the database\r\n");
 		goto close;
 	}
 
@@ -1001,7 +999,7 @@ void run_queue( const char *siteName )
 
 close:
 	mysql_close( mysql );
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 int send_current_session_key( MYSQL *mysql, const char *user, const char *identity )
@@ -1013,13 +1011,12 @@ int send_current_session_key( MYSQL *mysql, const char *user, const char *identi
 	/* Get the latest put session key. */
 	sk_result = current_put_sk( mysql, user, sk, &generation );
 	if ( sk_result != 1 ) {
-		printf( "ERROR fetching session key\r\n");
+		BIO_printf( bioOut, "ERROR fetching session key\r\n");
 	}
 
 	int send_res = send_session_key( mysql, user, identity, sk, generation );
-	if ( send_res < 0 ) {
-		fprintf(stderr, "sending failed %d\n", send_res );
-	}
+	if ( send_res < 0 )
+		error( "sending failed %d\n", send_res );
 
 	return 0;
 }
@@ -1039,7 +1036,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row ) {
-		printf( "ERROR request not found\r\n" );
+		BIO_printf( bioOut, "ERROR request not found\r\n" );
 		goto close;
 	}
 
@@ -1053,11 +1050,11 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	send_current_session_key( mysql, user, row[0] );
 	forward_tree_insert( mysql, user, row[0], row[1] );
 
-	printf( "OK\r\n" );
+	BIO_printf( bioOut, "OK\r\n" );
 
 	mysql_free_result( result );
 close:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 
@@ -1130,14 +1127,14 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 		 * an appropriate time delay. */
 		RAND_bytes( reqid, RELID_SIZE );
 		reqid_str = bin2hex( reqid, RELID_SIZE );
-		printf( "OK %s\r\n", reqid_str );
+		BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 		goto close;
 	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR %d\r\n", ERROR_PUBLIC_KEY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
@@ -1153,7 +1150,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	/* Encrypt it. */
 	sigRes = encrypt.encryptSign( flogin_token, TOKEN_SIZE );
 	if ( sigRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 
@@ -1165,13 +1162,13 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 			flogin_token_str, reqid_str, encrypt.enc, encrypt.sig );
 	
 	/* Return the request id for the requester to use. */
-	printf( "OK %s\r\n", reqid_str );
+	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 
 	free( flogin_token_str );
 	free( reqid_str );
 
 close:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 void fetch_ftoken( MYSQL *mysql, const char *reqid )
@@ -1185,7 +1182,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 
 	/* Execute the query. */
 	if ( query_res != 0 ) {
-		printf( "ERROR %d\r\n", ERROR_DB_ERROR );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DB_ERROR );
 		goto query_fail;
 	}
 
@@ -1193,15 +1190,15 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		printf( "OK %s %s\r\n", row[0], row[1] );
+		BIO_printf( bioOut, "OK %s %s\r\n", row[0], row[1] );
 	else
-		printf( "ERROR %d\r\n", ERROR_NO_FTOKEN );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NO_FTOKEN );
 
 	/* Done. */
 	mysql_free_result( select_res );
 
 query_fail:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
@@ -1228,14 +1225,14 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	if ( friend_claim <= 0 ) {
 		/* No friend claim ... we can reveal this since ftoken_response requires
 		 * that the user be logged in. */
-		printf( "ERROR %d\r\n", ERROR_NOT_A_FRIEND );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NOT_A_FRIEND );
 		goto close;
 	}
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR %d\r\n", ERROR_PUBLIC_KEY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
@@ -1244,7 +1241,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	RelidEncSig encsig;
 	fetchRes = fetch_ftoken_net( encsig, site, friend_id.host, flogin_reqid_str );
 	if ( fetchRes < 0 ) {
-		printf("ERROR %d\r\n", ERROR_FETCH_FTOKEN );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_FTOKEN );
 		goto close;
 	}
 
@@ -1256,13 +1253,13 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	/* Decrypt the flogin_token. */
 	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
 	if ( verifyRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
 
 	/* Check the size. */
 	if ( encrypt.decLen != REQID_SIZE ) {
-		printf( "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		goto close;
 	}
 
@@ -1276,11 +1273,11 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 		user, friend_id.identity, flogin_token_str );
 
 	/* Return the login token for the requester to use. */
-	printf( "OK %s\r\n", flogin_token_str );
+	BIO_printf( bioOut, "OK %s\r\n", flogin_token_str );
 
 	free( flogin_token_str );
 close:
-	fflush( stdout );
+	BIO_flush( bioOut );
 }
 
 /* Check if we have an acknowledment of a friend claim. */
@@ -1316,7 +1313,7 @@ void session_key( MYSQL *mysql, const char *relid, const char *user,
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
 	if ( id_pub == 0 ) {
-		printf("ERROR fetch_public_key failed\n" );
+		BIO_printf( bioOut, "ERROR fetch_public_key failed\n" );
 		return;
 	}
 
@@ -1351,7 +1348,7 @@ void session_key( MYSQL *mysql, const char *relid, const char *user,
 		forward_tree_insert( mysql, user, identity, row[0] );
 	}
 	
-	printf("OK\n");
+	BIO_printf( bioOut, "OK\n" );
 }
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
@@ -1372,7 +1369,7 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 				to_identity, relid, user, identity );
 	}
 
-	printf("OK\n");
+	BIO_printf( bioOut, "OK\n" );
 }
 
 long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
@@ -1434,7 +1431,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row ) {
-		printf("ERROR bad user\r\n");
+		BIO_printf( bioOut, "ERROR bad user\r\n" );
 		goto close;
 	}
 	session_key = strdup(row[0]);
@@ -1534,14 +1531,14 @@ long submit_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLe
 	int result = send_broadcast( mysql, user, msg, mLen );
 
 	if ( result < 0 ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
 
-	printf("OK\r\n");
+	BIO_printf( bioOut, "OK\r\n" );
 
 close:
-	fflush(stdout);
+	BIO_flush(bioOut);
 	return 0;
 }
 
@@ -1624,7 +1621,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	result = send_remote_publish_net( resultEnc, resultSig, resultGen, author_id,
 			to_user, token, msg, mLen );
 	if ( result < 0 ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
 
@@ -1636,14 +1633,14 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	result = send_remote_broadcast( mysql, to_user, author_id, resultSig, resultGen,
 			msg, mLen, resultEnc );
 	if ( result < 0 ) {
-		printf( "ERROR\r\n" );
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
 	
-	printf("OK %s\r\n" , resultSig );
+	BIO_printf( bioOut, "OK %s\r\n" , resultSig );
 
 close:
-	fflush(stdout);
+	BIO_flush(bioOut);
 	return 0;
 }
 
@@ -1674,7 +1671,7 @@ void broadcast( MYSQL *mysql, const char *relid,
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row ) {
-		printf("ERROR bad recipient\r\n");
+		BIO_printf( bioOut, "ERROR bad recipient\r\n");
 		goto close;
 	}
 
@@ -1692,7 +1689,7 @@ void broadcast( MYSQL *mysql, const char *relid,
 	decryptRes = encrypt.skDecryptVerify( session_key, sig, encrypted );
 
 	if ( decryptRes < 0 ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
 
@@ -1718,10 +1715,10 @@ void broadcast( MYSQL *mysql, const char *relid,
 
 	mysql_free_result( result );
 
-	printf("OK\n");
+	BIO_printf( bioOut, "OK\n" );
 
 close:
-	fflush(stdout);
+	BIO_flush(bioOut);
 }
 
 void broadcast_publish( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
@@ -1776,7 +1773,7 @@ void broadcast_remote_publish( MYSQL *mysql, const char *relid, const char *user
 
 		if ( decryptRes < 0 ) {
 			message("second level skDecryptVerify failed\n");
-			printf("ERROR\r\n");
+			BIO_printf( bioOut, "ERROR\r\n" );
 			return;
 		}
 
@@ -1878,7 +1875,7 @@ void receive_message( MYSQL *mysql, const char *relid, const char *enc,
 	decrypt_res = encrypt.symDecryptVerify( enc, sig, message );
 
 	if ( decrypt_res < 0 ) {
-		printf( "ERROR %s", encrypt.err );
+		BIO_printf( bioOut, "ERROR %s", encrypt.err );
 		goto free_result;
 	}
 
@@ -1886,7 +1883,7 @@ void receive_message( MYSQL *mysql, const char *relid, const char *enc,
 
 free_result:
 	mysql_free_result( result );
-	fflush( stdout );
+	BIO_flush( bioOut );
 	return;
 }
 
@@ -1909,7 +1906,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}
 
@@ -1920,11 +1917,11 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 		"INSERT INTO login_token ( user, login_token, expires ) "
 		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", user, token_str, lasts );
 
-	printf( "OK %s %ld\r\n", token_str, lasts );
+	BIO_printf( bioOut, "OK %s %ld\r\n", token_str, lasts );
 
 free_result:
 	mysql_free_result( result );
-	fflush(stdout);
+	BIO_flush( bioOut );
 }
 
 void submit_ftoken( MYSQL *mysql, const char *token )
@@ -1940,7 +1937,7 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}
 
@@ -1949,11 +1946,11 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
 		row[0], row[1], token, lasts );
 
-	printf( "OK %ld %s\r\n", lasts, row[1] );
+	BIO_printf( bioOut, "OK %ld %s\r\n", lasts, row[1] );
 
 free_result:
 	mysql_free_result( result );
-	fflush(stdout);
+	BIO_flush(bioOut);
 }
 
 void remote_publish( MYSQL *mysql, const char *user,
@@ -1978,7 +1975,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}
 
@@ -2006,7 +2003,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row ) {
-		printf("ERROR\r\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
 	session_key = strdup(row[0]);
@@ -2015,17 +2012,17 @@ void remote_publish( MYSQL *mysql, const char *user,
 	encrypt.load( id_pub, user_priv );
 	sigRes = encrypt.skEncryptSign( session_key, (u_char*)msg, mLen );
 	if ( sigRes < 0 ) {
-		printf( "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 
 	message( "remote_publish enc: %s\n", encrypt.sym );
 	message( "remote_publish sig: %s\n", encrypt.sig );
 	
-	printf( "OK %s %s %s\r\n", encrypt.sym, encrypt.sig, generation );
+	BIO_printf( bioOut, "OK %s %s %s\r\n", encrypt.sym, encrypt.sig, generation );
 
 free_result:
 	mysql_free_result( result );
 close:
-	fflush(stdout);
+	BIO_flush(bioOut);
 }

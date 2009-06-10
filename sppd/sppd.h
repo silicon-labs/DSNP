@@ -18,6 +18,7 @@
 #define _SPPD_H
 
 #include <mysql.h>
+#include <openssl/bio.h>
 
 struct PublicKey
 {
@@ -203,5 +204,13 @@ void openLogFile();
 #define ERROR_NOT_A_FRIEND             11
 #define ERROR_NO_FTOKEN                12
 #define ERROR_DB_ERROR                 13
+
+extern BIO *bioIn;
+extern BIO *bioOut;
+BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host );
+BIO *sslStartServer( BIO *readBio, BIO *writeBio );
+void sslInitClient();
+void sslInitServer();
+void start_tls();
 
 #endif

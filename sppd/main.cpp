@@ -15,6 +15,7 @@
  */
 
 #include <openssl/rand.h>
+#include <openssl/bio.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,9 @@
 #include <signal.h>
 
 #include "sppd.h"
+
+BIO *bioIn = 0;
+BIO *bioOut = 0;
 
 void read_rcfile( const char *confFile )
 {
@@ -31,6 +35,7 @@ void read_rcfile( const char *confFile )
 		exit(1);
 	}
 
+	/* FIXME: this must be fixed. */
 	static char buf[1024];
 	long len = fread( buf, 1, 1024, rcfile );
 	rcfile_parse( buf, len );
@@ -70,8 +75,24 @@ int check_args( int argc, char **argv )
 	return 0;
 }
 
-void test_function()
+
+void start_tls()
 {
+	BIO_printf( bioOut, "OK\r\n" );
+	BIO_flush( bioOut );
+
+	/* Don't need the buffering wrappers anymore. */
+	bioIn = BIO_pop( bioIn );
+	bioOut = BIO_pop( bioOut );
+
+	sslInitServer();
+	bioIn = bioOut = sslStartServer( bioIn, bioOut );
+}
+
+void test_tls()
+{
+	static char buf[8192];
+
 	set_config_by_name( "spp" );
 	MYSQL *mysql, *connect_res;
 
@@ -80,14 +101,41 @@ void test_function()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
-	if ( connect_res == 0 ) {
-		printf( "ERROR failed to connect to the database\r\n");
-	}
+	if ( connect_res == 0 )
+		fatal( "ERROR failed to connect to the database\r\n");
 
-//	int result = queue_broadcast( mysql, "age", 0, "message on saturday" );
-//	if ( result < 0 ) {
-//		printf("send_broadcast failed with %d\n", result );
-//	}
+	long socketFd = open_inet_connection( "localhost", 7070 );
+	if ( socketFd < 0 )
+		fatal("connection\n");
+
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *bio = BIO_new( BIO_f_buffer() );
+	BIO_push( bio, socketBio );
+
+	/* Send the request. */
+	BIO_printf( bio,
+		"SPP/0.1 http://localhost/spp/\r\n"
+		"start_tls\r\n" );
+	BIO_flush( bio );
+
+	int len = BIO_gets( bio, buf, 8192 );
+	buf[len] = 0;
+	message( "result: %s\n", buf );
+
+	sslInitClient();
+	bioIn = bioOut = sslStartClient( socketBio, socketBio, "xform.complang.org" );
+
+	BIO_printf( bioOut, "public_key age\r\n" );
+	BIO_flush( bioOut );
+	sleep( 2 );
+	len = BIO_read( bioIn, buf, 8192 );
+	buf[len] = 0;
+	message( "result: %s\n", buf );
+}
+
+void run_test()
+{
+	test_tls();
 }
 
 void dieHandler( int signum )
@@ -109,6 +157,8 @@ void setupSignals()
 	signal( SIGTERM, &dieHandler );
 }
 
+int sslTest();
+
 int main( int argc, char **argv )
 {
 	if ( check_args( argc, argv ) < 0 ) {
@@ -116,6 +166,16 @@ int main( int argc, char **argv )
 		fprintf( stderr, "  options: -q<site>    don't listen, run queue\n" );
 		exit(1);
 	}
+
+	/* Set up the input BIO to wrap stdin. */
+	BIO *bioFdIn = BIO_new_fd( fileno(stdin), BIO_NOCLOSE );
+	bioIn = BIO_new( BIO_f_buffer() );
+	BIO_push( bioIn, bioFdIn );
+
+	/* Set up the output bio to wrap stdout. */
+	BIO *bioFdOut = BIO_new_fd( fileno(stdout), BIO_NOCLOSE );
+	bioOut = BIO_new( BIO_f_buffer() );
+	BIO_push( bioOut, bioFdOut );
 
 	setupSignals();
 
@@ -128,7 +188,7 @@ int main( int argc, char **argv )
 	if ( runQueue )
 		run_queue( siteName );
 	else if ( test )
-		test_function();
+		run_test();
 	else 
 		server_parse_loop();
 }

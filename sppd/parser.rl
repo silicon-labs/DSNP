@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <openssl/bio.h>
 #include "sppd.h"
 
 #define MAX_MSG_LEN 16384
@@ -189,7 +190,7 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 
 		char *user_message = new char[length+1];
-		fread( user_message, 1, length, stdin );
+		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
 		receive_message( mysql, relid, enc, sig, user_message );
@@ -207,7 +208,7 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 
 		char *user_message = new char[length+1];
-		fread( user_message, 1, length, stdin );
+		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
 		broadcast( mysql, relid, sig, generation, user_message );
@@ -222,7 +223,7 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 
 		char *user_message = new char[length+1];
-		fread( user_message, 1, length, stdin );
+		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
 		submit_broadcast( mysql, user, user_message, length );
@@ -240,7 +241,7 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 
 		char *user_message = new char[length+1];
-		fread( user_message, 1, length, stdin );
+		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
 		submit_remote_broadcast( mysql, user, identity, token, user_message, length );
@@ -270,15 +271,20 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 
 		char *user_message = new char[length+1];
-		fread( user_message, 1, length, stdin );
+		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
 		remote_publish( mysql, user, identity, token, user_message, length );
 		free( user_message );
 	}
 
+	action start_tls {
+		start_tls();
+	}
+
 	commands := |* 
 		'comm_key'i ' ' key EOL @comm_key;
+		'start_tls'i EOL @start_tls;
 		'login'i ' ' user ' ' pass EOL @login;
 
 		# Admin commands.
@@ -346,15 +352,13 @@ int server_parse_loop()
 
 	while ( true ) {
 		static char buf[linelen];
-		char *result = fgets( buf, linelen, stdin );
+		int result = BIO_gets( bioIn, buf, linelen );
 
 		/* Just break when client closes the connection. */
-		if ( feof( stdin ) )
+		if ( result <= 0 ) {
+			message("parse_loop: exiting %d\n", result );
 			break;
-
-		/* Check for an error in the fgets. */
-		if ( ! result )
-			return -1;
+		}
 
 		/* Did we get a full line? */
 		long length = strlen( buf );
@@ -362,6 +366,8 @@ int server_parse_loop()
 			error( "line too long\n" );
 			return ERR_LINE_TOO_LONG;
 		}
+
+		message("parse_loop: parsing a line: %s\n", buf );
 
 		const char *p = buf, *pe = buf + length;
 
@@ -546,7 +552,7 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 long fetch_public_key_net( PublicKey &pub, const char *site, 
 		const char *host, const char *user )
 {
-	static char buf[1024];
+	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
 	const char *n1, *n2, *e1, *e2;
@@ -556,17 +562,22 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, "SPP/0.1 %s\r\npublic_key %s\r\n", site, user );
-	fflush( writeSocket );
+	BIO_printf( buffer,
+		"SPP/0.1 %s\r\n"
+		"public_key %s\r\n", 
+		site, user );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 1024, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -608,8 +619,6 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	pub.e[e2-e1] = 0;
 
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }
@@ -637,19 +646,22 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket,
+	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"fetch_requested_relid %s\r\n", site, fr_reqid );
-	fflush( writeSocket );
+		"fetch_requested_relid %s\r\n",
+		site, fr_reqid );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 8192, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -688,8 +700,6 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	encsig.sig[s2-s1] = 0;
 
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }
@@ -717,19 +727,22 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket,
+	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"fetch_response_relid %s\r\n", site, reqid );
-	fflush( writeSocket );
+		"fetch_response_relid %s\r\n",
+		site, reqid );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 8192, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -771,8 +784,6 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	encsig.sig[s2-s1] = 0;
 
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }
@@ -799,19 +810,22 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket,
+	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"fetch_ftoken %s\r\n", site, flogin_reqid );
-	fflush( writeSocket );
+		"fetch_ftoken %s\r\n",
+		site, flogin_reqid );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 8192, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -853,8 +867,6 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	encsig.sig[s2-s1] = 0;
 
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }
@@ -933,22 +945,23 @@ long send_broadcast_net( const char *toSite, const char *relid,
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, 
+	BIO_printf( buffer, 
 		"SPP/0.1 %s\r\n"
 		"broadcast %s %s %lld %ld\r\n", 
-		toSite,
-		relid, sig1, generation1, mLen );
-	fwrite( msg, 1, mLen, writeSocket );
-	fflush( writeSocket );
+		toSite, relid, sig1, generation1, mLen );
+	BIO_write( buffer, msg, mLen );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 8192, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -980,8 +993,6 @@ long send_broadcast_net( const char *toSite, const char *relid,
 	}
 	
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }
@@ -1015,22 +1026,23 @@ long send_message_net( const char *to_identity, const char *relid,
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, 
+	BIO_printf( buffer, 
 		"SPP/0.1 %s\r\n"
 		"message %s %s %s %ld\r\n", 
-		toIdent.site,
-		relid, enc, sig, mLen );
-	fwrite( message, 1, mLen, writeSocket );
-	fflush( writeSocket );
+		toIdent.site, relid, enc, sig, mLen );
+	BIO_write( buffer, message, mLen );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 8192, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -1062,8 +1074,6 @@ long send_message_net( const char *to_identity, const char *relid,
 	}
 	
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }
@@ -1102,22 +1112,23 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 	if ( socketFd < 0 )
 		return ERR_CONNECTION_FAILED;
 
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
 	/* Send the request. */
-	FILE *writeSocket = fdopen( socketFd, "w" );
-	fprintf( writeSocket, 
+	BIO_printf( buffer, 
 		"SPP/0.1 %s\r\n"
 		"remote_publish %s %s%s/ %s %ld\r\n", 
-		toIdent.site,
-		toIdent.user, c->CFG_URI, from_user, token, mLen );
-	fwrite( message, 1, mLen, writeSocket );
-	fflush( writeSocket );
+		toIdent.site, toIdent.user, c->CFG_URI, from_user, token, mLen );
+	BIO_write( buffer, message, mLen );
+	BIO_flush( buffer );
 
 	/* Read the result. */
-	FILE *readSocket = fdopen( socketFd, "r" );
-	char *readRes = fgets( buf, 8192, readSocket );
+	int readRes = BIO_gets( buffer, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( !readRes ) {
+	if ( readRes <= 0 ) {
 		result = ERR_READ_ERROR;
 		goto fail;
 	}
@@ -1159,8 +1170,6 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 	::message( "resultGen: %lld\n", resultGen );
 	
 fail:
-	fclose( writeSocket );
-	fclose( readSocket );
 	::close( socketFd );
 	return result;
 }

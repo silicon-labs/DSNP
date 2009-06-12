@@ -5,16 +5,15 @@
 #include <iostream>
 #include "sppd.h"
 
-//#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
+/* Trusted certs for verification. */
+#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
+
 //#define MY_CERT "/home/thurston/xform.complang.org.crt"
 //#define MY_KEY "/home/thurston/xform.complang.org.key"
-//#define MY_PEM "/home/thurston/xform.complang.org.pem"
 
-#define CA_CERTS "/home/thurston/devel/spp/sppd/localhost.crt"
-
-#define MY_CERT "/home/thurston/devel/spp/sppd/localhost.crt"
-#define MY_KEY "/home/thurston/devel/spp/sppd/localhost.key"
-#define MY_PEM "/home/thurston/devel/spp/sppd/localhost.pem"
+/* Cert and key used by server. */
+#define MY_CERT "/etc/ssl/local/localhost.crt" ///home/thurston/devel/spp/sppd/localhost.crt"
+#define MY_KEY  "/etc/ssl/local/localhost.key" ///home/thurston/devel/spp/sppd/localhost.key"
 
 SSL_CTX *ctx = 0;
 
@@ -129,13 +128,13 @@ void sslInitServer()
 	if ( ctx == NULL )
 		fatal("creating context failed\n");
 
-	int result = SSL_CTX_use_certificate_file( ctx, MY_PEM, SSL_FILETYPE_PEM );
+	int result = SSL_CTX_use_certificate_file( ctx, MY_CERT, SSL_FILETYPE_PEM );
 	if ( result != 1 ) 
-		fatal("failed to load " MY_PEM "\n" );
+		fatal("failed to load " MY_CERT "\n" );
 
-	result = SSL_CTX_use_PrivateKey_file( ctx, MY_PEM, SSL_FILETYPE_PEM );
+	result = SSL_CTX_use_PrivateKey_file( ctx, MY_KEY, SSL_FILETYPE_PEM );
 	if ( result != 1 ) 
-		fatal("failed to load " MY_PEM "\n" );
+		fatal("failed to load " MY_KEY "\n" );
 }
 
 

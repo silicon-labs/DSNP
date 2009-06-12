@@ -123,12 +123,11 @@ void test_tls()
 	message( "result: %s\n", buf );
 
 	sslInitClient();
-	bioIn = bioOut = sslStartClient( socketBio, socketBio, "xform.complang.org" );
+	bioIn = bioOut = sslStartClient( socketBio, socketBio, "localhost" );
 
 	BIO_printf( bioOut, "public_key age\r\n" );
 	BIO_flush( bioOut );
-	sleep( 2 );
-	len = BIO_read( bioIn, buf, 8192 );
+	len = BIO_gets( bioIn, buf, 8192 );
 	buf[len] = 0;
 	message( "result: %s\n", buf );
 }

@@ -5,11 +5,16 @@
 #include <iostream>
 #include "sppd.h"
 
-#define HOST "xform.complang.org"
-#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
-#define MY_CERT "/home/thurston/xform.complang.org.crt"
-#define MY_KEY "/home/thurston/xform.complang.org.key"
-#define MY_PEM "/home/thurston/xform.complang.org.pem"
+//#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
+//#define MY_CERT "/home/thurston/xform.complang.org.crt"
+//#define MY_KEY "/home/thurston/xform.complang.org.key"
+//#define MY_PEM "/home/thurston/xform.complang.org.pem"
+
+#define CA_CERTS "/home/thurston/devel/spp/sppd/localhost.crt"
+
+#define MY_CERT "/home/thurston/devel/spp/sppd/localhost.crt"
+#define MY_KEY "/home/thurston/devel/spp/sppd/localhost.key"
+#define MY_PEM "/home/thurston/devel/spp/sppd/localhost.pem"
 
 SSL_CTX *ctx = 0;
 
@@ -107,7 +112,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	BIO *bio = BIO_new( BIO_f_buffer());
     BIO_push( bio, sbio );
 
-	return sbio;
+	return bio;
 }
 
 

@@ -569,12 +569,23 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	/* Send the request. */
 	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"public_key %s\r\n", 
-		site, user );
+		"start_tls\r\n",
+		site );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, host );
+
+	BIO_printf( sbio, "public_key %s\r\n", user );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
+	message("encrypted return is %s", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {

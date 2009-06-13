@@ -179,6 +179,13 @@ char *alloc_string( const char *s, const char *e )
 			fgoto *parser_error;
 	}
 
+	action check_ssl {
+		if ( !ssl ) {
+			message("ssl check failed\n");
+			fgoto *parser_error;
+		}
+	}
+
 	action receive_message {
 		char *relid = alloc_string( r1, r2 );
 		char *enc = alloc_string( e1, e2 );
@@ -280,18 +287,19 @@ char *alloc_string( const char *s, const char *e )
 
 	action start_tls {
 		start_tls();
+		ssl = true;
 	}
 
 	commands := |* 
 		'comm_key'i ' ' key EOL @comm_key;
 		'start_tls'i EOL @start_tls;
-		'login'i ' ' user ' ' pass EOL @login;
+		'login'i ' ' user ' ' pass EOL @check_key @login;
 
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user;
 
 		# Public key sharing.
-		'public_key'i ' ' user EOL @public_key;
+		'public_key'i ' ' user EOL @check_ssl @public_key;
 
 		# Friend Request.
 		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request;
@@ -299,8 +307,8 @@ char *alloc_string( const char *s, const char *e )
 				EOL @check_key @relid_response;
 		'friend_final'i ' ' user ' ' reqid ' ' identity
 				EOL @check_key @friend_final;
-		'fetch_requested_relid'i ' ' reqid EOL @fetch_requested_relid;
-		'fetch_response_relid'i ' ' reqid EOL @fetch_response_relid;
+		'fetch_requested_relid'i ' ' reqid EOL @check_ssl @fetch_requested_relid;
+		'fetch_response_relid'i ' ' reqid EOL @check_ssl @fetch_response_relid;
 
 		# Friend Request Accept
 		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
@@ -309,16 +317,16 @@ char *alloc_string( const char *s, const char *e )
 		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request;
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
 				EOL @check_key @ftoken_response;
-		'fetch_ftoken'i ' ' reqid EOL @fetch_ftoken;
+		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken;
 		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
 
 		'submit_broadcast'i ' ' user ' ' number EOL @check_key @submit_broadcast;
 		'submit_remote_broadcast'i ' ' user ' ' identity ' ' token ' '
 				number EOL @check_key @submit_remote_broadcast;
 
-		'message'i ' ' relid ' ' enc ' ' sig ' ' number EOL @receive_message;
-		'broadcast'i ' ' relid ' ' sig ' ' generation ' ' number EOL @broadcast;
-		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number EOL @remote_publish;
+		'message'i ' ' relid ' ' enc ' ' sig ' ' number EOL @check_ssl @receive_message;
+		'broadcast'i ' ' relid ' ' sig ' ' generation ' ' number EOL @check_ssl @broadcast;
+		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number EOL @check_ssl @remote_publish;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -347,6 +355,7 @@ int server_parse_loop()
 	const char *g1, *g2;
 
 	MYSQL *mysql = 0;
+	bool ssl = false;
 
 	%% write init;
 
@@ -664,12 +673,24 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	/* Send the request. */
 	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"fetch_requested_relid %s\r\n",
-		site, fr_reqid );
+		"start_tls\r\n",
+		site );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, host );
+
+	/* Send the request. */
+	BIO_printf( sbio, "fetch_requested_relid %s\r\n", fr_reqid );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
+	message("encrypted return is %s", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -745,12 +766,23 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	/* Send the request. */
 	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"fetch_response_relid %s\r\n",
-		site, reqid );
+		"start_tls\r\n",
+		site );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, host );
+
+	/* Send the request. */
+	BIO_printf( sbio, "fetch_response_relid %s\r\n", reqid );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -828,12 +860,23 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	/* Send the request. */
 	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"fetch_ftoken %s\r\n",
-		site, flogin_reqid );
+		"start_tls\r\n",
+		site );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, host );
+
+	/* Send the request. */
+	BIO_printf( sbio, "fetch_ftoken %s\r\n", flogin_reqid );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -961,15 +1004,28 @@ long send_broadcast_net( const char *toSite, const char *relid,
 	BIO_push( buffer, socketBio );
 
 	/* Send the request. */
-	BIO_printf( buffer, 
+	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"broadcast %s %s %lld %ld\r\n", 
-		toSite, relid, sig1, generation1, mLen );
-	BIO_write( buffer, msg, mLen );
+		"start_tls\r\n",
+		toSite );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	::message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, site.host );
+
+	/* Send the request. */
+	BIO_printf( sbio, 
+		"broadcast %s %s %lld %ld\r\n", 
+		relid, sig1, generation1, mLen );
+	BIO_write( sbio, msg, mLen );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -1042,15 +1098,28 @@ long send_message_net( const char *to_identity, const char *relid,
 	BIO_push( buffer, socketBio );
 
 	/* Send the request. */
-	BIO_printf( buffer, 
+	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"message %s %s %s %ld\r\n", 
-		toIdent.site, relid, enc, sig, mLen );
-	BIO_write( buffer, message, mLen );
+		"start_tls\r\n",
+		toIdent.site );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	::message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
+
+	/* Send the request. */
+	BIO_printf( sbio, 
+		"message %s %s %s %ld\r\n", 
+		relid, enc, sig, mLen );
+	BIO_write( sbio, message, mLen );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -1128,15 +1197,28 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 	BIO_push( buffer, socketBio );
 
 	/* Send the request. */
-	BIO_printf( buffer, 
+	BIO_printf( buffer,
 		"SPP/0.1 %s\r\n"
-		"remote_publish %s %s%s/ %s %ld\r\n", 
-		toIdent.site, toIdent.user, c->CFG_URI, from_user, token, mLen );
-	BIO_write( buffer, message, mLen );
+		"start_tls\r\n",
+		toIdent.site );
 	BIO_flush( buffer );
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
+	::message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
+
+	/* Send the request. */
+	BIO_printf( sbio, 
+		"remote_publish %s %s%s/ %s %ld\r\n", 
+		toIdent.user, c->CFG_URI, from_user, token, mLen );
+	BIO_write( sbio, message, mLen );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {

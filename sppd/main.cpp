@@ -114,7 +114,7 @@ void test_tls()
 
 	/* Send the request. */
 	BIO_printf( bio,
-		"SPP/0.1 http://localhost/spp/\r\n"
+		"SPP/0.1 https://localhost/spp/\r\n"
 		"start_tls\r\n" );
 	BIO_flush( bio );
 

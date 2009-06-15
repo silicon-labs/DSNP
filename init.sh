@@ -31,10 +31,12 @@ CFG_PORT=7070
 { echo '<?php'; echo; } > $PHP_CONF
 echo > $SPPD_CONF
 
-echo
-echo "Please choose an admin password. This password will protect the database user"
-echo "'spp' and the admin login page of all sites."
-echo
+cat << EOF
+Please choose a password to protect the new database users with. Every site you
+create during this run will have a new user with this password. The user name
+will be derived from the site name.
+
+EOF
 
 while true; do
 	read -s -p 'password: ' CFG_ADMIN_PASS; echo
@@ -51,12 +53,6 @@ while true; do
 	fi
 	break;
 done
-
-rm -f init.sql
-cat > init.sql << EOF
-DROP USER 'spp'@'localhost';
-CREATE USER 'spp'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
-EOF
 
 #
 # Start reading installations.
@@ -91,30 +87,34 @@ done
 
 echo
 echo "Please give the Uniform Resource Identifier (URI) of this site. This will be"
-echo "the installations public name. It should start with 'http://' and end with '/'."
+echo "the installations public name. It should start with 'https://' and end with '/'."
 echo
 
 while true; do 
 	read -p 'installation uri: ' URI_IN
 
-	if echo $URI_IN | grep '^http:\/\/.*\/$' >/dev/null; then
+	if echo $URI_IN | grep '^https:\/\/.*\/$' >/dev/null; then
 		break
 	fi
 	echo; echo error: uri did not validate; echo
 done 
 
-CFG_HOST=`echo $URI_IN | sed 's/^http:\/\///; s/\/.*$//;'`
+CFG_HOST=`echo $URI_IN | sed 's/^https:\/\///; s/\/.*$//;'`
 CFG_URI=$URI_IN;
-CFG_PATH=`echo $URI_IN | sed 's/^http:\/\///; s/^[^\/]*//;'`
+CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 
 #
 # Init the database.
 #
 
+rm -f init.sql
 cat >> init.sql << EOF
+DROP USER '${NAME}_owner'@'localhost';
+CREATE USER '${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+
 DROP DATABASE $NAME;
 CREATE DATABASE $NAME;
-GRANT ALL ON $NAME.* TO 'spp'@'localhost';
+GRANT ALL ON $NAME.* TO 'spp_owner'@'localhost';
 USE $NAME;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
@@ -275,8 +275,8 @@ if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';
 	\$CFG_DB_HOST = 'localhost';
+	\$CFG_DB_USER = '${NAME}_owner';
 	\$CFG_DB_DATABASE = '$NAME';
-	\$CFG_DB_USER = 'spp';
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 	\$CFG_PORT = '$CFG_PORT';
@@ -294,8 +294,8 @@ CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
+CFG_DB_USER = ${NAME}_owner
 CFG_DB_DATABASE = $NAME
-CFG_DB_USER = spp
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
@@ -322,7 +322,7 @@ if ( get_magic_quotes_gpc() ) {
 	die('the SPP software assumes PHP magic quotes to be off');
 }
 
-\$USER_NAME = \$_GET['u'];
+\$USER_NAME = isset( \$_GET['u'] ) ? \$_GET['u'] : "";
 \$USER_PATH = "\${CFG_PATH}\$USER_NAME/";
 \$USER_URI = "\${CFG_URI}\$USER_NAME/";
 

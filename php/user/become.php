@@ -34,7 +34,7 @@ include('lib/session.php');
 <p>
 <form method="post" action="sbecome.php">
 Please submit your identity (case-sensitive). <br><br>
-For example, <code>http://www.complang.org/spp/first/sarah/</code><br><br>
+For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 <input type="text" size=70 name="identity">
 <input type="submit">
 </form>

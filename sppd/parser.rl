@@ -56,11 +56,11 @@ char *alloc_string( const char *s, const char *e )
 			digit{2} ':' digit{2} ':' digit{2} ) >{d1 = p;} %{d2 = p;};
 
 	identity = 
-		( 'http://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
+		( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
 		>{i1=p;} %{i2=p;};
 
 	identity2 = 
-		( 'http://' path_part '/' ( path_part '/' )* )
+		( 'https://' path_part '/' ( path_part '/' )* )
 		>{j1=p;} %{j2=p;};
 
 	number = [0-9]+           >{n1=p;} %{n2=p;};

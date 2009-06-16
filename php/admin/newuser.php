@@ -36,6 +36,14 @@ include('../config.php');
 <td>Password:</td>       <td> <input type="password" name="pass1"></td></tr>
 <td>Again:</td>          <td> <input type="password" name="pass2"></td></tr>
 </table>
+
+<p>
+<?php
+require_once('../recaptcha-php-1.10/recaptchalib.php');
+echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
+?>
+<p>
+
 <input type="submit">
 </form>
 

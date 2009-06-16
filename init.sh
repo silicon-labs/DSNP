@@ -61,6 +61,9 @@ done
 echo
 echo "Thank you. You can now add sites."
 
+# Clear the database init file
+rm -f init.sql
+
 while true; do
 
 echo
@@ -107,14 +110,13 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 # Init the database.
 #
 
-rm -f init.sql
 cat >> init.sql << EOF
 DROP USER '${NAME}_owner'@'localhost';
 CREATE USER '${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
 DROP DATABASE $NAME;
 CREATE DATABASE $NAME;
-GRANT ALL ON $NAME.* TO 'spp_owner'@'localhost';
+GRANT ALL ON $NAME.* TO '${NAME}_owner'@'localhost';
 USE $NAME;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
@@ -270,7 +272,7 @@ EOF
 #
 
 cat >> $PHP_CONF << EOF
-if ( strpos( \$_SERVER['REQUEST_URI'], '$CFG_PATH' ) === 0 ) {
+if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
 	\$CFG_URI = '$CFG_URI';
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';

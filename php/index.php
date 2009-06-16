@@ -31,7 +31,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <html>
 <head>
-<title><?php print $data['name']?> </title>
+<title><?php print $CFG_URI?> </title>
 </head>
 
 <h1>Secure Personal Publishing</h1>

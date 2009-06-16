@@ -6,14 +6,15 @@
 #include "sppd.h"
 
 /* Trusted certs for verification. */
-#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
+//#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
+//#define CA_CERTS "/etc/pki/tls/cert.pem"
 
 //#define MY_CERT "/home/thurston/xform.complang.org.crt"
 //#define MY_KEY "/home/thurston/xform.complang.org.key"
 
 /* Cert and key used by server. */
-#define MY_CERT "/etc/ssl/local/localhost.crt" ///home/thurston/devel/spp/sppd/localhost.crt"
-#define MY_KEY  "/etc/ssl/local/localhost.key" ///home/thurston/devel/spp/sppd/localhost.key"
+//#define MY_CERT "/etc/ssl/local/localhost.crt" ///home/thurston/devel/spp/sppd/localhost.crt"
+//#define MY_KEY  "/etc/ssl/local/localhost.key" ///home/thurston/devel/spp/sppd/localhost.key"
 
 SSL_CTX *ctx = 0;
 
@@ -65,9 +66,9 @@ void sslInitClient()
 		fatal("creating context failed\n");
 
 	/* Load the CA certificates that we will use to verify. */
-	int result = SSL_CTX_load_verify_locations( ctx, CA_CERTS, NULL );
+	int result = SSL_CTX_load_verify_locations( ctx, c->CFG_TLS_CA_CERTS, NULL );
 	if ( !result ) 
-		fatal("failed to load " CA_CERTS "\n" );
+		fatal("failed to load %s\n", c->CFG_TLS_CA_CERTS );
 
 }
 
@@ -128,13 +129,13 @@ void sslInitServer()
 	if ( ctx == NULL )
 		fatal("creating context failed\n");
 
-	int result = SSL_CTX_use_certificate_file( ctx, MY_CERT, SSL_FILETYPE_PEM );
+	int result = SSL_CTX_use_certificate_file( ctx, c->CFG_TLS_CRT, SSL_FILETYPE_PEM );
 	if ( result != 1 ) 
-		fatal("failed to load " MY_CERT "\n" );
+		fatal("failed to load %s\n", c->CFG_TLS_CRT );
 
-	result = SSL_CTX_use_PrivateKey_file( ctx, MY_KEY, SSL_FILETYPE_PEM );
+	result = SSL_CTX_use_PrivateKey_file( ctx, c->CFG_TLS_KEY, SSL_FILETYPE_PEM );
 	if ( result != 1 ) 
-		fatal("failed to load " MY_KEY "\n" );
+		fatal("failed to load %s\n", c->CFG_TLS_KEY );
 }
 
 

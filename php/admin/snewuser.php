@@ -18,6 +18,19 @@
 include('../config.php');
 #include('lib/session.php');
 
+require_once('../recaptcha-php-1.10/recaptchalib.php');
+$resp = recaptcha_check_answer ($CFG_RC_PRIVATE_KEY,
+		$_SERVER["REMOTE_ADDR"],
+		$_POST["recaptcha_challenge_field"],
+		$_POST["recaptcha_response_field"]);
+
+if (!$resp->is_valid) {
+	die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
+			"(reCAPTCHA said: " . $resp->error . ")");
+}
+
+// you got this from the signup page
+
 $user = $_POST['user'];
 $pass1 = $_POST['pass1'];
 $pass2 = $_POST['pass2'];

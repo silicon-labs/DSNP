@@ -28,18 +28,25 @@ include('lib/session.php');
 
 <body>
 
-<br>
-<center>
-<!--First please answer a challenge (TODO).-->
-<p>
+<h1>Become Friend</h1>
+
 <form method="post" action="sbecome.php">
 Please submit your identity (case-sensitive). <br><br>
 For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 <input type="text" size=70 name="identity">
+
+<p>
+
+<?php
+require_once('../recaptcha-php-1.10/recaptchalib.php');
+echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
+?>
+
+<p>
+
 <input type="submit">
 </form>
 
-</center>
 <body>
 
 </html>

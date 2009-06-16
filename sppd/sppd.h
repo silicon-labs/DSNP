@@ -149,6 +149,9 @@ struct Config
 	char *CFG_ADMIN_PASS;
 	char *CFG_COMM_KEY;
 	char *CFG_PORT;
+	char *CFG_TLS_CRT;
+	char *CFG_TLS_KEY;
+	char *CFG_TLS_CA_CERTS;
 
 	char *name;
 	Config *next;

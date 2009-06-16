@@ -21,16 +21,16 @@ include('lib/session.php');
 
 $identity = $_POST['identity'];
 
-require_once('../recaptcha-php-1.10/recaptchalib.php');
-$resp = recaptcha_check_answer ($CFG_RC_PRIVATE_KEY,
-		$_SERVER["REMOTE_ADDR"],
-		$_POST["recaptcha_challenge_field"],
-		$_POST["recaptcha_response_field"]);
-
-if (!$resp->is_valid) {
-	die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
-			"(reCAPTCHA said: " . $resp->error . ")");
-}
+//require_once('../recaptcha-php-1.10/recaptchalib.php');
+//$resp = recaptcha_check_answer ($CFG_RC_PRIVATE_KEY,
+//		$_SERVER["REMOTE_ADDR"],
+//		$_POST["recaptcha_challenge_field"],
+//		$_POST["recaptcha_response_field"]);
+//
+//if (!$resp->is_valid) {
+//	die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
+//			"(reCAPTCHA said: " . $resp->error . ")");
+//}
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )

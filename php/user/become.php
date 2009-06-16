@@ -38,8 +38,8 @@ For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 <p>
 
 <?php
-require_once('../recaptcha-php-1.10/recaptchalib.php');
-echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
+//require_once('../recaptcha-php-1.10/recaptchalib.php');
+//echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
 ?>
 
 <p>

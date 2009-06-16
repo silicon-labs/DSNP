@@ -1,5 +1,7 @@
 RewriteEngine on
 
+RewriteRule ^robots.txt$                   robots.txt             [L]
+
 # Add a trailing slash to all items underneath the root.
 RewriteRule ^([a-zA-Z0-9.]+)$              %{REQUEST_URI}/        [R,L]
 

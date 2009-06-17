@@ -51,7 +51,6 @@ void printError( int e )
 	}
 }
 
-
 void sslInitClient()
 {
 	/* Global initialization. */
@@ -64,12 +63,14 @@ void sslInitClient()
 	ctx = SSL_CTX_new(TLSv1_client_method());
 	if ( ctx == NULL )
 		fatal("creating context failed\n");
+	
+	if ( c->CFG_TLS_CA_CERTS == 0 )
+		fatal("CFG_TLS_CA_CERTS is not set\n");
 
 	/* Load the CA certificates that we will use to verify. */
 	int result = SSL_CTX_load_verify_locations( ctx, c->CFG_TLS_CA_CERTS, NULL );
 	if ( !result ) 
 		fatal("failed to load %s\n", c->CFG_TLS_CA_CERTS );
-
 }
 
 BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
@@ -128,6 +129,11 @@ void sslInitServer()
 	ctx = SSL_CTX_new(TLSv1_server_method());
 	if ( ctx == NULL )
 		fatal("creating context failed\n");
+
+	if ( c->CFG_TLS_CRT == 0 )
+		fatal("CFG_TLS_CRT is not set\n");
+	if ( c->CFG_TLS_KEY == 0 )
+		fatal("CFG_TLS_KEY is not set\n");
 
 	int result = SSL_CTX_use_certificate_file( ctx, c->CFG_TLS_CRT, SSL_FILETYPE_PEM );
 	if ( result != 1 ) 

@@ -1515,7 +1515,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	full = new char[128+mLen];
-	soFar = sprintf( full, "publish %lld %s %ld\r\n", seqNum, timeStr, mLen );
+	soFar = sprintf( full, "direct_broadcast %lld %s %ld\r\n", seqNum, timeStr, mLen );
 	memcpy( full + soFar, msg, mLen );
 	full[soFar+mLen] = 0;
 
@@ -1599,7 +1599,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 	/* Make the full message. */
 	full = new char[4096+encMessageLen];
 	soFar = sprintf( full, 
-		"remote_publish %lld %s %s %s %lld %ld\r\n", 
+		"remote_broadcast %lld %s %s %s %lld %ld\r\n", 
 		seqNum, timeStr, hashStr, sig2, generation2, encMessageLen );
 	memcpy( full + soFar, encMessage, encMessageLen );
 	full[soFar+encMessageLen] = 0;
@@ -1729,7 +1729,7 @@ close:
 	BIO_flush(bioOut);
 }
 
-void broadcast_publish( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
 		long long seqNum, const char *date, const char *msg, long length )
 {
 	exec_query( mysql, 
@@ -1739,7 +1739,7 @@ void broadcast_publish( MYSQL *mysql, const char *relid, const char *user, const
 		user, authorId, seqNum, date, msg, length );
 }
 
-void broadcast_remote_publish( MYSQL *mysql, const char *relid, const char *user, const char *friendId, 
+void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friendId, 
 		long long seqNum, const char *date, const char *hash, const char *sig2,
 		long long generation2, const char *msg, long mLen )
 {
@@ -1750,7 +1750,7 @@ void broadcast_remote_publish( MYSQL *mysql, const char *relid, const char *user
 	Encrypt encrypt;
 	int decryptRes;
 
-	message( "broadcast_remote_publish\n");
+	message( "remote_broadcast\n");
 	message( "generation2: %lld\n", generation2 );
 
 	/* Messages has a remote sender and needs to be futher decrypted. */

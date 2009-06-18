@@ -470,7 +470,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 
 	include common;
 
-	action broadcast_publish {
+	action direct_broadcast {
 		char *seqStr = alloc_string( q1, q2 );
 		char *date = alloc_string( d1, d2 );
 		char *lengthStr = alloc_string( n1, n2 );
@@ -485,11 +485,11 @@ int message_parser( MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		broadcast_publish( mysql, relid, user, friend_id, seqNum, date, msg, length );
+		direct_broadcast( mysql, relid, user, friend_id, seqNum, date, msg, length );
 		fbreak;
 	}
 
-	action broadcast_remote_publish {
+	action remote_broadcast {
 		char *seqStr = alloc_string( q1, q2 );
 		char *date = alloc_string( d1, d2 );
 		char *hash = alloc_string( a1, a2 );
@@ -507,16 +507,16 @@ int message_parser( MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		broadcast_remote_publish( mysql, relid, user, friend_id, seqNum, date,
+		remote_broadcast( mysql, relid, user, friend_id, seqNum, date,
 			hash, sig, generation, msg, length );
 		fbreak;
 	}
 
 	main :=
-		'publish'i ' ' seq_num ' ' date ' ' number EOL @broadcast_publish |
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' number EOL @direct_broadcast |
 
-		'remote_publish'i ' ' seq_num ' ' date ' ' hash ' ' sig ' ' generation ' ' number
-			EOL @broadcast_remote_publish;
+		'remote_broadcast'i ' ' seq_num ' ' date ' ' hash ' ' sig ' ' generation ' ' number
+			EOL @remote_broadcast;
 
 }%%
 

@@ -128,9 +128,9 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 
 int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
-void broadcast_publish( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
 		long long seqNum, const char *date, const char *msg, long length );
-void broadcast_remote_publish( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
+void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
 		long long seqNum, const char *date, const char *hash, const char *sig,
 		long long generation, const char *msg, long length );
 

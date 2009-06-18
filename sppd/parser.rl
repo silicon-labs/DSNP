@@ -271,6 +271,8 @@ char *alloc_string( const char *s, const char *e )
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 		char *token = alloc_string( t1, t2 );
+		char *enc = alloc_string( e1, e2 );
+		char *sig = alloc_string( s1, s2 );
 		char *number = alloc_string( n1, n2 );
 
 		int length = atoi( number );
@@ -281,7 +283,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		remote_publish( mysql, user, identity, token, user_message, length );
+		remote_publish( mysql, user, identity, token, enc, sig, user_message );
 		free( user_message );
 	}
 
@@ -326,7 +328,8 @@ char *alloc_string( const char *s, const char *e )
 
 		'message'i ' ' relid ' ' enc ' ' sig ' ' number EOL @check_ssl @receive_message;
 		'broadcast'i ' ' relid ' ' sig ' ' generation ' ' number EOL @check_ssl @broadcast;
-		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number EOL @check_ssl @remote_publish;
+		'remote_publish'i ' ' user ' ' identity ' ' token ' ' enc ' ' sig ' ' 
+				number EOL @check_ssl @remote_publish;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -1170,7 +1173,7 @@ fail:
 
 long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &resultGen,
 		const char *to_identity, const char *from_user, 
-		const char *token, const char *message, long mLen )
+		const char *token, const char *enc, const char *sig, const char *sym, long mLen )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -1205,16 +1208,16 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 
 	/* Read the result. */
 	int readRes = BIO_gets( buffer, buf, 8192 );
-	::message("return is %s", buf );
+	message("return is %s", buf );
 
 	sslInitClient();
 	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
 
 	/* Send the request. */
 	BIO_printf( sbio, 
-		"remote_publish %s %s%s/ %s %ld\r\n", 
-		toIdent.user, c->CFG_URI, from_user, token, mLen );
-	BIO_write( sbio, message, mLen );
+		"remote_publish %s %s%s/ %s %s %s %ld\r\n", 
+		toIdent.user, c->CFG_URI, from_user, token, enc, sig, mLen );
+	BIO_write( sbio, sym, mLen );
 	BIO_flush( sbio );
 
 	/* Read the result. */

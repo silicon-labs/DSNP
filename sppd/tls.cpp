@@ -5,17 +5,6 @@
 #include <iostream>
 #include "sppd.h"
 
-/* Trusted certs for verification. */
-//#define CA_CERTS "/etc/ssl/certs/ca-certificates.crt"
-//#define CA_CERTS "/etc/pki/tls/cert.pem"
-
-//#define MY_CERT "/home/thurston/xform.complang.org.crt"
-//#define MY_KEY "/home/thurston/xform.complang.org.key"
-
-/* Cert and key used by server. */
-//#define MY_CERT "/etc/ssl/local/localhost.crt" ///home/thurston/devel/spp/sppd/localhost.crt"
-//#define MY_KEY  "/etc/ssl/local/localhost.key" ///home/thurston/devel/spp/sppd/localhost.key"
-
 SSL_CTX *ctx = 0;
 
 void printError( int e )

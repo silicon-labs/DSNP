@@ -115,7 +115,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
-		const char *userMessage, long mLen);
+		const char *enc, const char *sig, const char *msg );
 
 bool check_comm_key( const char *key );
 
@@ -124,7 +124,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, const char *user_message, long mLen );
 long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &resultGen,
 		const char *to_identity, const char *from_identity,
-		const char *token, const char *message, long mLen );
+		const char *token, const char *enc, const char *sig, const char *sym, long mLen );
 
 int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );

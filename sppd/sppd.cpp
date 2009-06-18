@@ -1617,9 +1617,17 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	int result;
 	char *resultEnc, *resultSig;
 	long long resultGen;
+	RSA *user_priv, *id_pub;
+
+	Encrypt encrypt;
+
+	user_priv = load_key( mysql, to_user );
+	id_pub = fetch_public_key( mysql, author_id );
+	encrypt.load( id_pub, user_priv );
+	encrypt.symEncryptSign( (u_char*)msg, mLen );
 
 	result = send_remote_publish_net( resultEnc, resultSig, resultGen, author_id,
-			to_user, token, msg, mLen );
+			to_user, token, encrypt.enc, encrypt.sig, encrypt.sym, strlen(encrypt.sym) );
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
@@ -1955,11 +1963,12 @@ free_result:
 
 void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
-		const char *msg, long mLen )
+		const char *enc, const char *sig, const char *sym )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	Encrypt encrypt;
+	Encrypt encrypt1;
+	Encrypt encrypt2;
 	RSA *user_priv, *id_pub;
 	int sigRes;
 	char *session_key, *generation;
@@ -1982,15 +1991,18 @@ void remote_publish( MYSQL *mysql, const char *user,
 	authorId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
 	sprintf( authorId, "%s%s/", c->CFG_URI, user );
 
+	user_priv = load_key( mysql, user );
+	id_pub = fetch_public_key( mysql, identity );
+
+	encrypt1.load( id_pub, user_priv );
+	encrypt1.symDecryptVerify( enc, sig, sym );
+
 	exec_query( mysql,
 		"INSERT INTO remote_published "
 		"( user, author_id, subject_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, now(), %d )",
-		user, authorId, identity, msg, mLen );
+		user, authorId, identity, encrypt1.decrypted, encrypt1.decLen );
 	
-	user_priv = load_key( mysql, user );
-	id_pub = fetch_public_key( mysql, identity );
-
 	/* Find youngest session key. In the future some sense of current session
 	 * key should be maintained. */
 	exec_query( mysql,
@@ -2009,17 +2021,17 @@ void remote_publish( MYSQL *mysql, const char *user,
 	session_key = strdup(row[0]);
 	generation = strdup(row[1]);
 
-	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.skEncryptSign( session_key, (u_char*)msg, mLen );
+	encrypt2.load( id_pub, user_priv );
+	sigRes = encrypt2.skEncryptSign( session_key, encrypt1.decrypted, encrypt1.decLen );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
 	}
 
-	message( "remote_publish enc: %s\n", encrypt.sym );
-	message( "remote_publish sig: %s\n", encrypt.sig );
+	message( "remote_publish enc: %s\n", encrypt2.sym );
+	message( "remote_publish sig: %s\n", encrypt2.sig );
 	
-	BIO_printf( bioOut, "OK %s %s %s\r\n", encrypt.sym, encrypt.sig, generation );
+	BIO_printf( bioOut, "OK %s %s %s\r\n", encrypt2.sym, encrypt2.sig, generation );
 
 free_result:
 	mysql_free_result( result );

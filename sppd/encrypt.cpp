@@ -283,9 +283,15 @@ int Encrypt::skEncryptSign( const char *srcSK, u_char *message, long len )
 
 	/* FIXME: check results here. */
 
+	/* Need to make a buffer containing both the session key and message so we
+	 * our signature is valid only using this encryption key. */
+	u_char *signData = new u_char[SK_SIZE + len];
+	memcpy( signData, session_key, SK_SIZE );
+	memcpy( signData+SK_SIZE, message, len );
+
 	/* Sign the message. */
 	u_char msg_sha1[SHA_DIGEST_LENGTH];
-	SHA1( message, len, msg_sha1 );
+	SHA1( signData, SK_SIZE+len, msg_sha1 );
 
 	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
 	unsigned sigLen;
@@ -340,9 +346,15 @@ int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char 
 	RC4( &rc4_key, msgLen, message, decrypted );
 	decLen = msgLen;
 
+	/* Need to make a buffer containing both the session key an message so we
+	 * can verify the message was originally signed with this key. */
+	u_char *verifyData = new u_char[SK_SIZE + decLen];
+	memcpy( verifyData, session_key, SK_SIZE );
+	memcpy( verifyData+SK_SIZE, decrypted, decLen );
+
 	/* Verify the message. */
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( decrypted, msgLen, decrypted_sha1 );
+	SHA1( verifyData, SK_SIZE+decLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
 			signature, sigLen, pubEncVer );
 	if ( verifyres != 1 ) {

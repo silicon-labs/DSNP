@@ -1697,6 +1697,7 @@ void broadcast( MYSQL *mysql, const char *relid,
 	decryptRes = encrypt.skDecryptVerify( session_key, sig, encrypted );
 
 	if ( decryptRes < 0 ) {
+		message("skDecryptVerify failed\n");
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}

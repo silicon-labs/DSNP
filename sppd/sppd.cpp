@@ -823,7 +823,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 
 	/* Extract all messages. */
 	exec_query( mysql, 
-		"SELECT to_site, relid, sig, generation, message "
+		"SELECT to_site, relid, generation, message "
 		"FROM broadcast_queue" );
 
 	/* Get the result. */
@@ -845,11 +845,10 @@ long run_broadcast_queue_db( MYSQL *mysql )
 
 		char *to_site = row[0];
 		char *relid = row[1];
-		char *sig = row[2];
-		long long generation = strtoll( row[3], 0, 10 );
-		char *msg = row[4];
+		long long generation = strtoll( row[2], 0, 10 );
+		char *msg = row[3];
 
-		long send_res = send_broadcast_net( to_site, relid, sig,
+		long send_res = send_broadcast_net( to_site, relid,
 				generation, msg, strlen(msg) );
 		if ( send_res < 0 ) {
 			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
@@ -869,19 +868,19 @@ long run_broadcast_queue_db( MYSQL *mysql )
 			if ( !sent[i] ) {
 				char *to_site = row[0];
 				char *relid = row[1];
-				char *sig = row[2];
-				char *generation = row[3];
-				char *message = row[4];
+				char *generation = row[2];
+				char *message = row[3];
 
-				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
+				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", 
+						to_site, relid, generation );
 
 				/* Queue the message. */
 
 				exec_query( mysql,
 					"INSERT INTO broadcast_queue "
-					"( to_site, relid, sig, generation, message ) "
-					"VALUES ( %e, %e, %e, %e, %e ) ",
-					to_site, relid, sig, generation, message );
+					"( to_site, relid, generation, message ) "
+					"VALUES ( %e, %e, %e, %e ) ",
+					to_site, relid, generation, message );
 			}
 		}
 
@@ -1391,16 +1390,16 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 }
 
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
-		const char *sig, long long generation, const char *msg )
+		long long generation, const char *msg )
 {
 	/* Table lock. */
 	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
 
 	exec_query( mysql,
 		"INSERT INTO broadcast_queue "
-		"( to_site, relid, sig, generation, message ) "
-		"VALUES ( %e, %e, %e, %L, %e ) ",
-		to_site, relid, sig, generation, msg );
+		"( to_site, relid, generation, message ) "
+		"VALUES ( %e, %e, %L, %e ) ",
+		to_site, relid, generation, msg );
 
 	/* UNLOCK reset. */
 	exec_query( mysql, "UNLOCK TABLES");
@@ -1461,7 +1460,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		id.load( friend_id );
 		id.parse();
 
-		queue_broadcast_db( mysql, id.site, put_relid, encrypt.sig,
+		queue_broadcast_db( mysql, id.site, put_relid,
 				strtoll(generation, 0, 10), encrypt.sym );
 	}
 
@@ -1543,8 +1542,7 @@ close:
 }
 
 long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
-		const char *sig2, long long generation2,
-		const char *msg, long mLen, const char *encMessage )
+		long long generation2, const char *msg, long mLen, const char *encMessage )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
@@ -1599,8 +1597,8 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 	/* Make the full message. */
 	full = new char[4096+encMessageLen];
 	soFar = sprintf( full, 
-		"remote_broadcast %lld %s %s %s %lld %ld\r\n", 
-		seqNum, timeStr, hashStr, sig2, generation2, encMessageLen );
+		"remote_broadcast %lld %s %s %lld %ld\r\n", 
+		seqNum, timeStr, hashStr, generation2, encMessageLen );
 	memcpy( full + soFar, encMessage, encMessageLen );
 	full[soFar+encMessageLen] = 0;
 
@@ -1626,7 +1624,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	encrypt.load( id_pub, user_priv );
 	encrypt.symEncryptSign( (u_char*)msg, mLen );
 
-	result = send_remote_publish_net( resultEnc, resultSig, resultGen, author_id,
+	result = send_remote_publish_net( resultEnc, resultGen, author_id,
 			to_user, token, encrypt.enc, encrypt.sig, encrypt.sym, strlen(encrypt.sym) );
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -1634,11 +1632,10 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	}
 
 	message("result enc: %s\n", resultEnc );
-	message("result sig: %s\n", resultSig );
 	message("result gen: %lld\n", resultGen );
 
 
-	result = send_remote_broadcast( mysql, to_user, author_id, resultSig, resultGen,
+	result = send_remote_broadcast( mysql, to_user, author_id, resultGen,
 			msg, mLen, resultEnc );
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -1653,8 +1650,7 @@ close:
 }
 
 
-void broadcast( MYSQL *mysql, const char *relid,
-		const char *sig, long long generation, const char *encrypted )
+void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1717,10 +1713,10 @@ void broadcast( MYSQL *mysql, const char *relid,
 	 */
 
 	if ( get_fwd_site1 != 0 )
-		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, sig, generation, encrypted );
+		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, generation, encrypted );
 
 	if ( get_fwd_site2 != 0 )
-		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, sig, generation, encrypted );
+		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, generation, encrypted );
 
 	mysql_free_result( result );
 
@@ -1741,7 +1737,7 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 }
 
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friendId, 
-		long long seqNum, const char *date, const char *hash, const char *sig2,
+		long long seqNum, const char *date, const char *hash,
 		long long generation2, const char *msg, long mLen )
 {
 	MYSQL_RES *result;
@@ -1773,7 +1769,6 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 		message( "second level message: %s\n", msg );
 		message( "second level author_id: %s\n", author_id );
-		message( "second level sig2: %s\n", sig2 );
 
 		/* Do the decryption. */
 		id_pub = fetch_public_key( mysql, author_id );
@@ -2030,9 +2025,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	}
 
 	message( "remote_publish enc: %s\n", encrypt2.sym );
-	message( "remote_publish sig: %s\n", encrypt2.sig );
-	
-	BIO_printf( bioOut, "OK %s %s %s\r\n", encrypt2.sym, encrypt2.sig, generation );
+	BIO_printf( bioOut, "OK %s %s\r\n", encrypt2.sym, generation );
 
 free_result:
 	mysql_free_result( result );

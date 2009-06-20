@@ -207,7 +207,6 @@ char *alloc_string( const char *s, const char *e )
 
 	action broadcast {
 		char *relid = alloc_string( r1, r2 );
-		char *sig = alloc_string( s1, s2 );
 		char *generation_str = alloc_string( g1, g2 );
 		long long generation = strtoll( generation_str, 0, 10 );
 		char *length_str = alloc_string( n1, n2 );
@@ -220,7 +219,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		broadcast( mysql, relid, sig, generation, user_message );
+		broadcast( mysql, relid, generation, user_message );
 	}
 
 	action submit_broadcast {
@@ -329,7 +328,7 @@ char *alloc_string( const char *s, const char *e )
 				number EOL @check_key @submit_remote_broadcast;
 
 		'message'i ' ' relid ' ' enc ' ' sig ' ' number EOL @check_ssl @receive_message;
-		'broadcast'i ' ' relid ' ' sig ' ' generation ' ' number EOL @check_ssl @broadcast;
+		'broadcast'i ' ' relid ' ' generation ' ' number EOL @check_ssl @broadcast;
 		'remote_publish'i ' ' user ' ' identity ' ' token ' ' enc ' ' sig ' ' 
 				number EOL @check_ssl @remote_publish;
 	*|;
@@ -495,7 +494,6 @@ int message_parser( MYSQL *mysql, const char *relid,
 		char *seqStr = alloc_string( q1, q2 );
 		char *date = alloc_string( d1, d2 );
 		char *hash = alloc_string( a1, a2 );
-		char *sig = alloc_string( s1, s2 );
 		char *genStr = alloc_string( g1, g2 );
 		char *lengthStr = alloc_string( n1, n2 );
 
@@ -510,14 +508,14 @@ int message_parser( MYSQL *mysql, const char *relid,
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
 		remote_broadcast( mysql, relid, user, friend_id, seqNum, date,
-			hash, sig, generation, msg, length );
+			hash, generation, msg, length );
 		fbreak;
 	}
 
 	main :=
 		'direct_broadcast'i ' ' seq_num ' ' date ' ' number EOL @direct_broadcast |
 
-		'remote_broadcast'i ' ' seq_num ' ' date ' ' hash ' ' sig ' ' generation ' ' number
+		'remote_broadcast'i ' ' seq_num ' ' date ' ' hash ' ' generation ' ' number
 			EOL @remote_broadcast;
 
 }%%
@@ -528,7 +526,6 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen )
 {
 	long cs;
-	const char *s1, *s2;
 	const char *d1, *d2;
 	const char *n1, *n2;
 	const char *a1, *a2;
@@ -985,7 +982,7 @@ long Identity::parse()
 }%%
 
 long send_broadcast_net( const char *toSite, const char *relid,
-		const char *sig1, long long generation1, const char *msg, long mLen )
+		long long generation, const char *msg, long mLen )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -1024,8 +1021,8 @@ long send_broadcast_net( const char *toSite, const char *relid,
 
 	/* Send the request. */
 	BIO_printf( sbio, 
-		"broadcast %s %s %lld %ld\r\n", 
-		relid, sig1, generation1, mLen );
+		"broadcast %s %lld %ld\r\n", 
+		relid, generation, mLen );
 	BIO_write( sbio, msg, mLen );
 	BIO_flush( sbio );
 
@@ -1173,7 +1170,7 @@ fail:
 	write data;
 }%%
 
-long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &resultGen,
+long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *to_identity, const char *from_user, 
 		const char *token, const char *enc, const char *sig, const char *sym, long mLen )
 {
@@ -1183,8 +1180,6 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 	bool OK = false;
 	long pres;
 	char *number;
-
-	resultSig = 0;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1236,14 +1231,13 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 		include common;
 
 		main := 
-			'OK' ' ' enc ' ' sig ' ' number EOL @{ OK = true; } |
+			'OK' ' ' enc ' ' number EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
 	p = buf;
 	pe = buf + strlen(buf);
 	const char *e1, *e2;
-	const char *s1, *s2;
 	const char *n1, *n2;
 
 	%% write init;
@@ -1261,7 +1255,6 @@ long send_remote_publish_net( char *&resultEnc, char *&resultSig, long long &res
 	}
 
 	resultEnc = alloc_string( e1, e2 );
-	resultSig = alloc_string( s1, s2 );
 	number = alloc_string( n1, n2 );
 	resultGen = strtoll( number, 0, 10 );
 

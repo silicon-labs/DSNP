@@ -25,6 +25,8 @@
 
 bool gblKeySubmitted = false;
 
+/* FIXME: check all scanned lengths for overflow. */
+
 char *alloc_string( const char *s, const char *e )
 {
 	long length = e-s;

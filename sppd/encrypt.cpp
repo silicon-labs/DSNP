@@ -26,6 +26,7 @@
 #include <openssl/err.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 int Encrypt::sign( u_char *src, long len )
 {
@@ -263,7 +264,7 @@ int Encrypt::symDecryptVerify( const char *srcEnc, const char *srcSig, const cha
 	return 0;
 }
 
-int Encrypt::skEncryptSign( const char *srcSK, u_char *message, long len )
+int Encrypt::skSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 {
 	RC4_KEY rc4_key;
 	u_char *output;
@@ -276,22 +277,15 @@ int Encrypt::skEncryptSign( const char *srcSK, u_char *message, long len )
 		return -1;
 	}
 
-	/* Encrypt the message using the session key. */
-	output = (u_char*)malloc( len );
-	RC4_set_key( &rc4_key, SK_SIZE, session_key );
-	RC4( &rc4_key, len, message, output );
-
-	/* FIXME: check results here. */
-
 	/* Need to make a buffer containing both the session key and message so we
 	 * our signature is valid only using this encryption key. */
-	u_char *signData = new u_char[SK_SIZE + len];
+	u_char *signData = new u_char[SK_SIZE + mLen];
 	memcpy( signData, session_key, SK_SIZE );
-	memcpy( signData+SK_SIZE, message, len );
+	memcpy( signData+SK_SIZE, msg, mLen );
 
 	/* Sign the message. */
 	u_char msg_sha1[SHA_DIGEST_LENGTH];
-	SHA1( signData, SK_SIZE+len, msg_sha1 );
+	SHA1( signData, SK_SIZE+mLen, msg_sha1 );
 
 	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
 	unsigned sigLen;
@@ -304,8 +298,22 @@ int Encrypt::skEncryptSign( const char *srcSK, u_char *message, long len )
 		return -1;
 	}
 
+	u_char *encryptData = new u_char[64 + sigLen + mLen];
+	long lenLen = sprintf( (char*)encryptData, "%d\n", sigLen );
+	memcpy( encryptData+lenLen, signature, sigLen );
+	memcpy( encryptData+lenLen+sigLen, msg, mLen );
+
+	::message( "size1: %d %d %d\n", lenLen, sigLen, mLen );
+
+	/* Encrypt the message using the session key. */
+	output = (u_char*)malloc( lenLen+sigLen+mLen );
+	RC4_set_key( &rc4_key, SK_SIZE, session_key );
+	RC4( &rc4_key, lenLen+sigLen+mLen, encryptData, output );
+
+	/* FIXME: check results here. */
+
 	sig = bin2hex( signature, sigLen );
-	sym = bin2hex( output, len );
+	sym = bin2hex( output, lenLen+sigLen+mLen );
 
 	free( signature );
 	free( output );
@@ -313,9 +321,11 @@ int Encrypt::skEncryptSign( const char *srcSK, u_char *message, long len )
 	return 0;
 }
 	
-int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char *srcMsg )
+int Encrypt::skDecryptVerify( const char *srcSK, const char *srcMsg )
 {
 	RC4_KEY rc4_key;
+	u_char *signature, *data;
+	long dataLen, sigLen;
 
 	/* Convert the session_key to binary. */
 	u_char session_key[SK_SIZE];
@@ -325,17 +335,9 @@ int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char 
 		return -1;
 	}
 
-	/* Convert the sig to binary. */
-	u_char *signature = (u_char*)malloc( strlen(srcSig) );
-	long sigLen = hex2bin( signature, RSA_size(pubEncVer), srcSig );
-	if ( sigLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded signature to binary" );
-		return -1;
-	}
-
 	/* Convert the message to binary. */
-	u_char *message = (u_char*)malloc( strlen(srcMsg) );
-	long msgLen = hex2bin( message, strlen(srcMsg), srcMsg );
+	u_char *msg = (u_char*)malloc( strlen(srcMsg) );
+	long msgLen = hex2bin( msg, strlen(srcMsg), srcMsg );
 	if ( msgLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded message to binary" );
 		return -1;
@@ -343,24 +345,34 @@ int Encrypt::skDecryptVerify( const char *srcSK, const char *srcSig, const char 
 
 	decrypted = (u_char*)malloc( msgLen );
 	RC4_set_key( &rc4_key, skLen, session_key );
-	RC4( &rc4_key, msgLen, message, decrypted );
+	RC4( &rc4_key, msgLen, msg, decrypted );
 	decLen = msgLen;
+
+	/* FIXME: ragel scanner that verifies resulting lengths. */
+	sscanf( (char*)decrypted, "%ld\n", &sigLen );
+	signature = (u_char*) strchr( (char*)decrypted, '\n' ) + 1;
+	data = signature + sigLen;
+	dataLen = decLen - ( data - decrypted );
 
 	/* Need to make a buffer containing both the session key an message so we
 	 * can verify the message was originally signed with this key. */
 	u_char *verifyData = new u_char[SK_SIZE + decLen];
 	memcpy( verifyData, session_key, SK_SIZE );
-	memcpy( verifyData+SK_SIZE, decrypted, decLen );
+	memcpy( verifyData+SK_SIZE, data, dataLen );
 
 	/* Verify the message. */
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( verifyData, SK_SIZE+decLen, decrypted_sha1 );
+	SHA1( verifyData, SK_SIZE+dataLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
 			signature, sigLen, pubEncVer );
 	if ( verifyres != 1 ) {
+		message("verify failed\n");
 		ERR_error_string( ERR_get_error(), err );
 		return -1;
 	}
+
+	decrypted = data;
+	decLen = dataLen;
 
 	return 0;
 }

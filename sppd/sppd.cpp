@@ -1455,7 +1455,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		/* Do the encryption. */
 		user_priv = load_key( mysql, user );
 		encrypt.load( 0, user_priv );
-		encrypt.skEncryptSign( session_key, (u_char*)msg, mLen );
+		encrypt.skSignEncrypt( session_key, (u_char*)msg, mLen );
 
 		/* Find the root user to send to. */
 		id.load( friend_id );
@@ -1694,7 +1694,7 @@ void broadcast( MYSQL *mysql, const char *relid,
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
-	decryptRes = encrypt.skDecryptVerify( session_key, sig, encrypted );
+	decryptRes = encrypt.skDecryptVerify( session_key, encrypted );
 
 	if ( decryptRes < 0 ) {
 		message("skDecryptVerify failed\n");
@@ -1778,7 +1778,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		/* Do the decryption. */
 		id_pub = fetch_public_key( mysql, author_id );
 		encrypt.load( id_pub, 0 );
-		decryptRes = encrypt.skDecryptVerify( session_key, sig2, msg );
+		decryptRes = encrypt.skDecryptVerify( session_key, msg );
 
 		if ( decryptRes < 0 ) {
 			message("second level skDecryptVerify failed\n");
@@ -2023,7 +2023,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	generation = strdup(row[1]);
 
 	encrypt2.load( id_pub, user_priv );
-	sigRes = encrypt2.skEncryptSign( session_key, encrypt1.decrypted, encrypt1.decLen );
+	sigRes = encrypt2.skSignEncrypt( session_key, encrypt1.decrypted, encrypt1.decLen );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;

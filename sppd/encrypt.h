@@ -50,7 +50,7 @@ struct Encrypt
 	int sign( u_char *src, long len );
 	int verify( u_char *msg, long len, const char *srcSig );
 
-	int encryptSign( u_char *src, long len );
+	int signEncrypt( u_char *src, long len );
 	int decryptVerify( const char *enc, const char *sig );
 
 	int symEncryptSign( u_char *src, long len );

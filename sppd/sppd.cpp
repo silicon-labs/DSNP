@@ -472,7 +472,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Encrypt and sign the relationship id. */
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.encryptSign( requested_relid, RELID_SIZE );
+	sigRes = encrypt.signEncrypt( requested_relid, RELID_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
@@ -627,7 +627,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	memcpy( message+RELID_SIZE, response_relid, RELID_SIZE );
 
 	/* Encrypt and sign using the same credentials. */
-	sigRes = encrypt.encryptSign( message, RELID_SIZE*2 );
+	sigRes = encrypt.signEncrypt( message, RELID_SIZE*2 );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
@@ -1147,7 +1147,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	encrypt.load( id_pub, user_priv );
 
 	/* Encrypt it. */
-	sigRes = encrypt.encryptSign( flogin_token, TOKEN_SIZE );
+	sigRes = encrypt.signEncrypt( flogin_token, TOKEN_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;

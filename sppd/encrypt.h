@@ -53,7 +53,7 @@ struct Encrypt
 	int signEncrypt( u_char *src, long len );
 	int decryptVerify( const char *enc, const char *sig );
 
-	int symEncryptSign( u_char *src, long len );
+	int symSignEncrypt( u_char *src, long len );
 	int symDecryptVerify( const char *enc, const char *sig, const char *message );
 
 	int skSignEncrypt( const char *sk, u_char *src, long len );

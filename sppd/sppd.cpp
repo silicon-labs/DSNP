@@ -472,7 +472,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Encrypt and sign the relationship id. */
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.signEncrypt( requested_relid, RELID_SIZE );
+	sigRes = encrypt.symSignEncrypt( requested_relid, RELID_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
@@ -484,9 +484,9 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	exec_query( mysql,
 		"INSERT INTO relid_request "
-		"( for_user, from_id, requested_relid, reqid, msg_enc, msg_sig ) "
-		"VALUES( %e, %e, %e, %e, %e, %e )",
-		user, identity, requested_relid_str, reqid_str, encrypt.enc, encrypt.sig );
+		"( for_user, from_id, requested_relid, reqid, msg_enc, msg_sig, msg_sym ) "
+		"VALUES( %e, %e, %e, %e, %e, %e, %e )",
+		user, identity, requested_relid_str, reqid_str, encrypt.enc, encrypt.sig, encrypt.sym );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
@@ -504,7 +504,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	MYSQL_ROW row;
 
 	query_res = exec_query( mysql,
-		"SELECT msg_enc, msg_sig FROM relid_request WHERE reqid = %e", reqid );
+		"SELECT msg_enc, msg_sig, msg_sym FROM relid_request WHERE reqid = %e", reqid );
 
 	if ( query_res != 0 ) {
 		BIO_printf( bioOut, "ERR\r\n" );
@@ -515,7 +515,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		BIO_printf( bioOut, "OK %s %s\r\n", row[0], row[1] );
+		BIO_printf( bioOut, "OK %s %s %s\r\n", row[0], row[1], row[2] );
 	else
 		BIO_printf( bioOut, "ERROR\r\n" );
 
@@ -604,7 +604,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Decrypt and verify the requested_relid. */
 	encrypt.load( id_pub, user_priv );
 
-	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
+	verifyRes = encrypt.symDecryptVerify( encsig.enc, encsig.sig, encsig.sym );
 	if ( verifyRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
@@ -1622,7 +1622,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	user_priv = load_key( mysql, to_user );
 	id_pub = fetch_public_key( mysql, author_id );
 	encrypt.load( id_pub, user_priv );
-	encrypt.symEncryptSign( (u_char*)msg, mLen );
+	encrypt.symSignEncrypt( (u_char*)msg, mLen );
 
 	result = send_remote_publish_net( resultEnc, resultGen, author_id,
 			to_user, token, encrypt.enc, encrypt.sig, encrypt.sym, strlen(encrypt.sym) );
@@ -1818,7 +1818,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 	encrypt.load( id_pub, user_priv );
 
 	/* Include the null in the message. */
-	encrypt_res = encrypt.symEncryptSign( (u_char*)message, strlen(message)+1 );
+	encrypt_res = encrypt.symSignEncrypt( (u_char*)message, strlen(message)+1 );
 
 	queue_message_db( mysql, to_identity, relid, encrypt.enc, encrypt.sig, encrypt.sym );
 free_result:

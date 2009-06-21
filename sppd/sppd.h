@@ -30,6 +30,7 @@ struct RelidEncSig
 {
 	char *enc;
 	char *sig;
+	char *sym;
 };
 
 struct Identity

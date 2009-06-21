@@ -163,7 +163,7 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 	return 0;
 }
 	
-int Encrypt::symEncryptSign( u_char *message, long len )
+int Encrypt::symSignEncrypt( u_char *message, long len )
 {
 	RC4_KEY rc4_key;
 	u_char *output;

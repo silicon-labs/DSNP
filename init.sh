@@ -145,7 +145,8 @@ CREATE TABLE relid_request (
 	requested_relid CHAR(32),
 	reqid CHAR(32),
 	msg_enc TEXT,
-	msg_sig TEXT
+	msg_sig TEXT,
+	msg_sym TEXT
 );
 
 CREATE TABLE relid_response (

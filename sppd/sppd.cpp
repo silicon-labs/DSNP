@@ -529,14 +529,14 @@ query_fail:
 long store_relid_response( MYSQL *mysql, const char *identity, 
 		const char *fr_relid_str, const char *fr_reqid_str, 
 		const char *relid_str, const char *reqid_str, 
-		const char *enc, const char *sig )
+		const char *enc, const char *sig, const char *sym )
 {
 	int result = exec_query( mysql,
 		"INSERT INTO relid_response "
-		"( from_id, requested_relid, returned_relid, reqid, msg_enc, msg_sig ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e )",
+		"( from_id, requested_relid, returned_relid, reqid, msg_enc, msg_sig, msg_sym ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e, %e )",
 		identity, fr_relid_str, relid_str, 
-		reqid_str, enc, sig );
+		reqid_str, enc, sig, sym );
 	
 	return result;
 }
@@ -627,7 +627,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	memcpy( message+RELID_SIZE, response_relid, RELID_SIZE );
 
 	/* Encrypt and sign using the same credentials. */
-	sigRes = encrypt.signEncrypt( message, RELID_SIZE*2 );
+	sigRes = encrypt.symSignEncrypt( message, RELID_SIZE*2 );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
@@ -640,7 +640,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	store_relid_response( mysql, identity, requested_relid_str, fr_reqid_str, 
 			response_relid_str, response_reqid_str,
-			encrypt.enc, encrypt.sig );
+			encrypt.enc, encrypt.sig, encrypt.sym );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, identity, response_relid_str, requested_relid_str, false );
@@ -664,7 +664,7 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 
 	/* Execute the query. */
 	query_res = exec_query( mysql,
-		"SELECT msg_enc, msg_sig FROM relid_response WHERE reqid = %e;", reqid );
+		"SELECT msg_enc, msg_sig, msg_sym FROM relid_response WHERE reqid = %e;", reqid );
 	
 	if ( query_res != 0 ) {
 		BIO_printf( bioOut, "ERR\r\n" );
@@ -675,7 +675,7 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		BIO_printf( bioOut, "OK %s %s\r\n", row[0], row[1] );
+		BIO_printf( bioOut, "OK %s %s %s\r\n", row[0], row[1], row[2] );
 	else
 		BIO_printf( bioOut, "ERR\r\n" );
 
@@ -756,7 +756,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 
 	encrypt.load( id_pub, user_priv );
 
-	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
+	verifyRes = encrypt.symDecryptVerify( encsig.enc, encsig.sig, encsig.sym );
 	if ( verifyRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;

@@ -201,7 +201,8 @@ CREATE TABLE ftoken_request (
 	token CHAR(32),
 	reqid CHAR(32),
 	msg_enc TEXT,
-	msg_sig TEXT
+	msg_sig TEXT,
+	msg_sym TEXT
 );
 
 CREATE TABLE broadcast_queue (

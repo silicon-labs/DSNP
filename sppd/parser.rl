@@ -856,7 +856,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
-	const char *e1, *e2, *s1, *s2;
+	const char *e1, *e2, *s1, *s2, *y1, *y2;
 	bool OK = false;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
@@ -900,9 +900,10 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 
 		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
 		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
+		sym = [0-9a-f]+      >{y1 = p;} %{y2 = p;};
 
 		main := 
-			'OK ' enc ' ' sig EOL @{ OK = true; } |
+			'OK ' enc ' ' sig ' ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
@@ -925,10 +926,13 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	
 	encsig.enc = (char*)malloc( e2-e1+1 );
 	encsig.sig = (char*)malloc( s2-s1+1 );
+	encsig.sym = (char*)malloc( y2-y1+1 );
 	memcpy( encsig.enc, e1, e2-e1 );
 	memcpy( encsig.sig, s1, s2-s1 );
+	memcpy( encsig.sym, y1, y2-y1 );
 	encsig.enc[e2-e1] = 0;
 	encsig.sig[s2-s1] = 0;
+	encsig.sym[y2-y1] = 0;
 
 fail:
 	::close( socketFd );

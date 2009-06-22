@@ -1059,16 +1059,16 @@ close:
 
 long store_ftoken( MYSQL *mysql, const char *user, 
 		const char *identity, char *token_str, char *reqid_str,
-		char *msg_enc, char *msg_sig )
+		char *msg_enc, char *msg_sig, char *msg_sym )
 {
 	long result = 0;
 	int query_res;
 
 	query_res = exec_query( mysql,
 		"INSERT INTO ftoken_request "
-		"( user, from_id, token, reqid, msg_enc, msg_sig ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e ) ",
-		user, identity, token_str, reqid_str, msg_enc, msg_sig );
+		"( user, from_id, token, reqid, msg_enc, msg_sig, msg_sym ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e, %e ) ",
+		user, identity, token_str, reqid_str, msg_enc, msg_sig, msg_sym );
 
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
@@ -1147,7 +1147,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	encrypt.load( id_pub, user_priv );
 
 	/* Encrypt it. */
-	sigRes = encrypt.signEncrypt( flogin_token, TOKEN_SIZE );
+	sigRes = encrypt.symSignEncrypt( flogin_token, TOKEN_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;
@@ -1158,7 +1158,8 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	reqid_str = bin2hex( reqid, REQID_SIZE );
 
 	store_ftoken( mysql, user, friend_id.identity, 
-			flogin_token_str, reqid_str, encrypt.enc, encrypt.sig );
+			flogin_token_str, reqid_str, encrypt.enc, 
+			encrypt.sig, encrypt.sym );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
@@ -1177,7 +1178,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	MYSQL_ROW row;
 
 	query_res = exec_query( mysql,
-		"SELECT msg_enc, msg_sig FROM ftoken_request WHERE reqid = %e", reqid );
+		"SELECT msg_enc, msg_sig, msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
 
 	/* Execute the query. */
 	if ( query_res != 0 ) {
@@ -1189,7 +1190,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		BIO_printf( bioOut, "OK %s %s\r\n", row[0], row[1] );
+		BIO_printf( bioOut, "OK %s %s %s\r\n", row[0], row[1], row[2] );
 	else
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NO_FTOKEN );
 
@@ -1250,7 +1251,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	encrypt.load( id_pub, user_priv );
 
 	/* Decrypt the flogin_token. */
-	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig );
+	verifyRes = encrypt.symDecryptVerify( encsig.enc, encsig.sig, encsig.sym );
 	if ( verifyRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;

@@ -73,97 +73,8 @@ int Encrypt::verify( u_char *msg, long len, const char *srcSig )
 
 	return 0;
 }
-
+	
 int Encrypt::signEncrypt( u_char *msg, long mLen )
-{
-	/* Need to make a buffer containing both the session key and message so we
-	 * our signature is valid only using this encryption key. */
-	u_char *signData = new u_char[BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e) + mLen];
-	BN_bn2bin( pubEncVer->n, signData );
-	BN_bn2bin( pubEncVer->e, signData+BN_num_bytes(pubEncVer->n) );
-	memcpy( signData + BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e), msg, mLen );
-
-	/* Sign the msg. */
-	u_char src_sha1[SHA_DIGEST_LENGTH];
-	SHA1( signData, BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e) + mLen, src_sha1 );
-
-	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
-	unsigned sigLen;
-	int signRes = RSA_sign( NID_sha1, src_sha1, SHA_DIGEST_LENGTH, signature, 
-			&sigLen, privDecSign );
-
-	if ( signRes != 1 ) {
-		ERR_error_string( ERR_get_error(), err );
-		return -1;
-	}
-
-	/* Encrypt the src. */
-	u_char *encrypted = (u_char*)malloc( RSA_size(pubEncVer) );
-	int encLen = RSA_public_encrypt( mLen, msg, encrypted, 
-			pubEncVer, RSA_PKCS1_PADDING );
-	
-	if ( encLen < 0 ) {
-		ERR_error_string( ERR_get_error(), err );
-		return encLen;
-	}
-
-	enc = bin2hex( encrypted, encLen );
-	sig = bin2hex( signature, sigLen );
-
-	free( encrypted );
-	free( signature );
-
-	return 0;
-}
-
-int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
-{
-	/* Convert the encrypted string to binary. */
-	u_char *encrypted = (u_char*)malloc( strlen(srcEnc) );
-	long encLen = hex2bin( encrypted, strlen(srcEnc), srcEnc );
-	if ( encLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded encrypted string to binary" );
-		return -1;
-	}
-
-	/* Convert the sig to binary. */
-	u_char *signature = (u_char*)malloc( strlen(srcSig) );
-	long sigLen = hex2bin( signature, strlen(srcSig), srcSig );
-	if ( sigLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded signature to binary" );
-		return -1;
-	}
-
-	/* Decrypt the item. */
-	decrypted = (u_char*) malloc( RSA_size( privDecSign ) );
-	decLen = RSA_private_decrypt( encLen, encrypted, decrypted, 
-			privDecSign, RSA_PKCS1_PADDING );
-	if ( decLen < 0 ) {
-		error("decryption failed\n");
-		ERR_error_string( ERR_get_error(), err );
-		return -1;
-	}
-
-	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + decLen];
-	BN_bn2bin( privDecSign->n, verifyData );
-	BN_bn2bin( privDecSign->e, verifyData+BN_num_bytes(privDecSign->n) );
-	memcpy( verifyData + BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e), decrypted, decLen );
-
-	/* Verify the item. */
-	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( verifyData, BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + decLen, decrypted_sha1 );
-	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
-			signature, sigLen, pubEncVer );
-	if ( verifyres != 1 ) {
-		error("verification failed\n");
-		ERR_error_string( ERR_get_error(), err );
-		return -1;
-	}
-
-	return 0;
-}
-	
-int Encrypt::symSignEncrypt( u_char *msg, long mLen )
 {
 	RC4_KEY rc4_key;
 	u_char *output;
@@ -190,12 +101,12 @@ int Encrypt::symSignEncrypt( u_char *msg, long mLen )
 	}
 
 	/* Generate a session key just for this message. */
-	unsigned char new_sesion_key[SK_SIZE];
-	RAND_bytes( new_sesion_key, SK_SIZE );
+	unsigned char new_session_key[SK_SIZE];
+	RAND_bytes( new_session_key, SK_SIZE );
 
 	/* Encrypt the session key. */
 	u_char *encrypted = (u_char*)malloc( RSA_size(pubEncVer) );
-	int encLen = RSA_public_encrypt( SK_SIZE, new_sesion_key, encrypted, 
+	int encLen = RSA_public_encrypt( SK_SIZE, new_session_key, encrypted, 
 			pubEncVer, RSA_PKCS1_PADDING );
 	
 	if ( encLen < 0 ) {
@@ -203,16 +114,21 @@ int Encrypt::symSignEncrypt( u_char *msg, long mLen )
 		return encLen;
 	}
 
+	u_char *encryptData = new u_char[64 + sigLen + mLen];
+	long lenLen = sprintf( (char*)encryptData, "%d\n", sigLen );
+	memcpy( encryptData+lenLen, signature, sigLen );
+	memcpy( encryptData+lenLen+sigLen, msg, mLen );
+
 	/* Encrypt the message using the session key. */
-	output = (u_char*)malloc( mLen );
-	RC4_set_key( &rc4_key, SK_SIZE, new_sesion_key );
-	RC4( &rc4_key, mLen, msg, output );
+	output = (u_char*)malloc( lenLen+sigLen+mLen );
+	RC4_set_key( &rc4_key, SK_SIZE, new_session_key );
+	RC4( &rc4_key, lenLen+sigLen+mLen, encryptData, output );
 
 	/* FIXME: check results here. */
 
 	enc = bin2hex( encrypted, encLen );
 	sig = bin2hex( signature, sigLen );
-	sym = bin2hex( output, mLen );
+	sym = bin2hex( output, lenLen+sigLen+mLen );
 
 	free( encrypted );
 	free( signature );
@@ -221,23 +137,17 @@ int Encrypt::symSignEncrypt( u_char *msg, long mLen )
 	return 0;
 }
 
-int Encrypt::symDecryptVerify( const char *srcEnc, const char *srcSig, const char *srcMsg )
+int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig, const char *srcMsg )
 {
 	RC4_KEY rc4_key;
+	u_char *data, *signature;
+	long dataLen, sigLen;
 
 	/* Convert the encrypted string to binary. */
 	u_char *encrypted = (u_char*)malloc( strlen(srcEnc) );
 	long encLen = hex2bin( encrypted, RSA_size(pubEncVer), srcEnc );
 	if ( encLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded encrypted string to binary" );
-		return -1;
-	}
-
-	/* Convert the sig to binary. */
-	u_char *signature = (u_char*)malloc( strlen(srcSig) );
-	long sigLen = hex2bin( signature, RSA_size(pubEncVer), srcSig );
-	if ( sigLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded signature to binary" );
 		return -1;
 	}
 
@@ -264,20 +174,29 @@ int Encrypt::symDecryptVerify( const char *srcEnc, const char *srcSig, const cha
 	RC4( &rc4_key, msgLen, message, decrypted );
 	decLen = msgLen;
 
-	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + decLen];
+	/* FIXME: ragel scanner that verifies resulting lengths. */
+	sscanf( (char*)decrypted, "%ld\n", &sigLen );
+	signature = (u_char*) strchr( (char*)decrypted, '\n' ) + 1;
+	data = signature + sigLen;
+	dataLen = decLen - ( data - decrypted );
+
+	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + dataLen];
 	BN_bn2bin( privDecSign->n, verifyData );
 	BN_bn2bin( privDecSign->e, verifyData+BN_num_bytes(privDecSign->n) );
-	memcpy( verifyData + BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e), decrypted, decLen );
+	memcpy( verifyData + BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e), data, dataLen );
 
 	/* Verify the item. */
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( verifyData, BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + decLen, decrypted_sha1 );
+	SHA1( verifyData, BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + dataLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
 			signature, sigLen, pubEncVer );
 	if ( verifyres != 1 ) {
 		ERR_error_string( ERR_get_error(), err );
 		return -1;
 	}
+
+	decrypted = data;
+	decLen = dataLen;
 
 	return 0;
 }
@@ -321,7 +240,6 @@ int Encrypt::skSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 	memcpy( encryptData+lenLen, signature, sigLen );
 	memcpy( encryptData+lenLen+sigLen, msg, mLen );
 
-	::message( "size1: %d %d %d\n", lenLen, sigLen, mLen );
 
 	/* Encrypt the message using the session key. */
 	output = (u_char*)malloc( lenLen+sigLen+mLen );

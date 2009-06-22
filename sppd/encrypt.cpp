@@ -163,10 +163,31 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig )
 	return 0;
 }
 	
-int Encrypt::symSignEncrypt( u_char *message, long len )
+int Encrypt::symSignEncrypt( u_char *msg, long mLen )
 {
 	RC4_KEY rc4_key;
 	u_char *output;
+
+	/* Need to make a buffer containing both the session key and message so we
+	 * our signature is valid only using this encryption key. */
+	u_char *signData = new u_char[BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e) + mLen];
+	BN_bn2bin( pubEncVer->n, signData );
+	BN_bn2bin( pubEncVer->e, signData+BN_num_bytes(pubEncVer->n) );
+	memcpy( signData + BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e), msg, mLen );
+
+	/* Sign the message. */
+	u_char msg_sha1[SHA_DIGEST_LENGTH];
+	SHA1( signData, BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e) + mLen, msg_sha1 );
+
+	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
+	unsigned sigLen;
+	int signRes = RSA_sign( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
+			signature, &sigLen, privDecSign );
+
+	if ( signRes != 1 ) {
+		ERR_error_string( ERR_get_error(), err );
+		return -1;
+	}
 
 	/* Generate a session key just for this message. */
 	unsigned char new_sesion_key[SK_SIZE];
@@ -178,37 +199,20 @@ int Encrypt::symSignEncrypt( u_char *message, long len )
 			pubEncVer, RSA_PKCS1_PADDING );
 	
 	if ( encLen < 0 ) {
-		free( encrypted );
 		ERR_error_string( ERR_get_error(), err );
 		return encLen;
 	}
 
 	/* Encrypt the message using the session key. */
-	output = (u_char*)malloc( len );
+	output = (u_char*)malloc( mLen );
 	RC4_set_key( &rc4_key, SK_SIZE, new_sesion_key );
-	RC4( &rc4_key, len, message, output );
+	RC4( &rc4_key, mLen, msg, output );
 
 	/* FIXME: check results here. */
 
-	/* Sign the message. */
-	u_char msg_sha1[SHA_DIGEST_LENGTH];
-	SHA1( message, len, msg_sha1 );
-
-	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
-	unsigned sigLen;
-	int signRes = RSA_sign( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
-			signature, &sigLen, privDecSign );
-
-	if ( signRes != 1 ) {
-		free( encrypted );
-		free( signature );
-		ERR_error_string( ERR_get_error(), err );
-		return -1;
-	}
-
 	enc = bin2hex( encrypted, encLen );
 	sig = bin2hex( signature, sigLen );
-	sym = bin2hex( output, len );
+	sym = bin2hex( output, mLen );
 
 	free( encrypted );
 	free( signature );
@@ -260,9 +264,14 @@ int Encrypt::symDecryptVerify( const char *srcEnc, const char *srcSig, const cha
 	RC4( &rc4_key, msgLen, message, decrypted );
 	decLen = msgLen;
 
-	/* Verify the message. */
+	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + decLen];
+	BN_bn2bin( privDecSign->n, verifyData );
+	BN_bn2bin( privDecSign->e, verifyData+BN_num_bytes(privDecSign->n) );
+	memcpy( verifyData + BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e), decrypted, decLen );
+
+	/* Verify the item. */
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( decrypted, msgLen, decrypted_sha1 );
+	SHA1( verifyData, BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + decLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
 			signature, sigLen, pubEncVer );
 	if ( verifyres != 1 ) {

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <arpa/inet.h>
 
 int Encrypt::sign( u_char *src, long len )
 {
@@ -115,7 +116,9 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	}
 
 	u_char *encryptData = new u_char[64 + sigLen + mLen];
-	long lenLen = sprintf( (char*)encryptData, "%d\n", sigLen );
+	uint16_t *pSigLen = (uint16_t*)encryptData;
+	*pSigLen = htons( sigLen );
+	long lenLen = 2;
 	memcpy( encryptData+lenLen, signature, sigLen );
 	memcpy( encryptData+lenLen+sigLen, msg, mLen );
 
@@ -174,9 +177,13 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig, const char *
 	RC4( &rc4_key, msgLen, message, decrypted );
 	decLen = msgLen;
 
-	/* FIXME: ragel scanner that verifies resulting lengths. */
-	sscanf( (char*)decrypted, "%ld\n", &sigLen );
-	signature = (u_char*) strchr( (char*)decrypted, '\n' ) + 1;
+	/* Signature length is in the first two bytes. */
+	uint16_t *pSigLen = (uint16_t*)decrypted;
+	sigLen = ntohs( *pSigLen );
+	if ( sigLen >= msgLen )
+		return -1;
+
+	signature = decrypted + 2;
 	data = signature + sigLen;
 	dataLen = decLen - ( data - decrypted );
 
@@ -236,10 +243,11 @@ int Encrypt::skSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 	}
 
 	u_char *encryptData = new u_char[64 + sigLen + mLen];
-	long lenLen = sprintf( (char*)encryptData, "%d\n", sigLen );
+	uint16_t *pSigLen = (uint16_t*)encryptData;
+	*pSigLen = htons( sigLen );
+	long lenLen = 2;
 	memcpy( encryptData+lenLen, signature, sigLen );
 	memcpy( encryptData+lenLen+sigLen, msg, mLen );
-
 
 	/* Encrypt the message using the session key. */
 	output = (u_char*)malloc( lenLen+sigLen+mLen );
@@ -284,9 +292,13 @@ int Encrypt::skDecryptVerify( const char *srcSK, const char *srcMsg )
 	RC4( &rc4_key, msgLen, msg, decrypted );
 	decLen = msgLen;
 
-	/* FIXME: ragel scanner that verifies resulting lengths. */
-	sscanf( (char*)decrypted, "%ld\n", &sigLen );
-	signature = (u_char*) strchr( (char*)decrypted, '\n' ) + 1;
+	/* Signature length is in the first two bytes. */
+	uint16_t *pSigLen = (uint16_t*)decrypted;
+	sigLen = ntohs( *pSigLen );
+	if ( sigLen >= msgLen )
+		return -1;
+
+	signature = decrypted + 2;
 	data = signature + sigLen;
 	dataLen = decLen - ( data - decrypted );
 

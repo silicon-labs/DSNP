@@ -127,11 +127,17 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	RC4_set_key( &rc4_key, SK_SIZE, new_session_key );
 	RC4( &rc4_key, lenLen+sigLen+mLen, encryptData, output );
 
+	u_char *fullMessage = new u_char[ 2 + encLen + lenLen + sigLen + mLen ];
+	uint16_t *pEncLen = (uint16_t*)fullMessage;
+	*pEncLen = htons( encLen );
+	memcpy( fullMessage + 2, encrypted, encLen );
+	memcpy( fullMessage + 2 + encLen, output, lenLen + sigLen + mLen );
+
 	/* FIXME: check results here. */
 
 	enc = bin2hex( encrypted, encLen );
 	sig = bin2hex( signature, sigLen );
-	sym = bin2hex( output, lenLen+sigLen+mLen );
+	sym = bin2hex( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
 
 	free( encrypted );
 	free( signature );
@@ -140,19 +146,11 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	return 0;
 }
 
-int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig, const char *srcMsg )
+int Encrypt::decryptVerify( const char *, const char *, const char *srcMsg )
 {
 	RC4_KEY rc4_key;
 	u_char *data, *signature;
 	long dataLen, sigLen;
-
-	/* Convert the encrypted string to binary. */
-	u_char *encrypted = (u_char*)malloc( strlen(srcEnc) );
-	long encLen = hex2bin( encrypted, RSA_size(pubEncVer), srcEnc );
-	if ( encLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded encrypted string to binary" );
-		return -1;
-	}
 
 	/* Convert the message to binary. */
 	u_char *message = (u_char*)malloc( strlen(srcMsg) );
@@ -161,6 +159,15 @@ int Encrypt::decryptVerify( const char *srcEnc, const char *srcSig, const char *
 		sprintf( err, "error converting hex-encoded message to binary" );
 		return -1;
 	}
+
+	u_char *encrypted = message + 2;
+	uint16_t *pEncSkLen = (uint16_t*)message;
+	long encLen = ntohs( *pEncSkLen );
+	if ( encLen >= msgLen )
+		return -1;
+	
+	message += 2 + encLen;
+	msgLen -= 2 + encLen;
 
 	/* Decrypt the key. */
 	session_key = (u_char*) malloc( RSA_size( privDecSign ) );

@@ -1317,7 +1317,7 @@ void session_key( MYSQL *mysql, const char *relid, const char *user,
 			"INSERT INTO get_session_key "
 			"( get_relid, generation, session_key ) "
 			"VALUES ( %e, %e, %e ) ",
-			relid, sk, generation );
+			relid, generation, sk );
 	
 	/* If this friend claim hasn't been acknowledged then send back
 	 * a session key and acknowledge the claim. */
@@ -1825,8 +1825,8 @@ long send_session_key( MYSQL *mysql, const char *from_user, const char *to_ident
 	static char buf[8192];
 
 	sprintf( buf,
-		"session_key %s %lld\r\n", 
-		session_key, generation );
+		"session_key %lld %s\r\n", 
+		generation, session_key );
 
 	return queue_message( mysql, from_user, to_identity, buf );
 }

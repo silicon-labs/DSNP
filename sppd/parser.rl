@@ -191,8 +191,6 @@ char *alloc_string( const char *s, const char *e )
 
 	action receive_message {
 		char *relid = alloc_string( r1, r2 );
-		char *enc = alloc_string( e1, e2 );
-		char *sig = alloc_string( s1, s2 );
 		char *lengthStr = alloc_string( n1, n2 );
 
 		long length = atoi( lengthStr );
@@ -203,7 +201,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		receive_message( mysql, relid, enc, sig, user_message );
+		receive_message( mysql, relid, user_message );
 	}
 
 	action broadcast {
@@ -273,8 +271,6 @@ char *alloc_string( const char *s, const char *e )
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 		char *token = alloc_string( t1, t2 );
-		char *enc = alloc_string( e1, e2 );
-		char *sig = alloc_string( s1, s2 );
 		char *number = alloc_string( n1, n2 );
 
 		int length = atoi( number );
@@ -285,7 +281,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		remote_publish( mysql, user, identity, token, enc, sig, user_message );
+		remote_publish( mysql, user, identity, token, user_message );
 		free( user_message );
 	}
 
@@ -328,10 +324,10 @@ char *alloc_string( const char *s, const char *e )
 		'submit_remote_broadcast'i ' ' user ' ' identity ' ' token ' '
 				number EOL @check_key @submit_remote_broadcast;
 
-		'message'i ' ' relid ' ' enc ' ' sig ' ' number EOL @check_ssl @receive_message;
+		'message'i ' ' relid ' ' number EOL @check_ssl @receive_message;
 		'broadcast'i ' ' relid ' ' generation ' ' number EOL @check_ssl @broadcast;
-		'remote_publish'i ' ' user ' ' identity ' ' token ' ' enc ' ' sig ' ' 
-				number EOL @check_ssl @remote_publish;
+		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number 
+				EOL @check_ssl @remote_publish;
 	*|;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -354,7 +350,6 @@ int server_parse_loop()
 	const char *pp1, *pp2;
 	const char *r1, *r2;
 	const char *a1, *a2;
-	const char *s1, *s2;
 	const char *n1, *n2;
 	const char *t1, *t2;
 	const char *g1, *g2;
@@ -413,10 +408,10 @@ int server_parse_loop()
 	include common;
 
 	action session_key {
-		char *sk = alloc_string( k1, k2 );
 		char *generation = alloc_string( g1, g2 );
+		char *sk = alloc_string( k1, k2 );
 
-		session_key( mysql, relid, user, friend_id, sk, generation );
+		session_key( mysql, relid, user, friend_id, generation, sk );
 	}
 
 	action forward_to {
@@ -428,7 +423,7 @@ int server_parse_loop()
 	}
 
 	main :=
-		'session_key'i ' ' key ' ' generation EOL @session_key |
+		'session_key'i ' ' generation ' ' key EOL @session_key |
 		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to;
 }%%
 
@@ -662,7 +657,7 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
-	const char *e1, *e2, *s1, *s2, *y1, *y2;
+	const char *y1, *y2;
 	bool OK = false;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
@@ -706,7 +701,7 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 		include common;
 
 		main := 
-			'OK ' enc ' ' sig ' ' sym EOL @{ OK = true; } |
+			'OK ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
@@ -727,14 +722,8 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 		goto fail;
 	}
 	
-	encsig.enc = (char*)malloc( e2-e1+1 );
-	encsig.sig = (char*)malloc( s2-s1+1 );
 	encsig.sym = (char*)malloc( y2-y1+1 );
-	memcpy( encsig.enc, e1, e2-e1 );
-	memcpy( encsig.sig, s1, s2-s1 );
 	memcpy( encsig.sym, y1, y2-y1 );
-	encsig.enc[e2-e1] = 0;
-	encsig.sig[s2-s1] = 0;
 	encsig.sym[y2-y1] = 0;
 
 fail:
@@ -758,7 +747,7 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
-	const char *e1, *e2, *s1, *s2, *y1, *y2;
+	const char *y1, *y2;
 	bool OK = false;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
@@ -805,7 +794,7 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 		sym = [0-9a-f]+      >{y1 = p;} %{y2 = p;};
 
 		main := 
-			'OK ' enc ' ' sig ' ' sym EOL @{ OK = true; } |
+			'OK ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
@@ -826,14 +815,8 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 		goto fail;
 	}
 	
-	encsig.enc = (char*)malloc( e2-e1+1 );
-	encsig.sig = (char*)malloc( s2-s1+1 );
 	encsig.sym = (char*)malloc( y2-y1+1 );
-	memcpy( encsig.enc, e1, e2-e1 );
-	memcpy( encsig.sig, s1, s2-s1 );
 	memcpy( encsig.sym, y1, y2-y1 );
-	encsig.enc[e2-e1] = 0;
-	encsig.sig[s2-s1] = 0;
 	encsig.sym[y2-y1] = 0;
 
 fail:
@@ -856,7 +839,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
-	const char *e1, *e2, *s1, *s2, *y1, *y2;
+	const char *y1, *y2;
 	bool OK = false;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
@@ -898,12 +881,10 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	%%{
 		EOL = '\r'? '\n';
 
-		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
-		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
 		sym = [0-9a-f]+      >{y1 = p;} %{y2 = p;};
 
 		main := 
-			'OK ' enc ' ' sig ' ' sym EOL @{ OK = true; } |
+			'OK ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
@@ -924,14 +905,8 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		goto fail;
 	}
 	
-	encsig.enc = (char*)malloc( e2-e1+1 );
-	encsig.sig = (char*)malloc( s2-s1+1 );
 	encsig.sym = (char*)malloc( y2-y1+1 );
-	memcpy( encsig.enc, e1, e2-e1 );
-	memcpy( encsig.sig, s1, s2-s1 );
 	memcpy( encsig.sym, y1, y2-y1 );
-	encsig.enc[e2-e1] = 0;
-	encsig.sig[s2-s1] = 0;
 	encsig.sym[y2-y1] = 0;
 
 fail:
@@ -1088,7 +1063,7 @@ fail:
 }%%
 
 long send_message_net( const char *to_identity, const char *relid,
-		const char *enc, const char *sig, const char *message, long mLen )
+		const char *message, long mLen )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -1127,8 +1102,8 @@ long send_message_net( const char *to_identity, const char *relid,
 
 	/* Send the request. */
 	BIO_printf( sbio, 
-		"message %s %s %s %ld\r\n", 
-		relid, enc, sig, mLen );
+		"message %s %ld\r\n", 
+		relid, mLen );
 	BIO_write( sbio, message, mLen );
 	BIO_flush( sbio );
 
@@ -1184,7 +1159,7 @@ fail:
 
 long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *to_identity, const char *from_user, 
-		const char *token, const char *enc, const char *sig, const char *sym, long mLen )
+		const char *token, const char *sym, long mLen )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -1224,8 +1199,8 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 
 	/* Send the request. */
 	BIO_printf( sbio, 
-		"remote_publish %s %s%s/ %s %s %s %ld\r\n", 
-		toIdent.user, c->CFG_URI, from_user, token, enc, sig, mLen );
+		"remote_publish %s %s%s/ %s %ld\r\n", 
+		toIdent.user, c->CFG_URI, from_user, token, mLen );
 	BIO_write( sbio, sym, mLen );
 	BIO_flush( sbio );
 
@@ -1243,13 +1218,13 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		include common;
 
 		main := 
-			'OK' ' ' enc ' ' number EOL @{ OK = true; } |
+			'OK' ' ' number ' ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
 	p = buf;
 	pe = buf + strlen(buf);
-	const char *e1, *e2;
+	const char *y1, *y2;
 	const char *n1, *n2;
 
 	%% write init;
@@ -1266,7 +1241,7 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		goto fail;
 	}
 
-	resultEnc = alloc_string( e1, e2 );
+	resultEnc = alloc_string( y1, y2 );
 	number = alloc_string( n1, n2 );
 	resultGen = strtoll( number, 0, 10 );
 

@@ -144,8 +144,6 @@ CREATE TABLE relid_request (
 	from_id TEXT,
 	requested_relid CHAR(32),
 	reqid CHAR(32),
-	msg_enc TEXT,
-	msg_sig TEXT,
 	msg_sym TEXT
 );
 
@@ -154,8 +152,6 @@ CREATE TABLE relid_response (
 	requested_relid CHAR(32),
 	returned_relid CHAR(32),
 	reqid CHAR(32),
-	msg_enc TEXT,
-	msg_sig TEXT,
 	msg_sym TEXT
 );
 
@@ -169,8 +165,8 @@ CREATE TABLE friend_request (
 
 CREATE TABLE get_session_key (
 	get_relid VARCHAR(32),
-	session_key CHAR(32),
 	generation BIGINT
+	session_key CHAR(32),
 );
 
 CREATE TABLE put_session_key (
@@ -200,8 +196,6 @@ CREATE TABLE ftoken_request (
 	from_id TEXT,
 	token CHAR(32),
 	reqid CHAR(32),
-	msg_enc TEXT,
-	msg_sig TEXT,
 	msg_sym TEXT
 );
 
@@ -215,8 +209,6 @@ CREATE TABLE broadcast_queue (
 CREATE TABLE message_queue (
 	to_id TEXT,
 	relid CHAR(32),
-	enc TEXT,
-	sig TEXT,
 	message TEXT
 );
 

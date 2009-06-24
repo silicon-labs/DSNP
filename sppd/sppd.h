@@ -104,18 +104,16 @@ long send_forward_to( MYSQL *mysql, const char *from, const char *to, int childN
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
 
-void receive_message( MYSQL *mysql, const char *relid,
-		const char *enc, const char *sig, const char *message );
+void receive_message( MYSQL *mysql, const char *relid, const char *message );
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 		long long generation, const char *message );
 long send_message_net( const char *to_identity, const char *relid,
-		const char *enc, const char *sig, const char *message, long mLen );
+		const char *message, long mLen );
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *token,
-		const char *enc, const char *sig, const char *msg );
+		const char *identity, const char *token, const char *msg );
 
 bool check_comm_key( const char *key );
 
@@ -124,7 +122,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, const char *user_message, long mLen );
 long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *to_identity, const char *from_identity,
-		const char *token, const char *enc, const char *sig, const char *sym, long mLen );
+		const char *token, const char *sym, long mLen );
 
 int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );

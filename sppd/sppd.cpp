@@ -484,9 +484,9 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 
 	exec_query( mysql,
 		"INSERT INTO relid_request "
-		"( for_user, from_id, requested_relid, reqid, msg_enc, msg_sig, msg_sym ) "
-		"VALUES( %e, %e, %e, %e, %e, %e, %e )",
-		user, identity, requested_relid_str, reqid_str, encrypt.enc, encrypt.sig, encrypt.sym );
+		"( for_user, from_id, requested_relid, reqid, msg_sym ) "
+		"VALUES( %e, %e, %e, %e, %e )",
+		user, identity, requested_relid_str, reqid_str, encrypt.sym );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
@@ -504,7 +504,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	MYSQL_ROW row;
 
 	query_res = exec_query( mysql,
-		"SELECT msg_enc, msg_sig, msg_sym FROM relid_request WHERE reqid = %e", reqid );
+		"SELECT msg_sym FROM relid_request WHERE reqid = %e", reqid );
 
 	if ( query_res != 0 ) {
 		BIO_printf( bioOut, "ERR\r\n" );
@@ -515,7 +515,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		BIO_printf( bioOut, "OK %s %s %s\r\n", row[0], row[1], row[2] );
+		BIO_printf( bioOut, "OK %s\r\n", row[0] );
 	else
 		BIO_printf( bioOut, "ERROR\r\n" );
 
@@ -526,17 +526,16 @@ query_fail:
 	BIO_flush( bioOut );
 }
 
-long store_relid_response( MYSQL *mysql, const char *identity, 
-		const char *fr_relid_str, const char *fr_reqid_str, 
-		const char *relid_str, const char *reqid_str, 
-		const char *enc, const char *sig, const char *sym )
+long store_relid_response( MYSQL *mysql, const char *identity, const char *fr_relid_str,
+		const char *fr_reqid_str, const char *relid_str, const char *reqid_str, 
+		const char *sym )
 {
 	int result = exec_query( mysql,
 		"INSERT INTO relid_response "
-		"( from_id, requested_relid, returned_relid, reqid, msg_enc, msg_sig, msg_sym ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e, %e )",
+		"( from_id, requested_relid, returned_relid, reqid, msg_sym ) "
+		"VALUES ( %e, %e, %e, %e, %e )",
 		identity, fr_relid_str, relid_str, 
-		reqid_str, enc, sig, sym );
+		reqid_str, sym );
 	
 	return result;
 }
@@ -604,7 +603,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	/* Decrypt and verify the requested_relid. */
 	encrypt.load( id_pub, user_priv );
 
-	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig, encsig.sym );
+	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
@@ -639,8 +638,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	response_reqid_str = bin2hex( response_reqid, REQID_SIZE );
 
 	store_relid_response( mysql, identity, requested_relid_str, fr_reqid_str, 
-			response_relid_str, response_reqid_str,
-			encrypt.enc, encrypt.sig, encrypt.sym );
+			response_relid_str, response_reqid_str, encrypt.sym );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, identity, response_relid_str, requested_relid_str, false );
@@ -664,7 +662,7 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 
 	/* Execute the query. */
 	query_res = exec_query( mysql,
-		"SELECT msg_enc, msg_sig, msg_sym FROM relid_response WHERE reqid = %e;", reqid );
+		"SELECT msg_sym FROM relid_response WHERE reqid = %e;", reqid );
 	
 	if ( query_res != 0 ) {
 		BIO_printf( bioOut, "ERR\r\n" );
@@ -675,7 +673,7 @@ void fetch_response_relid( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		BIO_printf( bioOut, "OK %s %s %s\r\n", row[0], row[1], row[2] );
+		BIO_printf( bioOut, "OK %s\r\n", row[0] );
 	else
 		BIO_printf( bioOut, "ERR\r\n" );
 
@@ -756,7 +754,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 
 	encrypt.load( id_pub, user_priv );
 
-	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig, encsig.sym );
+	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
@@ -908,7 +906,7 @@ long run_message_queue_db( MYSQL *mysql )
 
 	/* Extract all messages. */
 	exec_query( mysql,
-		"SELECT to_id, relid, enc, sig, message FROM message_queue" );
+		"SELECT to_id, relid, message FROM message_queue" );
 
 	/* Get the result. */
 	select_res = mysql_store_result( mysql );
@@ -929,11 +927,9 @@ long run_message_queue_db( MYSQL *mysql )
 
 		char *to_id = row[0];
 		char *relid = row[1];
-		char *enc = row[2];
-		char *sig = row[3];
-		char *message = row[4];
+		char *message = row[2];
 
-		long send_res = send_message_net( to_id, relid, enc, sig, message, strlen(message) );
+		long send_res = send_message_net( to_id, relid, message, strlen(message) );
 		if ( send_res < 0 ) {
 			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
@@ -951,18 +947,16 @@ long run_message_queue_db( MYSQL *mysql )
 
 			char *to_id = row[0];
 			char *relid = row[1];
-			char *enc = row[2];
-			char *sig = row[3];
-			char *message = row[4];
+			char *message = row[2];
 
 			if ( !sent[i] ) {
 				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
 
 				exec_query( mysql,
 					"INSERT INTO message_queue "
-					"( to_id, relid, enc, sig, message ) "
-					"VALUES ( %e, %e, %e, %e, %e ) ",
-					to_id, relid, enc, sig, message );
+					"( to_id, relid, message ) "
+					"VALUES ( %e, %e, %e ) ",
+					to_id, relid, message );
 			}
 		}
 		/* Free the table lock before we process the select results. */
@@ -1057,18 +1051,17 @@ close:
 }
 
 
-long store_ftoken( MYSQL *mysql, const char *user, 
-		const char *identity, char *token_str, char *reqid_str,
-		char *msg_enc, char *msg_sig, char *msg_sym )
+long store_ftoken( MYSQL *mysql, const char *user, const char *identity,
+		const char *token_str, const char *reqid_str, const char *msg_sym )
 {
 	long result = 0;
 	int query_res;
 
 	query_res = exec_query( mysql,
 		"INSERT INTO ftoken_request "
-		"( user, from_id, token, reqid, msg_enc, msg_sig, msg_sym ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e, %e ) ",
-		user, identity, token_str, reqid_str, msg_enc, msg_sig, msg_sym );
+		"( user, from_id, token, reqid, msg_sym ) "
+		"VALUES ( %e, %e, %e, %e, %e ) ",
+		user, identity, token_str, reqid_str, msg_sym );
 
 	if ( query_res != 0 )
 		result = ERR_QUERY_ERROR;
@@ -1158,8 +1151,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	reqid_str = bin2hex( reqid, REQID_SIZE );
 
 	store_ftoken( mysql, user, friend_id.identity, 
-			flogin_token_str, reqid_str, encrypt.enc, 
-			encrypt.sig, encrypt.sym );
+			flogin_token_str, reqid_str, encrypt.sym );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
@@ -1178,7 +1170,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	MYSQL_ROW row;
 
 	query_res = exec_query( mysql,
-		"SELECT msg_enc, msg_sig, msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
+		"SELECT msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
 
 	/* Execute the query. */
 	if ( query_res != 0 ) {
@@ -1190,7 +1182,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row )
-		BIO_printf( bioOut, "OK %s %s %s\r\n", row[0], row[1], row[2] );
+		BIO_printf( bioOut, "OK %s\r\n", row[0] );
 	else
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NO_FTOKEN );
 
@@ -1251,7 +1243,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	encrypt.load( id_pub, user_priv );
 
 	/* Decrypt the flogin_token. */
-	verifyRes = encrypt.decryptVerify( encsig.enc, encsig.sig, encsig.sym );
+	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
@@ -1302,7 +1294,7 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 }
 
 void session_key( MYSQL *mysql, const char *relid, const char *user,
-		const char *identity, const char *sk, const char *generation )
+		const char *identity, const char *generation, const char *sk )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1323,7 +1315,7 @@ void session_key( MYSQL *mysql, const char *relid, const char *user,
 	/* Make the query. */
 	query_res = exec_query( mysql, 
 			"INSERT INTO get_session_key "
-			"( get_relid, session_key, generation ) "
+			"( get_relid, generation, session_key ) "
 			"VALUES ( %e, %e, %e ) ",
 			relid, sk, generation );
 	
@@ -1380,9 +1372,9 @@ long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
 
 	exec_query( mysql,
 		"INSERT INTO message_queue "
-		"( to_id, relid, enc, sig, message ) "
-		"VALUES ( %e, %e, %e, %e, %e ) ",
-		to_identity, relid, enc, sig, message );
+		"( to_id, relid, message ) "
+		"VALUES ( %e, %e, %e ) ",
+		to_identity, relid, message );
 
 	/* UNLOCK reset. */
 	exec_query( mysql, "UNLOCK TABLES");
@@ -1422,7 +1414,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	/* Find youngest session key. In the future some sense of current session
 	 * key should be maintained. */
 	exec_query( mysql,
-		"SELECT session_key, generation FROM put_session_key "
+		"SELECT generation, session_key, FROM put_session_key "
 		"WHERE user = %e "
 		"ORDER BY generation DESC "
 		"LIMIT 1",
@@ -1434,8 +1426,8 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		BIO_printf( bioOut, "ERROR bad user\r\n" );
 		goto close;
 	}
-	session_key = strdup(row[0]);
-	generation = strdup(row[1]);
+	generation = strdup(row[0]);
+	session_key = strdup(row[1]);
 
 	/* Find root user. */
 	exec_query( mysql,
@@ -1543,7 +1535,7 @@ close:
 }
 
 long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
-		long long generation2, const char *msg, long mLen, const char *encMessage )
+		long long generation, const char *msg, long mLen, const char *encMessage )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
@@ -1599,7 +1591,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 	full = new char[4096+encMessageLen];
 	soFar = sprintf( full, 
 		"remote_broadcast %lld %s %s %lld %ld\r\n", 
-		seqNum, timeStr, hashStr, generation2, encMessageLen );
+		seqNum, timeStr, hashStr, generation, encMessageLen );
 	memcpy( full + soFar, encMessage, encMessageLen );
 	full[soFar+encMessageLen] = 0;
 
@@ -1626,7 +1618,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
 	result = send_remote_publish_net( resultEnc, resultGen, author_id,
-			to_user, token, encrypt.enc, encrypt.sig, encrypt.sym, strlen(encrypt.sym) );
+			to_user, token, encrypt.sym, strlen(encrypt.sym) );
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
@@ -1739,7 +1731,7 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friendId, 
 		long long seqNum, const char *date, const char *hash,
-		long long generation2, const char *msg, long mLen )
+		long long generation, const char *msg, long mLen )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1749,7 +1741,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	int decryptRes;
 
 	message( "remote_broadcast\n");
-	message( "generation2: %lld\n", generation2 );
+	message( "generation: %lld\n", generation );
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	exec_query( mysql, 
@@ -1758,7 +1750,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		"JOIN get_session_key "
 		"ON friend_claim.get_relid = get_session_key.get_relid "
 		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = %L",
-		user, hash, generation2 );
+		user, hash, generation );
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
@@ -1851,8 +1843,7 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identi
 	return queue_message( mysql, from_user, to_identity, buf );
 }
 
-void receive_message( MYSQL *mysql, const char *relid, const char *enc,
-		const char *sig, const char *message )
+void receive_message( MYSQL *mysql, const char *relid, const char *message )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1877,7 +1868,7 @@ void receive_message( MYSQL *mysql, const char *relid, const char *enc,
 	id_pub = fetch_public_key( mysql, friend_id );
 
 	encrypt.load( id_pub, user_priv );
-	decrypt_res = encrypt.decryptVerify( enc, sig, message );
+	decrypt_res = encrypt.decryptVerify( message );
 
 	if ( decrypt_res < 0 ) {
 		BIO_printf( bioOut, "ERROR %s", encrypt.err );
@@ -1959,8 +1950,7 @@ free_result:
 }
 
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *token,
-		const char *enc, const char *sig, const char *sym )
+		const char *identity, const char *token, const char *sym )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1992,7 +1982,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	id_pub = fetch_public_key( mysql, identity );
 
 	encrypt1.load( id_pub, user_priv );
-	encrypt1.decryptVerify( enc, sig, sym );
+	encrypt1.decryptVerify( sym );
 
 	exec_query( mysql,
 		"INSERT INTO remote_published "
@@ -2026,7 +2016,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	}
 
 	message( "remote_publish enc: %s\n", encrypt2.sym );
-	BIO_printf( bioOut, "OK %s %s\r\n", encrypt2.sym, generation );
+	BIO_printf( bioOut, "OK %s %s\r\n", generation, encrypt2.sym );
 
 free_result:
 	mysql_free_result( result );

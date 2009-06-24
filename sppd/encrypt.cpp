@@ -146,7 +146,7 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	return 0;
 }
 
-int Encrypt::decryptVerify( const char *, const char *, const char *srcMsg )
+int Encrypt::decryptVerify( const char *srcMsg )
 {
 	RC4_KEY rc4_key;
 	u_char *data, *signature;

@@ -29,52 +29,6 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
-int Encrypt::sign( u_char *src, long len )
-{
-	/* Sign the src. */
-	u_char src_sha1[SHA_DIGEST_LENGTH];
-	SHA1( src, len, src_sha1 );
-
-	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
-	unsigned sigLen;
-	int signRes = RSA_sign( NID_sha1, src_sha1, SHA_DIGEST_LENGTH, signature, 
-			&sigLen, privDecSign );
-
-	if ( signRes != 1 ) {
-		free( signature );
-		ERR_error_string( ERR_get_error(), err );
-		return -1;
-	}
-
-	sig = bin2hex( signature, sigLen );
-	free( signature );
-	return 0;
-}
-
-int Encrypt::verify( u_char *msg, long len, const char *srcSig )
-{
-	/* Convert the sig to binary. */
-	u_char *signature = (u_char*)malloc( strlen(srcSig) );
-	long sigLen = hex2bin( signature, strlen(srcSig), srcSig );
-	if ( sigLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded signature to binary" );
-		return -1;
-	}
-
-	/* Verify the item. */
-	u_char msg_sha1[SHA_DIGEST_LENGTH];
-	SHA1( msg, len, msg_sha1 );
-	int verifyres = RSA_verify( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
-			signature, sigLen, pubEncVer );
-	if ( verifyres != 1 ) {
-		error("verification failed\n");
-		ERR_error_string( ERR_get_error(), err );
-		return -1;
-	}
-
-	return 0;
-}
-	
 int Encrypt::signEncrypt( u_char *msg, long mLen )
 {
 	RC4_KEY rc4_key;
@@ -135,8 +89,6 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 
 	/* FIXME: check results here. */
 
-	enc = bin2hex( encrypted, encLen );
-	sig = bin2hex( signature, sigLen );
 	sym = bin2hex( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
 
 	free( encrypted );
@@ -170,8 +122,8 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	msgLen -= 2 + encLen;
 
 	/* Decrypt the key. */
-	session_key = (u_char*) malloc( RSA_size( privDecSign ) );
-	skLen = RSA_private_decrypt( encLen, encrypted, session_key, 
+	u_char *session_key = (u_char*) malloc( RSA_size( privDecSign ) );
+	long skLen = RSA_private_decrypt( encLen, encrypted, session_key, 
 			privDecSign, RSA_PKCS1_PADDING );
 	if ( skLen < 0 ) {
 		sprintf( err, "bad session key");
@@ -215,7 +167,7 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	return 0;
 }
 
-int Encrypt::skSignEncrypt( const char *srcSK, u_char *msg, long mLen )
+int Encrypt::bkSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 {
 	RC4_KEY rc4_key;
 	u_char *output;
@@ -263,7 +215,7 @@ int Encrypt::skSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 
 	/* FIXME: check results here. */
 
-	sig = bin2hex( signature, sigLen );
+//	sig = bin2hex( signature, sigLen );
 	sym = bin2hex( output, lenLen+sigLen+mLen );
 
 	free( signature );
@@ -272,7 +224,7 @@ int Encrypt::skSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 	return 0;
 }
 	
-int Encrypt::skDecryptVerify( const char *srcSK, const char *srcMsg )
+int Encrypt::bkDecryptVerify( const char *srcSK, const char *srcMsg )
 {
 	RC4_KEY rc4_key;
 	u_char *signature, *data;

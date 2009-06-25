@@ -1251,3 +1251,116 @@ fail:
 	::close( socketFd );
 	return result;
 }
+
+%%{
+	machine base64;
+	write data;
+}%%
+
+char *binToBase64( const u_char *data, long len )
+{
+	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	long twentyFourBits;
+	long lenRem = len % 3;
+	long lenEven = len - lenRem;
+
+	long outLen = ( lenEven / 3 ) * 4 + ( lenRem > 0 ? 4 : 0 ) + 1;
+	char *output = new char[outLen];
+	char *dest = output;
+
+	for ( int i = 0; i < lenEven; i += 3 ) {
+		twentyFourBits = (long)data[i] << 16;
+		twentyFourBits |= (long)data[i+1] << 8;
+		twentyFourBits |= (long)data[i+2];
+
+		*dest++ = index[( twentyFourBits >> 18 ) & 0x3f];
+		*dest++ = index[( twentyFourBits >> 12 ) & 0x3f];
+		*dest++ = index[( twentyFourBits >> 6 ) & 0x3f];
+		*dest++ = index[twentyFourBits & 0x3f];
+	}
+
+	if ( lenRem > 0 ) {
+		twentyFourBits = (long)data[lenEven] << 16;
+		if ( lenRem > 1 )
+			twentyFourBits |= (long)data[lenEven+1] << 8;
+
+		/* Always need the first two six-bit groups.  */
+		*dest++ = index[( twentyFourBits >> 18 ) & 0x3f];
+		*dest++ = index[( twentyFourBits >> 12 ) & 0x3f];
+		if ( lenRem > 1 )
+			*dest++ = index[( twentyFourBits >> 6 ) & 0x3f];
+		else
+			*dest++ = '=';
+		*dest++ = '=';
+	}
+
+	*dest = 0;
+
+	return output;
+
+}
+
+long base64ToBin( unsigned char *out, long len, const char *src )
+{
+	long sixBits;
+	long twentyFourBits;
+	unsigned char *dest = out;
+
+	/* Parser for response. */
+	%%{
+		sixBits = 
+			[A-Z] @{ sixBits = *p - 'A'; } |
+			[a-z] @{ sixBits = 26 + (*p - 'a'); } |
+			[0-9] @{ sixBits = 52 + (*p - '0'); } |
+			'+' @{ sixBits = 62; } |
+			'/' @{ sixBits = 63; };
+
+		action c1 {
+			twentyFourBits = sixBits << 18;
+		}
+		action c2 {
+			twentyFourBits |= sixBits << 12;
+		}
+		action c3 {
+			twentyFourBits |= sixBits << 6;
+		}
+		action c4 {
+			twentyFourBits |= sixBits;
+		}
+
+		action three {
+			*dest++ = ( twentyFourBits >> 16 ) & 0xff;
+			*dest++ = ( twentyFourBits >> 8 ) & 0xff;
+			*dest++ = twentyFourBits & 0xff;
+		}
+		action two {
+			*dest++ = ( twentyFourBits >> 16 ) & 0xff;
+			*dest++ = ( twentyFourBits >> 8 ) & 0xff;
+		}
+		action one {
+			*dest++ = ( twentyFourBits >> 16 ) & 0xff;
+		}
+
+		twentyFourBits =
+			( sixBits @c1 sixBits @c2 sixBits @c3 sixBits @c4 ) @three |
+			( sixBits @c1 sixBits @c2 sixBits '=') @two |
+			( sixBits @c1 sixBits '=' '=' ) @one ;
+
+		main := twentyFourBits*;
+			
+	}%%
+
+	const char *p = src;
+	const char *pe = src + strlen(src);
+	int cs;
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		return 0;
+
+	return dest - out;
+}
+

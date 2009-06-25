@@ -1364,8 +1364,8 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 	BIO_printf( bioOut, "OK\n" );
 }
 
-long queue_message_db( MYSQL *mysql, const char *to_identity, const char *relid,
-		const char *enc, const char *sig, const char *message )
+long queue_message_db( MYSQL *mysql, const char *to_identity,
+		const char *relid, const char *message )
 {
 	/* Table lock. */
 	exec_query( mysql, "LOCK TABLES message_queue WRITE");
@@ -1447,7 +1447,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		/* Do the encryption. */
 		user_priv = load_key( mysql, user );
 		encrypt.load( 0, user_priv );
-		encrypt.skSignEncrypt( session_key, (u_char*)msg, mLen );
+		encrypt.bkSignEncrypt( session_key, (u_char*)msg, mLen );
 
 		/* Find the root user to send to. */
 		id.load( friend_id );
@@ -1683,10 +1683,10 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
-	decryptRes = encrypt.skDecryptVerify( session_key, encrypted );
+	decryptRes = encrypt.bkDecryptVerify( session_key, encrypted );
 
 	if ( decryptRes < 0 ) {
-		message("skDecryptVerify failed\n");
+		message("bkDecryptVerify failed\n");
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
@@ -1766,10 +1766,10 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		/* Do the decryption. */
 		id_pub = fetch_public_key( mysql, author_id );
 		encrypt.load( id_pub, 0 );
-		decryptRes = encrypt.skDecryptVerify( session_key, msg );
+		decryptRes = encrypt.bkDecryptVerify( session_key, msg );
 
 		if ( decryptRes < 0 ) {
-			message("second level skDecryptVerify failed\n");
+			message("second level bkDecryptVerify failed\n");
 			BIO_printf( bioOut, "ERROR\r\n" );
 			return;
 		}
@@ -1813,7 +1813,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 	/* Include the null in the message. */
 	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
 
-	queue_message_db( mysql, to_identity, relid, encrypt.enc, encrypt.sig, encrypt.sym );
+	queue_message_db( mysql, to_identity, relid, encrypt.sym );
 free_result:
 	mysql_free_result( result );
 	return 0;
@@ -2009,7 +2009,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	generation = strdup(row[1]);
 
 	encrypt2.load( id_pub, user_priv );
-	sigRes = encrypt2.skSignEncrypt( session_key, encrypt1.decrypted, encrypt1.decLen );
+	sigRes = encrypt2.bkSignEncrypt( session_key, encrypt1.decrypted, encrypt1.decLen );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;

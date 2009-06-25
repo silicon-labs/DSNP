@@ -33,7 +33,7 @@ struct Encrypt
 	Encrypt()
 	:
 		pubEncVer(0), privDecSign(0), 
-		enc(0), sig(0)
+		sym(0)
 	{}
 
 	~Encrypt()
@@ -53,29 +53,21 @@ struct Encrypt
 	int signEncrypt( u_char *src, long len );
 	int decryptVerify( const char *message );
 
-	int skSignEncrypt( const char *sk, u_char *src, long len );
-	int skDecryptVerify( const char *sk, const char *message );
+	int bkSignEncrypt( const char *bk, u_char *src, long len );
+	int bkDecryptVerify( const char *bk, const char *message );
 
 	void clear()
 	{
-		if ( enc != 0 )
-			delete[] enc;
-		if ( sig != 0 )
-			delete[] sig;
-		enc = 0;
-		sig = 0;
+		if ( sym != 0 )
+			delete[] sym;
+		sym = 0;
 	}
 
 	RSA *pubEncVer;
 	RSA *privDecSign;
 
 	/* For encryption. */
-	char *enc;
-	char *sig;
 	char *sym;
-
-	u_char *session_key;
-	long skLen;
 
 	/* For decryption. */
 	u_char *decrypted;

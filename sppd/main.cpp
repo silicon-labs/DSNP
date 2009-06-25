@@ -132,9 +132,69 @@ void test_tls()
 	message( "result: %s\n", buf );
 }
 
+void test_base64()
+{
+	unsigned char out[64];
+	char *enc;
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "aGVsbG8gdGhlcmUhIQ==" );
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YQ==");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWI=");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWJj");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWJjZA==");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWJjZGU=");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWJjZGVm");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWJjZGVmZw==");
+	printf( "%s\n", out );
+
+	memset( out, 0, 64 );
+	base64ToBin( out, 64, "YWJjZGVmZ2g=");
+	printf( "%s\n", out );
+
+	enc = binToBase64( (const u_char*) "a", 1 );
+	printf( "%s\n", enc );
+
+	enc = binToBase64( (const u_char*) "ab", 2 );
+	printf( "%s\n", enc );
+
+	enc = binToBase64( (const u_char*) "abc", 3 );
+	printf( "%s\n", enc );
+
+	enc = binToBase64( (const u_char*) "abcd", 4 );
+	printf( "%s\n", enc );
+
+	enc = binToBase64( (const u_char*) "abcde", 5 );
+	printf( "%s\n", enc );
+
+	enc = binToBase64( (const u_char*) "abcdef", 6 );
+	printf( "%s\n", enc );
+}
+
 void run_test()
 {
-	test_tls();
+	test_decode();
 }
 
 void dieHandler( int signum )

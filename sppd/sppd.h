@@ -213,5 +213,7 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
 void start_tls();
+long base64ToBin( unsigned char *out, long len, const char *src );
+char *binToBase64( const u_char *data, long len );
 
 #endif

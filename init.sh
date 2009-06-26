@@ -123,20 +123,20 @@ CREATE TABLE user (
 	pass VARCHAR(40), 
 	email VARCHAR(50),
 
-	rsa_n TEXT, # 256
-	rsa_e CHAR(6),
-	rsa_d TEXT, # 256
-	rsa_p CHAR(128),
-	rsa_q CHAR(128),
-	rsa_dmp1 CHAR(128),
-	rsa_dmq1 CHAR(128),
-	rsa_iqmp CHAR(128)
+	rsa_n TEXT,
+	rsa_e TEXT,
+	rsa_d TEXT,
+	rsa_p TEXT,
+	rsa_q TEXT,
+	rsa_dmp1 TEXT,
+	rsa_dmq1 TEXT,
+	rsa_iqmp TEXT
 );
 
 CREATE TABLE public_key (
 	identity TEXT,
 	rsa_n TEXT,
-	rsa_e CHAR(6)
+	rsa_e TEXT
 );
 
 CREATE TABLE relid_request (

@@ -604,11 +604,11 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	%%{
 		EOL = '\r'? '\n';
 
-		n = [0-9A-F]+  >{n1 = p;} %{n2 = p;};
-		e = [01]+      >{e1 = p;} %{e2 = p;};
+		n = [A-Za-z0-9+/=]+   >{n1 = p;} %{n2 = p;};
+		e = [A-Za-z0-9+/=]+   >{e1 = p;} %{e2 = p;};
 
 		main := 
-			'OK ' n '/' e EOL @{ OK = true; } |
+			'OK ' n ' ' e EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 

@@ -172,6 +172,25 @@ bool check_comm_key( const char *key )
 	return true;
 }
 
+char *bnToBase64( const BIGNUM *n )
+{
+	long len = BN_num_bytes(n);
+	u_char *bin = new u_char[len];
+	BN_bn2bin( n, bin );
+	char *b64 = binToBase64( bin, len );
+	delete[] bin;
+	return b64;
+}
+
+BIGNUM *base64ToBn( const char *base64 )
+{
+	u_char *bin = new u_char[strlen(base64)];
+	long len = base64ToBin( bin, 0, base64 );
+	BIGNUM *bn = BN_bin2bn( bin, len, 0 );
+	delete[] bin;
+	return bn;
+}
+
 void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
@@ -186,14 +205,14 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	}
 
 	/* Extract the components to hex strings. */
-	n = BN_bn2hex( rsa->n );
-	e = BN_bn2hex( rsa->e );
-	d = BN_bn2hex( rsa->d );
-	p = BN_bn2hex( rsa->p );
-	q = BN_bn2hex( rsa->q );
-	dmp1 = BN_bn2hex( rsa->dmp1 );
-	dmq1 = BN_bn2hex( rsa->dmq1 );
-	iqmp = BN_bn2hex( rsa->iqmp );
+	n = bnToBase64( rsa->n );
+	e = bnToBase64( rsa->e );
+	d = bnToBase64( rsa->d );
+	p = bnToBase64( rsa->p );
+	q = bnToBase64( rsa->q );
+	dmp1 = bnToBase64( rsa->dmp1 );
+	dmq1 = bnToBase64( rsa->dmq1 );
+	iqmp = bnToBase64( rsa->iqmp );
 
 	/* Hash the password. */
 	pass_hashed = pass_hash( user, pass );
@@ -208,14 +227,14 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 
 	BIO_printf( bioOut, "OK\r\n" );
 
-	OPENSSL_free( n );
-	OPENSSL_free( e );
-	OPENSSL_free( d );
-	OPENSSL_free( p );
-	OPENSSL_free( q );
-	OPENSSL_free( dmp1 );
-	OPENSSL_free( dmq1 );
-	OPENSSL_free( iqmp );
+	delete[] n;
+	delete[] e;
+	delete[] d;
+	delete[] p;
+	delete[] q;
+	delete[] dmp1;
+	delete[] dmq1;
+	delete[] iqmp;
 
 	RSA_free( rsa );
 flush:
@@ -239,7 +258,7 @@ void public_key( MYSQL *mysql, const char *user )
 	}
 
 	/* Everythings okay. */
-	BIO_printf( bioOut, "OK %s/%s\n", row[0], row[1] );
+	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );
 
 free_result:
 	mysql_free_result( result );
@@ -353,8 +372,8 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity )
 	}
 
 	rsa = RSA_new();
-	BN_hex2bn( &rsa->n, pub.n );
-	BN_hex2bn( &rsa->e, pub.e );
+	rsa->n = base64ToBn( pub.n );
+	rsa->e = base64ToBn( pub.e );
 
 	return rsa;
 }
@@ -383,14 +402,14 @@ RSA *load_key( MYSQL *mysql, const char *user )
 
 	/* Everythings okay. */
 	rsa = RSA_new();
-	BN_hex2bn( &rsa->n,    row[0] );
-	BN_hex2bn( &rsa->e,    row[1] );
-	BN_hex2bn( &rsa->d,    row[2] );
-	BN_hex2bn( &rsa->p,    row[3] );
-	BN_hex2bn( &rsa->q,    row[4] );
-	BN_hex2bn( &rsa->dmp1, row[5] );
-	BN_hex2bn( &rsa->dmq1, row[6] );
-	BN_hex2bn( &rsa->iqmp, row[7] );
+	rsa->n =    base64ToBn( row[0] );
+	rsa->e =    base64ToBn( row[1] );
+	rsa->d =    base64ToBn( row[2] );
+	rsa->p =    base64ToBn( row[3] );
+	rsa->q =    base64ToBn( row[4] );
+	rsa->dmp1 = base64ToBn( row[5] );
+	rsa->dmq1 = base64ToBn( row[6] );
+	rsa->iqmp = base64ToBn( row[7] );
 
 free_result:
 	mysql_free_result( result );

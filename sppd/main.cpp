@@ -194,7 +194,7 @@ void test_base64()
 
 void run_test()
 {
-	test_decode();
+	test_base64();
 }
 
 void dieHandler( int signum )

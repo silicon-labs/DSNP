@@ -39,21 +39,23 @@ char *alloc_string( const char *s, const char *e )
 %%{
 	machine common;
 
+	base64 = [A-Za-z0-9+/=]+;
+
 	user = [a-zA-Z0-9_.]+     >{u1=p;} %{u2=p;};
 	pass = graph+             >{p1=p;} %{p2=p;};
 	email = graph+            >{e1=p;} %{e2=p;};
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
-	reqid = [0-9a-f]+         >{r1=p;} %{r2=p;};
-	hash = [0-9a-f]+          >{a1=p;} %{a2=p;};
-	key = [a-f0-9]+           >{k1=p;} %{k2=p;};
-	enc = [0-9a-f]+           >{e1=p;} %{e2=p;};
-	sig = [0-9a-f]+           >{s1=p;} %{s2=p;};
-	sig1 = [0-9a-f]+          >{s1=p;} %{s2=p;};
-	sig2 = [0-9a-f]+          >{t1=p;} %{t2=p;};
-	sym = [0-9a-f]+           >{y1=p;} %{y2=p;};
+	reqid = base64            >{r1=p;} %{r2=p;};
+	hash = base64             >{a1=p;} %{a2=p;};
+	key = base64              >{k1=p;} %{k2=p;};
+	enc = base64              >{e1=p;} %{e2=p;};
+	sig = base64              >{s1=p;} %{s2=p;};
+	sig1 = base64             >{s1=p;} %{s2=p;};
+	sig2 = base64             >{t1=p;} %{t2=p;};
+	sym = base64              >{y1=p;} %{y2=p;};
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
-	relid = [0-9a-f]+         >{r1=p;} %{r2=p;};
-	token = [0-9a-f]+         >{t1=p;} %{t2=p;};
+	relid = base64            >{r1=p;} %{r2=p;};
+	token = base64            >{t1=p;} %{t2=p;};
 
 	date = ( digit{4} '-' digit{2} '-' digit{2} ' '
 			digit{2} ':' digit{2} ':' digit{2} ) >{d1 = p;} %{d2 = p;};
@@ -61,10 +63,6 @@ char *alloc_string( const char *s, const char *e )
 	identity = 
 		( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
 		>{i1=p;} %{i2=p;};
-
-	identity2 = 
-		( 'https://' path_part '/' ( path_part '/' )* )
-		>{j1=p;} %{j2=p;};
 
 	number = [0-9]+           >{n1=p;} %{n2=p;};
 	seq_num = [0-9]+          >{q1=p;} %{q2=p;};
@@ -407,11 +405,11 @@ int server_parse_loop()
 
 	include common;
 
-	action session_key {
+	action broadcast_key {
 		char *generation = alloc_string( g1, g2 );
-		char *sk = alloc_string( k1, k2 );
+		char *bk = alloc_string( k1, k2 );
 
-		session_key( mysql, relid, user, friend_id, generation, sk );
+		broadcast_key( mysql, relid, user, friend_id, generation, bk );
 	}
 
 	action forward_to {
@@ -423,7 +421,7 @@ int server_parse_loop()
 	}
 
 	main :=
-		'session_key'i ' ' generation ' ' key EOL @session_key |
+		'broadcast_key'i ' ' generation ' ' key EOL @broadcast_key |
 		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to;
 }%%
 
@@ -602,10 +600,10 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 
 	/* Parser for response. */
 	%%{
-		EOL = '\r'? '\n';
+		include common;
 
-		n = [A-Za-z0-9+/=]+   >{n1 = p;} %{n2 = p;};
-		e = [A-Za-z0-9+/=]+   >{e1 = p;} %{e2 = p;};
+		n = base64   >{n1 = p;} %{n2 = p;};
+		e = base64   >{e1 = p;} %{e2 = p;};
 
 		main := 
 			'OK ' n ' ' e EOL @{ OK = true; } |
@@ -787,11 +785,7 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 
 	/* Parser for response. */
 	%%{
-		EOL = '\r'? '\n';
-
-		enc = [0-9a-f]+      >{e1 = p;} %{e2 = p;};
-		sig = [0-9a-f]+      >{s1 = p;} %{s2 = p;};
-		sym = [0-9a-f]+      >{y1 = p;} %{y2 = p;};
+		include common;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
@@ -879,9 +873,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 
 	/* Parser for response. */
 	%%{
-		EOL = '\r'? '\n';
-
-		sym = [0-9a-f]+      >{y1 = p;} %{y2 = p;};
+		include common;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
@@ -1024,7 +1016,7 @@ long send_broadcast_net( const char *toSite, const char *relid,
 
 	/* Parser for response. */
 	%%{
-		EOL = '\r'? '\n';
+		include common;
 
 		main := 
 			'OK' EOL @{ OK = true; } |
@@ -1118,7 +1110,7 @@ long send_message_net( const char *to_identity, const char *relid,
 
 	/* Parser for response. */
 	%%{
-		EOL = '\r'? '\n';
+		include common;
 
 		main := 
 			'OK' EOL @{ OK = true; } |
@@ -1257,7 +1249,7 @@ fail:
 	write data;
 }%%
 
-char *binToBase64( const u_char *data, long len )
+char *bin_to_base64( const u_char *data, long len )
 {
 	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	long twentyFourBits;
@@ -1300,7 +1292,7 @@ char *binToBase64( const u_char *data, long len )
 
 }
 
-long base64ToBin( unsigned char *out, long len, const char *src )
+long base64_to_bin( unsigned char *out, long len, const char *src )
 {
 	long sixBits;
 	long twentyFourBits;

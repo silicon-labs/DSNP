@@ -23,7 +23,7 @@ requireOwner();
 
 $uri = $_GET['uri'];
 $reqid = $_GET['reqid'];
-$hash = MD5( $uri );
+$hash = base64_encode(md5($uri, true));
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
@@ -37,7 +37,7 @@ fwrite($fp, $send);
 
 $res = fgets($fp);
 
-if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+if ( ereg("^OK ([A-Za-z0-9+/=]+)", $res, $regs) ) {
 	$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
 	header("Location: ${uri}sftoken.php?${arg_ftoken}" );
 }

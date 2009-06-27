@@ -62,8 +62,7 @@ echo
 echo "Thank you. You can now add sites."
 
 # Clear the database init file
-rm -f init.sql
-
+rm -f init.sql 
 while true; do
 
 echo
@@ -142,73 +141,73 @@ CREATE TABLE public_key (
 CREATE TABLE relid_request (
 	for_user VARCHAR(20),
 	from_id TEXT,
-	requested_relid CHAR(32),
-	reqid CHAR(32),
+	requested_relid VARCHAR(48),
+	reqid VARCHAR(48),
 	msg_sym TEXT
 );
 
 CREATE TABLE relid_response (
 	from_id TEXT,
-	requested_relid CHAR(32),
-	returned_relid CHAR(32),
-	reqid CHAR(32),
+	requested_relid VARCHAR(48),
+	returned_relid VARCHAR(48),
+	reqid VARCHAR(48),
 	msg_sym TEXT
 );
 
 CREATE TABLE friend_request (
 	for_user VARCHAR(20), 
 	from_id TEXT,
-	reqid CHAR(32),
-	requested_relid CHAR(32),
-	returned_relid CHAR(32)
+	reqid VARCHAR(48),
+	requested_relid VARCHAR(48),
+	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE get_session_key (
-	get_relid VARCHAR(32),
-	generation BIGINT
-	session_key CHAR(32),
+CREATE TABLE get_broadcast_key (
+	get_relid VARCHAR(48),
+	generation BIGINT,
+	broadcast_key VARCHAR(48)
 );
 
-CREATE TABLE put_session_key (
+CREATE TABLE put_broadcast_key (
 	user VARCHAR(20), 
-	session_key CHAR(32),
-	generation BIGINT
+	generation BIGINT,
+	broadcast_key VARCHAR(48)
 );
 
 CREATE TABLE friend_claim (
 	user VARCHAR(20), 
 	friend_id TEXT,
-	friend_hash CHAR(32),
-	put_relid CHAR(32),
-	get_relid CHAR(32),
+	friend_hash VARCHAR(48),
+	put_relid VARCHAR(48),
+	get_relid VARCHAR(48),
 	acknowledged BOOL,
 	put_root BOOL,
 	put_forward1 TEXT,
 	put_forward2 TEXT,
 	get_fwd_site1 TEXT,
 	get_fwd_site2 TEXT,
-	get_fwd_relid1 CHAR(32),
-	get_fwd_relid2 CHAR(32)
+	get_fwd_relid1 VARCHAR(48),
+	get_fwd_relid2 VARCHAR(48)
 );
 
 CREATE TABLE ftoken_request (
 	user VARCHAR(20), 
 	from_id TEXT,
-	token CHAR(32),
-	reqid CHAR(32),
+	token VARCHAR(48),
+	reqid VARCHAR(48),
 	msg_sym TEXT
 );
 
 CREATE TABLE broadcast_queue (
 	to_site TEXT,
-	relid CHAR(32),
+	relid VARCHAR(48),
 	generation BIGINT,
 	message TEXT
 );
 
 CREATE TABLE message_queue (
 	to_id TEXT,
-	relid CHAR(32),
+	relid VARCHAR(48),
 	message TEXT
 );
 
@@ -242,21 +241,21 @@ CREATE TABLE remote_published (
 
 CREATE TABLE login_token (
 	user VARCHAR(20),
-	login_token CHAR(32),
+	login_token VARCHAR(48),
 	expires TIMESTAMP
 );
 
 CREATE TABLE flogin_token (
 	user VARCHAR(20),
 	identity TEXT,
-	login_token CHAR(32),
+	login_token VARCHAR(48),
 	expires TIMESTAMP
 );
 
 CREATE TABLE remote_flogin_token (
 	user VARCHAR(20),
 	identity TEXT,
-	login_token CHAR(32)
+	login_token VARCHAR(48)
 );
 
 EOF
@@ -276,6 +275,8 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 	\$CFG_PORT = '$CFG_PORT';
+	\$CFG_USE_RECAPTCHA = false;
+	\$CFG_RC_PUBLIC_KEY = 'xxxx';
 }
 
 EOF
@@ -295,6 +296,9 @@ CFG_DB_DATABASE = $NAME
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
+CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
+CFG_TLS_CRT = /etc/ssl/local/localhost.crt
+CFG_TLS_KEY = /etc/ssl/local/localhost.key
 
 EOF
 

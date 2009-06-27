@@ -24,7 +24,7 @@ $furi = $_REQUEST['uri'];
 if ( !$furi )
 	die('no uri given');
 
-$hash = md5($furi);
+$hash = base64_encode(md5($furi, true));
 
 /* Maybe we are already logged in as this friend. */
 if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
@@ -44,7 +44,7 @@ else {
 
 	$res = fgets($fp);
 
-	if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+	if ( ereg("^OK ([A-Za-z0-9+/=]+)", $res, $regs) ) {
 		$arg_uri = 'uri=' . urlencode( $USER_URI );
 		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 		header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );

@@ -77,7 +77,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void session_key( MYSQL *mysql, const char *relid, const char *user, const char *identity,
+void broadcast_key( MYSQL *mysql, const char *relid, const char *user, const char *identity,
 		const char *sk, const char *generation );
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
@@ -97,7 +97,7 @@ char *get_site( const char *identity );
 long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
 long send_broadcast_net( const char *toSite, const char *relid,
 		long long generation, const char *message, long mLen );
-long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
+long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		const char *session_key, long long generation );
 long send_forward_to( MYSQL *mysql, const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
@@ -213,7 +213,7 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
 void start_tls();
-long base64ToBin( unsigned char *out, long len, const char *src );
-char *binToBase64( const u_char *data, long len );
+long base64_to_bin( unsigned char *out, long len, const char *src );
+char *bin_to_base64( const u_char *data, long len );
 
 #endif

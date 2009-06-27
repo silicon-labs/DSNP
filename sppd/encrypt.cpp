@@ -89,7 +89,7 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 
 	/* FIXME: check results here. */
 
-	sym = bin2hex( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
+	sym = bin_to_base64( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
 
 	free( encrypted );
 	free( signature );
@@ -106,7 +106,7 @@ int Encrypt::decryptVerify( const char *srcMsg )
 
 	/* Convert the message to binary. */
 	u_char *message = (u_char*)malloc( strlen(srcMsg) );
-	long msgLen = hex2bin( message, strlen(srcMsg), srcMsg );
+	long msgLen = base64_to_bin( message, strlen(srcMsg), srcMsg );
 	if ( msgLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded message to binary" );
 		return -1;
@@ -167,14 +167,14 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	return 0;
 }
 
-int Encrypt::bkSignEncrypt( const char *srcSK, u_char *msg, long mLen )
+int Encrypt::bkSignEncrypt( const char *srcBk, u_char *msg, long mLen )
 {
 	RC4_KEY rc4_key;
 	u_char *output;
 
-	/* Convert the session_key to binary. */
-	u_char session_key[SK_SIZE];
-	long skLen = hex2bin( session_key, SK_SIZE, srcSK );
+	/* Convert the broadcst_key to binary. */
+	u_char broadcst_key[SK_SIZE];
+	long skLen = base64_to_bin( broadcst_key, SK_SIZE, srcBk );
 	if ( skLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded session key string to binary" );
 		return -1;
@@ -183,7 +183,7 @@ int Encrypt::bkSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 	/* Need to make a buffer containing both the session key and message so we
 	 * our signature is valid only using this encryption key. */
 	u_char *signData = new u_char[SK_SIZE + mLen];
-	memcpy( signData, session_key, SK_SIZE );
+	memcpy( signData, broadcst_key, SK_SIZE );
 	memcpy( signData+SK_SIZE, msg, mLen );
 
 	/* Sign the message. */
@@ -210,13 +210,12 @@ int Encrypt::bkSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 
 	/* Encrypt the message using the session key. */
 	output = (u_char*)malloc( lenLen+sigLen+mLen );
-	RC4_set_key( &rc4_key, SK_SIZE, session_key );
+	RC4_set_key( &rc4_key, SK_SIZE, broadcst_key );
 	RC4( &rc4_key, lenLen+sigLen+mLen, encryptData, output );
 
 	/* FIXME: check results here. */
 
-//	sig = bin2hex( signature, sigLen );
-	sym = bin2hex( output, lenLen+sigLen+mLen );
+	sym = bin_to_base64( output, lenLen+sigLen+mLen );
 
 	free( signature );
 	free( output );
@@ -224,15 +223,15 @@ int Encrypt::bkSignEncrypt( const char *srcSK, u_char *msg, long mLen )
 	return 0;
 }
 	
-int Encrypt::bkDecryptVerify( const char *srcSK, const char *srcMsg )
+int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg )
 {
 	RC4_KEY rc4_key;
 	u_char *signature, *data;
 	long dataLen, sigLen;
 
-	/* Convert the session_key to binary. */
-	u_char session_key[SK_SIZE];
-	long skLen = hex2bin( session_key, SK_SIZE, srcSK );
+	/* Convert the broadcst_key to binary. */
+	u_char broadcst_key[SK_SIZE];
+	long skLen = base64_to_bin( broadcst_key, SK_SIZE, srcBk );
 	if ( skLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded session key string to binary" );
 		return -1;
@@ -240,14 +239,14 @@ int Encrypt::bkDecryptVerify( const char *srcSK, const char *srcMsg )
 
 	/* Convert the message to binary. */
 	u_char *msg = (u_char*)malloc( strlen(srcMsg) );
-	long msgLen = hex2bin( msg, strlen(srcMsg), srcMsg );
+	long msgLen = base64_to_bin( msg, strlen(srcMsg), srcMsg );
 	if ( msgLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded message to binary" );
 		return -1;
 	}
 
 	decrypted = (u_char*)malloc( msgLen );
-	RC4_set_key( &rc4_key, skLen, session_key );
+	RC4_set_key( &rc4_key, skLen, broadcst_key );
 	RC4( &rc4_key, msgLen, msg, decrypted );
 	decLen = msgLen;
 
@@ -264,7 +263,7 @@ int Encrypt::bkDecryptVerify( const char *srcSK, const char *srcMsg )
 	/* Need to make a buffer containing both the session key an message so we
 	 * can verify the message was originally signed with this key. */
 	u_char *verifyData = new u_char[SK_SIZE + decLen];
-	memcpy( verifyData, session_key, SK_SIZE );
+	memcpy( verifyData, broadcst_key, SK_SIZE );
 	memcpy( verifyData+SK_SIZE, data, dataLen );
 
 	/* Verify the message. */

@@ -39,8 +39,11 @@ include('../config.php');
 
 <p>
 <?php
-require_once('../recaptcha-php-1.10/recaptchalib.php');
-echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
+
+if ( $CFG_USE_RECAPTCHA ) {
+	require_once('../recaptcha-php-1.10/recaptchalib.php');
+	echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
+}
 ?>
 <p>
 

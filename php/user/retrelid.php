@@ -38,7 +38,7 @@ fwrite($fp, $send);
 
 $res = fgets($fp);
 
-if ( ereg("^OK ([0-9a-f]+)", $res, $regs) ) {
+if ( ereg("^OK ([A-Za-z0-9+/=]+)", $res, $regs) ) {
 	$arg_identity = 'identity=' . urlencode( $USER_URI );
 	$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 

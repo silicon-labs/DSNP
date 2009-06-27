@@ -111,6 +111,24 @@ long hex2bin( unsigned char *dest, long len, const char *src )
 	return slen;
 }
 
+char *bn_to_base64( const BIGNUM *n )
+{
+	long len = BN_num_bytes(n);
+	u_char *bin = new u_char[len];
+	BN_bn2bin( n, bin );
+	char *b64 = bin_to_base64( bin, len );
+	delete[] bin;
+	return b64;
+}
+
+BIGNUM *base64_to_bn( const char *base64 )
+{
+	u_char *bin = new u_char[strlen(base64)];
+	long len = base64_to_bin( bin, 0, base64 );
+	BIGNUM *bn = BN_bin2bn( bin, len, 0 );
+	delete[] bin;
+	return bn;
+}
 
 char *pass_hash( const char *user, const char *pass )
 {
@@ -121,13 +139,13 @@ char *pass_hash( const char *user, const char *pass )
 	return bin2hex( pass_bin, MD5_DIGEST_LENGTH );
 }
 
-int current_put_sk( MYSQL *mysql, const char *user, char *sk, long long *generation )
+int current_put_bk( MYSQL *mysql, const char *user, char *bk, long long *generation )
 {
 	int retVal = 0;
 
 	exec_query( mysql, 
-		"SELECT session_key, generation "
-		"FROM put_session_key "
+		"SELECT generation, broadcast_key "
+		"FROM put_broadcast_key "
 		"WHERE user = %e "
 		"ORDER BY generation DESC LIMIT 1",
 		user );
@@ -136,59 +154,40 @@ int current_put_sk( MYSQL *mysql, const char *user, char *sk, long long *generat
 	MYSQL_ROW row = mysql_fetch_row( result );
 
 	if ( row ) {
-		if ( sk != 0 ) 
-			strcpy( sk, row[0] );
 		if ( generation != 0 )
-			*generation = strtoll( row[1], 0, 10 );
+			*generation = strtoll( row[0], 0, 10 );
+		if ( bk != 0 ) 
+			strcpy( bk, row[1] );
 		retVal = 1;
 	}
 
 	return retVal;
 }
 
-void new_session_key( MYSQL *mysql, const char *user )
+void new_broadcast_key( MYSQL *mysql, const char *user )
 {
-	unsigned char session_key[RELID_SIZE];
-	const char *sk = 0;
+	unsigned char broadcast_key[RELID_SIZE];
+	const char *bk = 0;
 	long long generation = 0;
 
-	/* Get the latest generation. If there is no session key then generation
+	/* Get the latest generation. If there is no broadcast key then generation
 	 * is left alone. */
-	current_put_sk( mysql, user, 0, &generation );
+	current_put_bk( mysql, user, 0, &generation );
 
 	/* Generate the relationship and request ids. */
-	RAND_bytes( session_key, RELID_SIZE );
-	sk = bin2hex( session_key, RELID_SIZE );
+	RAND_bytes( broadcast_key, RELID_SIZE );
+	bk = bin_to_base64( broadcast_key, RELID_SIZE );
 
 	exec_query( mysql, 
-		"INSERT INTO put_session_key "
-		"( user, session_key, generation ) "
-		"VALUES ( %e, %e, %L ) ",
-		user, sk, generation + 1 );
+		"INSERT INTO put_broadcast_key "
+		"( user, generation, broadcast_key ) "
+		"VALUES ( %e, %L, %e ) ",
+		user, generation + 1, bk );
 }
 
 bool check_comm_key( const char *key )
 {
 	return true;
-}
-
-char *bnToBase64( const BIGNUM *n )
-{
-	long len = BN_num_bytes(n);
-	u_char *bin = new u_char[len];
-	BN_bn2bin( n, bin );
-	char *b64 = binToBase64( bin, len );
-	delete[] bin;
-	return b64;
-}
-
-BIGNUM *base64ToBn( const char *base64 )
-{
-	u_char *bin = new u_char[strlen(base64)];
-	long len = base64ToBin( bin, 0, base64 );
-	BIGNUM *bn = BN_bin2bn( bin, len, 0 );
-	delete[] bin;
-	return bn;
 }
 
 void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
@@ -205,14 +204,14 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	}
 
 	/* Extract the components to hex strings. */
-	n = bnToBase64( rsa->n );
-	e = bnToBase64( rsa->e );
-	d = bnToBase64( rsa->d );
-	p = bnToBase64( rsa->p );
-	q = bnToBase64( rsa->q );
-	dmp1 = bnToBase64( rsa->dmp1 );
-	dmq1 = bnToBase64( rsa->dmq1 );
-	iqmp = bnToBase64( rsa->iqmp );
+	n = bn_to_base64( rsa->n );
+	e = bn_to_base64( rsa->e );
+	d = bn_to_base64( rsa->d );
+	p = bn_to_base64( rsa->p );
+	q = bn_to_base64( rsa->q );
+	dmp1 = bn_to_base64( rsa->dmp1 );
+	dmq1 = bn_to_base64( rsa->dmq1 );
+	iqmp = bn_to_base64( rsa->iqmp );
 
 	/* Hash the password. */
 	pass_hashed = pass_hash( user, pass );
@@ -223,7 +222,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 		user, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
 	
 	/* Make the first session key for the user. */
-	new_session_key( mysql, user );
+	new_broadcast_key( mysql, user );
 
 	BIO_printf( bioOut, "OK\r\n" );
 
@@ -372,8 +371,8 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity )
 	}
 
 	rsa = RSA_new();
-	rsa->n = base64ToBn( pub.n );
-	rsa->e = base64ToBn( pub.e );
+	rsa->n = base64_to_bn( pub.n );
+	rsa->e = base64_to_bn( pub.e );
 
 	return rsa;
 }
@@ -402,14 +401,14 @@ RSA *load_key( MYSQL *mysql, const char *user )
 
 	/* Everythings okay. */
 	rsa = RSA_new();
-	rsa->n =    base64ToBn( row[0] );
-	rsa->e =    base64ToBn( row[1] );
-	rsa->d =    base64ToBn( row[2] );
-	rsa->p =    base64ToBn( row[3] );
-	rsa->q =    base64ToBn( row[4] );
-	rsa->dmp1 = base64ToBn( row[5] );
-	rsa->dmq1 = base64ToBn( row[6] );
-	rsa->iqmp = base64ToBn( row[7] );
+	rsa->n =    base64_to_bn( row[0] );
+	rsa->e =    base64_to_bn( row[1] );
+	rsa->d =    base64_to_bn( row[2] );
+	rsa->p =    base64_to_bn( row[3] );
+	rsa->q =    base64_to_bn( row[4] );
+	rsa->dmp1 = base64_to_bn( row[5] );
+	rsa->dmq1 = base64_to_bn( row[6] );
+	rsa->iqmp = base64_to_bn( row[7] );
 
 free_result:
 	mysql_free_result( result );
@@ -498,8 +497,8 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	}
 	
 	/* Store the request. */
-	requested_relid_str = bin2hex( requested_relid, RELID_SIZE );
-	reqid_str = bin2hex( fr_reqid, REQID_SIZE );
+	requested_relid_str = bin_to_base64( requested_relid, RELID_SIZE );
+	reqid_str = bin_to_base64( fr_reqid, REQID_SIZE );
 
 	exec_query( mysql,
 		"INSERT INTO relid_request "
@@ -566,7 +565,7 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	/* Make an md5hash for the identity. */
 	unsigned char friend_hash[MD5_DIGEST_LENGTH];
 	MD5( (unsigned char*)identity, strlen(identity), friend_hash );
-	char *friend_hash_str = bin2hex( friend_hash, MD5_DIGEST_LENGTH );
+	char *friend_hash_str = bin_to_base64( friend_hash, MD5_DIGEST_LENGTH );
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
@@ -652,9 +651,9 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	}
 
 	/* Store the request. */
-	requested_relid_str = bin2hex( requested_relid, RELID_SIZE );
-	response_relid_str = bin2hex( response_relid, RELID_SIZE );
-	response_reqid_str = bin2hex( response_reqid, REQID_SIZE );
+	requested_relid_str = bin_to_base64( requested_relid, RELID_SIZE );
+	response_relid_str = bin_to_base64( response_relid, RELID_SIZE );
+	response_reqid_str = bin_to_base64( response_reqid, REQID_SIZE );
 
 	store_relid_response( mysql, identity, requested_relid_str, fr_reqid_str, 
 			response_relid_str, response_reqid_str, encrypt.sym );
@@ -706,7 +705,7 @@ query_fail:
 long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 {
 	long result = 0;
-	char *requested_relid_str = bin2hex( fr_relid, RELID_SIZE );
+	char *requested_relid_str = bin_to_base64( fr_relid, RELID_SIZE );
 	int query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
@@ -796,12 +795,12 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 		goto close;
 	}
 		
-	requested_relid_str = bin2hex( requested_relid, RELID_SIZE );
-	returned_relid_str = bin2hex( returned_relid, RELID_SIZE );
+	requested_relid_str = bin_to_base64( requested_relid, RELID_SIZE );
+	returned_relid_str = bin_to_base64( returned_relid, RELID_SIZE );
 
 	/* Make a user request id. */
 	RAND_bytes( user_reqid, REQID_SIZE );
-	user_reqid_str = bin2hex( user_reqid, REQID_SIZE );
+	user_reqid_str = bin_to_base64( user_reqid, REQID_SIZE );
 
 	exec_query( mysql, 
 		"INSERT INTO friend_request "
@@ -1014,19 +1013,19 @@ close:
 	BIO_flush( bioOut );
 }
 
-int send_current_session_key( MYSQL *mysql, const char *user, const char *identity )
+int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *identity )
 {
 	char sk[SK_SIZE_HEX];
 	long long generation;
 	int sk_result;
 
 	/* Get the latest put session key. */
-	sk_result = current_put_sk( mysql, user, sk, &generation );
+	sk_result = current_put_bk( mysql, user, sk, &generation );
 	if ( sk_result != 1 ) {
 		BIO_printf( bioOut, "ERROR fetching session key\r\n");
 	}
 
-	int send_res = send_session_key( mysql, user, identity, sk, generation );
+	int send_res = send_broadcast_key( mysql, user, identity, sk, generation );
 	if ( send_res < 0 )
 		error( "sending failed %d\n", send_res );
 
@@ -1059,7 +1058,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
 
-	send_current_session_key( mysql, user, row[0] );
+	send_current_broadcast_key( mysql, user, row[0] );
 	forward_tree_insert( mysql, user, row[0], row[1] );
 
 	BIO_printf( bioOut, "OK\r\n" );
@@ -1137,7 +1136,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 		 * away that there is no claim. FIXME: Would be good to fake this with
 		 * an appropriate time delay. */
 		RAND_bytes( reqid, RELID_SIZE );
-		reqid_str = bin2hex( reqid, RELID_SIZE );
+		reqid_str = bin_to_base64( reqid, RELID_SIZE );
 		BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 		goto close;
 	}
@@ -1166,8 +1165,8 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	}
 
 	/* Store the request. */
-	flogin_token_str = bin2hex( flogin_token, TOKEN_SIZE );
-	reqid_str = bin2hex( reqid, REQID_SIZE );
+	flogin_token_str = bin_to_base64( flogin_token, TOKEN_SIZE );
+	reqid_str = bin_to_base64( reqid, REQID_SIZE );
 
 	store_ftoken( mysql, user, friend_id.identity, 
 			flogin_token_str, reqid_str, encrypt.sym );
@@ -1275,7 +1274,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	}
 
 	flogin_token = encrypt.decrypted;
-	flogin_token_str = bin2hex( flogin_token, RELID_SIZE );
+	flogin_token_str = bin_to_base64( flogin_token, RELID_SIZE );
 
 	exec_query( mysql,
 		"INSERT INTO remote_flogin_token "
@@ -1312,8 +1311,8 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 	return false;
 }
 
-void session_key( MYSQL *mysql, const char *relid, const char *user,
-		const char *identity, const char *generation, const char *sk )
+void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
+		const char *identity, const char *generation, const char *bk )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1333,10 +1332,10 @@ void session_key( MYSQL *mysql, const char *relid, const char *user,
 
 	/* Make the query. */
 	query_res = exec_query( mysql, 
-			"INSERT INTO get_session_key "
-			"( get_relid, generation, session_key ) "
+			"INSERT INTO get_broadcast_key "
+			"( get_relid, generation, broadcast_key ) "
 			"VALUES ( %e, %e, %e ) ",
-			relid, generation, sk );
+			relid, generation, bk );
 	
 	/* If this friend claim hasn't been acknowledged then send back
 	 * a session key and acknowledge the claim. */
@@ -1355,7 +1354,7 @@ void session_key( MYSQL *mysql, const char *relid, const char *user,
 		result = mysql_store_result( mysql );
 		row = mysql_fetch_row( result );
 
-		send_current_session_key( mysql, user, identity );
+		send_current_broadcast_key( mysql, user, identity );
 		forward_tree_insert( mysql, user, identity, row[0] );
 	}
 	
@@ -1426,14 +1425,14 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	MYSQL_ROW row;
 	Encrypt encrypt;
 	RSA *user_priv;
-	char *session_key, *generation;
+	char *broadcast_key, *generation;
 	char *friend_id, *put_relid;
 	Identity id;
 
 	/* Find youngest session key. In the future some sense of current session
 	 * key should be maintained. */
 	exec_query( mysql,
-		"SELECT generation, session_key, FROM put_session_key "
+		"SELECT generation, broadcast_key FROM put_broadcast_key "
 		"WHERE user = %e "
 		"ORDER BY generation DESC "
 		"LIMIT 1",
@@ -1446,7 +1445,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		goto close;
 	}
 	generation = strdup(row[0]);
-	session_key = strdup(row[1]);
+	broadcast_key = strdup(row[1]);
 
 	/* Find root user. */
 	exec_query( mysql,
@@ -1466,7 +1465,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		/* Do the encryption. */
 		user_priv = load_key( mysql, user );
 		encrypt.load( 0, user_priv );
-		encrypt.bkSignEncrypt( session_key, (u_char*)msg, mLen );
+		encrypt.bkSignEncrypt( broadcast_key, (u_char*)msg, mLen );
 
 		/* Find the root user to send to. */
 		id.load( friend_id );
@@ -1604,7 +1603,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 
 	/* Make an md5hash for the identity. */
 	MD5( (unsigned char*)author_id, strlen(author_id), hash );
-	hashStr = bin2hex( hash, MD5_DIGEST_LENGTH );
+	hashStr = bin_to_base64( hash, MD5_DIGEST_LENGTH );
 
 	/* Make the full message. */
 	full = new char[4096+encMessageLen];
@@ -1625,7 +1624,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 		const char *author_id, const char *token, const char *msg, long mLen )
 {
 	int result;
-	char *resultEnc, *resultSig;
+	char *resultEnc;
 	long long resultGen;
 	RSA *user_priv, *id_pub;
 
@@ -1654,7 +1653,8 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 		goto close;
 	}
 	
-	BIO_printf( bioOut, "OK %s\r\n" , resultSig );
+	message("remote broadcast okay\n");
+	BIO_printf( bioOut, "OK\r\n" );
 
 close:
 	BIO_flush(bioOut);
@@ -1666,7 +1666,7 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	char *user, *friend_id, *session_key;
+	char *user, *friend_id, *broadcast_key;
 	char *get_fwd_site1, *get_fwd_relid1;
 	char *get_fwd_site2, *get_fwd_relid2;
 	RSA *id_pub;
@@ -1677,10 +1677,10 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	exec_query( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
 		"    get_fwd_site1, get_fwd_relid1, get_fwd_site2, get_fwd_relid2, "
-		"    session_key "
+		"    broadcast_key "
 		"FROM friend_claim "
-		"JOIN get_session_key "
-		"ON friend_claim.get_relid = get_session_key.get_relid "
+		"JOIN get_broadcast_key "
+		"ON friend_claim.get_relid = get_broadcast_key.get_relid "
 		"WHERE friend_claim.get_relid = %e AND generation = %L",
 		relid, generation );
 	
@@ -1697,12 +1697,12 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	get_fwd_relid1 = row[3];
 	get_fwd_site2 = row[4];
 	get_fwd_relid2 = row[5];
-	session_key = row[6];
+	broadcast_key = row[6];
 
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
 	encrypt.load( id_pub, 0 );
-	decryptRes = encrypt.bkDecryptVerify( session_key, encrypted );
+	decryptRes = encrypt.bkDecryptVerify( broadcast_key, encrypted );
 
 	if ( decryptRes < 0 ) {
 		message("bkDecryptVerify failed\n");
@@ -1754,7 +1754,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	char *session_key, *author_id;
+	char *broadcast_key, *author_id;
 	RSA *id_pub;
 	Encrypt encrypt;
 	int decryptRes;
@@ -1764,10 +1764,10 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	exec_query( mysql, 
-		"SELECT friend_claim.friend_id, session_key "
+		"SELECT friend_claim.friend_id, broadcast_key "
 		"FROM friend_claim "
-		"JOIN get_session_key "
-		"ON friend_claim.get_relid = get_session_key.get_relid "
+		"JOIN get_broadcast_key "
+		"ON friend_claim.get_relid = get_broadcast_key.get_relid "
 		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = %L",
 		user, hash, generation );
 
@@ -1777,7 +1777,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		message("YES\n");
 
 		author_id = row[0];
-		session_key = row[1];
+		broadcast_key = row[1];
 
 		message( "second level message: %s\n", msg );
 		message( "second level author_id: %s\n", author_id );
@@ -1785,7 +1785,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		/* Do the decryption. */
 		id_pub = fetch_public_key( mysql, author_id );
 		encrypt.load( id_pub, 0 );
-		decryptRes = encrypt.bkDecryptVerify( session_key, msg );
+		decryptRes = encrypt.bkDecryptVerify( broadcast_key, msg );
 
 		if ( decryptRes < 0 ) {
 			message("second level bkDecryptVerify failed\n");
@@ -1838,14 +1838,14 @@ free_result:
 	return 0;
 }
 
-long send_session_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		const char *session_key, long long generation )
+long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
+		const char *broadcast_key, long long generation )
 {
 	static char buf[8192];
 
 	sprintf( buf,
-		"session_key %lld %s\r\n", 
-		generation, session_key );
+		"broadcast_key %lld %s\r\n", 
+		generation, broadcast_key );
 
 	return queue_message( mysql, from_user, to_identity, buf );
 }
@@ -1926,7 +1926,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	}
 
 	RAND_bytes( token, TOKEN_SIZE );
-	token_str = bin2hex( token, TOKEN_SIZE );
+	token_str = bin_to_base64( token, TOKEN_SIZE );
 
 	exec_query( mysql, 
 		"INSERT INTO login_token ( user, login_token, expires ) "
@@ -1977,7 +1977,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	Encrypt encrypt2;
 	RSA *user_priv, *id_pub;
 	int sigRes;
-	char *session_key, *generation;
+	char *broadcast_key, *generation;
 	char *authorId;
 
 	message( "remote_publish submitted token: %s\n", token );
@@ -2012,7 +2012,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	/* Find youngest session key. In the future some sense of current session
 	 * key should be maintained. */
 	exec_query( mysql,
-		"SELECT session_key, generation FROM put_session_key "
+		"SELECT generation, broadcast_key FROM put_broadcast_key "
 		"WHERE user = %e "
 		"ORDER BY generation DESC "
 		"LIMIT 1",
@@ -2024,11 +2024,11 @@ void remote_publish( MYSQL *mysql, const char *user,
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
-	session_key = strdup(row[0]);
-	generation = strdup(row[1]);
+	generation = strdup(row[0]);
+	broadcast_key = strdup(row[1]);
 
 	encrypt2.load( id_pub, user_priv );
-	sigRes = encrypt2.bkSignEncrypt( session_key, encrypt1.decrypted, encrypt1.decLen );
+	sigRes = encrypt2.bkSignEncrypt( broadcast_key, encrypt1.decrypted, encrypt1.decLen );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;

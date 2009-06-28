@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <openssl/sha.h>
 
 #define LOGIN_TOKEN_LASTS 86400
 
@@ -130,13 +131,14 @@ BIGNUM *base64_to_bn( const char *base64 )
 	return bn;
 }
 
-char *pass_hash( const char *user, const char *pass )
+char *pass_hash( const u_char *salt, const char *pass )
 {
-	unsigned char pass_bin[MD5_DIGEST_LENGTH];
-	char pass_comb[1024];
-	sprintf( pass_comb, "%s:spp:%s", user, pass );
-	MD5( (unsigned char*)pass_comb, strlen(pass_comb), pass_bin );
-	return bin2hex( pass_bin, MD5_DIGEST_LENGTH );
+	unsigned char pass_hash[SHA_DIGEST_LENGTH];
+	u_char *pass_comb = new u_char[SALT_SIZE + strlen(pass)];
+	memcpy( pass_comb, salt, SALT_SIZE );
+	memcpy( pass_comb + SALT_SIZE, pass, strlen(pass) );
+	SHA1( pass_comb, SALT_SIZE+strlen(pass), pass_hash );
+	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
 }
 
 int current_put_bk( MYSQL *mysql, const char *user, char *bk, long long *generation )
@@ -194,7 +196,11 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
-	char *pass_hashed;
+	char *pass_hashed, *salt_str;
+	u_char salt[SALT_SIZE];
+
+	RAND_bytes( salt, SALT_SIZE );
+	salt_str = bin_to_base64( salt, SALT_SIZE );
 
 	/* Generate a new key. */
 	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
@@ -214,12 +220,17 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	iqmp = bn_to_base64( rsa->iqmp );
 
 	/* Hash the password. */
-	pass_hashed = pass_hash( user, pass );
+	pass_hashed = pass_hash( salt, pass );
 
 	/* Execute the insert. */
-	exec_query( mysql, "INSERT INTO user VALUES("
-		"%e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e);", 
-		user, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
+	exec_query( mysql,
+		"INSERT INTO user "
+		"("
+		"	user, salt, pass, email, "
+		"	rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
+		")"
+		"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e );", 
+		user, salt_str, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
 	
 	/* Make the first session key for the user. */
 	new_broadcast_key( mysql, user );
@@ -1907,20 +1918,31 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	Encrypt encrypt;
-	unsigned char token[RELID_SIZE];
+	u_char token[RELID_SIZE];
+	u_char salt[SALT_SIZE];
 	char *token_str;
-	char *pass_hashed;
+	char *pass_hashed, *salt_str, *pass_str;
 	long lasts = LOGIN_TOKEN_LASTS;
 
-	/* Hash the password. */
-	pass_hashed = pass_hash( user, pass );
-
 	exec_query( mysql, 
-		"SELECT user FROM user WHERE user = %e AND pass = %e", user, pass_hashed );
+		"SELECT user, salt, pass FROM user WHERE user = %e", user );
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		goto free_result;
+	}
+
+	salt_str = row[1];
+	pass_str = row[2];
+
+	base64_to_bin( salt, 0, salt_str );
+
+	/* Hash the password. */
+	pass_hashed = pass_hash( salt, pass );
+
+	if ( strcmp( pass_hashed, pass_str ) != 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}

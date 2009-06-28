@@ -174,6 +174,7 @@ extern bool gblKeySubmitted;
 #define TOKEN_SIZE  16
 #define SK_SIZE     16
 #define SK_SIZE_HEX 33
+#define SALT_SIZE   18
 
 char *bin2hex( unsigned char *data, long len );
 long hex2bin( unsigned char *dest, long len, const char *src );

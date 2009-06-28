@@ -119,6 +119,7 @@ GRANT ALL ON $NAME.* TO '${NAME}_owner'@'localhost';
 USE $NAME;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
+	salt CHAR(24),
 	pass VARCHAR(40), 
 	email VARCHAR(50),
 

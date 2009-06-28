@@ -24,10 +24,11 @@ $furi = $_REQUEST['uri'];
 if ( !$furi )
 	die('no uri given');
 
-$hash = base64_encode(md5($furi, true));
+$hash = base64_encode(SHA1($furi, true));
 
 /* Maybe we are already logged in as this friend. */
-if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
+if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && 
+		isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
 	header( "Location: $USER_PATH" );
 }
 else {

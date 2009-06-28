@@ -112,8 +112,6 @@ $query = sprintf(
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-$mehash = MD5( $USER_URI );
-
 while ( $row = mysql_fetch_assoc($result) ) {
 	$author_id = $row['author_id'];
 	$subject_id = $row['subject_id'];

@@ -23,7 +23,7 @@ requireOwner();
 
 $uri = $_GET['uri'];
 $reqid = $_GET['reqid'];
-$hash = base64_encode(md5($uri, true));
+$hash = base64_encode(SHA1($uri, true));
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )

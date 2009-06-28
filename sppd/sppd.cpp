@@ -573,10 +573,10 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 		const char *identity, const char *put_relid, const char *get_relid, 
 		bool acknowledged )
 {
-	/* Make an md5hash for the identity. */
-	unsigned char friend_hash[MD5_DIGEST_LENGTH];
-	MD5( (unsigned char*)identity, strlen(identity), friend_hash );
-	char *friend_hash_str = bin_to_base64( friend_hash, MD5_DIGEST_LENGTH );
+	/* Make a hash for the identity. */
+	unsigned char friend_hash[SHA_DIGEST_LENGTH];
+	SHA1( (unsigned char*)identity, strlen(identity), friend_hash );
+	char *friend_hash_str = bin_to_base64( friend_hash, SHA_DIGEST_LENGTH );
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
@@ -1577,7 +1577,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 	MYSQL_ROW row;
 	const char *hashStr;
 	long encMessageLen, soFar;
-	unsigned char hash[MD5_DIGEST_LENGTH];
+	unsigned char hash[SHA_DIGEST_LENGTH];
 	char *subjectId;
 
 	/* Get the current time. */
@@ -1612,9 +1612,9 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 	seqNum = strtoll( row[0], 0, 10 );
 	encMessageLen = strlen(encMessage);
 
-	/* Make an md5hash for the identity. */
-	MD5( (unsigned char*)author_id, strlen(author_id), hash );
-	hashStr = bin_to_base64( hash, MD5_DIGEST_LENGTH );
+	/* Make a hash for the identity. */
+	SHA1( (unsigned char*)author_id, strlen(author_id), hash );
+	hashStr = bin_to_base64( hash, SHA_DIGEST_LENGTH );
 
 	/* Make the full message. */
 	full = new char[4096+encMessageLen];

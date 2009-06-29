@@ -163,6 +163,13 @@ CREATE TABLE friend_request (
 	returned_relid VARCHAR(48)
 );
 
+CREATE TABLE sent_friend_request (
+	from_user VARCHAR(20),
+	for_id TEXT,
+	requested_relid VARCHAR(48),
+	returned_relid VARCHAR(48)
+);
+
 CREATE TABLE get_broadcast_key (
 	get_relid VARCHAR(48),
 	generation BIGINT,
@@ -207,6 +214,7 @@ CREATE TABLE broadcast_queue (
 );
 
 CREATE TABLE message_queue (
+	from_user VARCHAR(20),
 	to_id TEXT,
 	relid VARCHAR(48),
 	message TEXT

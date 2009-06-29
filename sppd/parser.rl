@@ -135,6 +135,7 @@ char *alloc_string( const char *s, const char *e )
 		accept_friend( mysql, user, reqid );
 	}
 
+
 	action ftoken_request {
 		char *user = alloc_string( u1, u2 );
 		char *hash = alloc_string( a1, a2 );
@@ -420,9 +421,17 @@ int server_parse_loop()
 		forward_to( mysql, user, friend_id, number, to_identity, relid );
 	}
 
+	action notify_accept {
+//		char *user = alloc_string( u1, u2 );
+//		char *reqid = alloc_string( r1, r2 );
+//
+		notify_accept( mysql, user, friend_id );
+	}
+
 	main :=
 		'broadcast_key'i ' ' generation ' ' key EOL @broadcast_key |
-		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to;
+		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to |
+		'notify_accept'i ' ' user EOL @notify_accept;
 }%%
 
 %% write data;
@@ -438,6 +447,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 	const char *g1, *g2;
 	const char *n1, *n2;
 	const char *r1, *r2;
+	const char *u1, *u2;
 
 	%% write init;
 
@@ -1054,14 +1064,15 @@ fail:
 	write data;
 }%%
 
-long send_message_net( const char *to_identity, const char *relid,
-		const char *message, long mLen )
+long send_message_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
+		const char *message, long mLen, char **result_message )
 {
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
+	const char *n1, *n2;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1093,9 +1104,7 @@ long send_message_net( const char *to_identity, const char *relid,
 	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
 
 	/* Send the request. */
-	BIO_printf( sbio, 
-		"message %s %ld\r\n", 
-		relid, mLen );
+	BIO_printf( sbio, "message %s %ld\r\n", relid, mLen );
 	BIO_write( sbio, message, mLen );
 	BIO_flush( sbio );
 
@@ -1112,8 +1121,26 @@ long send_message_net( const char *to_identity, const char *relid,
 	%%{
 		include common;
 
+		action result {
+			char *length_str = alloc_string( n1, n2 );
+			long length = strtoll( length_str, 0, 10 );
+			if ( length > MAX_MSG_LEN )
+				fgoto *parser_error;
+
+			char *user_message = new char[length+1];
+			BIO_read( sbio, user_message, length );
+			user_message[length] = 0;
+
+			::message( "about to decrypt RESULT\n" );
+
+			if ( result_message != 0 ) 
+				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
+			::message( "finished with decrypt RESULT\n" );
+		}
+
 		main := 
 			'OK' EOL @{ OK = true; } |
+			'RESULT' ' ' number EOL @result |
 			'ERROR' EOL;
 	}%%
 

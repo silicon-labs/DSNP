@@ -192,9 +192,31 @@ void test_base64()
 	printf( "%s\n", enc );
 }
 
+void test_notify_accept()
+{
+	set_config_by_name( "spp" );
+	MYSQL *mysql, *connect_res;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+
+	if ( connect_res == 0 )
+		fatal( "ERROR failed to connect to the database\r\n");
+
+	long socketFd = open_inet_connection( "localhost", 7070 );
+	if ( socketFd < 0 )
+		fatal("connection\n");
+	
+	char *result = send_message_now( mysql, "age", "https://localhost/spp/pat/", "notify_accept pat\r\n" );
+	message( "test_notify_accept result: %s\r\n", result );
+}
+
+
 void run_test()
 {
-	test_base64();
+	test_notify_accept();
 }
 
 void dieHandler( int signum )

@@ -569,14 +569,19 @@ long store_relid_response( MYSQL *mysql, const char *identity, const char *fr_re
 	return result;
 }
 
-long store_friend_claim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *put_relid, const char *get_relid, 
-		bool acknowledged )
+char *make_friend_hash( const char *identity )
 {
 	/* Make a hash for the identity. */
 	unsigned char friend_hash[SHA_DIGEST_LENGTH];
 	SHA1( (unsigned char*)identity, strlen(identity), friend_hash );
-	char *friend_hash_str = bin_to_base64( friend_hash, SHA_DIGEST_LENGTH );
+	return bin_to_base64( friend_hash, SHA_DIGEST_LENGTH );
+}
+
+long store_friend_claim( MYSQL *mysql, const char *user, 
+		const char *identity, const char *put_relid, const char *get_relid, 
+		bool acknowledged )
+{
+	char *friend_hash_str = make_friend_hash( identity );
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
@@ -671,6 +676,12 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, identity, response_relid_str, requested_relid_str, false );
+
+	/* Insert the friend claim. */
+	exec_query( mysql, "INSERT INTO sent_friend_request "
+		"( from_user, for_id, requested_relid, returned_relid ) "
+		"VALUES ( %e, %e, %e, %e );",
+		user, identity, requested_relid_str, response_relid_str );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", response_reqid_str );
@@ -935,7 +946,7 @@ long run_message_queue_db( MYSQL *mysql )
 
 	/* Extract all messages. */
 	exec_query( mysql,
-		"SELECT to_id, relid, message FROM message_queue" );
+		"SELECT from_user, to_id, relid, message FROM message_queue" );
 
 	/* Get the result. */
 	select_res = mysql_store_result( mysql );
@@ -954,11 +965,12 @@ long run_message_queue_db( MYSQL *mysql )
 	for ( int i = 0; i < rows; i++ ) {
 		row = mysql_fetch_row( select_res );
 
-		char *to_id = row[0];
-		char *relid = row[1];
-		char *message = row[2];
+		char *from_user = row[0];
+		char *to_id = row[1];
+		char *relid = row[2];
+		char *message = row[3];
 
-		long send_res = send_message_net( to_id, relid, message, strlen(message) );
+		long send_res = send_message_net( mysql, from_user, to_id, relid, message, strlen(message), 0 );
 		if ( send_res < 0 ) {
 			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
@@ -974,18 +986,20 @@ long run_message_queue_db( MYSQL *mysql )
 		for ( int i = 0; i < rows; i++ ) {
 			row = mysql_fetch_row( select_res );
 
-			char *to_id = row[0];
-			char *relid = row[1];
-			char *message = row[2];
+			char *from_user = row[0];
+			char *to_id = row[1];
+			char *relid = row[2];
+			char *message = row[3];
 
 			if ( !sent[i] ) {
-				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", row[0], row[1], row[2] );
+				BIO_printf( bioOut, "Putting back to the queue: %s %s %s %s\n", 
+						row[0], row[1], row[2], row[3] );
 
 				exec_query( mysql,
 					"INSERT INTO message_queue "
-					"( to_id, relid, message ) "
-					"VALUES ( %e, %e, %e ) ",
-					to_id, relid, message );
+					"( from_user, to_id, relid, message ) "
+					"VALUES ( %e, %e, %e, %e ) ",
+					from_user, to_id, relid, message );
 			}
 		}
 		/* Free the table lock before we process the select results. */
@@ -1061,6 +1075,8 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 		BIO_printf( bioOut, "ERROR request not found\r\n" );
 		goto close;
 	}
+
+	/* Notify the requester. */
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
@@ -1393,17 +1409,17 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 	BIO_printf( bioOut, "OK\n" );
 }
 
-long queue_message_db( MYSQL *mysql, const char *to_identity,
-		const char *relid, const char *message )
+long queue_message_db( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *relid, const char *message )
 {
 	/* Table lock. */
 	exec_query( mysql, "LOCK TABLES message_queue WRITE");
 
 	exec_query( mysql,
 		"INSERT INTO message_queue "
-		"( to_id, relid, message ) "
-		"VALUES ( %e, %e, %e ) ",
-		to_identity, relid, message );
+		"( from_user, to_id, relid, message ) "
+		"VALUES ( %e, %e, %e, %e ) ",
+		from_user, to_identity, relid, message );
 
 	/* UNLOCK reset. */
 	exec_query( mysql, "UNLOCK TABLES");
@@ -1814,6 +1830,44 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	}
 }
 
+char *send_message_now( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *message )
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+	int encrypt_res;
+	const char *relid;
+	char *user_result;
+
+	exec_query( mysql, 
+		"SELECT put_relid FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e ",
+		from_user, to_identity );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 )
+		goto free_result;
+	relid = row[0];
+
+	id_pub = fetch_public_key( mysql, to_identity );
+	user_priv = load_key( mysql, from_user );
+
+	encrypt.load( id_pub, user_priv );
+
+	/* Include the null in the message. */
+	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
+
+	send_message_net( mysql, from_user, to_identity, relid, encrypt.sym, strlen(encrypt.sym), &user_result );
+
+free_result:
+	mysql_free_result( result );
+	return user_result;
+
+}
+
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message )
 {
@@ -1843,7 +1897,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 	/* Include the null in the message. */
 	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
 
-	queue_message_db( mysql, to_identity, relid, encrypt.sym );
+	queue_message_db( mysql, from_user, to_identity, relid, encrypt.sym );
 free_result:
 	mysql_free_result( result );
 	return 0;
@@ -2063,4 +2117,50 @@ free_result:
 	mysql_free_result( result );
 close:
 	BIO_flush(bioOut);
+}
+
+char *decrypt_result( MYSQL *mysql, const char *from_user, 
+		const char *to_identity, const char *user_message )
+{
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+	int decrypt_res;
+
+	::message( "decrypting result %s %s %s\n", from_user, to_identity, user_message );
+
+	user_priv = load_key( mysql, from_user );
+	id_pub = fetch_public_key( mysql, to_identity );
+
+	encrypt.load( id_pub, user_priv );
+	message( "about to\n");
+	decrypt_res = encrypt.decryptVerify( user_message );
+
+	if ( decrypt_res < 0 ) {
+		message( "decrypt_verify failed\n");
+		return 0;
+	}
+
+	message( "decrypt_result: %s\n", encrypt.decrypted );
+
+	return strdup((char*)encrypt.decrypted);
+}
+
+long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id )
+{
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+
+	::message("in notify_accept\n");
+
+	user_priv = load_key( mysql, for_user );
+	id_pub = fetch_public_key( mysql, from_id );
+
+	encrypt.load( id_pub, user_priv );
+	encrypt.signEncrypt( (u_char*)"flying with brian", 18 );
+
+	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
+	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
+	BIO_flush( bioOut );
+	::message("finished notify_accept\n");
+	return 0;
 }

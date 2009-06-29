@@ -107,13 +107,18 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 void receive_message( MYSQL *mysql, const char *relid, const char *message );
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 		long long generation, const char *message );
-long send_message_net( const char *to_identity, const char *relid,
-		const char *message, long mLen );
+long send_message_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
+		const char *message, long mLen, char **result_message );
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, const char *msg );
+char *decrypt_result( MYSQL *mysql, const char *from_user, 
+		const char *to_identity, const char *user_message );
+char *send_message_now( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *message );
+long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id );
 
 bool check_comm_key( const char *key );
 

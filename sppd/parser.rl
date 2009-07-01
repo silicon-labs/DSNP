@@ -423,14 +423,21 @@ int server_parse_loop()
 
 	include common;
 
-	action notify_accept {
+	action accept {
 		char *requested_relid = alloc_string( r1, r2 );
 		char *returned_relid = alloc_string( s1, s2 );
-		notify_accept( mysql, user, friend_id, requested_relid, returned_relid );
+		accept( mysql, user, friend_id, requested_relid, returned_relid );
+	}
+
+	action registered {
+		char *requested_relid = alloc_string( r1, r2 );
+		char *returned_relid = alloc_string( s1, s2 );
+		registered( mysql, user, friend_id, requested_relid, returned_relid );
 	}
 
 	main :=
-		'notify_accept'i ' ' requested_relid ' ' returned_relid EOL @notify_accept;
+		'accept'i ' ' requested_relid ' ' returned_relid EOL @accept |
+		'registered'i ' ' requested_relid ' ' returned_relid EOL @registered;
 }%%
 
 %% write data;

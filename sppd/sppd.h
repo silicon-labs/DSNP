@@ -122,7 +122,9 @@ long send_notify_accept( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *message, char **result_message );
 void notify_accept( MYSQL *mysql, const char *relid, const char *message );
-long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
+long accept( MYSQL *mysql, const char *for_user, const char *from_id,
+		const char *requested_relid, const char *returned_relid );
+long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
 
 bool check_comm_key( const char *key );

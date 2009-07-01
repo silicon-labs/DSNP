@@ -1073,16 +1073,20 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 		goto close;
 	}
 
-	sprintf( buf, "notify_accept %s %s\r\n", row[1], row[2] );
-	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
-
 	/* Notify the requester. */
+	sprintf( buf, "accept %s %s\r\n", row[1], row[2] );
+	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
 	send_notify_accept( mysql, user, row[0], row[1], buf, &result_message );
 	message( "accept_friend received: %s\n", result_message );
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, row[0], row[1], row[2] );
+
+	/* Notify the requester. */
+	sprintf( buf, "registered %s %s\r\n", row[1], row[2] );
+	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
+	send_notify_accept( mysql, user, row[0], row[1], buf, &result_message );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
@@ -2153,13 +2157,13 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	return strdup((char*)encrypt.decrypted);
 }
 
-long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
+long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid )
 {
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
 
-	::message("in notify_accept\n");
+	::message("in accept\n");
 
 	user_priv = load_key( mysql, for_user );
 	id_pub = fetch_public_key( mysql, from_id );
@@ -2170,14 +2174,25 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)"flying with brian", 18 );
 
-
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
+	BIO_flush( bioOut );
+
+	::message("finished accept\n");
+	return 0;
+}
+
+long registered( MYSQL *mysql, const char *for_user, const char *from_id,
+		const char *requested_relid, const char *returned_relid )
+{
+	::message("in registered\n");
+
+	BIO_printf( bioOut, "OK\r\n" );
 	BIO_flush( bioOut );
 
 	send_current_broadcast_key( mysql, for_user, from_id );
 	forward_tree_insert( mysql, for_user, from_id, returned_relid );
 
-	::message("finished notify_accept\n");
+	::message("finished registered\n");
 	return 0;
 }

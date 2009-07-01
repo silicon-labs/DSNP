@@ -204,6 +204,21 @@ char *alloc_string( const char *s, const char *e )
 		receive_message( mysql, relid, user_message );
 	}
 
+	action notify_accept {
+		char *relid = alloc_string( r1, r2 );
+		char *lengthStr = alloc_string( n1, n2 );
+
+		long length = atoi( lengthStr );
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		char *user_message = new char[length+1];
+		BIO_read( bioIn, user_message, length );
+		user_message[length] = 0;
+
+		notify_accept( mysql, relid, user_message );
+	}
+
 	action broadcast {
 		char *relid = alloc_string( r1, r2 );
 		char *generation_str = alloc_string( g1, g2 );
@@ -312,6 +327,7 @@ char *alloc_string( const char *s, const char *e )
 
 		# Friend Request Accept
 		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
+		'notify_accept'i ' ' relid ' ' number EOL @check_ssl @notify_accept;
 
 		# Friend login. 
 		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request;
@@ -399,6 +415,51 @@ int server_parse_loop()
 }
 
 /*
+ * notify_accept_parser
+ */
+
+%%{
+	machine notify_accept_parser;
+
+	include common;
+
+	action notify_accept {
+		char *requested_relid = alloc_string( r1, r2 );
+		char *returned_relid = alloc_string( s1, s2 );
+		notify_accept( mysql, user, friend_id, requested_relid, returned_relid );
+	}
+
+	main :=
+		'notify_accept'i ' ' requested_relid ' ' returned_relid EOL @notify_accept;
+}%%
+
+%% write data;
+
+int notify_accept_parser( MYSQL *mysql, const char *relid,
+		const char *user, const char *friend_id, const char *message )
+{
+	long cs;
+	const char *r1, *r2;
+	const char *s1, *s2;
+
+	%% write init;
+
+	const char *p = message;
+	const char *pe = message + strlen( message );
+
+	%% write exec;
+
+	if ( cs < %%{ write first_final; }%% ) {
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else
+			return ERR_UNEXPECTED_END;
+	}
+
+	return 0;
+}
+
+/*
  * message_parser
  */
 
@@ -422,16 +483,9 @@ int server_parse_loop()
 		forward_to( mysql, user, friend_id, number, to_identity, relid );
 	}
 
-	action notify_accept {
-		char *requested_relid = alloc_string( r1, r2 );
-		char *returned_relid = alloc_string( s1, s2 );
-		notify_accept( mysql, user, friend_id, requested_relid, returned_relid );
-	}
-
 	main :=
 		'broadcast_key'i ' ' generation ' ' key EOL @broadcast_key |
-		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to |
-		'notify_accept'i ' ' requested_relid ' ' returned_relid EOL @notify_accept;
+		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to;
 }%%
 
 %% write data;
@@ -447,7 +501,6 @@ int message_parser( MYSQL *mysql, const char *relid,
 	const char *g1, *g2;
 	const char *n1, *n2;
 	const char *r1, *r2;
-	const char *s1, *s2;
 
 	%% write init;
 
@@ -467,7 +520,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 }
 
 /*
- * message_parser
+ * broadcast_parser
  */
 
 %%{
@@ -1030,6 +1083,117 @@ long send_broadcast_net( const char *toSite, const char *relid,
 
 		main := 
 			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% ) {
+		result = ERR_PARSE_ERROR;
+		goto fail;
+	}
+	
+	if ( !OK ) {
+		result = ERR_SERVER_ERROR;
+		goto fail;
+	}
+	
+fail:
+	::close( socketFd );
+	return result;
+}
+
+/*
+ * send_notify_accept_net
+ */
+
+%%{
+	machine send_notify_accept_net;
+	write data;
+}%%
+
+long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
+		const char *message, long mLen, char **result_message )
+{
+	static char buf[8192];
+	long result = 0, cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+	const char *n1, *n2;
+
+	/* Need to parse the identity. */
+	Identity toIdent( to_identity );
+	pres = toIdent.parse();
+
+	if ( pres < 0 )
+		return pres;
+
+	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return ERR_CONNECTION_FAILED;
+
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
+	/* Send the request. */
+	BIO_printf( buffer,
+		"SPP/0.1 %s\r\n"
+		"start_tls\r\n",
+		toIdent.site );
+	BIO_flush( buffer );
+
+	/* Read the result. */
+	int readRes = BIO_gets( buffer, buf, 8192 );
+	::message("return is %s", buf );
+
+	sslInitClient();
+	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
+
+	/* Send the request. */
+	BIO_printf( sbio, "notify_accept %s %ld\r\n", relid, mLen );
+	BIO_write( sbio, message, mLen );
+	BIO_flush( sbio );
+
+	/* Read the result. */
+	readRes = BIO_gets( sbio, buf, 8192 );
+
+	/* If there was an error then fail the fetch. */
+	if ( readRes <= 0 ) {
+		result = ERR_READ_ERROR;
+		goto fail;
+	}
+
+	/* Parser for response. */
+	%%{
+		include common;
+
+		action result {
+			char *length_str = alloc_string( n1, n2 );
+			long length = strtoll( length_str, 0, 10 );
+			if ( length > MAX_MSG_LEN )
+				fgoto *parser_error;
+
+			char *user_message = new char[length+1];
+			BIO_read( sbio, user_message, length );
+			user_message[length] = 0;
+
+			::message( "about to decrypt RESULT\n" );
+
+			if ( result_message != 0 ) 
+				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
+			::message( "finished with decrypt RESULT\n" );
+		}
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'RESULT' ' ' number EOL @result |
 			'ERROR' EOL;
 	}%%
 

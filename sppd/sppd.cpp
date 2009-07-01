@@ -1077,7 +1077,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
 
 	/* Notify the requester. */
-	send_message_now( mysql, user, row[0], row[1], buf, &result_message );
+	send_notify_accept( mysql, user, row[0], row[1], buf, &result_message );
 	message( "accept_friend received: %s\n", result_message );
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
@@ -1343,11 +1343,8 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 		const char *identity, const char *generation, const char *bk )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	RSA *user_priv, *id_pub;
 	long query_res;
-	bool acknowledged;
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -1365,27 +1362,6 @@ void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 			"( get_relid, generation, broadcast_key ) "
 			"VALUES ( %e, %e, %e ) ",
 			relid, generation, bk );
-	
-	/* If this friend claim hasn't been acknowledged then send back
-	 * a session key and acknowledge the claim. */
-	acknowledged = is_acknowledged( mysql, user, identity );
-	if ( !acknowledged ) {
-		exec_query( mysql, 
-			"UPDATE friend_claim SET acknowledged = true "
-			"WHERE user = %e AND friend_id = %e",
-			user, identity );
-
-		exec_query( mysql, 
-			"SELECT put_relid from friend_claim "
-			"WHERE user = %e AND friend_id = %e",
-			user, identity );
-
-		result = mysql_store_result( mysql );
-		row = mysql_fetch_row( result );
-
-		send_current_broadcast_key( mysql, user, identity );
-		forward_tree_insert( mysql, user, identity, row[0] );
-	}
 	
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -1832,7 +1808,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	}
 }
 
-long send_message_now( MYSQL *mysql, const char *from_user,
+long send_notify_accept( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *message, char **result_message )
 {
@@ -1849,7 +1825,7 @@ long send_message_now( MYSQL *mysql, const char *from_user,
 	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
 
 	::message( "send_message_now sending to: %s\n", to_identity );
-	send_message_net( mysql, from_user, to_identity, put_relid, encrypt.sym,
+	send_notify_accept_net( mysql, from_user, to_identity, put_relid, encrypt.sym,
 			strlen(encrypt.sym), result_message );
 
 	return 0;
@@ -1914,6 +1890,49 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identi
 	return queue_message( mysql, from_user, to_identity, buf );
 }
 
+void notify_accept( MYSQL *mysql, const char *relid, const char *message )
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+	int decrypt_res;
+	const char *user, *friend_id;
+
+	exec_query( mysql, 
+		"SELECT from_user, for_id FROM sent_friend_request "
+		"WHERE requested_relid = %e",
+		relid );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR finding friend\r\n" );
+		goto free_result;
+	}
+
+	user = row[0];
+	friend_id = row[1];
+
+	user_priv = load_key( mysql, user );
+	id_pub = fetch_public_key( mysql, friend_id );
+
+	encrypt.load( id_pub, user_priv );
+	decrypt_res = encrypt.decryptVerify( message );
+
+	if ( decrypt_res < 0 ) {
+		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
+		goto free_result;
+	}
+
+	notify_accept_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
+
+free_result:
+	mysql_free_result( result );
+	BIO_flush( bioOut );
+	return;
+}
+
 void receive_message( MYSQL *mysql, const char *relid, const char *message )
 {
 	MYSQL_RES *result;
@@ -1931,17 +1950,8 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
-		exec_query( mysql, 
-			"SELECT from_user, for_id FROM sent_friend_request "
-			"WHERE requested_relid = %e",
-			relid );
-
-		result = mysql_store_result( mysql );
-		row = mysql_fetch_row( result );
-		if ( row == 0 ) {
-			BIO_printf( bioOut, "ERROR finding friend\r\n" );
-			goto free_result;
-		}
+		BIO_printf( bioOut, "ERROR finding friend\r\n" );
+		goto free_result;
 	}
 	user = row[0];
 	friend_id = row[1];
@@ -2164,6 +2174,9 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 	BIO_flush( bioOut );
+
+	send_current_broadcast_key( mysql, for_user, from_id );
+	forward_tree_insert( mysql, for_user, from_id, returned_relid );
 
 	::message("finished notify_accept\n");
 	return 0;

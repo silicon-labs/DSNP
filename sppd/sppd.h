@@ -116,9 +116,11 @@ void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
-char *send_message_now( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *message );
-long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id );
+long send_message_now( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *put_relid,
+		const char *message, char **result_message );
+long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
+		const char *requested_relid, const char *returned_relid );
 
 bool check_comm_key( const char *key );
 

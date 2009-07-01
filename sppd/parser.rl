@@ -56,6 +56,8 @@ char *alloc_string( const char *s, const char *e )
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
 	relid = base64            >{r1=p;} %{r2=p;};
 	token = base64            >{t1=p;} %{t2=p;};
+	requested_relid = base64  >{r1=p;} %{r2=p;};
+	returned_relid = base64   >{s1=p;} %{s2=p;};
 
 	date = ( digit{4} '-' digit{2} '-' digit{2} ' '
 			digit{2} ':' digit{2} ':' digit{2} ) >{d1 = p;} %{d2 = p;};
@@ -134,7 +136,6 @@ char *alloc_string( const char *s, const char *e )
 
 		accept_friend( mysql, user, reqid );
 	}
-
 
 	action ftoken_request {
 		char *user = alloc_string( u1, u2 );
@@ -422,16 +423,15 @@ int server_parse_loop()
 	}
 
 	action notify_accept {
-//		char *user = alloc_string( u1, u2 );
-//		char *reqid = alloc_string( r1, r2 );
-//
-		notify_accept( mysql, user, friend_id );
+		char *requested_relid = alloc_string( r1, r2 );
+		char *returned_relid = alloc_string( s1, s2 );
+		notify_accept( mysql, user, friend_id, requested_relid, returned_relid );
 	}
 
 	main :=
 		'broadcast_key'i ' ' generation ' ' key EOL @broadcast_key |
 		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to |
-		'notify_accept'i ' ' user EOL @notify_accept;
+		'notify_accept'i ' ' requested_relid ' ' returned_relid EOL @notify_accept;
 }%%
 
 %% write data;
@@ -447,7 +447,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 	const char *g1, *g2;
 	const char *n1, *n2;
 	const char *r1, *r2;
-	const char *u1, *u2;
+	const char *s1, *s2;
 
 	%% write init;
 

@@ -578,8 +578,7 @@ char *make_friend_hash( const char *identity )
 }
 
 long store_friend_claim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *put_relid, const char *get_relid, 
-		bool acknowledged )
+		const char *identity, const char *put_relid, const char *get_relid )
 {
 	char *friend_hash_str = make_friend_hash( identity );
 
@@ -587,7 +586,7 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	exec_query( mysql, "INSERT INTO friend_claim "
 		"( user, friend_id, friend_hash, put_relid, get_relid, acknowledged, put_root ) "
 		"VALUES ( %e, %e, %e, %e, %e, %b, %b );",
-		user, identity, friend_hash_str, put_relid, get_relid, acknowledged, false );
+		user, identity, friend_hash_str, put_relid, get_relid, true, false );
 
 	return 0;
 }
@@ -673,9 +672,6 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	store_relid_response( mysql, identity, requested_relid_str, fr_reqid_str, 
 			response_relid_str, response_reqid_str, encrypt.sym );
-
-	/* The relid is the one we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, identity, response_relid_str, requested_relid_str, false );
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO sent_friend_request "
@@ -1061,6 +1057,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
+	char buf[2048], *result_message = 0;
 
 	/* Execute the query. */
 	exec_query( mysql, "SELECT from_id, requested_relid, returned_relid "
@@ -1076,11 +1073,16 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 		goto close;
 	}
 
+	sprintf( buf, "notify_accept %s %s\r\n", row[1], row[2] );
+	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
+
 	/* Notify the requester. */
+	send_message_now( mysql, user, row[0], row[1], buf, &result_message );
+	message( "accept_friend received: %s\n", result_message );
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, row[0], row[1], row[2], true );
+	store_friend_claim( mysql, user, row[0], row[1], row[2] );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
@@ -1830,27 +1832,13 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	}
 }
 
-char *send_message_now( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *message )
+long send_message_now( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *put_relid,
+		const char *message, char **result_message )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
 	int encrypt_res;
-	const char *relid;
-	char *user_result;
-
-	exec_query( mysql, 
-		"SELECT put_relid FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e ",
-		from_user, to_identity );
-
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 )
-		goto free_result;
-	relid = row[0];
 
 	id_pub = fetch_public_key( mysql, to_identity );
 	user_priv = load_key( mysql, from_user );
@@ -1860,12 +1848,11 @@ char *send_message_now( MYSQL *mysql, const char *from_user,
 	/* Include the null in the message. */
 	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
 
-	send_message_net( mysql, from_user, to_identity, relid, encrypt.sym, strlen(encrypt.sym), &user_result );
+	::message( "send_message_now sending to: %s\n", to_identity );
+	send_message_net( mysql, from_user, to_identity, put_relid, encrypt.sym,
+			strlen(encrypt.sym), result_message );
 
-free_result:
-	mysql_free_result( result );
-	return user_result;
-
+	return 0;
 }
 
 long queue_message( MYSQL *mysql, const char *from_user,
@@ -1943,8 +1930,19 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
-	if ( row == 0 )
-		goto free_result;
+	if ( row == 0 ) {
+		exec_query( mysql, 
+			"SELECT from_user, for_id FROM sent_friend_request "
+			"WHERE requested_relid = %e",
+			relid );
+
+		result = mysql_store_result( mysql );
+		row = mysql_fetch_row( result );
+		if ( row == 0 ) {
+			BIO_printf( bioOut, "ERROR finding friend\r\n" );
+			goto free_result;
+		}
+	}
 	user = row[0];
 	friend_id = row[1];
 
@@ -1955,7 +1953,7 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 	decrypt_res = encrypt.decryptVerify( message );
 
 	if ( decrypt_res < 0 ) {
-		BIO_printf( bioOut, "ERROR %s", encrypt.err );
+		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
 		goto free_result;
 	}
 
@@ -2145,7 +2143,8 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	return strdup((char*)encrypt.decrypted);
 }
 
-long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id )
+long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
+		const char *requested_relid, const char *returned_relid )
 {
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
@@ -2155,12 +2154,17 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id )
 	user_priv = load_key( mysql, for_user );
 	id_pub = fetch_public_key( mysql, from_id );
 
+	/* The relid is the one we made on this end. It becomes the put_relid. */
+	store_friend_claim( mysql, for_user, from_id, returned_relid, requested_relid );
+
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)"flying with brian", 18 );
+
 
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 	BIO_flush( bioOut );
+
 	::message("finished notify_accept\n");
 	return 0;
 }

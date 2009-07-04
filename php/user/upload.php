@@ -19,15 +19,21 @@
 include('../config.php');
 include('lib/session.php');
 
+$max_image_size = 10485760;
+
 requireOwner();
 
-echo $_FILES['photo']['name'] . "<br>";
-echo $_FILES['photo']['tmp_name'] . "<br>";
-echo $_FILES['photo']['type'] . "<br>";
-echo $_FILES['photo']['size'] . "<br>";
-print_r( $_FILES['photo'] );
-echo "<br>";
+#echo $_FILES['photo']['name'] . "<br>";
+#echo $_FILES['photo']['tmp_name'] . "<br>";
+#echo $_FILES['photo']['type'] . "<br>";
+#echo $_FILES['photo']['size'] . "<br>";
 
+if ( $_FILES['photo']['size'] > $max_image_size )
+	die("image excedes max size of $max_image_size bytes");
+
+#echo $_FILES['photo']['size'] . "<br>";
+
+# Validate it as an image.
 $image_size = @getimagesize( $_FILES['photo']['tmp_name'] );
 if ( ! $image_size )
 	die( "file doesn't appear to be a valid image" );
@@ -51,10 +57,21 @@ mysql_query( $query ) or die('Query failed: ' . mysql_error());
 $result = mysql_query("SELECT last_insert_id() as id") or die('Query failed: ' . mysql_error());
 $row = mysql_fetch_assoc($result);
 $id = $row['id'];
-echo "image id: " . $id;
+#echo "image id: " . $id;
 $path = "$CFG_PHOTO_DIR/$USER_NAME/img-$id.jpg";
 
 if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
 	die( "bad image file" );
 
+$thumb = "$CFG_PHOTO_DIR/$USER_NAME/thm-$id.jpg";
+
+system("gm convert " .
+	"-define jpeg:preserve-settings " .
+	"-size 120x120 " .
+	$path . " " .
+	"-resize 120x120 " .
+	"+profile '*' " .
+	$thumb );
+
+header("Location: $USER_URI");
 ?>

@@ -36,3 +36,9 @@ function requireOwner()
 		exit("You do not have permission to access this page\n");
 }
 
+function requireFriendOrOwner()
+{
+	if ( !isset( $_SESSION['auth'] ) || ( $_SESSION['auth'] != 'friend' && $_SESSION['auth'] != 'owner' ) )
+		exit("You do not have permission to access this page\n");
+}
+

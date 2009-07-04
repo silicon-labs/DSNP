@@ -95,6 +95,25 @@ while ( $row = mysql_fetch_assoc($result) ) {
 }
 
 ?>
+
+<h1>Photo Stream</h1>
+
+<?php
+
+# Look for the user/pass combination.
+$query = sprintf("SELECT seq_num FROM image WHERE user = '%s' ORDER BY seq_num DESC LIMIT 20;",
+    mysql_real_escape_string($USER_NAME)
+);
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+while ( $row = mysql_fetch_assoc($result) ) {
+	$seq_num = $row['seq_num'];
+	echo "<a href=\"${USER_URI}img/img-$seq_num.jpg\">";
+	echo "<img src=\"${USER_URI}img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
+}
+
+?>
 </td>
 <td width="70%" valign="top">
 

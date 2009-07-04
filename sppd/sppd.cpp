@@ -1524,7 +1524,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		user, authorId, timeStr, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
-	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
+	exec_query( mysql, "SELECT last_insert_id()" );
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( !row )

@@ -58,11 +58,16 @@ At this point friender considers friendee a friend, but not vice versa.
 
 FRIENDSHIP ACCEPT/DENY
 
+FRIENDSHIP ACCEPT
+
 The next time the friendee logs in they are presented with the friendship
-request. They can either accept or deny the request. The relationship status is
-recorded by the friendee's server. No additional communication with the friend
-is necessary. The friender will know that friendship request has been approved
-when a feed is available.
+request. They can either accept or deny the request. 
+
+The acceptor sends accept notification with both relids. They are sent back
+indicating that the friendship was registered on the other end. The acceptor
+then registers the friendship and sends a registered message. It can can now
+send broadcast key and broadcast tree insertion messages. The other end can
+send these messages after it receives the registered message.
 
 PUBLISHING TO FRIENDS
 

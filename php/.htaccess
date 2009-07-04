@@ -7,8 +7,12 @@ RewriteRule ^([a-zA-Z0-9.]+)$              %{REQUEST_URI}/        [R,L]
 
 # Admin.
 RewriteRule ^admin/(.*)$                   admin/$1               [L]
+RewriteRule ^user/(.*)$                    user/$1                [L]
+
+# Images.
+RewriteRule ^([a-zA-Z0-9.]+)/img/([^\/]*)$   user/image.php?u=$1&i=$2      [L,QSA]
 
 # Users.
-RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$     user/$2?u=$1           [L,QSA]
+RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$       user/$2?u=$1                  [L,QSA]
 
 php_flag display_errors on

@@ -267,6 +267,16 @@ CREATE TABLE remote_flogin_token (
 	login_token VARCHAR(48)
 );
 
+CREATE TABLE image (
+	user VARCHAR(20),
+	seq_num BIGINT NOT NULL AUTO_INCREMENT,
+	rows INT,
+	cols INT,
+	mime_type VARCHAR(32),
+
+	PRIMARY KEY(user, seq_num)
+);
+
 EOF
 
 #
@@ -286,6 +296,7 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_PORT = '$CFG_PORT';
 	\$CFG_USE_RECAPTCHA = false;
 	\$CFG_RC_PUBLIC_KEY = 'xxxx';
+	\$CFG_PHOTO_DIR = '/home/thurston/devel/spp/photos';
 }
 
 EOF
@@ -308,6 +319,7 @@ CFG_PORT = $CFG_PORT
 CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
 CFG_TLS_CRT = /etc/ssl/local/localhost.crt
 CFG_TLS_KEY = /etc/ssl/local/localhost.key
+CFG_PHOTO_DIR = /home/thurston/devel/spp/photos
 
 EOF
 

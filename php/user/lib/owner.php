@@ -122,6 +122,15 @@ status changes, and contact information changes.</small>
 </table>
 </form>
 
+<hr>
+
+<form method="post" enctype="multipart/form-data" action="upload.php">
+Photo Upload: <input name="photo" type="file" />
+<input type="submit" value="Upload" />
+</form> 
+
+<hr>
+
 <?
 
 $query = sprintf(

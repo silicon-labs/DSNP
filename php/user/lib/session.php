@@ -26,13 +26,13 @@ if ( isset( $_COOKIE[session_name()] ) )
 
 function requireFriend()
 {
-	if ( $_SESSION['auth'] != 'friend' )
+	if ( !isset( $_SESSION['auth'] ) || $_SESSION['auth'] != 'friend' )
 		exit("You do not have permission to access this page\n");
 }
 
 function requireOwner()
 {
-	if ( $_SESSION['auth'] != 'owner' )
+	if ( !isset( $_SESSION['auth'] ) || $_SESSION['auth'] != 'owner' )
 		exit("You do not have permission to access this page\n");
 }
 

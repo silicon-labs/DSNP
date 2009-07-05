@@ -198,6 +198,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	RSA *rsa;
 	char *pass_hashed, *pass_salt_str, *id_salt_str;
 	u_char pass_salt[SALT_SIZE], id_salt[SALT_SIZE];
+	char *photo_dir_cmd;
 
 	RAND_bytes( pass_salt, SALT_SIZE );
 	pass_salt_str = bin_to_base64( pass_salt, SALT_SIZE );
@@ -237,6 +238,11 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	
 	/* Make the first session key for the user. */
 	new_broadcast_key( mysql, user );
+
+	photo_dir_cmd = new char [32 + strlen(c->CFG_PHOTO_DIR) + strlen(user)];
+	sprintf( photo_dir_cmd, "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
+	message("system: %s\n", photo_dir_cmd );
+	system( photo_dir_cmd );
 
 	BIO_printf( bioOut, "OK\r\n" );
 

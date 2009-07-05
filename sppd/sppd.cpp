@@ -2104,6 +2104,7 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	long lasts = LOGIN_TOKEN_LASTS;
+	char *user, *from_id, *hash;
 
 	exec_query( mysql,
 		"SELECT user, from_id FROM ftoken_request WHERE token = %e",
@@ -2115,13 +2116,26 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}
+	user = row[0];
+	from_id = row[1];
 
 	exec_query( mysql, 
 		"INSERT INTO flogin_token ( user, identity, login_token, expires ) "
 		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
-		row[0], row[1], token, lasts );
+		user, from_id, token, lasts );
 
-	BIO_printf( bioOut, "OK %ld %s\r\n", lasts, row[1] );
+	exec_query( mysql,
+		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", from_id );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		goto free_result;
+	}
+	hash = row[0];
+
+	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash, lasts, from_id );
 
 free_result:
 	mysql_free_result( result );

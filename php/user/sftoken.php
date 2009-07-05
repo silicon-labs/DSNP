@@ -35,7 +35,7 @@ fwrite($fp, $send);
 $res = fgets($fp);
 
 # If there is a result then the login is successful. 
-if ( ereg("^OK ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+if ( ereg("^OK ([A-Za-z0-9+/=]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	session_name("SPPSESSID");
 	session_set_cookie_params( $regs[1], $USER_PATH );
 	session_start();
@@ -43,8 +43,8 @@ if ( ereg("^OK ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	# Login successful.
 	$_SESSION['auth']     = 'friend';
 	$_SESSION['token']    = $ftoken;
-	$_SESSION['identity'] = $regs[2];
-	$_SESSION['hash']     = base64_encode( SHA1($regs[2], true ) );
+	$_SESSION['hash']     = $regs[1]; 
+	$_SESSION['identity'] = $regs[3];
 	header( "Location: $USER_PATH" );
 }
 else {

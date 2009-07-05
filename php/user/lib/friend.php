@@ -63,8 +63,8 @@ while ( $row = mysql_fetch_assoc($result) ) {
 		echo "you: <a href=\"${dest_id}\"><small>$dest_id</small></a> <br>\n";
 	}
 	else {
-		echo "<a href=\"${BROWSER_ID}sendmeto.php?uri=" . 
-			urlencode($dest_id) . 
+		echo "<a href=\"${dest_id}sflogin.php?h=" . 
+			urlencode( $_SESSION['hash'] ) .
 			"\"><small>$dest_id</small></a> <br>\n";
 	}
 }

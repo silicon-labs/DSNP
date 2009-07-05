@@ -39,7 +39,7 @@ char *alloc_string( const char *s, const char *e )
 %%{
 	machine common;
 
-	base64 = [A-Za-z0-9+/=]+;
+	base64 = [A-Za-z0-9\-_]+;
 
 	user = [a-zA-Z0-9_.]+     >{u1=p;} %{u2=p;};
 	pass = graph+             >{p1=p;} %{p2=p;};
@@ -1452,8 +1452,8 @@ fail:
 
 char *bin_to_base64( const u_char *data, long len )
 {
-	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	long twentyFourBits;
+	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	long group;
 	long lenRem = len % 3;
 	long lenEven = len - lenRem;
 
@@ -1462,29 +1462,26 @@ char *bin_to_base64( const u_char *data, long len )
 	char *dest = output;
 
 	for ( int i = 0; i < lenEven; i += 3 ) {
-		twentyFourBits = (long)data[i] << 16;
-		twentyFourBits |= (long)data[i+1] << 8;
-		twentyFourBits |= (long)data[i+2];
+		group = (long)data[i] << 16;
+		group |= (long)data[i+1] << 8;
+		group |= (long)data[i+2];
 
-		*dest++ = index[( twentyFourBits >> 18 ) & 0x3f];
-		*dest++ = index[( twentyFourBits >> 12 ) & 0x3f];
-		*dest++ = index[( twentyFourBits >> 6 ) & 0x3f];
-		*dest++ = index[twentyFourBits & 0x3f];
+		*dest++ = index[( group >> 18 ) & 0x3f];
+		*dest++ = index[( group >> 12 ) & 0x3f];
+		*dest++ = index[( group >> 6 ) & 0x3f];
+		*dest++ = index[group & 0x3f];
 	}
 
 	if ( lenRem > 0 ) {
-		twentyFourBits = (long)data[lenEven] << 16;
+		group = (long)data[lenEven] << 16;
 		if ( lenRem > 1 )
-			twentyFourBits |= (long)data[lenEven+1] << 8;
+			group |= (long)data[lenEven+1] << 8;
 
 		/* Always need the first two six-bit groups.  */
-		*dest++ = index[( twentyFourBits >> 18 ) & 0x3f];
-		*dest++ = index[( twentyFourBits >> 12 ) & 0x3f];
+		*dest++ = index[( group >> 18 ) & 0x3f];
+		*dest++ = index[( group >> 12 ) & 0x3f];
 		if ( lenRem > 1 )
-			*dest++ = index[( twentyFourBits >> 6 ) & 0x3f];
-		else
-			*dest++ = '=';
-		*dest++ = '=';
+			*dest++ = index[( group >> 6 ) & 0x3f];
 	}
 
 	*dest = 0;
@@ -1496,55 +1493,65 @@ char *bin_to_base64( const u_char *data, long len )
 long base64_to_bin( unsigned char *out, long len, const char *src )
 {
 	long sixBits;
-	long twentyFourBits;
+	long group;
 	unsigned char *dest = out;
 
 	/* Parser for response. */
 	%%{
+		action upperChar { sixBits = *p - 'A'; }
+		action lowerChar { sixBits = 26 + (*p - 'a'); }
+		action digitChar { sixBits = 52 + (*p - '0'); }
+		action dashChar  { sixBits = 62; }
+		action underscoreChar { sixBits = 63; }
+
 		sixBits = 
-			[A-Z] @{ sixBits = *p - 'A'; } |
-			[a-z] @{ sixBits = 26 + (*p - 'a'); } |
-			[0-9] @{ sixBits = 52 + (*p - '0'); } |
-			'+' @{ sixBits = 62; } |
-			'/' @{ sixBits = 63; };
+			[A-Z] @upperChar |
+			[a-z] @lowerChar |
+			[0-9] @digitChar |
+			'-' @dashChar |
+			'_' @underscoreChar;
 
 		action c1 {
-			twentyFourBits = sixBits << 18;
+			group = sixBits << 18;
 		}
 		action c2 {
-			twentyFourBits |= sixBits << 12;
+			group |= sixBits << 12;
 		}
 		action c3 {
-			twentyFourBits |= sixBits << 6;
+			group |= sixBits << 6;
 		}
 		action c4 {
-			twentyFourBits |= sixBits;
+			group |= sixBits;
 		}
 
 		action three {
-			*dest++ = ( twentyFourBits >> 16 ) & 0xff;
-			*dest++ = ( twentyFourBits >> 8 ) & 0xff;
-			*dest++ = twentyFourBits & 0xff;
+			*dest++ = ( group >> 16 ) & 0xff;
+			*dest++ = ( group >> 8 ) & 0xff;
+			*dest++ = group & 0xff;
 		}
 		action two {
-			*dest++ = ( twentyFourBits >> 16 ) & 0xff;
-			*dest++ = ( twentyFourBits >> 8 ) & 0xff;
+			*dest++ = ( group >> 16 ) & 0xff;
+			*dest++ = ( group >> 8 ) & 0xff;
 		}
 		action one {
-			*dest++ = ( twentyFourBits >> 16 ) & 0xff;
+			*dest++ = ( group >> 16 ) & 0xff;
 		}
 
-		twentyFourBits =
-			( sixBits @c1 sixBits @c2 sixBits @c3 sixBits @c4 ) @three |
-			( sixBits @c1 sixBits @c2 sixBits '=') @two |
-			( sixBits @c1 sixBits '=' '=' ) @one ;
+		group =
+			( sixBits @c1 sixBits @c2 sixBits @c3 sixBits @c4 ) %three;
 
-		main := twentyFourBits*;
+		short =
+			( sixBits @c1 sixBits @c2 sixBits ) %two |
+			( sixBits @c1 sixBits ) %one ;
+
+		# Lots of ambiguity, but duplicate removal makes it okay.
+		main := group* short? 0;
 			
 	}%%
 
+	/* Note: including the null. */
 	const char *p = src;
-	const char *pe = src + strlen(src);
+	const char *pe = src + strlen(src) + 1;
 	int cs;
 
 	%% write init;

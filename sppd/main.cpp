@@ -138,15 +138,15 @@ void test_base64()
 	char *enc;
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "aGVsbG8gdGhlcmUhIQ==" );
+	base64_to_bin( out, 64, "aGVsbG8gdGhlcmUhIQ" );
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YQ==");
+	base64_to_bin( out, 64, "YQ");
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWI=");
+	base64_to_bin( out, 64, "YWI");
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
@@ -154,11 +154,11 @@ void test_base64()
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZA==");
+	base64_to_bin( out, 64, "YWJjZA");
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGU=");
+	base64_to_bin( out, 64, "YWJjZGU");
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
@@ -166,11 +166,11 @@ void test_base64()
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGVmZw==");
+	base64_to_bin( out, 64, "YWJjZGVmZw");
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGVmZ2g=");
+	base64_to_bin( out, 64, "YWJjZGVmZ2g");
 	printf( "%s\n", out );
 
 	enc = bin_to_base64( (const u_char*) "a", 1 );

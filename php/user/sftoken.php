@@ -35,7 +35,7 @@ fwrite($fp, $send);
 $res = fgets($fp);
 
 # If there is a result then the login is successful. 
-if ( ereg("^OK ([A-Za-z0-9+/=]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	session_name("SPPSESSID");
 	session_set_cookie_params( $regs[1], $USER_PATH );
 	session_start();

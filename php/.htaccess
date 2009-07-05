@@ -16,3 +16,4 @@ RewriteRule ^([a-zA-Z0-9.]+)/img/([^\/]*)$   user/image.php?u=$1&i=$2      [L,QS
 RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$       user/$2?u=$1                  [L,QSA]
 
 php_flag display_errors on
+php_flag upload_max_filesize 3271557120

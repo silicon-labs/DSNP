@@ -43,7 +43,7 @@ fwrite($fp, $send);
 
 $res = fgets($fp);
 
-if ( ereg("^OK ([A-Za-z0-9+/=]+) ([^ \t\r\n]*)", $res, $regs) ) {
+if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
 	$friend_id = $regs[2];
 	header("Location: ${friend_id}sftoken.php?${arg_ftoken}" );

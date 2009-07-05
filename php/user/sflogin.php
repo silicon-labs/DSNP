@@ -43,7 +43,7 @@ else {
 
 	$res = fgets($fp);
 
-	if ( ereg("^OK ([A-Za-z0-9+/=]+) ([^ \t\n\r]+) ([A-Za-z0-9+/=]+)", $res, $regs) ) {
+	if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\n\r]+) ([-A-Za-z0-9_]+)", $res, $regs) ) {
 		$arg_h = 'h=' . urlencode( $regs[3] );
 		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 		$friend_id = $regs[2];

@@ -33,7 +33,9 @@ $send =
 fwrite($fp, $send);
 
 $res = fgets($fp);
-if ( !ereg("^OK ([A-Za-z0-9/+=]+) ([A-Za-z0-9/+=]+) ([0-9]+)", $res, $regs) ) {
+#echo $res;
+#exit;
+if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)", $res, $regs) ) {
 	include('lib/loginfailed.php');
 }
 else {

@@ -33,17 +33,18 @@ $send =
 fwrite($fp, $send);
 
 $res = fgets($fp);
-if ( !ereg("^OK ([A-Za-z0-9/+=]+) ([0-9]+)", $res, $regs) ) {
+if ( !ereg("^OK ([A-Za-z0-9/+=]+) ([A-Za-z0-9/+=]+) ([0-9]+)", $res, $regs) ) {
 	include('lib/loginfailed.php');
 }
 else {
 	session_name("SPPSESSID");
-	session_set_cookie_params( $regs[2], $USER_PATH );
+	session_set_cookie_params( $regs[3], $USER_PATH );
 	session_start();
 
 	# Login successful.
 	$_SESSION['auth'] = 'owner';
-	$_SESSION['token'] = $regs[1];
+	$_SESSION['hash'] = $regs[1];
+	$_SESSION['token'] = $regs[2];
 	header( "Location: $USER_PATH" );
 }
 

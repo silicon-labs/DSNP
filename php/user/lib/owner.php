@@ -83,8 +83,8 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$acknowledged = $row['acknowledged'];
 
 	if ( $acknowledged ) {
-		echo "<a href=\"${dest_id}sflogin.php?uri=" . 
-			urlencode($USER_URI) . "\"><small>$dest_id</small></a> ";
+		echo "<a href=\"${dest_id}sflogin.php?h=" . 
+			urlencode( $_SESSION['hash'] ) . "\"><small>$dest_id</small></a> ";
 	}
 	else {
 		echo "<a href=\"${dest_id}\"><small>$dest_id</small></a> ";

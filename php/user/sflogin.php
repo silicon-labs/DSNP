@@ -19,12 +19,10 @@
 include('../config.php');
 include('lib/session.php');
 
-$furi = $_REQUEST['uri'];
+$hash = $_REQUEST['h'];
 
-if ( !$furi )
-	die('no uri given');
-
-$hash = base64_encode(SHA1($furi, true));
+if ( !$hash )
+	die('no hash given');
 
 /* Maybe we are already logged in as this friend. */
 if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && 
@@ -45,9 +43,10 @@ else {
 
 	$res = fgets($fp);
 
-	if ( ereg("^OK ([A-Za-z0-9+/=]+)", $res, $regs) ) {
-		$arg_uri = 'uri=' . urlencode( $USER_URI );
+	if ( ereg("^OK ([A-Za-z0-9+/=]+) ([^ \t\n\r]+) ([A-Za-z0-9+/=]+)", $res, $regs) ) {
+		$arg_h = 'h=' . urlencode( $regs[3] );
 		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
-		header("Location: ${furi}retftok.php?${arg_uri}&${arg_reqid}" );
+		$friend_id = $regs[2];
+		header("Location: ${friend_id}retftok.php?${arg_h}&${arg_reqid}" );
 	}
 }

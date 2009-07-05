@@ -123,7 +123,7 @@ long send_notify_accept( MYSQL *mysql, const char *from_user,
 		const char *message, char **result_message );
 void notify_accept( MYSQL *mysql, const char *relid, const char *message );
 long accept( MYSQL *mysql, const char *for_user, const char *from_id,
-		const char *requested_relid, const char *returned_relid );
+		const char *id_salt, const char *requested_relid, const char *returned_relid );
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
 

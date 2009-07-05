@@ -56,6 +56,7 @@ char *alloc_string( const char *s, const char *e )
 	generation = [0-9]+       >{g1=p;} %{g2=p;};
 	relid = base64            >{r1=p;} %{r2=p;};
 	token = base64            >{t1=p;} %{t2=p;};
+	id_salt = base64          >{a1=p;} %{a2=p;};
 	requested_relid = base64  >{r1=p;} %{r2=p;};
 	returned_relid = base64   >{s1=p;} %{s2=p;};
 
@@ -392,7 +393,7 @@ int server_parse_loop()
 			return ERR_LINE_TOO_LONG;
 		}
 
-		message("parse_loop: parsing a line: %s\n", buf );
+		message("parse_loop: parsing a line: %s", buf );
 
 		const char *p = buf, *pe = buf + length;
 
@@ -424,9 +425,10 @@ int server_parse_loop()
 	include common;
 
 	action accept {
+		char *id_salt = alloc_string( a1, a2 );
 		char *requested_relid = alloc_string( r1, r2 );
 		char *returned_relid = alloc_string( s1, s2 );
-		accept( mysql, user, friend_id, requested_relid, returned_relid );
+		accept( mysql, user, friend_id, id_salt, requested_relid, returned_relid );
 	}
 
 	action registered {
@@ -436,7 +438,7 @@ int server_parse_loop()
 	}
 
 	main :=
-		'accept'i ' ' requested_relid ' ' returned_relid EOL @accept |
+		'accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @accept |
 		'registered'i ' ' requested_relid ' ' returned_relid EOL @registered;
 }%%
 
@@ -446,6 +448,7 @@ int notify_accept_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *message )
 {
 	long cs;
+	const char *a1, *a2;
 	const char *r1, *r2;
 	const char *s1, *s2;
 

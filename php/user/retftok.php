@@ -21,9 +21,15 @@ include('lib/session.php');
 
 requireOwner();
 
-$uri = $_GET['uri'];
+$hash = $_REQUEST['h'];
 $reqid = $_GET['reqid'];
-$hash = base64_encode(SHA1($uri, true));
+
+if ( !$hash )
+	die('no hash given');
+
+if ( !$reqid )
+	die('no reqid given');
+
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
@@ -37,9 +43,10 @@ fwrite($fp, $send);
 
 $res = fgets($fp);
 
-if ( ereg("^OK ([A-Za-z0-9+/=]+)", $res, $regs) ) {
+if ( ereg("^OK ([A-Za-z0-9+/=]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
-	header("Location: ${uri}sftoken.php?${arg_ftoken}" );
+	$friend_id = $regs[2];
+	header("Location: ${friend_id}sftoken.php?${arg_ftoken}" );
 }
 else {
 	echo $res;

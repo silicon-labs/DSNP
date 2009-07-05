@@ -131,11 +131,11 @@ BIGNUM *base64_to_bn( const char *base64 )
 	return bn;
 }
 
-char *pass_hash( const u_char *salt, const char *pass )
+char *pass_hash( const u_char *pass_salt, const char *pass )
 {
 	unsigned char pass_hash[SHA_DIGEST_LENGTH];
 	u_char *pass_comb = new u_char[SALT_SIZE + strlen(pass)];
-	memcpy( pass_comb, salt, SALT_SIZE );
+	memcpy( pass_comb, pass_salt, SALT_SIZE );
 	memcpy( pass_comb + SALT_SIZE, pass, strlen(pass) );
 	SHA1( pass_comb, SALT_SIZE+strlen(pass), pass_hash );
 	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
@@ -196,11 +196,14 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
-	char *pass_hashed, *salt_str;
-	u_char salt[SALT_SIZE];
+	char *pass_hashed, *pass_salt_str, *id_salt_str;
+	u_char pass_salt[SALT_SIZE], id_salt[SALT_SIZE];
 
-	RAND_bytes( salt, SALT_SIZE );
-	salt_str = bin_to_base64( salt, SALT_SIZE );
+	RAND_bytes( pass_salt, SALT_SIZE );
+	pass_salt_str = bin_to_base64( pass_salt, SALT_SIZE );
+
+	RAND_bytes( id_salt, SALT_SIZE );
+	id_salt_str = bin_to_base64( id_salt, SALT_SIZE );
 
 	/* Generate a new key. */
 	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
@@ -220,17 +223,17 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	iqmp = bn_to_base64( rsa->iqmp );
 
 	/* Hash the password. */
-	pass_hashed = pass_hash( salt, pass );
+	pass_hashed = pass_hash( pass_salt, pass );
 
 	/* Execute the insert. */
 	exec_query( mysql,
 		"INSERT INTO user "
 		"("
-		"	user, salt, pass, email, "
+		"	user, pass_salt, pass, email, id_salt, "
 		"	rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
 		")"
-		"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e );", 
-		user, salt_str, pass_hashed, email, n, e, d, p, q, dmp1, dmq1, iqmp );
+		"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e );", 
+		user, pass_salt_str, pass_hashed, email, id_salt_str, n, e, d, p, q, dmp1, dmq1, iqmp );
 	
 	/* Make the first session key for the user. */
 	new_broadcast_key( mysql, user );
@@ -569,24 +572,27 @@ long store_relid_response( MYSQL *mysql, const char *identity, const char *fr_re
 	return result;
 }
 
-char *make_friend_hash( const char *identity )
+char *make_id_hash( const char *salt, const char *identity )
 {
 	/* Make a hash for the identity. */
+	long len = strlen(salt) + strlen(identity) + 1;
+	char *total = new char[len];
+	sprintf( total, "%s%s", salt, identity );
 	unsigned char friend_hash[SHA_DIGEST_LENGTH];
-	SHA1( (unsigned char*)identity, strlen(identity), friend_hash );
+	SHA1( (unsigned char*)total, len, friend_hash );
 	return bin_to_base64( friend_hash, SHA_DIGEST_LENGTH );
 }
 
 long store_friend_claim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *put_relid, const char *get_relid )
+		const char *identity, const char *id_salt, const char *put_relid, const char *get_relid )
 {
-	char *friend_hash_str = make_friend_hash( identity );
+	char *friend_hash_str = make_id_hash( id_salt, identity );
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
-		"( user, friend_id, friend_hash, put_relid, get_relid, acknowledged, put_root ) "
-		"VALUES ( %e, %e, %e, %e, %e, %b, %b );",
-		user, identity, friend_hash_str, put_relid, get_relid, true, false );
+		"( user, friend_id, friend_salt, friend_hash, put_relid, get_relid, acknowledged, put_root ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e, %b, %b );",
+		user, identity, id_salt, friend_hash_str, put_relid, get_relid, true, false );
 
 	return 0;
 }
@@ -638,6 +644,7 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 
 	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
+		::message("relid_response: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
@@ -792,6 +799,7 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 
 	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
+		::message("friend_final: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
@@ -1058,6 +1066,20 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	char buf[2048], *result_message = 0;
+	char *from_id, *requested_relid, *returned_relid;
+	char *id_salt;
+
+	/* Execute the query. */
+	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", user );
+
+	/* Check for a result. */
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		BIO_printf( bioOut, "ERROR request not found\r\n" );
+		goto close;
+	}
+	id_salt = row[0];
 
 	/* Execute the query. */
 	exec_query( mysql, "SELECT from_id, requested_relid, returned_relid "
@@ -1073,26 +1095,30 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 		goto close;
 	}
 
+	from_id = row[0];
+	requested_relid = row[1];
+	returned_relid = row[2];
+
 	/* Notify the requester. */
-	sprintf( buf, "accept %s %s\r\n", row[1], row[2] );
-	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
-	send_notify_accept( mysql, user, row[0], row[1], buf, &result_message );
+	sprintf( buf, "accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
+	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
+	send_notify_accept( mysql, user, from_id, requested_relid, buf, &result_message );
 	message( "accept_friend received: %s\n", result_message );
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, row[0], row[1], row[2] );
+	store_friend_claim( mysql, user, from_id, result_message, requested_relid, returned_relid );
 
 	/* Notify the requester. */
-	sprintf( buf, "registered %s %s\r\n", row[1], row[2] );
-	message( "accept_friend sending: %s to %s from %s\n", buf, row[0], user  );
-	send_notify_accept( mysql, user, row[0], row[1], buf, &result_message );
+	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
+	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
+	send_notify_accept( mysql, user, from_id, requested_relid, buf, &result_message );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
 
-	send_current_broadcast_key( mysql, user, row[0] );
-	forward_tree_insert( mysql, user, row[0], row[1] );
+	send_current_broadcast_key( mysql, user, from_id );
+	forward_tree_insert( mysql, user, from_id, requested_relid );
 
 	BIO_printf( bioOut, "OK\r\n" );
 
@@ -1152,6 +1178,37 @@ query_fail:
 	return result;
 }
 
+char *user_identity_hash( MYSQL *mysql, const char *user )
+{
+	long result = 0;
+	long query_res;
+	char *identity, *id_hash_str = 0;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	query_res = exec_query( mysql,
+		"SELECT id_salt FROM user WHERE user = %e", user );
+
+	if ( query_res != 0 ) {
+		result = ERR_QUERY_ERROR;
+		goto query_fail;
+	}
+
+	select_res = mysql_store_result( mysql );
+	row = mysql_fetch_row( select_res );
+	if ( row ) {
+		identity = new char[strlen(c->CFG_URI) + strlen(user) + 1];
+		sprintf( identity, "%s%s/", c->CFG_URI, user );
+		id_hash_str = make_id_hash( row[0], identity );
+	}
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+query_fail:
+	return id_hash_str;
+}
+
 void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 {
 	int sigRes;
@@ -1165,11 +1222,15 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
+		::message("ftoken_request: hash %s for user %s is not valid\n", hash, user );
+
 		/* No friend claim ... send back a reqid anyways. Don't want to give
 		 * away that there is no claim. FIXME: Would be good to fake this with
 		 * an appropriate time delay. */
 		RAND_bytes( reqid, RELID_SIZE );
 		reqid_str = bin_to_base64( reqid, RELID_SIZE );
+
+		/*FIXME: Hang for a bit here instead. */
 		BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 		goto close;
 	}
@@ -1203,9 +1264,13 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 
 	store_ftoken( mysql, user, friend_id.identity, 
 			flogin_token_str, reqid_str, encrypt.sym );
-	
+
+	::message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
+
+
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
+	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str,
+			friend_id.identity, user_identity_hash( mysql, user ) );
 
 	free( flogin_token_str );
 	free( reqid_str );
@@ -1296,6 +1361,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	/* Decrypt the flogin_token. */
 	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
+		::message("ftoken_response: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		goto close;
 	}
@@ -1316,7 +1382,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 		user, friend_id.identity, flogin_token_str );
 
 	/* Return the login token for the requester to use. */
-	BIO_printf( bioOut, "OK %s\r\n", flogin_token_str );
+	BIO_printf( bioOut, "OK %s %s\r\n", flogin_token_str, friend_id.identity );
 
 	free( flogin_token_str );
 close:
@@ -1985,13 +2051,14 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	MYSQL_ROW row;
 	Encrypt encrypt;
 	u_char token[RELID_SIZE];
-	u_char salt[SALT_SIZE];
+	u_char pass_salt[SALT_SIZE];
 	char *token_str;
-	char *pass_hashed, *salt_str, *pass_str;
+	char *pass_hashed, *salt_str, *pass_str, *id_salt_str;
 	long lasts = LOGIN_TOKEN_LASTS;
+	char *identity, *id_hash_str;
 
 	exec_query( mysql, 
-		"SELECT user, salt, pass FROM user WHERE user = %e", user );
+		"SELECT user, pass_salt, pass, id_salt FROM user WHERE user = %e", user );
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
@@ -2002,11 +2069,12 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 
 	salt_str = row[1];
 	pass_str = row[2];
+	id_salt_str = row[3];
 
-	base64_to_bin( salt, 0, salt_str );
+	base64_to_bin( pass_salt, 0, salt_str );
 
 	/* Hash the password. */
-	pass_hashed = pass_hash( salt, pass );
+	pass_hashed = pass_hash( pass_salt, pass );
 
 	if ( strcmp( pass_hashed, pass_str ) != 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -2020,7 +2088,11 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 		"INSERT INTO login_token ( user, login_token, expires ) "
 		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", user, token_str, lasts );
 
-	BIO_printf( bioOut, "OK %s %ld\r\n", token_str, lasts );
+	identity = new char[strlen(c->CFG_URI) + strlen(user) + 2];
+	sprintf( identity, "%s%s/", c->CFG_URI, user );
+	id_hash_str = make_id_hash( id_salt_str, identity );
+
+	BIO_printf( bioOut, "OK %s %s %ld\r\n", id_hash_str, token_str, lasts );
 
 free_result:
 	mysql_free_result( result );
@@ -2158,10 +2230,13 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 }
 
 long accept( MYSQL *mysql, const char *for_user, const char *from_id,
-		const char *requested_relid, const char *returned_relid )
+		const char *id_salt, const char *requested_relid, const char *returned_relid )
 {
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	char *returned_id_salt;
 
 	::message("in accept\n");
 
@@ -2169,16 +2244,29 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	id_pub = fetch_public_key( mysql, from_id );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, for_user, from_id, returned_relid, requested_relid );
+	store_friend_claim( mysql, for_user, from_id, id_salt, returned_relid, requested_relid );
+
+	/* Execute the query. */
+	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", for_user );
+
+	/* Check for a result. */
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row ) {
+		BIO_printf( bioOut, "ERROR request not found\r\n" );
+		goto close;
+	}
+	returned_id_salt = row[0];
 
 	encrypt.load( id_pub, user_priv );
-	encrypt.signEncrypt( (u_char*)"flying with brian", 18 );
+	encrypt.signEncrypt( (u_char*)returned_id_salt, strlen(returned_id_salt)+1 );
 
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 	BIO_flush( bioOut );
 
 	::message("finished accept\n");
+close:
 	return 0;
 }
 

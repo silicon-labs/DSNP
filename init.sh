@@ -119,9 +119,11 @@ GRANT ALL ON $NAME.* TO '${NAME}_owner'@'localhost';
 USE $NAME;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
-	salt CHAR(24),
+	pass_salt CHAR(24),
 	pass VARCHAR(40), 
+
 	email VARCHAR(50),
+	id_salt CHAR(24),
 
 	rsa_n TEXT,
 	rsa_e TEXT,
@@ -185,6 +187,7 @@ CREATE TABLE put_broadcast_key (
 CREATE TABLE friend_claim (
 	user VARCHAR(20), 
 	friend_id TEXT,
+	friend_salt VARCHAR(48),
 	friend_hash VARCHAR(48),
 	put_relid VARCHAR(48),
 	get_relid VARCHAR(48),

@@ -59,6 +59,7 @@ char *alloc_string( const char *s, const char *e )
 	id_salt = base64          >{a1=p;} %{a2=p;};
 	requested_relid = base64  >{r1=p;} %{r2=p;};
 	returned_relid = base64   >{s1=p;} %{s2=p;};
+	type = [a-zA-Z]+          >{y1=p;} %{y2=p;};
 
 	date = ( digit{4} '-' digit{2} '-' digit{2} ' '
 			digit{2} ':' digit{2} ':' digit{2} ) >{d1 = p;} %{d2 = p;};
@@ -240,6 +241,7 @@ char *alloc_string( const char *s, const char *e )
 	action submit_broadcast {
 		char *user = alloc_string( u1, u2 );
 		char *number = alloc_string( n1, n2 );
+		char *type = alloc_string( y1, y2 );
 
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
@@ -249,14 +251,16 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		submit_broadcast( mysql, user, user_message, length );
+		submit_broadcast( mysql, user, type, user_message, length );
 		free( user_message );
 	}
 
 	action submit_remote_broadcast {
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
+		char *hash = alloc_string( a1, a2 );
 		char *token = alloc_string( t1, t2 );
+		char *type = alloc_string( y1, y2 );
 		char *number = alloc_string( n1, n2 );
 
 		int length = atoi( number );
@@ -267,7 +271,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		submit_remote_broadcast( mysql, user, identity, token, user_message, length );
+		submit_remote_broadcast( mysql, user, identity, hash, token, type, user_message, length );
 		free( user_message );
 	}
 
@@ -287,6 +291,7 @@ char *alloc_string( const char *s, const char *e )
 		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 		char *token = alloc_string( t1, t2 );
+		char *type = alloc_string( y1, y2 );
 		char *number = alloc_string( n1, n2 );
 
 		int length = atoi( number );
@@ -297,7 +302,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		remote_publish( mysql, user, identity, token, user_message );
+		remote_publish( mysql, user, identity, token, type, user_message );
 		free( user_message );
 	}
 
@@ -337,13 +342,13 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken;
 		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
 
-		'submit_broadcast'i ' ' user ' ' number EOL @check_key @submit_broadcast;
-		'submit_remote_broadcast'i ' ' user ' ' identity ' ' token ' '
-				number EOL @check_key @submit_remote_broadcast;
+		'submit_broadcast'i ' ' user ' ' type ' ' number EOL @check_key @submit_broadcast;
+		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' '
+				type ' ' number EOL @check_key @submit_remote_broadcast;
 
 		'message'i ' ' relid ' ' number EOL @check_ssl @receive_message;
 		'broadcast'i ' ' relid ' ' generation ' ' number EOL @check_ssl @broadcast;
-		'remote_publish'i ' ' user ' ' identity ' ' token ' ' number 
+		'remote_publish'i ' ' user ' ' identity ' ' token ' ' type ' ' number 
 				EOL @check_ssl @remote_publish;
 	*|;
 
@@ -370,6 +375,7 @@ int server_parse_loop()
 	const char *n1, *n2;
 	const char *t1, *t2;
 	const char *g1, *g2;
+	const char *y1, *y2;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -541,6 +547,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 	action direct_broadcast {
 		char *seqStr = alloc_string( q1, q2 );
 		char *date = alloc_string( d1, d2 );
+		char *type = alloc_string( y1, y2 );
 		char *lengthStr = alloc_string( n1, n2 );
 
 		long long seqNum = strtoll( seqStr, 0, 10 );
@@ -553,7 +560,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		direct_broadcast( mysql, relid, user, friend_id, seqNum, date, msg, length );
+		direct_broadcast( mysql, relid, user, friend_id, seqNum, date, type, msg, length );
 		fbreak;
 	}
 
@@ -561,6 +568,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 		char *seqStr = alloc_string( q1, q2 );
 		char *date = alloc_string( d1, d2 );
 		char *hash = alloc_string( a1, a2 );
+		char *type = alloc_string( y1, y2 );
 		char *genStr = alloc_string( g1, g2 );
 		char *lengthStr = alloc_string( n1, n2 );
 
@@ -575,14 +583,14 @@ int message_parser( MYSQL *mysql, const char *relid,
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
 		remote_broadcast( mysql, relid, user, friend_id, seqNum, date,
-			hash, generation, msg, length );
+			hash, type, generation, msg, length );
 		fbreak;
 	}
 
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' number EOL @direct_broadcast |
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' number EOL @direct_broadcast |
 
-		'remote_broadcast'i ' ' seq_num ' ' date ' ' hash ' ' generation ' ' number
+		'remote_broadcast'i ' ' seq_num ' ' date ' ' hash ' ' type ' ' generation ' ' number
 			EOL @remote_broadcast;
 
 }%%
@@ -598,6 +606,7 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	const char *a1, *a2;
 	const char *g1, *g2;
 	const char *q1, *q2;
+	const char *y1, *y2;
 
 	message("parsing broadcast string: %s\n", msg );
 
@@ -1352,7 +1361,7 @@ fail:
 
 long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *to_identity, const char *from_user, 
-		const char *token, const char *sym, long mLen )
+		const char *token, const char *type, const char *sym, long mLen )
 {
 	static char buf[8192];
 	long result = 0, cs;
@@ -1392,8 +1401,8 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 
 	/* Send the request. */
 	BIO_printf( sbio, 
-		"remote_publish %s %s%s/ %s %ld\r\n", 
-		toIdent.user, c->CFG_URI, from_user, token, mLen );
+		"remote_publish %s %s%s/ %s %s %ld\r\n", 
+		toIdent.user, c->CFG_URI, from_user, token, type, mLen );
 	BIO_write( sbio, sym, mLen );
 	BIO_flush( sbio );
 

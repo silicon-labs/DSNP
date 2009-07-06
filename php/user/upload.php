@@ -73,5 +73,24 @@ system("gm convert " .
 	"+profile '*' " .
 	$thumb );
 
+$fp = fsockopen( 'localhost', $CFG_PORT );
+if ( !$fp )
+	exit(1);
+
+$fh = fopen($thumb, 'r');
+$data = fread($fh, filesize($thumb));
+fclose($fh);
+
+#$encoded = trim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
+$len = strlen( $data );
+
+$send = 
+	"SPP/0.1 $CFG_URI\r\n" . 
+	"comm_key $CFG_COMM_KEY\r\n" .
+	"submit_broadcast $USER_NAME PHT $len\r\n";
+
+fwrite( $fp, $send );
+fwrite( $fp, $data, $len );
+
 header("Location: $USER_URI");
 ?>

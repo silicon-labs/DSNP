@@ -45,41 +45,50 @@ function printName( $identity, $possessive )
 	}
 }
 
-function printMessage( $author_id, $subject_id, $message, $time_published )
+function printMessage( $author_id, $subject_id, $type, $message, $time_published )
 {
 	global $USER_NAME;
 	global $USER_URI;
 
-	$r = new XMLReader();
-	$r->xml( $message );
-	if ( $r->read() ) {
+	if ( $type == "PHT" ) {
+		echo "<small>$time_published ";
+		printName( $author_id, false );
+		echo " uploaded a photo:</small><br>";
+		echo "<a href=\"img/$message\">";
+		echo "<img src=\"img/$message\" alt=\"$message\"></a><br>\n";
+	}
+	else {
+		$r = new XMLReader();
+		$r->xml( $message );
+		if ( $r->read() ) {
 
-		if ( $r->name == "text" ) {
-			if ( $r->read() )
-				$text = $r->value;
+			if ( $r->name == "text" ) {
+				if ( $r->read() )
+					$text = $r->value;
 
-			if ( isset( $text ) ) {
-				echo "<small>$time_published ";
-				printName( $author_id, false );
-				echo " said:</small><br>";
-				echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";
+				if ( isset( $text ) ) {
+					echo "<small>$time_published ";
+					printName( $author_id, false );
+					echo " said:</small><br>";
+					echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";
+				}
 			}
-		}
-		else if ( $r->name == "wall" ) {
-			if ( $r->read() )
-				$wall = $r->value;
+			else if ( $r->name == "wall" ) {
+				if ( $r->read() )
+					$wall = $r->value;
 
-			if ( isset( $wall ) ) {
-				echo "<small>$time_published ";
+				if ( isset( $wall ) ) {
+					echo "<small>$time_published ";
 
-				printName( $author_id, false );
+					printName( $author_id, false );
 
-				echo " wrote on ";
+					echo " wrote on ";
 
-				printName( $subject_id, true );
+					printName( $subject_id, true );
 
-				echo " wall:</small><br>";
-				echo "&nbsp;&nbsp;" . htmlspecialchars($wall) . "<br>";
+					echo " wall:</small><br>";
+					echo "&nbsp;&nbsp;" . htmlspecialchars($wall) . "<br>";
+				}
 			}
 		}
 	}

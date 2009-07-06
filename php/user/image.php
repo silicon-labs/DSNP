@@ -21,7 +21,7 @@ include('lib/session.php');
 
 requireFriendOrOwner();
 
-if ( !ereg('^(img|thm)-[0-9]*\.jpg$', $_GET['i'] ) )
+if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $_GET['i'] ) )
 	die("bad image");
 
 $file = $_GET['i'];

@@ -45,11 +45,13 @@ $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
 	exit(1);
 
+$token = $_SESSION['token'];
+$hash = $_SESSION['hash'];
+
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"submit_remote_broadcast $USER_NAME $BROWSER_ID " . $_SESSION['token'] .
-			" " . $len . "\r\n";
+	"submit_remote_broadcast $USER_NAME $BROWSER_ID $hash $token BRD $len\r\n";
 
 fwrite( $fp, $send );
 fwrite( $fp, $encoded, $len );

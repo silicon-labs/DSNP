@@ -230,6 +230,7 @@ CREATE TABLE received (
 	seq_num BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
+	type CHAR(4),
 	message BLOB
 );
 
@@ -239,6 +240,7 @@ CREATE TABLE published (
 	subject_id TEXT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
+	type CHAR(4),
 	message BLOB,
 	PRIMARY KEY(user, seq_num)
 );
@@ -248,6 +250,7 @@ CREATE TABLE remote_published (
 	author_id TEXT,
 	subject_id TEXT,
 	time_published TIMESTAMP,
+	type CHAR(4),
 	message BLOB
 );
 

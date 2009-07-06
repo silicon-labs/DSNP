@@ -117,11 +117,11 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <?
 
 $query = sprintf(
-	"SELECT author_id, subject_id, time_published, message " .
+	"SELECT author_id, subject_id, time_published, type, message " .
 	"FROM published " . 
 	"WHERE user = '%s' " .
 	"UNION " .
-	"SELECT author_id, subject_id, time_published, message " .
+	"SELECT author_id, subject_id, time_published, type, message " .
 	"FROM remote_published " .
 	"WHERE user = '%s' " .
 	"ORDER BY time_published DESC",
@@ -135,11 +135,12 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$author_id = $row['author_id'];
 	$subject_id = $row['subject_id'];
 	$time_published = $row['time_published'];
+	$type = $row['type'];
 	$message = $row['message'];
 
 	echo "<p>\n";
 	
-	printMessage( $author_id, $subject_id, $message, $time_published );
+	printMessage( $author_id, $subject_id, $type, $message, $time_published );
 }
 ?>
 

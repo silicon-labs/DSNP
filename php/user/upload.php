@@ -77,12 +77,7 @@ $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
 	exit(1);
 
-$fh = fopen($thumb, 'r');
-$data = fread($fh, filesize($thumb));
-fclose($fh);
-
-#$encoded = trim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
-$len = strlen( $data );
+$len = strlen( "thm-$id.jpg" );
 
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
@@ -90,7 +85,7 @@ $send =
 	"submit_broadcast $USER_NAME PHT $len\r\n";
 
 fwrite( $fp, $send );
-fwrite( $fp, $data, $len );
+fwrite( $fp, "thm-$id.jpg", $len );
 
 header("Location: $USER_URI");
 ?>

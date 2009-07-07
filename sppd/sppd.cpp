@@ -1203,7 +1203,7 @@ char *user_identity_hash( MYSQL *mysql, const char *user )
 	select_res = mysql_store_result( mysql );
 	row = mysql_fetch_row( select_res );
 	if ( row ) {
-		identity = new char[strlen(c->CFG_URI) + strlen(user) + 1];
+		identity = new char[strlen(c->CFG_URI) + strlen(user) + 2];
 		sprintf( identity, "%s%s/", c->CFG_URI, user );
 		id_hash_str = make_id_hash( row[0], identity );
 	}
@@ -1273,13 +1273,9 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 
 	::message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
 
-
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str,
 			friend_id.identity, user_identity_hash( mysql, user ) );
-
-	free( flogin_token_str );
-	free( reqid_str );
 
 close:
 	BIO_flush( bioOut );
@@ -1591,8 +1587,18 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	const char *insert = msg;
 	long insertLen = mLen;
 	if ( strcmp( type, "PHT" ) == 0 ) {
-		insert = "pht";
-		insertLen = 3;
+		char *fileName = new char[strlen(c->CFG_PHOTO_DIR) + strlen(user) + mLen + 24];
+		sprintf( fileName, "%s/%s/", c->CFG_PHOTO_DIR, user );
+		long soFar = strlen(fileName);
+		memcpy( fileName + soFar, msg, mLen );
+		fileName[soFar + mLen] = 0;
+		char *data = new char[16384];
+		FILE *file = fopen( fileName, "rb" );
+		::message( "failed to open %s\n", fileName );
+		long len = fread( data, 1, 16384, file );
+
+		msg = data;
+		mLen = len;
 	}
 
 	/* Insert the broadcast message into the published table. */

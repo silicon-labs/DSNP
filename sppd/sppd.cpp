@@ -1563,7 +1563,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	struct tm curTM, *tmRes;
 	char *full;
 	char *authorId;
-	char timeStr[64];
+	char time_str[64];
 	long sendResult, soFar;
 	long long seqNum;
 	MYSQL_RES *result;
@@ -1578,7 +1578,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		return -1;
 
 	/* Format for the message. */
-	if ( strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
+	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
 		return -1;
 
 	authorId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
@@ -1606,7 +1606,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		"INSERT INTO published "
 		"( user, author_id, time_published, type, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
-		user, authorId, timeStr, type, insert, insertLen );
+		user, authorId, time_str, type, insert, insertLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT last_insert_id()" );
@@ -1619,7 +1619,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	full = new char[128+mLen];
-	soFar = sprintf( full, "direct_broadcast %lld %s %s %ld\r\n", seqNum, timeStr, type, mLen );
+	soFar = sprintf( full, "direct_broadcast %lld %s %s %ld\r\n", seqNum, time_str, type, mLen );
 	memcpy( full + soFar, msg, mLen );
 	full[soFar+mLen] = 0;
 
@@ -1647,58 +1647,20 @@ close:
 }
 
 long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
-		const char *author_hash, long long generation, const char *type,
+		const char *author_hash, long long generation,
 		const char *msg, long mLen, const char *encMessage )
 {
-	time_t curTime;
-	struct tm curTM, *tmRes;
-
 	char *full;
-	char timeStr[64];
 	long sendResult;
-	long long seqNum;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	long encMessageLen, soFar;
-	char *subjectId;
 
-	/* Get the current time. */
-	curTime = time(NULL);
-
-	/* Convert to struct tm. */
-	tmRes = localtime_r( &curTime, &curTM );
-	if ( tmRes == 0 )
-		return -1;
-
-	/* Format for the message. */
-	if ( strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
-		return -1;
-
-	subjectId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
-	sprintf( subjectId, "%s%s/", c->CFG_URI, user );
-
-	/* Insert the broadcast message into the published table. */
-	exec_query( mysql,
-		"INSERT INTO published "
-		"( user, author_id, subject_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, %e, %e, %d )",
-		user, author_id, subjectId, timeStr, type, msg, mLen );
-
-	/* Get the id that was assigned to the message. */
-	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row )
-		return -1;
-
-	seqNum = strtoll( row[0], 0, 10 );
 	encMessageLen = strlen(encMessage);
 
 	/* Make the full message. */
 	full = new char[4096+encMessageLen];
 	soFar = sprintf( full, 
-		"remote_broadcast %lld %s %s %s %lld %ld\r\n", 
-		seqNum, timeStr, author_hash, type, generation, encMessageLen );
+		"remote_broadcast %s %lld %ld\r\n", 
+		author_hash, generation, encMessageLen );
 	memcpy( full + soFar, encMessage, encMessageLen );
 	full[soFar+encMessageLen] = 0;
 
@@ -1713,21 +1675,58 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 		const char *author_id, const char *author_hash, 
 		const char *token, const char *type, const char *msg, long mLen )
 {
-	int result;
+	int res;
 	char *resultEnc;
 	long long resultGen;
 	RSA *user_priv, *id_pub;
-
 	Encrypt encrypt;
+	time_t curTime;
+	struct tm curTM, *tmRes;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	char time_str[64];
+	char *subjectId;
+	long long seq_num;
+
+	/* Get the current time. */
+	curTime = time(NULL);
+
+	/* Convert to struct tm. */
+	tmRes = localtime_r( &curTime, &curTM );
+	if ( tmRes == 0 )
+		return -1;
+
+	/* Format for the message. */
+	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
+		return -1;
+
+	subjectId = new char[strlen(c->CFG_URI) + strlen(to_user) + 2];
+	sprintf( subjectId, "%s%s/", c->CFG_URI, to_user );
+
+	/* Insert the broadcast message into the published table. */
+	exec_query( mysql,
+		"INSERT INTO published "
+		"( user, author_id, subject_id, time_published, type, message ) "
+		"VALUES ( %e, %e, %e, %e, %e, %d )",
+		to_user, author_id, subjectId, time_str, type, msg, mLen );
+
+	/* Get the id that was assigned to the message. */
+	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( !row )
+		return -1;
+
+	seq_num = strtoll( row[0], 0, 10 );
 
 	user_priv = load_key( mysql, to_user );
 	id_pub = fetch_public_key( mysql, author_id );
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
-	result = send_remote_publish_net( resultEnc, resultGen, author_id,
-			to_user, token, type, encrypt.sym, strlen(encrypt.sym) );
-	if ( result < 0 ) {
+	res = send_remote_publish_net( resultEnc, resultGen, author_id,
+			to_user, token, seq_num, type, encrypt.sym, strlen(encrypt.sym) );
+	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
@@ -1735,9 +1734,9 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	message("result enc: %s\n", resultEnc );
 	message("result gen: %lld\n", resultGen );
 
-	result = send_remote_broadcast( mysql, to_user, author_id, 
-			author_hash, resultGen, type, msg, mLen, resultEnc );
-	if ( result < 0 ) {
+	res = send_remote_broadcast( mysql, to_user, author_id, 
+			author_hash, resultGen, msg, mLen, resultEnc );
+	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto close;
 	}
@@ -1852,9 +1851,19 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		user, authorId, seqNum, date, type, msg, length );
 }
 
-void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friendId, 
-		long long seqNum, const char *date, const char *hash, const char *type,
-		long long generation, const char *msg, long mLen )
+void remote_inner( MYSQL *mysql, const char *user, const char *friend_id, const char *author_id,
+		long long seq_num, const char *date, const char *type, const char *msg, long mLen )
+{
+	::message("storing remote innter\n");
+	exec_query( mysql, 
+		"INSERT INTO received "
+		"	( for_user, author_id, subject_id, seq_num, time_published, time_received, type, message ) "
+		"VALUES ( %e, %e, %e, %L, %e, now(), %e, %d )",
+		user, author_id, friend_id, seq_num, date, type, msg, mLen );
+}
+
+void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
+		const char *hash, long long generation, const char *msg, long mLen )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1899,11 +1908,8 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 		message( "second level decLen: %d\n", encrypt.decLen );
 
-		exec_query( mysql, 
-			"INSERT INTO received "
-			"	( for_user, author_id, subject_id, seq_num, time_published, time_received, type, message ) "
-			"VALUES ( %e, %e, %e, %L, %e, now(), %e, %d )",
-			user, author_id, friendId, seqNum, date, type, encrypt.decrypted, encrypt.decLen );
+		remote_broadcast_parser( mysql, user, friend_id, author_id,
+				(char*)encrypt.decrypted, encrypt.decLen );
 	}
 }
 
@@ -2171,8 +2177,20 @@ free_result:
 	BIO_flush(bioOut);
 }
 
+
+	char *full;
+	char time_str[64];
+	long sendResult;
+	long long seqNum;
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	long encMessageLen, soFar;
+	char *subjectId;
+
+
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, const char *type, const char *sym )
+		const char *identity, const char *token, long long seq_num,
+		const char *type, const char *sym )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -2182,6 +2200,10 @@ void remote_publish( MYSQL *mysql, const char *user,
 	int sigRes;
 	char *broadcast_key, *generation;
 	char *authorId;
+	char *full;
+	long soFar;
+	time_t curTime;
+	struct tm curTM, *tmRes;
 
 	message( "remote_publish submitted token: %s\n", token );
 
@@ -2193,6 +2215,22 @@ void remote_publish( MYSQL *mysql, const char *user,
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		goto free_result;
+	}
+
+	/* Get the current time. */
+	curTime = time(NULL);
+
+	/* Convert to struct tm. */
+	tmRes = localtime_r( &curTime, &curTM );
+	if ( tmRes == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		goto free_result;
+	}
+
+	/* Format for the message. */
+	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 )  {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}
@@ -2232,8 +2270,14 @@ void remote_publish( MYSQL *mysql, const char *user,
 	generation = strdup(row[0]);
 	broadcast_key = strdup(row[1]);
 
+	/* Make the full message. */
+	full = new char[128+encrypt1.decLen];
+	soFar = sprintf( full, "remote_inner %lld %s %s %ld\r\n", seq_num, time_str, type, encrypt1.decLen );
+	memcpy( full + soFar, encrypt1.decrypted, encrypt1.decLen );
+	full[soFar+encrypt1.decLen] = 0;
+
 	encrypt2.load( id_pub, user_priv );
-	sigRes = encrypt2.bkSignEncrypt( broadcast_key, encrypt1.decrypted, encrypt1.decLen );
+	sigRes = encrypt2.bkSignEncrypt( broadcast_key, (u_char*)full, soFar+encrypt1.decLen );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		goto close;

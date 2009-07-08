@@ -115,7 +115,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void remote_publish( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, const char *type, const char *msg );
+		const char *identity, const char *token, long long seq_num, const char *type, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 long send_notify_accept( MYSQL *mysql, const char *from_user,
@@ -136,15 +136,18 @@ long submit_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *user_message, long mLen );
 long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *to_identity, const char *from_identity,
-		const char *token, const char *type, const char *sym, long mLen );
+		const char *token, long long seq_num, const char *type, const char *sym, long mLen );
 
 int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
 		long long seqNum, const char *date, const char *type, const char *msg, long length );
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
-		long long seqNum, const char *date, const char *hash, const char *type,
-		long long generation, const char *msg, long length );
+		const char *hash, long long generation, const char *msg, long length );
+void remote_inner( MYSQL *mysql, const char *user, const char *author_id, const char *friend_id,
+		long long seq_num, const char *date, const char *type, const char *msg, long mLen );
+int remote_broadcast_parser( MYSQL *mysql, const char *user, 
+		const char *friend_id, const char *author_id, const char *msg, long mLen );
 
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );

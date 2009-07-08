@@ -70,6 +70,7 @@ char *alloc_string( const char *s, const char *e )
 
 	number = [0-9]+           >{n1=p;} %{n2=p;};
 	seq_num = [0-9]+          >{q1=p;} %{q2=p;};
+	resource_id = [0-9]+       >{c1=p;} %{c2=p;};
 
 	EOL = '\r'? '\n';
 }%%
@@ -242,7 +243,9 @@ char *alloc_string( const char *s, const char *e )
 		char *user = alloc_string( u1, u2 );
 		char *number = alloc_string( n1, n2 );
 		char *type = alloc_string( y1, y2 );
+		char *resource_id_str = alloc_string( c1, c2 );
 
+		long long resource_id = strtoll( resource_id_str, 0, 10 );
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
@@ -251,7 +254,7 @@ char *alloc_string( const char *s, const char *e )
 		BIO_read( bioIn, user_message, length );
 		user_message[length] = 0;
 
-		submit_broadcast( mysql, user, type, user_message, length );
+		submit_broadcast( mysql, user, type, resource_id, user_message, length );
 		free( user_message );
 	}
 
@@ -344,7 +347,7 @@ char *alloc_string( const char *s, const char *e )
 		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken;
 		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
 
-		'submit_broadcast'i ' ' user ' ' type ' ' number EOL @check_key @submit_broadcast;
+		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' number EOL @check_key @submit_broadcast;
 		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' '
 				type ' ' number EOL @check_key @submit_remote_broadcast;
 
@@ -379,6 +382,7 @@ int server_parse_loop()
 	const char *g1, *g2;
 	const char *y1, *y2;
 	const char *q1, *q2;
+	const char *c1, *c2;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -551,9 +555,11 @@ int message_parser( MYSQL *mysql, const char *relid,
 		char *seq_str = alloc_string( q1, q2 );
 		char *date = alloc_string( d1, d2 );
 		char *type = alloc_string( y1, y2 );
+		char *resource_id_str = alloc_string( c1, c2 );
 		char *lengthStr = alloc_string( n1, n2 );
 
-		long long seqNum = strtoll( seq_str, 0, 10 );
+		long long seq_num = strtoll( seq_str, 0, 10 );
+		long long resource_id = strtoll( resource_id_str, 0, 10 );
 
 		long length = atoi( lengthStr );
 		if ( length > MAX_MSG_LEN ) {
@@ -563,7 +569,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		direct_broadcast( mysql, relid, user, friend_id, seqNum, date, type, msg, length );
+		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, type, resource_id, msg, length );
 		fbreak;
 	}
 
@@ -586,7 +592,7 @@ int message_parser( MYSQL *mysql, const char *relid,
 	}
 
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' number EOL @direct_broadcast |
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' resource_id ' ' number EOL @direct_broadcast |
 		'remote_broadcast'i ' ' hash ' ' generation ' ' number EOL @remote_broadcast;
 }%%
 
@@ -602,8 +608,9 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	const char *g1, *g2;
 	const char *q1, *q2;
 	const char *y1, *y2;
+	const char *c1, *c2;
 
-	message("parsing broadcast string: %s\n", msg );
+	//message("parsing broadcast string: %s\n", msg );
 
 	%% write init;
 

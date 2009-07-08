@@ -140,7 +140,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 	echo "<p>\n";
 	
-	printMessage( $author_id, $subject_id, $type, $message, $time_published );
+	printMessage( $author_id, $subject_id, $type, 0, $message, $time_published );
 }
 ?>
 

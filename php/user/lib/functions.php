@@ -45,7 +45,7 @@ function printName( $identity, $possessive )
 	}
 }
 
-function printMessage( $author_id, $subject_id, $type, $message, $time_published )
+function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published )
 {
 	global $USER_NAME;
 	global $USER_URI;
@@ -54,7 +54,10 @@ function printMessage( $author_id, $subject_id, $type, $message, $time_published
 		echo "<small>$time_published ";
 		printName( $author_id, false );
 		echo " uploaded a photo:</small><br>";
-		echo "<a href=\"img/$message\">";
+		if ( $resource_id > 0 ) 
+			echo "<a href=\"${author_id}img/img-$resource_id.jpg\">";
+		else
+			echo "<a href=\"img/$message\">";
 		echo "<img src=\"img/$message\" alt=\"$message\"></a><br>\n";
 	}
 	else {

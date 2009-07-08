@@ -899,7 +899,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 		long send_res = send_broadcast_net( to_site, relid,
 				generation, msg, strlen(msg) );
 		if ( send_res < 0 ) {
-			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
+			::message( "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
 			unsent = true;
 		}
@@ -919,7 +919,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 				char *generation = row[2];
 				char *message = row[3];
 
-				BIO_printf( bioOut, "Putting back to the queue: %s %s %s\n", 
+				::message( "Putting back to the queue: %s %s %s\n", 
 						to_site, relid, generation );
 
 				/* Queue the message. */
@@ -1557,7 +1557,7 @@ close:
 }
 
 long send_broadcast( MYSQL *mysql, const char *user,
-		const char *type, const char *msg, long mLen )
+		const char *type, long long resource_id, const char *msg, long mLen )
 {
 	time_t curTime;
 	struct tm curTM, *tmRes;
@@ -1565,7 +1565,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	char *authorId;
 	char time_str[64];
 	long sendResult, soFar;
-	long long seqNum;
+	long long seq_num;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 
@@ -1615,11 +1615,11 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	if ( !row )
 		return -1;
 
-	seqNum = strtoll( row[0], 0, 10 );
+	seq_num = strtoll( row[0], 0, 10 );
 
 	/* Make the full message. */
 	full = new char[128+mLen];
-	soFar = sprintf( full, "direct_broadcast %lld %s %s %ld\r\n", seqNum, time_str, type, mLen );
+	soFar = sprintf( full, "direct_broadcast %lld %s %s %lld %ld\r\n", seq_num, time_str, type, resource_id, mLen );
 	memcpy( full + soFar, msg, mLen );
 	full[soFar+mLen] = 0;
 
@@ -1630,9 +1630,9 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	return 0;
 }
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *type, const char *msg, long mLen )
+long submit_broadcast( MYSQL *mysql, const char *user, const char *type, long long resource_id, const char *msg, long mLen )
 {
-	int result = send_broadcast( mysql, user, type, msg, mLen );
+	int result = send_broadcast( mysql, user, type, resource_id, msg, mLen );
 
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -1804,6 +1804,7 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	decrypted[encrypt.decLen] = 0;
 	decLen = encrypt.decLen;
 
+	message("dispatching broadcast_parser\n");
 	parseRes = broadcast_parser( mysql, relid, user, friend_id, decrypted, decLen );
 	if ( parseRes < 0 )
 		message("broadcast_parser failed\n");
@@ -1826,15 +1827,15 @@ close:
 	BIO_flush(bioOut);
 }
 
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
-		long long seqNum, const char *date, const char *type, const char *msg, long length )
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
+		long long seq_num, const char *date, const char *type, long long resource_id, const char *msg, long length )
 {
 	if ( strcmp( type, "PHT" ) == 0 ) {
 		char *name = new char[64];
-		sprintf( name, "pub-%lld.jpg", seqNum );
+		sprintf( name, "pub-%lld.jpg", seq_num );
 
 		char *path = new char[strlen(c->CFG_PHOTO_DIR) + strlen(user) + 64];
-		sprintf( path, "%s/%s/pub-%lld.jpg", c->CFG_PHOTO_DIR, user, seqNum );
+		sprintf( path, "%s/%s/pub-%lld.jpg", c->CFG_PHOTO_DIR, user, seq_num );
 
 		FILE *f = fopen( path, "wb" );
 		fwrite( msg, 1, length, f );
@@ -1846,9 +1847,9 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 	exec_query( mysql, 
 		"INSERT INTO received "
-		"	( for_user, author_id, seq_num, time_published, time_received, type, message ) "
-		"VALUES ( %e, %e, %L, %e, now(), %e, %d )",
-		user, authorId, seqNum, date, type, msg, length );
+		"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) "
+		"VALUES ( %e, %e, %L, %e, now(), %e, %L, %d )",
+		user, author_id, seq_num, date, type, resource_id, msg, length );
 }
 
 void remote_inner( MYSQL *mysql, const char *user, const char *friend_id, const char *author_id,
@@ -2177,17 +2178,6 @@ free_result:
 	BIO_flush(bioOut);
 }
 
-
-	char *full;
-	char time_str[64];
-	long sendResult;
-	long long seqNum;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	long encMessageLen, soFar;
-	char *subjectId;
-
-
 void remote_publish( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, long long seq_num,
 		const char *type, const char *sym )
@@ -2204,6 +2194,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	long soFar;
 	time_t curTime;
 	struct tm curTM, *tmRes;
+	char time_str[64];
 
 	message( "remote_publish submitted token: %s\n", token );
 

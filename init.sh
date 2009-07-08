@@ -231,6 +231,7 @@ CREATE TABLE received (
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
 	type CHAR(4),
+	resource_id BIGINT,
 	message BLOB
 );
 

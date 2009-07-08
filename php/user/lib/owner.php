@@ -153,15 +153,15 @@ Photo Upload: <input name="photo" type="file" />
 <?
 
 $query = sprintf(
-	"SELECT author_id, subject_id, time_published, type, message " .
+	"SELECT author_id, subject_id, time_published, type, resource_id, message " .
 	"FROM received " .
 	"WHERE for_user = '%s' " .
 	"UNION " .
-	"SELECT author_id, subject_id, time_published, type, message " .
+	"SELECT author_id, subject_id, time_published, type, 0, message " .
 	"FROM published " . 
 	"WHERE user = '%s' " .
 	"UNION " .
-	"SELECT author_id, subject_id, time_published, type, message " .
+	"SELECT author_id, subject_id, time_published, type, 0, message " .
 	"FROM remote_published " .
 	"WHERE user = '%s' " .
 	"ORDER BY time_published DESC",
@@ -177,10 +177,11 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$subject_id = $row['subject_id'];
 	$time_published = $row['time_published'];
 	$type = $row['type'];
+	$resource_id = $row['resource_id'];
 	$message = $row['message'];
 
 	echo "<p>\n";
-	printMessage( $author_id, $subject_id, $type, $message, $time_published );
+	printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published );
 }
 
 ?>

@@ -130,7 +130,7 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 bool check_comm_key( const char *key );
 
 long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
-		const char *user_message, long mLen );
+		long long resource_id, const char *user_message, long mLen );
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *identity, const char *hash, const char *token, const char *type,
 		const char *user_message, long mLen );
@@ -141,7 +141,7 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
-		long long seqNum, const char *date, const char *type, const char *msg, long length );
+		long long seqNum, const char *date, const char *type, long long resource_id, const char *msg, long length );
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
 		const char *hash, long long generation, const char *msg, long length );
 void remote_inner( MYSQL *mysql, const char *user, const char *author_id, const char *friend_id,

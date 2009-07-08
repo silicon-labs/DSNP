@@ -47,7 +47,7 @@ $len = strlen( $encoded );
 $send = 
 	"SPP/0.1 $CFG_URI\r\n" . 
 	"comm_key $CFG_COMM_KEY\r\n" .
-	"submit_broadcast $USER_NAME MSG $len\r\n";
+	"submit_broadcast $USER_NAME MSG 0 $len\r\n";
 
 fwrite( $fp, $send );
 fwrite( $fp, $encoded, $len );

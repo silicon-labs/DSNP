@@ -242,6 +242,7 @@ CREATE TABLE published (
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	type CHAR(4),
+	resource_id BIGINT,
 	message BLOB,
 	PRIMARY KEY(user, seq_num)
 );
@@ -252,6 +253,7 @@ CREATE TABLE remote_published (
 	subject_id TEXT,
 	time_published TIMESTAMP,
 	type CHAR(4),
+	resource_id BIGINT,
 	message BLOB
 );
 

@@ -157,11 +157,11 @@ $query = sprintf(
 	"FROM received " .
 	"WHERE for_user = '%s' " .
 	"UNION " .
-	"SELECT author_id, subject_id, time_published, type, 0, message " .
+	"SELECT author_id, subject_id, time_published, type, resource_id, message " .
 	"FROM published " . 
 	"WHERE user = '%s' " .
 	"UNION " .
-	"SELECT author_id, subject_id, time_published, type, 0, message " .
+	"SELECT author_id, subject_id, time_published, type, resource_id, message " .
 	"FROM remote_published " .
 	"WHERE user = '%s' " .
 	"ORDER BY time_published DESC",

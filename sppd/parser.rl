@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <openssl/bio.h>
 #include "sppd.h"
+#include "lstring.h"
 
 #define MAX_MSG_LEN 16384
 
@@ -27,23 +28,14 @@ bool gblKeySubmitted = false;
 
 /* FIXME: check all scanned lengths for overflow. */
 
-char *alloc_string( const char *s, const char *e )
-{
-	long length = e-s;
-	char *result = (char*)malloc( length+1 );
-	memcpy( result, s, length );
-	result[length] = 0;
-	return result;
-}
-
 %%{
 	machine common;
 
 	base64 = [A-Za-z0-9\-_]+;
 
-	user = [a-zA-Z0-9_.]+     >{u1=p;} %{u2=p;};
-	pass = graph+             >{p1=p;} %{p2=p;};
-	email = graph+            >{e1=p;} %{e2=p;};
+	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
+	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
+	email = graph+            >{mark=p;} %{pass.set(mark, p);};
 	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
 	reqid = base64            >{r1=p;} %{r2=p;};
 	hash = base64             >{a1=p;} %{a2=p;};
@@ -61,8 +53,11 @@ char *alloc_string( const char *s, const char *e )
 	returned_relid = base64   >{s1=p;} %{s2=p;};
 	type = [a-zA-Z]+          >{y1=p;} %{y2=p;};
 
-	date = ( digit{4} '-' digit{2} '-' digit{2} ' '
-			digit{2} ':' digit{2} ':' digit{2} ) >{d1 = p;} %{d2 = p;};
+	date = ( 
+		digit{4} '-' digit{2} '-' digit{2} ' ' 
+		digit{2} ':' digit{2} ':' digit{2} 
+	)
+	>{mark=p;} %{date.set(mark, p);};
 
 	identity = 
 		( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
@@ -80,22 +75,10 @@ char *alloc_string( const char *s, const char *e )
 
 	include common;
 
-	action new_user {
-		char *user = alloc_string( u1, u2 );
-		char *pass = alloc_string( p1, p2 );
-		char *email = alloc_string( e1, e2 );
-
-		new_user( mysql, user, pass, email );
-	}
-
-	action public_key {
-		char *user = alloc_string( u1, u2 );
-
-		public_key( mysql, user );
-	}
+	action new_user { new_user( mysql, user, pass, email ); }
+	action public_key { public_key( mysql, user ); }
 
 	action relid_request {
-		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 
 		relid_request( mysql, user, identity );
@@ -108,7 +91,6 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action relid_response {
-		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
 		char *identity = alloc_string( i1, i2 );
 		char *id_host = alloc_string( h1, h2 );
@@ -124,7 +106,6 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action friend_final {
-		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
 		char *identity = alloc_string( i1, i2 );
 		char *id_host = alloc_string( h1, h2 );
@@ -134,21 +115,18 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action accept_friend {
-		char *user = alloc_string( u1, u2 );
 		char *reqid = alloc_string( r1, r2 );
 
 		accept_friend( mysql, user, reqid );
 	}
 
 	action ftoken_request {
-		char *user = alloc_string( u1, u2 );
 		char *hash = alloc_string( a1, a2 );
 
 		ftoken_request( mysql, user, hash );
 	}
 
 	action ftoken_response {
-		char *user = alloc_string( u1, u2 );
 		char *hash = alloc_string( a1, a2 );
 		char *reqid = alloc_string( r1, r2 );
 
@@ -240,7 +218,6 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action submit_broadcast {
-		char *user = alloc_string( u1, u2 );
 		char *number = alloc_string( n1, n2 );
 		char *type = alloc_string( y1, y2 );
 		char *resource_id_str = alloc_string( c1, c2 );
@@ -259,7 +236,6 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action submit_remote_broadcast {
-		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 		char *hash = alloc_string( a1, a2 );
 		char *token = alloc_string( t1, t2 );
@@ -279,8 +255,6 @@ char *alloc_string( const char *s, const char *e )
 	}
 
 	action login {
-		char *user = alloc_string( u1, u2 );
-		char *pass = alloc_string( p1, p2 );
 
 		login( mysql, user, pass );
 	}
@@ -292,7 +266,6 @@ char *alloc_string( const char *s, const char *e )
 
 	action remote_publish {
 		char *seq_str = alloc_string( q1, q2 );
-		char *user = alloc_string( u1, u2 );
 		char *identity = alloc_string( i1, i2 );
 		char *token = alloc_string( t1, t2 );
 		char *type = alloc_string( y1, y2 );
@@ -367,11 +340,9 @@ const long linelen = 4096;
 int server_parse_loop()
 {
 	long cs, act;
+	const char *mark;
 	const char *k1, *k2;
 	const char *ts, *te;
-	const char *u1, *u2;
-	const char *p1, *p2;
-	const char *e1, *e2;
 	const char *i1, *i2;
 	const char *h1, *h2;
 	const char *pp1, *pp2;
@@ -383,6 +354,7 @@ int server_parse_loop()
 	const char *y1, *y2;
 	const char *q1, *q2;
 	const char *c1, *c2;
+	String user, pass, email;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -553,7 +525,6 @@ int message_parser( MYSQL *mysql, const char *relid,
 
 	action direct_broadcast {
 		char *seq_str = alloc_string( q1, q2 );
-		char *date = alloc_string( d1, d2 );
 		char *type = alloc_string( y1, y2 );
 		char *resource_id_str = alloc_string( c1, c2 );
 		char *lengthStr = alloc_string( n1, n2 );
@@ -602,13 +573,14 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen )
 {
 	long cs;
-	const char *d1, *d2;
+	const char *mark;
 	const char *n1, *n2;
 	const char *a1, *a2;
 	const char *g1, *g2;
 	const char *q1, *q2;
 	const char *y1, *y2;
 	const char *c1, *c2;
+	String date;
 
 	//message("parsing broadcast string: %s\n", msg );
 
@@ -640,7 +612,6 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 
 	action remote_inner {
 		char *seq_str = alloc_string( q1, q2 );
-		char *date = alloc_string( d1, d2 );
 		char *type = alloc_string( y1, y2 );
 		char *lengthStr = alloc_string( n1, n2 );
 
@@ -668,10 +639,11 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 		const char *friend_id, const char *author_id, const char *msg, long mLen )
 {
 	long cs;
+	const char *mark;
 	const char *n1, *n2;
 	const char *y1, *y2;
-	const char *d1, *d2;
 	const char *q1, *q2;
+	String date;
 
 	message("parsing remote_broadcast string: %s\n", msg );
 

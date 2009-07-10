@@ -1,4 +1,4 @@
-#include "lstring.h"
+#include "string.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +23,9 @@ String::String( const char *s, const char *e )
 
 void String::set( const char *s, const char *e )
 {
+	if ( data != 0 )
+		delete[] data;
+
 	length = e-s;
 	data = new char[ length+1 ];
 	memcpy( data, s, length );

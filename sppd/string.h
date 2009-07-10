@@ -16,6 +16,14 @@ struct String
 
 	void set( const char *p1, const char *p2 );
 
+	char *relinquish()
+	{
+		char *res = data;
+		data = 0;
+		length = 0;
+		return res;
+	}
+
 	char *data;
 	long length;
 };

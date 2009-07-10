@@ -603,8 +603,8 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 	return 0;
 }
 
-void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
-		const char *identity, const char *id_host, const char *id_user )
+void relid_response( MYSQL *mysql, const char *user, 
+		const char *fr_reqid_str, const char *identity )
 {
 	/*  a) verifies browser is logged in as owner
 	 *  b) fetches $FR-URI/id.asc (using SSL)
@@ -623,20 +623,20 @@ void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 	unsigned char response_relid[RELID_SIZE], response_reqid[REQID_SIZE];
 	char *requested_relid_str, *response_relid_str, *response_reqid_str;
 	unsigned char message[RELID_SIZE*2];
-	char *site;
 	Encrypt encrypt;
 
+	Identity id( identity );
+	id.parse();
+
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity );
+	id_pub = fetch_public_key( mysql, id.identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		goto close;
 	}
 
-	site = get_site( identity );
-
 	RelidEncSig encsig;
-	fetchRes = fetch_requested_relid_net( encsig, site, id_host, fr_reqid_str );
+	fetchRes = fetch_requested_relid_net( encsig, id.site, id.host, fr_reqid_str );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
 		goto close;
@@ -764,8 +764,7 @@ query_fail:
 	return result;
 }
 
-void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity, 
-		const char *id_host, const char *id_user )
+void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 
 	 * b) decrypts and verifies message, must contain correct $FR-RELID
@@ -779,8 +778,9 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	char *requested_relid_str, *returned_relid_str;
 	unsigned char user_reqid[REQID_SIZE];
 	char *user_reqid_str;
-	char *site;
 	Encrypt encrypt;
+	Identity id( identity );
+	id.parse();
 
 	/* Get the public key for the identity. */
 	id_pub = fetch_public_key( mysql, identity );
@@ -789,10 +789,8 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 		goto close;
 	}
 
-	site = get_site( identity );
-
 	RelidEncSig encsig;
-	fetchRes = fetch_response_relid_net( encsig, site, id_host, reqid_str );
+	fetchRes = fetch_response_relid_net( encsig, id.site, id.host, reqid_str );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
 		goto close;
@@ -1307,6 +1305,8 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	/* Done. */
 	mysql_free_result( select_res );
 
+	message("fetch_ftoken finished\n");
+
 query_fail:
 	BIO_flush( bioOut );
 }
@@ -1329,6 +1329,8 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	Identity friend_id;
 	char *site;
 	Encrypt encrypt;
+
+	message("ftoken_response\n");
 
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
@@ -1480,6 +1482,8 @@ long queue_message_db( MYSQL *mysql, const char *from_user,
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 		long long generation, const char *msg )
 {
+	message("queue_broadcast_db\n");
+
 	/* Table lock. */
 	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
 
@@ -1544,9 +1548,13 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		encrypt.load( 0, user_priv );
 		encrypt.bkSignEncrypt( broadcast_key, (u_char*)msg, mLen );
 
+		message("finished encrypting\n");
+
 		/* Find the root user to send to. */
 		id.load( friend_id );
 		id.parse();
+
+		message("finished encrypting\n");
 
 		queue_broadcast_db( mysql, id.site, put_relid,
 				strtoll(generation, 0, 10), encrypt.sym );

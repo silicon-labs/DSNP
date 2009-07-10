@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <openssl/bio.h>
 #include "sppd.h"
-#include "lstring.h"
+#include "string.h"
 
 #define MAX_MSG_LEN 16384
 
@@ -36,22 +36,16 @@ bool gblKeySubmitted = false;
 	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
 	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
 	email = graph+            >{mark=p;} %{pass.set(mark, p);};
-	path_part = (graph-'/')+  >{pp1=p;} %{pp2=p;};
-	reqid = base64            >{r1=p;} %{r2=p;};
-	hash = base64             >{a1=p;} %{a2=p;};
-	key = base64              >{k1=p;} %{k2=p;};
-	enc = base64              >{e1=p;} %{e2=p;};
-	sig = base64              >{s1=p;} %{s2=p;};
-	sig1 = base64             >{s1=p;} %{s2=p;};
-	sig2 = base64             >{t1=p;} %{t2=p;};
-	sym = base64              >{y1=p;} %{y2=p;};
-	generation = [0-9]+       >{g1=p;} %{g2=p;};
-	relid = base64            >{r1=p;} %{r2=p;};
-	token = base64            >{t1=p;} %{t2=p;};
-	id_salt = base64          >{a1=p;} %{a2=p;};
-	requested_relid = base64  >{r1=p;} %{r2=p;};
-	returned_relid = base64   >{s1=p;} %{s2=p;};
-	type = [a-zA-Z]+          >{y1=p;} %{y2=p;};
+	reqid = base64            >{mark=p;} %{reqid.set(mark, p);};
+	hash = base64             >{mark=p;} %{hash.set(mark, p);};
+	key = base64              >{mark=p;} %{key.set(mark, p);};
+	sym = base64              >{mark=p;} %{sym.set(mark, p);};
+	relid = base64            >{mark=p;} %{relid.set(mark, p);};
+	token = base64            >{mark=p;} %{token.set(mark, p);};
+	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
+	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
+	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
+	type = [a-zA-Z]+          >{mark=p;} %{type.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -59,13 +53,16 @@ bool gblKeySubmitted = false;
 	)
 	>{mark=p;} %{date.set(mark, p);};
 
-	identity = 
-		( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
-		>{i1=p;} %{i2=p;};
+	path_part = (graph-'/')+;
 
-	number = [0-9]+           >{n1=p;} %{n2=p;};
-	seq_num = [0-9]+          >{q1=p;} %{q2=p;};
-	resource_id = [0-9]+       >{c1=p;} %{c2=p;};
+	identity = 
+		( 'https://' path_part '/' ( path_part '/' )* )
+		>{mark=p;} %{identity.set(mark, p);};
+
+	generation = [0-9]+       >{mark=p;} %{gen_str.set(mark, p);};
+	number = [0-9]+           >{mark=p;} %{number.set(mark, p);};
+	seq_num = [0-9]+          >{mark=p;} %{seq_str.set(mark, p);};
+	resource_id = [0-9]+      >{mark=p;} %{resource_id_str.set(mark, p);};
 
 	EOL = '\r'? '\n';
 }%%
@@ -79,67 +76,43 @@ bool gblKeySubmitted = false;
 	action public_key { public_key( mysql, user ); }
 
 	action relid_request {
-		char *identity = alloc_string( i1, i2 );
-
 		relid_request( mysql, user, identity );
 	}
 
 	action fetch_requested_relid {
-		char *reqid = alloc_string( r1, r2 );
-
 		fetch_requested_relid( mysql, reqid );
 	}
 
 	action relid_response {
-		char *reqid = alloc_string( r1, r2 );
-		char *identity = alloc_string( i1, i2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
-
-		relid_response( mysql, user, reqid, identity, id_host, id_user );
+		relid_response( mysql, user, reqid, identity );
 	}
 
 	action fetch_response_relid {
-		char *reqid = alloc_string( r1, r2 );
-
 		fetch_response_relid( mysql, reqid );
 	}
 
 	action friend_final {
-		char *reqid = alloc_string( r1, r2 );
-		char *identity = alloc_string( i1, i2 );
-		char *id_host = alloc_string( h1, h2 );
-		char *id_user = alloc_string( pp1, pp2 );
-
-		friend_final( mysql, user, reqid, identity, id_host, id_user );
+		friend_final( mysql, user, reqid, identity );
 	}
 
 	action accept_friend {
-		char *reqid = alloc_string( r1, r2 );
-
 		accept_friend( mysql, user, reqid );
 	}
 
 	action ftoken_request {
-		char *hash = alloc_string( a1, a2 );
-
 		ftoken_request( mysql, user, hash );
 	}
 
 	action ftoken_response {
-		char *hash = alloc_string( a1, a2 );
-		char *reqid = alloc_string( r1, r2 );
-
+		message("calling ftoken_response\n");
 		ftoken_response( mysql, user, hash, reqid );
 	}
 
 	action fetch_ftoken {
-		char *reqid = alloc_string( r1, r2 );
 		fetch_ftoken( mysql, reqid );
 	}
 
 	action set_config {
-		char *identity = alloc_string( i1, i2 );
 		set_config_by_uri( identity );
 
 		/* Now that we have a config connect to the database. */
@@ -149,8 +122,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action comm_key {
-		char *key = alloc_string( k1, k2 );
-		
 		/* Check the authentication. */
 		if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
 			gblKeySubmitted = true;
@@ -171,10 +142,7 @@ bool gblKeySubmitted = false;
 	}
 
 	action receive_message {
-		char *relid = alloc_string( r1, r2 );
-		char *lengthStr = alloc_string( n1, n2 );
-
-		long length = atoi( lengthStr );
+		long length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -186,10 +154,7 @@ bool gblKeySubmitted = false;
 	}
 
 	action notify_accept {
-		char *relid = alloc_string( r1, r2 );
-		char *lengthStr = alloc_string( n1, n2 );
-
-		long length = atoi( lengthStr );
+		long length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -201,12 +166,8 @@ bool gblKeySubmitted = false;
 	}
 
 	action broadcast {
-		char *relid = alloc_string( r1, r2 );
-		char *generation_str = alloc_string( g1, g2 );
-		long long generation = strtoll( generation_str, 0, 10 );
-		char *length_str = alloc_string( n1, n2 );
-
-		long length = atoi( length_str );
+		long long generation = strtoll( gen_str, 0, 10 );
+		long length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -218,10 +179,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action submit_broadcast {
-		char *number = alloc_string( n1, n2 );
-		char *type = alloc_string( y1, y2 );
-		char *resource_id_str = alloc_string( c1, c2 );
-
 		long long resource_id = strtoll( resource_id_str, 0, 10 );
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
@@ -236,12 +193,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action submit_remote_broadcast {
-		char *identity = alloc_string( i1, i2 );
-		char *hash = alloc_string( a1, a2 );
-		char *token = alloc_string( t1, t2 );
-		char *type = alloc_string( y1, y2 );
-		char *number = alloc_string( n1, n2 );
-
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
@@ -260,17 +211,10 @@ bool gblKeySubmitted = false;
 	}
 
 	action submit_ftoken {
-		char *token = alloc_string( t1, t2 );
 		submit_ftoken( mysql, token );
 	}
 
 	action remote_publish {
-		char *seq_str = alloc_string( q1, q2 );
-		char *identity = alloc_string( i1, i2 );
-		char *token = alloc_string( t1, t2 );
-		char *type = alloc_string( y1, y2 );
-		char *number = alloc_string( n1, n2 );
-
 		long long seq_num = strtoll( seq_str, 0, 10 );
 		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
@@ -341,20 +285,9 @@ int server_parse_loop()
 {
 	long cs, act;
 	const char *mark;
-	const char *k1, *k2;
 	const char *ts, *te;
-	const char *i1, *i2;
-	const char *h1, *h2;
-	const char *pp1, *pp2;
-	const char *r1, *r2;
-	const char *a1, *a2;
-	const char *n1, *n2;
-	const char *t1, *t2;
-	const char *g1, *g2;
-	const char *y1, *y2;
-	const char *q1, *q2;
-	const char *c1, *c2;
-	String user, pass, email;
+	String user, pass, email, identity, number, reqid, hash, key, relid, token, type;
+	String gen_str, seq_str, resource_id_str;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -410,15 +343,10 @@ int server_parse_loop()
 	include common;
 
 	action accept {
-		char *id_salt = alloc_string( a1, a2 );
-		char *requested_relid = alloc_string( r1, r2 );
-		char *returned_relid = alloc_string( s1, s2 );
 		accept( mysql, user, friend_id, id_salt, requested_relid, returned_relid );
 	}
 
 	action registered {
-		char *requested_relid = alloc_string( r1, r2 );
-		char *returned_relid = alloc_string( s1, s2 );
 		registered( mysql, user, friend_id, requested_relid, returned_relid );
 	}
 
@@ -433,9 +361,8 @@ int notify_accept_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *message )
 {
 	long cs;
-	const char *a1, *a2;
-	const char *r1, *r2;
-	const char *s1, *s2;
+	const char *mark;
+	String id_salt, requested_relid, returned_relid;
 
 	%% write init;
 
@@ -464,18 +391,11 @@ int notify_accept_parser( MYSQL *mysql, const char *relid,
 	include common;
 
 	action broadcast_key {
-		char *generation = alloc_string( g1, g2 );
-		char *bk = alloc_string( k1, k2 );
-
-		broadcast_key( mysql, relid, user, friend_id, generation, bk );
+		broadcast_key( mysql, to_relid, user, friend_id, gen_str, key );
 	}
 
 	action forward_to {
-		char *number = alloc_string( n1, n2 );
-		char *to_identity = alloc_string( i1, i2 );
-		char *relid = alloc_string( r1, r2 );
-
-		forward_to( mysql, user, friend_id, number, to_identity, relid );
+		forward_to( mysql, user, friend_id, number, identity, relid );
 	}
 
 	main :=
@@ -485,17 +405,12 @@ int notify_accept_parser( MYSQL *mysql, const char *relid,
 
 %% write data;
 
-int message_parser( MYSQL *mysql, const char *relid,
+int message_parser( MYSQL *mysql, const char *to_relid,
 		const char *user, const char *friend_id, const char *message )
 {
 	long cs;
-	const char *k1, *k2;
-	const char *i1, *i2;
-	const char *h1, *h2;
-	const char *pp1, *pp2;
-	const char *g1, *g2;
-	const char *n1, *n2;
-	const char *r1, *r2;
+	const char *mark;
+	String identity, number, key, relid, gen_str;
 
 	%% write init;
 
@@ -524,15 +439,10 @@ int message_parser( MYSQL *mysql, const char *relid,
 	include common;
 
 	action direct_broadcast {
-		char *seq_str = alloc_string( q1, q2 );
-		char *type = alloc_string( y1, y2 );
-		char *resource_id_str = alloc_string( c1, c2 );
-		char *lengthStr = alloc_string( n1, n2 );
-
 		long long seq_num = strtoll( seq_str, 0, 10 );
 		long long resource_id = strtoll( resource_id_str, 0, 10 );
 
-		long length = atoi( lengthStr );
+		long length = atoi( number );
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -545,12 +455,8 @@ int message_parser( MYSQL *mysql, const char *relid,
 	}
 
 	action remote_broadcast {
-		char *hash = alloc_string( a1, a2 );
-		char *genStr = alloc_string( g1, g2 );
-		char *lengthStr = alloc_string( n1, n2 );
-
-		long long generation = strtoll( genStr, 0, 10 );
-		long length = atoi( lengthStr );
+		long long generation = strtoll( gen_str, 0, 10 );
+		long length = atoi( number );
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -574,13 +480,7 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 {
 	long cs;
 	const char *mark;
-	const char *n1, *n2;
-	const char *a1, *a2;
-	const char *g1, *g2;
-	const char *q1, *q2;
-	const char *y1, *y2;
-	const char *c1, *c2;
-	String date;
+	String date, number, hash, type, seq_str, gen_str, resource_id_str;
 
 	//message("parsing broadcast string: %s\n", msg );
 
@@ -611,12 +511,8 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	include common;
 
 	action remote_inner {
-		char *seq_str = alloc_string( q1, q2 );
-		char *type = alloc_string( y1, y2 );
-		char *lengthStr = alloc_string( n1, n2 );
-
 		long long seq_num = strtoll( seq_str, 0, 10 );
-		long length = atoi( lengthStr );
+		long length = atoi( number );
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -640,10 +536,7 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 {
 	long cs;
 	const char *mark;
-	const char *n1, *n2;
-	const char *y1, *y2;
-	const char *q1, *q2;
-	String date;
+	String date, number, type, seq_str;
 
 	message("parsing remote_broadcast string: %s\n", msg );
 
@@ -776,6 +669,8 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	const char *p, *pe;
 	const char *y1, *y2;
 	bool OK = false;
+	const char *mark;
+	String sym;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
@@ -863,9 +758,10 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 {
 	static char buf[8192];
 	long result = 0, cs;
-	const char *p, *pe;
-	const char *y1, *y2;
 	bool OK = false;
+	const char *p, *pe;
+	const char *mark;
+	String sym;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
@@ -928,9 +824,7 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 		goto fail;
 	}
 	
-	encsig.sym = (char*)malloc( y2-y1+1 );
-	memcpy( encsig.sym, y1, y2-y1 );
-	encsig.sym[y2-y1] = 0;
+	encsig.sym = sym.relinquish();
 
 fail:
 	::close( socketFd );
@@ -951,9 +845,10 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 {
 	static char buf[8192];
 	long result = 0, cs;
-	const char *p, *pe;
-	const char *y1, *y2;
 	bool OK = false;
+	const char *p, *pe;
+	const char *mark;
+	String sym;
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
@@ -1016,9 +911,7 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		goto fail;
 	}
 	
-	encsig.sym = (char*)malloc( y2-y1+1 );
-	memcpy( encsig.sym, y1, y2-y1 );
-	encsig.sym[y2-y1] = 0;
+	encsig.sym = sym.relinquish();
 
 fail:
 	::close( socketFd );
@@ -1039,15 +932,17 @@ long Identity::parse()
 {
 	long result = 0, cs;
 	const char *p, *pe, *eof;
-
 	const char *i1, *i2;
 	const char *h1, *h2;
 	const char *pp1, *pp2;
 
 	/* Parser for response. */
 	%%{
-		include common;
-		main := identity;
+		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
+
+		main :=
+			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
+			>{i1=p;} %{i2=p;};
 	}%%
 
 	p = identity;
@@ -1181,7 +1076,8 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
-	const char *n1, *n2;
+	const char *mark;
+	String number;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1231,8 +1127,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 		include common;
 
 		action result {
-			char *length_str = alloc_string( n1, n2 );
-			long length = strtoll( length_str, 0, 10 );
+			long length = strtoll( number, 0, 10 );
 			if ( length > MAX_MSG_LEN )
 				fgoto *parser_error;
 
@@ -1292,7 +1187,8 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
-	const char *n1, *n2;
+	const char *mark;
+	String number;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1342,8 +1238,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 		include common;
 
 		action result {
-			char *length_str = alloc_string( n1, n2 );
-			long length = strtoll( length_str, 0, 10 );
+			long length = strtoll( number, 0, 10 );
 			if ( length > MAX_MSG_LEN )
 				fgoto *parser_error;
 
@@ -1399,14 +1294,15 @@ fail:
 long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *to_identity, const char *from_user, 
 		const char *token, long long seq_num,
-		const char *type, const char *sym, long mLen )
+		const char *type, const char *msg, long mLen )
 {
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
-	char *number;
+	const char *mark;
+	String number, sym;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1441,7 +1337,7 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 	BIO_printf( sbio, 
 		"remote_publish %s %s%s/ %s %lld %s %ld\r\n", 
 		toIdent.user, c->CFG_URI, from_user, token, seq_num, type, mLen );
-	BIO_write( sbio, sym, mLen );
+	BIO_write( sbio, msg, mLen );
 	BIO_flush( sbio );
 
 	/* Read the result. */
@@ -1464,8 +1360,6 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 
 	p = buf;
 	pe = buf + strlen(buf);
-	const char *y1, *y2;
-	const char *n1, *n2;
 
 	%% write init;
 	%% write exec;
@@ -1481,9 +1375,8 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		goto fail;
 	}
 
-	resultEnc = alloc_string( y1, y2 );
-	number = alloc_string( n1, n2 );
 	resultGen = strtoll( number, 0, 10 );
+	resultEnc = sym.relinquish();
 
 	::message( "resultGen: %lld\n", resultGen );
 	

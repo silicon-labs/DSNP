@@ -25,7 +25,7 @@ SPPD_CONF=sppd/sppd.conf
 CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 
 # Port for the server.
-CFG_PORT=7070
+CFG_PORT=7085
 
 # start the config files
 { echo '<?php'; echo; } > $PHP_CONF
@@ -302,10 +302,11 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_DB_DATABASE = '$NAME';
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
-	\$CFG_PORT = '$CFG_PORT';
-	\$CFG_USE_RECAPTCHA = false;
-	\$CFG_RC_PUBLIC_KEY = 'xxxx';
-	\$CFG_PHOTO_DIR = '/home/thurston/devel/spp/photos';
+	\$CFG_PORT = $CFG_PORT;
+	\$CFG_USE_RECAPTCHA = SET_THIS;
+	\$CFG_RC_PUBLIC_KEY = SET_THIS;
+	\$CFG_RC_PRIVATE_KEY = SET_THIS;
+	\$CFG_PHOTO_DIR = SET_THIS;
 }
 
 EOF
@@ -325,10 +326,10 @@ CFG_DB_DATABASE = $NAME
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
-CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
-CFG_TLS_CRT = /etc/ssl/local/localhost.crt
-CFG_TLS_KEY = /etc/ssl/local/localhost.key
-CFG_PHOTO_DIR = /home/thurston/devel/spp/photos
+CFG_TLS_CA_CERTS = SET_THIS
+CFG_TLS_CRT = SET_THIS
+CFG_TLS_KEY = SET_THIS
+CFG_PHOTO_DIR = SET_THIS
 
 EOF
 

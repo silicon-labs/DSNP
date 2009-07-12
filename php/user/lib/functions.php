@@ -54,10 +54,13 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		echo "<small>$time_published ";
 		printName( $author_id, false );
 		echo " uploaded a photo:</small><br>";
-		if ( $resource_id > 0 ) 
-			echo "<a href=\"${author_id}img/img-$resource_id.jpg\">";
-		else
+		if ( $resource_id > 0 ) {
+			echo "<a href=\"${author_id}img/img-$resource_id.jpg?h=" . 
+				urlencode($_SESSION['hash']) . "\">";
+		}
+		else {
 			echo "<a href=\"img/$message\">";
+		}
 		echo "<img src=\"img/$message\" alt=\"$message\"></a><br>\n";
 	}
 	else {

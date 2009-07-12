@@ -19,7 +19,7 @@
 include('../config.php');
 include('lib/session.php');
 
-requireFriendOrOwner();
+requireFriendOrOwnerLogin();
 
 if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $_GET['i'] ) )
 	die("bad image");

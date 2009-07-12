@@ -42,3 +42,21 @@ function requireFriendOrOwner()
 		exit("You do not have permission to access this page\n");
 }
 
+function requireFriendOrOwnerLogin()
+{
+	global $USER_URI;
+	if ( !isset( $_SESSION['auth'] ) || 
+			( $_SESSION['auth'] != 'friend' && $_SESSION['auth'] != 'owner' ) )
+	{
+		if ( isset($_GET['h']) ) {
+			$dest_uri = $_SERVER['REQUEST_URI'];
+			$dest = urlencode( substr( $dest_uri, 0, strpos($dest_uri, '?') ) );
+			header ( "Location: ${USER_URI}sflogin.php?h=" . $_GET['h'] . "&d=" . $dest );
+			exit;
+		}
+		else {
+			exit("You do not have permission to access this page\n");
+		}
+	}
+}
+

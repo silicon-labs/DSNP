@@ -46,7 +46,10 @@ $res = fgets($fp);
 if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
 	$friend_id = $regs[2];
-	header("Location: ${friend_id}sftoken.php?${arg_ftoken}" );
+	$dest = "";
+	if ( isset( $_GET['d'] ) )
+		$dest = "&d=" . urlencode($_GET['d']);
+	header("Location: ${friend_id}sftoken.php?${arg_ftoken}" . $dest );
 }
 else {
 	echo $res;

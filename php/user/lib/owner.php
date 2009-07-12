@@ -48,7 +48,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 /* Display friend requests. */
 $query = sprintf("SELECT from_id, reqid FROM friend_request WHERE for_user = '%s';",
-    mysql_real_escape_string($USER_NAME)
+	mysql_real_escape_string($USER_NAME)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
@@ -73,7 +73,7 @@ if ( mysql_num_rows( $result ) > 0 ) {
 
 # Look for the user/pass combination.
 $query = sprintf("SELECT friend_id, acknowledged FROM friend_claim WHERE user = '%s';",
-    mysql_real_escape_string($USER_NAME)
+	mysql_real_escape_string($USER_NAME)
 );
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -102,7 +102,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 # Look for the user/pass combination.
 $query = sprintf("SELECT seq_num FROM image WHERE user = '%s' ORDER BY seq_num DESC LIMIT 20;",
-    mysql_real_escape_string($USER_NAME)
+	mysql_real_escape_string($USER_NAME)
 );
 
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -117,21 +117,23 @@ while ( $row = mysql_fetch_assoc($result) ) {
 </td>
 <td width="70%" valign="top">
 
-<h1>Broadcast</h1>
+<hr>
 
+<!--
+<h1>Broadcast</h1>
 <small> Messages typed here are sent to all of your friends. At present, only
 text messages are supported. However, one can imagine many different types of
 notifications being implemented, including picutre uploads, tag notifications,
 status changes, and contact information changes.</small>
-<hr>
 <p>
+-->
 
 <form method="post" action="broadcast.php">
 <table>
-<tr><td>Message:</td></tr>
+<tr><td>Broadcast a Message:</td></tr>
 <!--<input type="text" name="message" size="50">-->
 <tr><td>
-<textarea rows="5" cols="65" name="message" wrap="physical"></textarea>
+<textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 </td></tr>
 <tr><td>
 <input value="Submit Message" type="submit">

@@ -47,6 +47,10 @@ else {
 		$arg_h = 'h=' . urlencode( $regs[3] );
 		$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 		$friend_id = $regs[2];
-		header("Location: ${friend_id}retftok.php?${arg_h}&${arg_reqid}" );
+		$dest = "";
+		if ( isset( $_GET['d'] ) )
+			$dest = "&d=" . urlencode($_GET['d']);
+			
+		header( "Location: ${friend_id}retftok.php?${arg_h}&${arg_reqid}" . $dest );
 	}
 }

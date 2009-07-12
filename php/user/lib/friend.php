@@ -93,18 +93,21 @@ while ( $row = mysql_fetch_assoc($result) ) {
 </td>
 <td width="%70" valign="top">
 
+<!--
 <h1>Stories</h1>
 
 <small> Messages typed here are sent to all of <?php print $USER_NAME;?>'s friends. 
 </small>
-<hr>
 <p>
+-->
+
+<hr>
 <form method="post" action="wall.php">
 <table>
-<tr><td>Write on <?php print $USER_NAME;?>'s wall:</td></tr>
+<tr><td>Write on <?php print $USER_NAME;?>'s message board:</td></tr>
 <!--<input type="text" name="message" size="50">-->
 <tr><td>
-<textarea rows="5" cols="65" name="message" wrap="physical"></textarea>
+<textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 </td></tr>
 <tr><td>
 <input value="Submit" type="submit">

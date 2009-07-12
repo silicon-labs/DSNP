@@ -45,7 +45,11 @@ if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 	$_SESSION['token']    = $ftoken;
 	$_SESSION['hash']     = $regs[1]; 
 	$_SESSION['identity'] = $regs[3];
-	header( "Location: $USER_PATH" );
+
+	if ( isset( $_GET['d'] ) )
+		header( "Location: " . $_GET['d'] );
+	else
+		header( "Location: $USER_PATH" );
 }
 else {
 	echo "<center>\n";

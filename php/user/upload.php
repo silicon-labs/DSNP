@@ -65,7 +65,7 @@ if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
 
 $thumb = "$CFG_PHOTO_DIR/$USER_NAME/thm-$id.jpg";
 
-system("gm convert " .
+system($CFG_IM_CONVERT . " " .
 	"-define jpeg:preserve-settings " .
 	"-size 120x120 " .
 	$path . " " .

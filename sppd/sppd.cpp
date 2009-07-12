@@ -202,6 +202,8 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 
 	RAND_bytes( pass_salt, SALT_SIZE );
 	pass_salt_str = bin_to_base64( pass_salt, SALT_SIZE );
+	message("pass_salt_str: %s\n", bin2hex( pass_salt, SALT_SIZE ) );
+	message("pass: %s\n", pass );
 
 	RAND_bytes( id_salt, SALT_SIZE );
 	id_salt_str = bin_to_base64( id_salt, SALT_SIZE );
@@ -2116,11 +2118,14 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	id_salt_str = row[3];
 
 	base64_to_bin( pass_salt, 0, salt_str );
+	message("pass_salt_str: %s\n", bin2hex( pass_salt, SALT_SIZE ) );
+	message("pass: %s\n", pass );
 
 	/* Hash the password. */
 	pass_hashed = pass_hash( pass_salt, pass );
 
 	if ( strcmp( pass_hashed, pass_str ) != 0 ) {
+		message("pass hashes do not match %s %s\n", pass_hashed, pass_str );
 		BIO_printf( bioOut, "ERROR\r\n" );
 		goto free_result;
 	}

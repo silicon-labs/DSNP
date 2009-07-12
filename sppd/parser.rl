@@ -35,7 +35,7 @@ bool gblKeySubmitted = false;
 
 	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
 	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
-	email = graph+            >{mark=p;} %{pass.set(mark, p);};
+	email = graph+            >{mark=p;} %{email.set(mark, p);};
 	reqid = base64            >{mark=p;} %{reqid.set(mark, p);};
 	hash = base64             >{mark=p;} %{hash.set(mark, p);};
 	key = base64              >{mark=p;} %{key.set(mark, p);};
@@ -602,7 +602,7 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 
 	/* Read the result. */
 	readRes = BIO_gets( sbio, buf, 8192 );
-	message("encrypted return is %s", buf );
+	message("encrypted return to fetch_public_key_net is %s", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -646,6 +646,8 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	pub.n[n2-n1] = 0;
 	pub.e[e2-e1] = 0;
 
+	message("fetch_public_key_net returning %s %s\n", pub.n, pub.e );
+
 fail:
 	::close( socketFd );
 	return result;
@@ -667,7 +669,6 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	static char buf[8192];
 	long result = 0, cs;
 	const char *p, *pe;
-	const char *y1, *y2;
 	bool OK = false;
 	const char *mark;
 	String sym;
@@ -700,7 +701,7 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 
 	/* Read the result. */
 	readRes = BIO_gets( sbio, buf, 8192 );
-	message("encrypted return is %s", buf );
+	message("encrypted return to fetch_requested_relid is %s", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 ) {
@@ -734,9 +735,7 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 		goto fail;
 	}
 	
-	encsig.sym = (char*)malloc( y2-y1+1 );
-	memcpy( encsig.sym, y1, y2-y1 );
-	encsig.sym[y2-y1] = 0;
+	encsig.sym = sym.relinquish();
 
 fail:
 	::close( socketFd );

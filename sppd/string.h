@@ -12,9 +12,13 @@ struct String
 	operator char*() { return data; }
 
 	String( const char *p1, const char *p2 );
+	String( const char *fmt, ... );
 	~String();
 
+	void clear();
+	void allocate( long size );
 	void set( const char *p1, const char *p2 );
+	void set( const char *fmt, ... );
 
 	char *relinquish()
 	{

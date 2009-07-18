@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 char *alloc_string( const char *s, const char *e )
 {
@@ -30,6 +33,41 @@ void String::set( const char *s, const char *e )
 	data = new char[ length+1 ];
 	memcpy( data, s, length );
 	data[length] = 0;
+}
+
+void String::allocate( long size )
+{
+	data = new char[size];
+}
+
+String::String( const char *fmt, ... )
+:
+	data(0),
+	length(0)
+{
+	va_list args;
+	char buf[1];
+
+	va_start( args, fmt );
+	long len = vsnprintf( buf, 0, fmt, args );
+	va_end( args );
+
+	if ( len >= 0 )  {
+		length = len;
+		data = new char[ length+1 ];
+		va_start( args, fmt );
+		vsnprintf( data, length+1, fmt, args );
+		va_end( args );
+	}
+}
+
+void String::clear()
+{
+	if ( data != 0 ) {
+		delete[] data;
+		data = 0;
+	}
+	length = 0;
 }
 
 String::~String()

@@ -192,6 +192,8 @@ extern bool gblKeySubmitted;
 #define SK_SIZE_HEX 33
 #define SALT_SIZE   18
 
+#define MAX_BRD_PHOTO_SIZE 16384
+
 char *bin2hex( unsigned char *data, long len );
 long hex2bin( unsigned char *dest, long len, const char *src );
 

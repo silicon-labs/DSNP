@@ -16,6 +16,7 @@
 
 #include "sppd.h"
 #include "encrypt.h"
+#include "string.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1443,21 +1444,21 @@ void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 }
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
-		const char *number, const char *to_identity, const char *relid )
+		const char *number, const char *to_site, const char *relid )
 {
 	if ( atoi( number ) == 1 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
 				"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
 				"WHERE user = %e AND friend_id = %e",
-				to_identity, relid, user, identity );
+				to_site, relid, user, identity );
 	}
 	else if ( atoi( number ) == 2 ) {
 		exec_query( mysql, 
 				"UPDATE friend_claim "
 				"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
 				"WHERE user = %e AND friend_id = %e",
-				to_identity, relid, user, identity );
+				to_site, relid, user, identity );
 	}
 
 	BIO_printf( bioOut, "OK\n" );
@@ -1572,7 +1573,6 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	time_t curTime;
 	struct tm curTM, *tmRes;
 	char *full;
-	char *authorId;
 	char time_str[64];
 	long sendResult, soFar;
 	long long seq_num;
@@ -1591,23 +1591,27 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
 		return -1;
 
-	authorId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
-	sprintf( authorId, "%s%s/", c->CFG_URI, user );
+	String authorId( "%s%s/", c->CFG_URI, user );
 
 	const char *insert = msg;
 	long insertLen = mLen;
-	if ( strcmp( type, "PHT" ) == 0 ) {
-		char *fileName = new char[strlen(c->CFG_PHOTO_DIR) + strlen(user) + mLen + 24];
-		sprintf( fileName, "%s/%s/", c->CFG_PHOTO_DIR, user );
-		long soFar = strlen(fileName);
-		memcpy( fileName + soFar, msg, mLen );
-		fileName[soFar + mLen] = 0;
-		char *data = new char[16384];
-		FILE *file = fopen( fileName, "rb" );
-		::message( "failed to open %s\n", fileName );
-		long len = fread( data, 1, 16384, file );
+	String fileData;
 
-		msg = data;
+	/* If this is a photo we need to read in the file. */
+	if ( strcmp( type, "PHT" ) == 0 ) {
+		String fileName( msg, msg+mLen );
+		String path( "%s/%s/%s", c->CFG_PHOTO_DIR, user, fileName.data );
+		fileData.allocate( MAX_BRD_PHOTO_SIZE );
+
+		FILE *file = fopen( path, "rb" );
+		if ( file == 0 ) {
+			::message( "failed to open %s\n", fileName.data );
+			return 0;
+		}
+		long len = fread( fileData.data, 1, MAX_BRD_PHOTO_SIZE, file );
+		fclose( file );
+
+		msg = fileData.data;
 		mLen = len;
 	}
 
@@ -1616,7 +1620,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		"INSERT INTO published "
 		"( user, author_id, time_published, type, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
-		user, authorId, time_str, type, insert, insertLen );
+		user, authorId.data, time_str, type, insert, insertLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT last_insert_id()" );

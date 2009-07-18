@@ -167,7 +167,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 	}
 	va_end(vl);
 
-	message( "mysql_query: %s\n", query );
+	/* message( "mysql_query: %s\n", query ); */
 	long query_res = mysql_query( mysql, query );
 
 	if ( query_res != 0 ) {

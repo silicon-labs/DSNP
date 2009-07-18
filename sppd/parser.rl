@@ -334,6 +334,9 @@ int server_parse_loop()
 
 		const char *p = buf, *pe = buf + lineLen;
 		%% write exec;
+
+		BIO_flush( bioOut );
+
 		if ( cs == parser_error ) {
 			error( "parse error: %s", buf );
 			return ERR_PARSE_ERROR;

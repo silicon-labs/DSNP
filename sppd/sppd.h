@@ -75,8 +75,8 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void broadcast_key( MYSQL *mysql, const char *relid, const char *user, const char *identity,
-		const char *sk, const char *generation );
+void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
+		const char *identity, long long generation, const char *bk );
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
 		const char *number, const char *relid, const char *to_identity );

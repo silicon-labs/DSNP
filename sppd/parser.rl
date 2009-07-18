@@ -59,10 +59,34 @@ bool gblKeySubmitted = false;
 		( 'https://' path_part '/' ( path_part '/' )* )
 		>{mark=p;} %{identity.set(mark, p);};
 
-	generation = [0-9]+       >{mark=p;} %{gen_str.set(mark, p);};
-	number = [0-9]+           >{mark=p;} %{number.set(mark, p);};
-	seq_num = [0-9]+          >{mark=p;} %{seq_str.set(mark, p);};
-	resource_id = [0-9]+      >{mark=p;} %{resource_id_str.set(mark, p);};
+	generation = [0-9]+       
+		>{mark=p;} 
+		%{
+			gen_str.set(mark, p);
+			generation = strtoll( gen_str, 0, 10 );
+		};
+
+	number = [0-9]+           
+		>{mark=p;}
+		%{number_str.set(mark, p);};
+
+	length = [0-9]+           
+		>{mark=p;}
+		%{
+			length_str.set(mark, p);
+			length = strtol( length_str, 0, 10 );
+		};
+
+	seq_num = [0-9]+          
+		>{mark=p;}
+		%{
+			seq_str.set(mark, p);
+			seq_num = strtoll( seq_str, 0, 10 );
+		};
+
+	resource_id = [0-9]+
+		>{mark=p;}
+		%{resource_id_str.set(mark, p);};
 
 	EOL = '\r'? '\n';
 }%%
@@ -142,7 +166,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action receive_message {
-		long length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -154,7 +177,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action notify_accept {
-		long length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -166,8 +188,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action broadcast {
-		long long generation = strtoll( gen_str, 0, 10 );
-		long length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -180,7 +200,6 @@ bool gblKeySubmitted = false;
 
 	action submit_broadcast {
 		long long resource_id = strtoll( resource_id_str, 0, 10 );
-		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -193,7 +212,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action submit_remote_broadcast {
-		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -206,7 +224,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action login {
-
 		login( mysql, user, pass );
 	}
 
@@ -215,8 +232,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action remote_publish {
-		long long seq_num = strtoll( seq_str, 0, 10 );
-		int length = atoi( number );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -255,7 +270,7 @@ bool gblKeySubmitted = false;
 
 		# Friend Request Accept
 		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
-		'notify_accept'i ' ' relid ' ' number EOL @check_ssl @notify_accept;
+		'notify_accept'i ' ' relid ' ' length EOL @check_ssl @notify_accept;
 
 		# Friend login. 
 		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request;
@@ -264,13 +279,13 @@ bool gblKeySubmitted = false;
 		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken;
 		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
 
-		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' number EOL @check_key @submit_broadcast;
+		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' length EOL @check_key @submit_broadcast;
 		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' '
-				type ' ' number EOL @check_key @submit_remote_broadcast;
+				type ' ' length EOL @check_key @submit_remote_broadcast;
 
-		'message'i ' ' relid ' ' number EOL @check_ssl @receive_message;
-		'broadcast'i ' ' relid ' ' generation ' ' number EOL @check_ssl @broadcast;
-		'remote_publish'i ' ' user ' ' identity ' ' token ' ' seq_num ' ' type ' ' number 
+		'message'i ' ' relid ' ' length EOL @check_ssl @receive_message;
+		'broadcast'i ' ' relid ' ' generation ' ' length EOL @check_ssl @broadcast;
+		'remote_publish'i ' ' user ' ' identity ' ' token ' ' seq_num ' ' type ' ' length 
 				EOL @check_ssl @remote_publish;
 	*|;
 
@@ -286,8 +301,12 @@ int server_parse_loop()
 	long cs, act;
 	const char *mark;
 	const char *ts, *te;
-	String user, pass, email, identity, number, reqid, hash, key, relid, token, type;
+	String user, pass, email, identity; 
+	String length_str, reqid;
+	String hash, key, relid, token, type;
 	String gen_str, seq_str, resource_id_str;
+	long length;
+	long long generation, seq_num;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -305,18 +324,16 @@ int server_parse_loop()
 		}
 
 		/* Did we get a full line? */
-		long length = strlen( buf );
-		if ( buf[length-1] != '\n' ) {
+		long lineLen = strlen( buf );
+		if ( buf[lineLen-1] != '\n' ) {
 			error( "line too long\n" );
 			return ERR_LINE_TOO_LONG;
 		}
 
 		message("parse_loop: parsing a line: %s", buf );
 
-		const char *p = buf, *pe = buf + length;
-
+		const char *p = buf, *pe = buf + lineLen;
 		%% write exec;
-
 		if ( cs == parser_error ) {
 			error( "parse error: %s", buf );
 			return ERR_PARSE_ERROR;
@@ -391,11 +408,11 @@ int notify_accept_parser( MYSQL *mysql, const char *relid,
 	include common;
 
 	action broadcast_key {
-		broadcast_key( mysql, to_relid, user, friend_id, gen_str, key );
+		broadcast_key( mysql, to_relid, user, friend_id, generation, key );
 	}
 
 	action forward_to {
-		forward_to( mysql, user, friend_id, number, identity, relid );
+		forward_to( mysql, user, friend_id, number_str, identity, relid );
 	}
 
 	main :=
@@ -410,7 +427,8 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 {
 	long cs;
 	const char *mark;
-	String identity, number, key, relid, gen_str;
+	String identity, number_str, key, relid, gen_str;
+	long long generation;
 
 	%% write init;
 
@@ -439,10 +457,8 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	include common;
 
 	action direct_broadcast {
-		long long seq_num = strtoll( seq_str, 0, 10 );
 		long long resource_id = strtoll( resource_id_str, 0, 10 );
 
-		long length = atoi( number );
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -455,8 +471,6 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	}
 
 	action remote_broadcast {
-		long long generation = strtoll( gen_str, 0, 10 );
-		long length = atoi( number );
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -469,8 +483,8 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	}
 
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' resource_id ' ' number EOL @direct_broadcast |
-		'remote_broadcast'i ' ' hash ' ' generation ' ' number EOL @remote_broadcast;
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' resource_id ' ' length EOL @direct_broadcast |
+		'remote_broadcast'i ' ' hash ' ' generation ' ' length EOL @remote_broadcast;
 }%%
 
 %% write data;
@@ -480,7 +494,10 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 {
 	long cs;
 	const char *mark;
-	String date, number, hash, type, seq_str, gen_str, resource_id_str;
+	String date, length_str, hash, type;
+	String seq_str, gen_str, resource_id_str;
+	long length;
+	long long generation, seq_num;
 
 	//message("parsing broadcast string: %s\n", msg );
 
@@ -511,8 +528,6 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	include common;
 
 	action remote_inner {
-		long long seq_num = strtoll( seq_str, 0, 10 );
-		long length = atoi( number );
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -525,7 +540,7 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	}
 
 	main :=
-		'remote_inner'i ' ' seq_num ' ' date ' ' type ' ' number EOL @remote_inner;
+		'remote_inner'i ' ' seq_num ' ' date ' ' type ' ' length EOL @remote_inner;
 
 }%%
 
@@ -536,7 +551,9 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 {
 	long cs;
 	const char *mark;
-	String date, number, type, seq_str;
+	String date, length_str, type, seq_str;
+	long long seq_num;
+	long length;
 
 	message("parsing remote_broadcast string: %s\n", msg );
 
@@ -1076,7 +1093,8 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 	bool OK = false;
 	long pres;
 	const char *mark;
-	String number;
+	String length_str;
+	long length;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1126,7 +1144,6 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 		include common;
 
 		action result {
-			long length = strtoll( number, 0, 10 );
 			if ( length > MAX_MSG_LEN )
 				fgoto *parser_error;
 
@@ -1143,7 +1160,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 
 		main := 
 			'OK' EOL @{ OK = true; } |
-			'RESULT' ' ' number EOL @result |
+			'RESULT' ' ' length EOL @result |
 			'ERROR' EOL;
 	}%%
 
@@ -1187,7 +1204,8 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 	bool OK = false;
 	long pres;
 	const char *mark;
-	String number;
+	String length_str;
+	long length;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1237,7 +1255,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 		include common;
 
 		action result {
-			long length = strtoll( number, 0, 10 );
+			length = strtoll( length_str, 0, 10 );
 			if ( length > MAX_MSG_LEN )
 				fgoto *parser_error;
 
@@ -1254,7 +1272,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 
 		main := 
 			'OK' EOL @{ OK = true; } |
-			'RESULT' ' ' number EOL @result |
+			'RESULT' ' ' length EOL @result |
 			'ERROR' EOL;
 	}%%
 
@@ -1301,7 +1319,7 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 	bool OK = false;
 	long pres;
 	const char *mark;
-	String number, sym;
+	String number_str, sym;
 
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
@@ -1374,7 +1392,7 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		goto fail;
 	}
 
-	resultGen = strtoll( number, 0, 10 );
+	resultGen = strtoll( number_str, 0, 10 );
 	resultEnc = sym.relinquish();
 
 	::message( "resultGen: %lld\n", resultGen );

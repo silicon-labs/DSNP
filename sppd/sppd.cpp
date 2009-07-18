@@ -1417,7 +1417,7 @@ bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
 }
 
 void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
-		const char *identity, const char *generation, const char *bk )
+		const char *identity, long long generation, const char *bk )
 {
 	RSA *user_priv, *id_pub;
 	long query_res;
@@ -1436,7 +1436,7 @@ void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 	query_res = exec_query( mysql, 
 			"INSERT INTO get_broadcast_key "
 			"( get_relid, generation, broadcast_key ) "
-			"VALUES ( %e, %e, %e ) ",
+			"VALUES ( %e, %L, %e ) ",
 			relid, generation, bk );
 	
 	BIO_printf( bioOut, "OK\n" );

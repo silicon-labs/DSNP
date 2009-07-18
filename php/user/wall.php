@@ -22,24 +22,9 @@ include('lib/session.php');
 requireFriend();
 $BROWSER_ID = $_SESSION['identity'];
 
+/* User message. */
 $message = $_POST['message'];
-
-$w = new XMLWriter();
-$w->openMemory();
-$w->startDocument();
-$w->startElement("wall");
-$w->text($message);
-$w->endElement();
-$w->endDocument();
-$encoded = $w->outputMemory();
-
-/* Remove the XML header part and the trailing newline. */
-$pos = strpos( $encoded, "\n" );
-$encoded = substr( $encoded, $pos+1 );
-$encoded = substr( $encoded, 0, strlen($encoded) - 1 );
-
-/* Length of the encoded string. */
-$len = strlen( $encoded );
+$len = strlen( $message );
 
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
@@ -54,7 +39,7 @@ $send =
 	"submit_remote_broadcast $USER_NAME $BROWSER_ID $hash $token BRD $len\r\n";
 
 fwrite( $fp, $send );
-fwrite( $fp, $encoded, $len );
+fwrite( $fp, $message, $len );
 
 $res = fgets($fp);
 

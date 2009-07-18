@@ -50,7 +50,7 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 	global $USER_NAME;
 	global $USER_URI;
 
-	if ( $type == "PHT" ) {
+	if ( $type == 'PHT' ) {
 		echo "<small>$time_published ";
 		printName( $author_id, false );
 		echo " uploaded a photo:</small><br>";
@@ -63,40 +63,23 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		}
 		echo "<img src=\"img/$message\" alt=\"$message\"></a><br>\n";
 	}
-	else {
-		$r = new XMLReader();
-		$r->xml( $message );
-		if ( $r->read() ) {
+	else if ( $type == 'MSG' ) {
+		echo "<small>$time_published ";
+		printName( $author_id, false );
+		echo " said:</small><br>";
+		echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
+	}
+	else if ( $type == 'BRD' ) {
+		echo "<small>$time_published ";
 
-			if ( $r->name == "text" ) {
-				if ( $r->read() )
-					$text = $r->value;
+		printName( $author_id, false );
 
-				if ( isset( $text ) ) {
-					echo "<small>$time_published ";
-					printName( $author_id, false );
-					echo " said:</small><br>";
-					echo "&nbsp;&nbsp;" . htmlspecialchars($text) . "<br>";
-				}
-			}
-			else if ( $r->name == "wall" ) {
-				if ( $r->read() )
-					$wall = $r->value;
+		echo " wrote on ";
 
-				if ( isset( $wall ) ) {
-					echo "<small>$time_published ";
+		printName( $subject_id, true );
 
-					printName( $author_id, false );
-
-					echo " wrote on ";
-
-					printName( $subject_id, true );
-
-					echo " wall:</small><br>";
-					echo "&nbsp;&nbsp;" . htmlspecialchars($wall) . "<br>";
-				}
-			}
-		}
+		echo " wall:</small><br>";
+		echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
 	}
 }
 

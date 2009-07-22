@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 MYSQL *db_connect()
 {
 	/* Open the database connection. */
@@ -43,14 +44,14 @@ MYSQL *db_connect()
  */
 
 /* Format and execute a query. */
-int exec_query( MYSQL *mysql, const char *fmt, ... )
+int exec_query_va( MYSQL *mysql, const char *fmt, va_list vls )
 {
 	long len = 0;
-	va_list vl;
 	const char *src = fmt;
 
 	/* First calculate the space we need. */
-	va_start(vl, fmt);
+	va_list vl1;
+	va_copy( vl1, vls );
 	while ( true ) {
 		char *p = strchr( src, '%' );
 		if ( p == 0 ) {
@@ -69,7 +70,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 
 		switch ( p[1] ) {
 			case 'e': {
-				char *a = va_arg(vl, char*);
+				char *a = va_arg(vl1, char*);
 				if ( a == 0 )
 					len += 4;
 				else
@@ -77,35 +78,36 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				break;
 			}
 			case 'd': {
-				va_arg(vl, char*);
-				long dl = va_arg(vl, long);
+				va_arg(vl1, char*);
+				long dl = va_arg(vl1, long);
 				len += 3 + dl*2;
 				break;
 			}
 			case 'L': {
-				va_arg(vl, long long);
+				va_arg(vl1, long long);
 				len += 32;
 				break;
 			}
 			case 'l': {
-				va_arg(vl, long);
+				va_arg(vl1, long);
 				len += 32;
 				break;
 			}
 			case 'b': {
-				va_arg(vl, int);
+				va_arg(vl1, int);
 				len += 8;
 				break;
 			}
 		}
 	}
-	va_end(vl);
+	va_end( vl1 );
 
 	char *query = (char*)malloc( len+1 );
 	char *dest = query;
 	src = fmt;
 
-	va_start(vl, fmt);
+	va_list vl2;
+	va_copy( vl2, vls );
 	while ( true ) {
 		char *p = strchr( src, '%' );
 		if ( p == 0 ) {
@@ -121,7 +123,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 
 		switch ( p[1] ) {
 			case 'e': {
-				char *a = va_arg(vl, char*);
+				char *a = va_arg(vl2, char*);
 				if ( a == 0 ) {
 					strcpy( dest, "NULL" );
 					dest += 4;
@@ -134,25 +136,25 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 				break;
 			}
 			case 'd': {
-				unsigned char *d = va_arg(vl, unsigned char*);
-				long dl = va_arg(vl, long);
+				unsigned char *d = va_arg(vl2, unsigned char*);
+				long dl = va_arg(vl2, long);
 				char *hex = bin2hex( d, dl );
 				dest += sprintf( dest, "x'%s'", hex );
 				free( hex );
 				break;
 			}
 			case 'L': {
-				long long v = va_arg(vl, long long);
+				long long v = va_arg(vl2, long long);
 				dest += sprintf( dest, "%lld", v );
 				break;
 			}
 			case 'l': {
-				long v = va_arg(vl, long);
+				long v = va_arg(vl2, long);
 				dest += sprintf( dest, "%ld", v );
 				break;
 			}
 			case 'b': {
-				int b = va_arg(vl, int);
+				int b = va_arg(vl2, int);
 				if ( b ) {
 					strcpy( dest, "TRUE" );
 					dest += 4;
@@ -165,13 +167,12 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 			}
 		}
 	}
-	va_end(vl);
+	va_end( vl2 );
 
-	/* message( "mysql_query: %s\n", query ); */
 	long query_res = mysql_query( mysql, query );
 
 	if ( query_res != 0 ) {
-		error( "mysql_query failed: %s\r\n", query );
+		error( "mysql_query failed: %s\r\nerror message: %s\n", query, mysql_error( mysql ) );
 		exit(1);
 	}
 
@@ -179,4 +180,30 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 	return query_res;
 }
 
+int exec_query( MYSQL *mysql, const char *fmt, ... )
+{
+	va_list args;
+	va_start( args, fmt );
+	int res = exec_query_va( mysql, fmt, args );
+	va_end( args );
+	return res;
+}
 
+DbQuery::DbQuery( MYSQL *mysql, const char *fmt, ... )
+:
+	mysql(mysql),
+	result(0)
+{
+	va_list args;
+	va_start( args, fmt );
+	exec_query_va( mysql, fmt, args );
+	va_end( args );
+
+	result = mysql_store_result( mysql );
+}
+
+DbQuery::~DbQuery()
+{
+	if ( result != 0 )
+		mysql_free_result( result );
+}

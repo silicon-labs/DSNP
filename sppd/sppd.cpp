@@ -28,6 +28,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <openssl/sha.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define LOGIN_TOKEN_LASTS 86400
 
@@ -193,7 +196,7 @@ bool check_comm_key( const char *key )
 	return true;
 }
 
-void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
+void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
 	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	RSA *rsa;
@@ -238,16 +241,6 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 		")"
 		"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e );", 
 		user, pass_salt_str, pass_hashed, email, id_salt_str, n, e, d, p, q, dmp1, dmq1, iqmp );
-	
-	/* Make the first session key for the user. */
-	new_broadcast_key( mysql, user );
-
-	photo_dir_cmd = new char [32 + strlen(c->CFG_PHOTO_DIR) + strlen(user)];
-	sprintf( photo_dir_cmd, "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
-	message("system: %s\n", photo_dir_cmd );
-	system( photo_dir_cmd );
-
-	BIO_printf( bioOut, "OK\r\n" );
 
 	delete[] n;
 	delete[] e;
@@ -259,6 +252,33 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	delete[] iqmp;
 
 	RSA_free( rsa );
+	
+	photo_dir_cmd = new char [32 + strlen(c->CFG_PHOTO_DIR) + strlen(user)];
+	sprintf( photo_dir_cmd, "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
+	message("system: %s\n", photo_dir_cmd );
+	system( photo_dir_cmd );
+
+}
+
+void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
+{
+	exec_query( mysql, "LOCK TABLES user WRITE;");
+
+	/* Query the user. */
+	DbQuery userCheck( mysql, "SELECT user FROM user WHERE user = %e", user );
+	if ( userCheck.fetchRow() ) {
+		BIO_printf( bioOut, "ERROR user exists\r\n" );
+		exec_query( mysql, "UNLOCK TABLES;" );
+		return;
+	}
+
+	try_new_user( mysql, user, pass, email );
+	BIO_printf( bioOut, "OK\r\n" );
+
+	exec_query( mysql, "UNLOCK TABLES;" );
+
+	/* Make the first broadcast key for the user. */
+	new_broadcast_key( mysql, user );
 }
 
 void public_key( MYSQL *mysql, const char *user )

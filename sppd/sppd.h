@@ -237,4 +237,16 @@ void start_tls();
 long base64_to_bin( unsigned char *out, long len, const char *src );
 char *bin_to_base64( const u_char *data, long len );
 
+struct DbQuery
+{
+	DbQuery( MYSQL *mysql, const char *fmt, ... );
+	~DbQuery();
+
+	MYSQL_ROW fetchRow()
+		{ return mysql_fetch_row( result ); }
+
+	MYSQL *mysql;
+	MYSQL_RES *result;
+};
+
 #endif

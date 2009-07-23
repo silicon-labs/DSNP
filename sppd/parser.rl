@@ -1410,7 +1410,7 @@ fail:
 	write data;
 }%%
 
-char *bin_to_base64( const u_char *data, long len )
+AllocString bin_to_base64( const u_char *data, long len )
 {
 	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 	long group;
@@ -1446,8 +1446,7 @@ char *bin_to_base64( const u_char *data, long len )
 
 	*dest = 0;
 
-	return output;
-
+	return AllocString( output, strlen(output) );
 }
 
 long base64_to_bin( unsigned char *out, long len, const char *src )

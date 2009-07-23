@@ -116,12 +116,12 @@ long hex2bin( unsigned char *dest, long len, const char *src )
 	return slen;
 }
 
-char *bn_to_base64( const BIGNUM *n )
+AllocString bn_to_base64( const BIGNUM *n )
 {
 	long len = BN_num_bytes(n);
 	u_char *bin = new u_char[len];
 	BN_bn2bin( n, bin );
-	char *b64 = bin_to_base64( bin, len );
+	AllocString b64 = bin_to_base64( bin, len );
 	delete[] bin;
 	return b64;
 }
@@ -198,11 +198,9 @@ bool check_comm_key( const char *key )
 
 void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
-	char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
-	RSA *rsa;
+	//char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	char *pass_hashed, *pass_salt_str, *id_salt_str;
 	u_char pass_salt[SALT_SIZE], id_salt[SALT_SIZE];
-	char *photo_dir_cmd;
 
 	RAND_bytes( pass_salt, SALT_SIZE );
 	pass_salt_str = bin_to_base64( pass_salt, SALT_SIZE );
@@ -213,21 +211,21 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 	id_salt_str = bin_to_base64( id_salt, SALT_SIZE );
 
 	/* Generate a new key. */
-	rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
+	RSA *rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
 	if ( rsa == 0 ) {
 		BIO_printf( bioOut, "ERROR key generation failed\r\n");
 		return;
 	}
 
 	/* Extract the components to hex strings. */
-	n = bn_to_base64( rsa->n );
-	e = bn_to_base64( rsa->e );
-	d = bn_to_base64( rsa->d );
-	p = bn_to_base64( rsa->p );
-	q = bn_to_base64( rsa->q );
-	dmp1 = bn_to_base64( rsa->dmp1 );
-	dmq1 = bn_to_base64( rsa->dmq1 );
-	iqmp = bn_to_base64( rsa->iqmp );
+	String n = bn_to_base64( rsa->n );
+	String e = bn_to_base64( rsa->e );
+	String d = bn_to_base64( rsa->d );
+	String p = bn_to_base64( rsa->p );
+	String q = bn_to_base64( rsa->q );
+	String dmp1 = bn_to_base64( rsa->dmp1 );
+	String dmq1 = bn_to_base64( rsa->dmq1 );
+	String iqmp = bn_to_base64( rsa->iqmp );
 
 	/* Hash the password. */
 	pass_hashed = pass_hash( pass_salt, pass );
@@ -240,24 +238,14 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 		"	rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
 		")"
 		"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e );", 
-		user, pass_salt_str, pass_hashed, email, id_salt_str, n, e, d, p, q, dmp1, dmq1, iqmp );
-
-	delete[] n;
-	delete[] e;
-	delete[] d;
-	delete[] p;
-	delete[] q;
-	delete[] dmp1;
-	delete[] dmq1;
-	delete[] iqmp;
+		user, pass_salt_str, pass_hashed, email, id_salt_str,
+		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
 	RSA_free( rsa );
 	
-	photo_dir_cmd = new char [32 + strlen(c->CFG_PHOTO_DIR) + strlen(user)];
-	sprintf( photo_dir_cmd, "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
-	message("system: %s\n", photo_dir_cmd );
-	system( photo_dir_cmd );
-
+	String photoDirCmd( "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
+	message("system: %s\n", photoDirCmd.data );
+	system( photoDirCmd );
 }
 
 void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )

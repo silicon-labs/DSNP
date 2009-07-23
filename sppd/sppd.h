@@ -19,6 +19,9 @@
 
 #include <mysql.h>
 #include <openssl/bio.h>
+#include <openssl/bn.h>
+
+#include "string.h"
 
 struct PublicKey
 {
@@ -235,7 +238,8 @@ void sslInitClient();
 void sslInitServer();
 void start_tls();
 long base64_to_bin( unsigned char *out, long len, const char *src );
-char *bin_to_base64( const u_char *data, long len );
+AllocString bin_to_base64( const u_char *data, long len );
+AllocString bn_to_base64( const BIGNUM *n );
 
 struct DbQuery
 {

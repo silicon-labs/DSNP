@@ -36,6 +36,7 @@ $send =
 
 fwrite( $fp, $send );
 fwrite( $fp, $message, $len );
+fwrite( $fp, "\r\n", 2 );
 
 $res = fgets($fp);
 

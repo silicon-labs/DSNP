@@ -201,17 +201,6 @@ bool gblKeySubmitted = false;
 
 	}
 
-	action submit_broadcast {
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		char *user_message = new char[length+1];
-		BIO_read( bioIn, user_message, length );
-		user_message[length] = 0;
-
-		submit_broadcast( mysql, user, type, resource_id, user_message, length );
-		free( user_message );
-	}
 
 	action submit_remote_broadcast {
 		if ( length > MAX_MSG_LEN )
@@ -250,46 +239,72 @@ bool gblKeySubmitted = false;
 		ssl = true;
 	}
 
-	commands := |* 
-		'comm_key'i ' ' key EOL @comm_key;
-		'start_tls'i EOL @start_tls;
-		'login'i ' ' user ' ' pass EOL @check_key @login;
+	# Reads in a message block plus the terminating EOL.
+	action read_message {
+		/* Validate the length. */
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		/* Read in the message and the mandadory \r\r. */
+		BIO_read( bioIn, message_buffer, length+2 );
+
+		/* Parse just the \r\r. */
+		p = message_buffer + length;
+		pe = message_buffer + length + 2;
+	}
+
+	action term_data {
+		message_buffer.data[length] = 0;
+	}
+
+	M_EOL = 
+		EOL @read_message 
+		EOL @term_data;
+
+	commands := (
+		'comm_key'i ' ' key EOL @comm_key |
+		'start_tls'i EOL @start_tls |
+		'login'i ' ' user ' ' pass EOL @check_key @login |
 
 		# Admin commands.
-		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user;
+		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user |
 
 		# Public key sharing.
-		'public_key'i ' ' user EOL @check_ssl @public_key;
+		'public_key'i ' ' user EOL @check_ssl @public_key |
 
 		# Friend Request.
-		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request;
+		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request |
 		'relid_response'i ' ' user ' ' reqid ' ' identity
-				EOL @check_key @relid_response;
+				EOL @check_key @relid_response |
 		'friend_final'i ' ' user ' ' reqid ' ' identity
-				EOL @check_key @friend_final;
-		'fetch_requested_relid'i ' ' reqid EOL @check_ssl @fetch_requested_relid;
-		'fetch_response_relid'i ' ' reqid EOL @check_ssl @fetch_response_relid;
+				EOL @check_key @friend_final |
+		'fetch_requested_relid'i ' ' reqid EOL @check_ssl @fetch_requested_relid |
+		'fetch_response_relid'i ' ' reqid EOL @check_ssl @fetch_response_relid |
 
 		# Friend Request Accept
-		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend;
-		'notify_accept'i ' ' relid ' ' length EOL @check_ssl @notify_accept;
+		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend |
+		'notify_accept'i ' ' relid ' ' length EOL @check_ssl @notify_accept |
 
 		# Friend login. 
-		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request;
+		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request |
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
-				EOL @check_key @ftoken_response;
-		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken;
-		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken;
+				EOL @check_key @ftoken_response |
+		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken |
+		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken |
 
-		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' length EOL @check_key @submit_broadcast;
+		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' length 
+				M_EOL @check_key @{
+					submit_broadcast( mysql, user, type, resource_id, message_buffer.data, length );
+				} |
+
 		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' '
-				type ' ' length EOL @check_key @submit_remote_broadcast;
+				type ' ' length EOL @check_key @submit_remote_broadcast |
 
-		'message'i ' ' relid ' ' length EOL @check_ssl @receive_message;
-		'broadcast'i ' ' relid ' ' generation ' ' length EOL @check_ssl @broadcast;
+		'message'i ' ' relid ' ' length EOL @check_ssl @receive_message |
+		'broadcast'i ' ' relid ' ' generation ' ' length EOL @check_ssl @broadcast |
 		'remote_publish'i ' ' user ' ' identity ' ' token ' ' seq_num ' ' type ' ' length 
-				EOL @check_ssl @remote_publish;
-	*|;
+				EOL @check_ssl @remote_publish 
+	)*;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
 }%%
@@ -300,15 +315,16 @@ const long linelen = 4096;
 
 int server_parse_loop()
 {
-	long cs, act;
+	long cs;
 	const char *mark;
-	const char *ts, *te;
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token, type;
 	String gen_str, seq_str, resource_id_str;
 	long length;
 	long long generation, seq_num, resource_id;
+	String message_buffer;
+	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
 	MYSQL *mysql = 0;
 	bool ssl = false;

@@ -128,8 +128,6 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
 
-bool check_comm_key( const char *key );
-
 long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
 		long long resource_id, const char *user_message, long mLen );
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 

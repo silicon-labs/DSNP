@@ -115,7 +115,7 @@ void sslInitServer()
 	SSL_library_init(); 
 
 	/* Create the SSL_CTX. */
-	ctx = SSL_CTX_new(TLSv1_server_method());
+	ctx = SSL_CTX_new(SSLv23_method());
 	if ( ctx == NULL )
 		fatal("creating context failed\n");
 

@@ -86,7 +86,10 @@ bool gblKeySubmitted = false;
 
 	resource_id = [0-9]+
 		>{mark=p;}
-		%{resource_id_str.set(mark, p);};
+		%{
+			resource_id_str.set(mark, p);
+			resource_id = strtoll( resource_id_str, 0, 10 );
+		};
 
 	EOL = '\r'? '\n';
 }%%
@@ -128,7 +131,6 @@ bool gblKeySubmitted = false;
 	}
 
 	action ftoken_response {
-		message("calling ftoken_response\n");
 		ftoken_response( mysql, user, hash, reqid );
 	}
 
@@ -196,10 +198,10 @@ bool gblKeySubmitted = false;
 		user_message[length] = 0;
 
 		broadcast( mysql, relid, generation, user_message );
+
 	}
 
 	action submit_broadcast {
-		long long resource_id = strtoll( resource_id_str, 0, 10 );
 		if ( length > MAX_MSG_LEN )
 			fgoto *parser_error;
 
@@ -306,7 +308,7 @@ int server_parse_loop()
 	String hash, key, relid, token, type;
 	String gen_str, seq_str, resource_id_str;
 	long length;
-	long long generation, seq_num;
+	long long generation, seq_num, resource_id;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -460,8 +462,6 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	include common;
 
 	action direct_broadcast {
-		long long resource_id = strtoll( resource_id_str, 0, 10 );
-
 		if ( length > MAX_MSG_LEN ) {
 			message("message too large\n");
 			fgoto *parser_error;
@@ -500,7 +500,7 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 	String date, length_str, hash, type;
 	String seq_str, gen_str, resource_id_str;
 	long length;
-	long long generation, seq_num;
+	long long generation, seq_num, resource_id;
 
 	//message("parsing broadcast string: %s\n", msg );
 

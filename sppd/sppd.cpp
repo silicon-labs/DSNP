@@ -191,11 +191,6 @@ void new_broadcast_key( MYSQL *mysql, const char *user )
 		user, generation + 1, bk );
 }
 
-bool check_comm_key( const char *key )
-{
-	return true;
-}
-
 void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
 	//char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;

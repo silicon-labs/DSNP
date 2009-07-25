@@ -2160,7 +2160,7 @@ free_result:
 	mysql_free_result( result );
 }
 
-void remote_publish( MYSQL *mysql, const char *user,
+void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, long long seq_num,
 		const char *type, const char *sym )
 {
@@ -2178,7 +2178,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 	struct tm curTM, *tmRes;
 	char time_str[64];
 
-	message( "remote_publish submitted token: %s\n", token );
+	message( "encrypt_remote_broadcast submitted token: %s\n", token );
 
 	exec_query( mysql,
 		"SELECT user FROM remote_flogin_token "
@@ -2223,7 +2223,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 		"VALUES ( %e, %e, %e, now(), %e, %d )",
 		user, authorId, identity, type, encrypt1.decrypted, encrypt1.decLen );
 
-	::message( "remote_publish type: %s\n", type );
+	::message( "encrypt_remote_broadcast type: %s\n", type );
 	
 	/* Find youngest session key. In the future some sense of current session
 	 * key should be maintained. */
@@ -2256,7 +2256,7 @@ void remote_publish( MYSQL *mysql, const char *user,
 		return;
 	}
 
-	message( "remote_publish enc: %s\n", encrypt2.sym );
+	message( "encrypt_remote_broadcast enc: %s\n", encrypt2.sym );
 	BIO_printf( bioOut, "OK %s %s\r\n", generation, encrypt2.sym );
 
 free_result:

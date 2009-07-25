@@ -115,7 +115,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
-void remote_publish( MYSQL *mysql, const char *user,
+void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, long long seq_num, const char *type, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );

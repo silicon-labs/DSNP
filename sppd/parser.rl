@@ -99,45 +99,6 @@ bool gblKeySubmitted = false;
 
 	include common;
 
-	action new_user { new_user( mysql, user, pass, email ); }
-	action public_key { public_key( mysql, user ); }
-
-	action relid_request {
-		relid_request( mysql, user, identity );
-	}
-
-	action fetch_requested_relid {
-		fetch_requested_relid( mysql, reqid );
-	}
-
-	action relid_response {
-		relid_response( mysql, user, reqid, identity );
-	}
-
-	action fetch_response_relid {
-		fetch_response_relid( mysql, reqid );
-	}
-
-	action friend_final {
-		friend_final( mysql, user, reqid, identity );
-	}
-
-	action accept_friend {
-		accept_friend( mysql, user, reqid );
-	}
-
-	action ftoken_request {
-		ftoken_request( mysql, user, hash );
-	}
-
-	action ftoken_response {
-		ftoken_response( mysql, user, hash, reqid );
-	}
-
-	action fetch_ftoken {
-		fetch_ftoken( mysql, reqid );
-	}
-
 	action set_config {
 		set_config_by_uri( identity );
 
@@ -165,73 +126,6 @@ bool gblKeySubmitted = false;
 			message("ssl check failed\n");
 			fgoto *parser_error;
 		}
-	}
-
-	action receive_message {
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		char *user_message = new char[length+1];
-		BIO_read( bioIn, user_message, length );
-		user_message[length] = 0;
-
-		receive_message( mysql, relid, user_message );
-	}
-
-	action notify_accept {
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		char *user_message = new char[length+1];
-		BIO_read( bioIn, user_message, length );
-		user_message[length] = 0;
-
-		notify_accept( mysql, relid, user_message );
-	}
-
-	action broadcast {
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		char *user_message = new char[length+1];
-		BIO_read( bioIn, user_message, length );
-		user_message[length] = 0;
-
-		broadcast( mysql, relid, generation, user_message );
-
-	}
-
-
-	action submit_remote_broadcast {
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		char *user_message = new char[length+1];
-		BIO_read( bioIn, user_message, length );
-		user_message[length] = 0;
-
-		submit_remote_broadcast( mysql, user, identity, hash, token, type, user_message, length );
-		free( user_message );
-	}
-
-	action login {
-		login( mysql, user, pass );
-	}
-
-	action submit_ftoken {
-		submit_ftoken( mysql, token );
-	}
-
-	action remote_publish {
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		char *user_message = new char[length+1];
-		BIO_read( bioIn, user_message, length );
-		user_message[length] = 0;
-
-		remote_publish( mysql, user, identity, token, seq_num, type, user_message );
-		free( user_message );
 	}
 
 	action start_tls {
@@ -264,46 +158,122 @@ bool gblKeySubmitted = false;
 	commands := (
 		'comm_key'i ' ' key EOL @comm_key |
 		'start_tls'i EOL @start_tls |
-		'login'i ' ' user ' ' pass EOL @check_key @login |
+		'login'i ' ' user ' ' pass 
+			EOL @check_key @{
+				login( mysql, user, pass );
+			} |
 
 		# Admin commands.
-		'new_user'i ' ' user ' ' pass ' ' email EOL @check_key @new_user |
+		'new_user'i ' ' user ' ' pass ' ' email
+			EOL @check_key @{
+				new_user( mysql, user, pass, email );
+			} |
 
 		# Public key sharing.
-		'public_key'i ' ' user EOL @check_ssl @public_key |
+		'public_key'i ' ' user
+			EOL @check_ssl @{
+				public_key( mysql, user );
+			} |
 
+		# 
 		# Friend Request.
-		'relid_request'i ' ' user ' ' identity EOL @check_key @relid_request |
+		#
+		'relid_request'i ' ' user ' ' identity
+			EOL @check_key @{
+				relid_request( mysql, user, identity );
+			} |
+
 		'relid_response'i ' ' user ' ' reqid ' ' identity
-				EOL @check_key @relid_response |
+			EOL @check_key @{
+				relid_response( mysql, user, reqid, identity );
+			} |
+
 		'friend_final'i ' ' user ' ' reqid ' ' identity
-				EOL @check_key @friend_final |
-		'fetch_requested_relid'i ' ' reqid EOL @check_ssl @fetch_requested_relid |
-		'fetch_response_relid'i ' ' reqid EOL @check_ssl @fetch_response_relid |
+			EOL @check_key @{
+				friend_final( mysql, user, reqid, identity );
+			} |
 
+		'fetch_requested_relid'i ' ' reqid
+			EOL @check_ssl @{
+				fetch_requested_relid( mysql, reqid );
+			} |
+
+		'fetch_response_relid'i ' ' reqid
+			EOL @check_ssl @{
+				fetch_response_relid( mysql, reqid );
+			} |
+
+		#
 		# Friend Request Accept
-		'accept_friend'i ' ' user ' ' reqid EOL @check_key @accept_friend |
-		'notify_accept'i ' ' relid ' ' length EOL @check_ssl @notify_accept |
+		#
+		'accept_friend'i ' ' user ' ' reqid
+			EOL @check_key @{
+				accept_friend( mysql, user, reqid );
+			} |
 
+		'notify_accept'i ' ' relid ' ' length 
+			M_EOL @check_ssl @{
+				notify_accept( mysql, relid, message_buffer.data );
+			} |
+
+		#
 		# Friend login. 
-		'ftoken_request'i ' ' user ' ' hash EOL @check_key @ftoken_request |
+		#
+		'ftoken_request'i ' ' user ' ' hash
+			EOL @check_key @{
+				ftoken_request( mysql, user, hash );
+			} |
+
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
-				EOL @check_key @ftoken_response |
-		'fetch_ftoken'i ' ' reqid EOL @check_ssl @fetch_ftoken |
-		'submit_ftoken'i ' ' token EOL @check_key @submit_ftoken |
+			EOL @check_key @{
+				ftoken_response( mysql, user, hash, reqid );
+			} |
 
+		'fetch_ftoken'i ' ' reqid
+			EOL @check_ssl @{
+				fetch_ftoken( mysql, reqid );
+			} |
+
+		'submit_ftoken'i ' ' token
+			EOL @check_key @{
+				submit_ftoken( mysql, token );
+			} |
+
+		#
+		# Broadcasting
+		#
 		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' length 
-				M_EOL @check_key @{
-					submit_broadcast( mysql, user, type, resource_id, message_buffer.data, length );
-				} |
+			M_EOL @check_key @{
+				submit_broadcast( mysql, user, type, resource_id, message_buffer.data, length );
+			} |
 
-		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' '
-				type ' ' length EOL @check_key @submit_remote_broadcast |
+		#
+		# Remote broadcasting
+		#
+		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' ' type ' ' length
+			M_EOL @check_key @{
+				submit_remote_broadcast( mysql, user, identity, hash, 
+						token, type, message_buffer.data, length );
+			} |
 
-		'message'i ' ' relid ' ' length EOL @check_ssl @receive_message |
-		'broadcast'i ' ' relid ' ' generation ' ' length EOL @check_ssl @broadcast |
-		'remote_publish'i ' ' user ' ' identity ' ' token ' ' seq_num ' ' type ' ' length 
-				EOL @check_ssl @remote_publish 
+		'encrypt_remote_broadcast'i ' ' user ' ' identity ' ' token ' ' seq_num ' ' type ' ' length
+			M_EOL @check_ssl @{
+				encrypt_remote_broadcast( mysql, user, identity, token, 
+						seq_num, type, message_buffer.data );
+			} |
+
+		#
+		# Message sending.
+		#
+		'message'i ' ' relid ' ' length 
+			M_EOL @check_ssl @{
+				receive_message( mysql, relid, message_buffer.data );
+			} |
+
+		'broadcast'i ' ' relid ' ' generation ' ' length
+			M_EOL @check_ssl @{
+				broadcast( mysql, relid, generation, message_buffer.data );
+			}
 	)*;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -1052,6 +1022,7 @@ long send_broadcast_net( const char *toSite, const char *relid,
 		"broadcast %s %lld %ld\r\n", 
 		relid, generation, mLen );
 	BIO_write( sbio, msg, mLen );
+	BIO_write( sbio, "\r\n", 2 );
 	BIO_flush( sbio );
 
 	/* Read the result. */
@@ -1147,6 +1118,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 	/* Send the request. */
 	BIO_printf( sbio, "notify_accept %s %ld\r\n", relid, mLen );
 	BIO_write( sbio, message, mLen );
+	BIO_write( sbio, "\r\n", 2 );
 	BIO_flush( sbio );
 
 	/* Read the result. */
@@ -1258,6 +1230,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 	/* Send the request. */
 	BIO_printf( sbio, "message %s %ld\r\n", relid, mLen );
 	BIO_write( sbio, message, mLen );
+	BIO_write( sbio, "\r\n", 2 );
 	BIO_flush( sbio );
 
 	/* Read the result. */
@@ -1371,9 +1344,10 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 
 	/* Send the request. */
 	BIO_printf( sbio, 
-		"remote_publish %s %s%s/ %s %lld %s %ld\r\n", 
+		"encrypt_remote_broadcast %s %s%s/ %s %lld %s %ld\r\n", 
 		toIdent.user, c->CFG_URI, from_user, token, seq_num, type, mLen );
 	BIO_write( sbio, msg, mLen );
+	BIO_write( sbio, "\r\n", 2 );
 	BIO_flush( sbio );
 
 	/* Read the result. */

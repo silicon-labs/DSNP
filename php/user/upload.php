@@ -86,6 +86,7 @@ $send =
 
 fwrite( $fp, $send );
 fwrite( $fp, "thm-$id.jpg", $len );
+fwrite( $fp, "\r\n", 2 );
 
 header("Location: $USER_URI");
 ?>

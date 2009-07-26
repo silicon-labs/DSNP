@@ -20,8 +20,8 @@ CXXFLAGS += -g -Wall
 LDFLAGS += -L/usr/lib/mysql
 
 CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp disttree.cpp \
-	log.cpp db.cpp sppd.cpp tls.cpp
-GEN_SRCS = parser.cpp rcfile.cpp
+	log.cpp db.cpp sppd.cpp tls.cpp base64.cpp
+GEN_SRCS = parser.cpp rcfile.cpp base64.cpp
 
 LIBS = -lssl -lmysqlclient
 
@@ -49,6 +49,9 @@ parser.cpp: parser.rl
 	ragel -G2 -o $@ $<
 
 rcfile.cpp: rcfile.rl
+	ragel -G2 -o $@ $<
+
+base64.cpp: base64.rl
 	ragel -G2 -o $@ $<
 
 #version.h: ../version.mk

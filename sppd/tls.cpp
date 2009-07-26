@@ -160,3 +160,32 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio )
 
 	return bio;
 }
+
+int TlsConnect::connect( const char *host, const char *site )
+{
+	static char buf[8192];
+
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 )
+		return 0;
+
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
+	/* Send the request. */
+	BIO_printf( buffer,
+		"SPP/0.1 %s\r\n"
+		"start_tls\r\n",
+		site );
+	BIO_flush( buffer );
+
+	/* Read the result. */
+	int readRes = BIO_gets( buffer, buf, 8192 );
+	message("return is %s", buf );
+
+	sslInitClient();
+	sbio = sslStartClient( socketBio, socketBio, host );
+
+	return 0;
+}

@@ -143,8 +143,8 @@ bool gblKeySubmitted = false;
 		BIO_read( bioIn, message_buffer, length+2 );
 
 		/* Parse just the \r\r. */
-		p = message_buffer + length;
-		pe = message_buffer + length + 2;
+		p = message_buffer.data + length;
+		pe = message_buffer.data + length + 2;
 	}
 
 	action term_data {
@@ -576,45 +576,26 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 		const char *host, const char *user )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	const char *p, *pe;
 	const char *n1, *n2, *e1, *e2;
 	bool OK = false;
 
-	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( host, site );
+	if ( result < 0 ) 
+		return result;
 
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
-
-	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		site );
-	BIO_flush( buffer );
+	BIO_printf( tlsConnect.sbio, "public_key %s\r\n", user );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, host );
-
-	BIO_printf( sbio, "public_key %s\r\n", user );
-	BIO_flush( sbio );
-
-	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 	message("encrypted return to fetch_public_key_net is %s", buf );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -635,15 +616,11 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( ! OK )
+		return ERR_SERVER_ERROR;
 	
 	pub.n = (char*)malloc( n2-n1+1 );
 	pub.e = (char*)malloc( e2-e1+1 );
@@ -654,9 +631,7 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 
 	message("fetch_public_key_net returning %s %s\n", pub.n, pub.e );
 
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 /*
@@ -673,47 +648,28 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	const char *p, *pe;
 	bool OK = false;
 	const char *mark;
 	String sym;
 
-	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( host, site );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		site );
-	BIO_flush( buffer );
+	BIO_printf( tlsConnect.sbio, "fetch_requested_relid %s\r\n", fr_reqid );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, host );
-
-	/* Send the request. */
-	BIO_printf( sbio, "fetch_requested_relid %s\r\n", fr_reqid );
-	BIO_flush( sbio );
-
-	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 	message("encrypted return to fetch_requested_relid is %s", buf );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -731,21 +687,15 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( !OK )
+		return ERR_SERVER_ERROR;
 	
 	encsig.sym = sym.relinquish();
 
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 
@@ -762,46 +712,27 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *reqid )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	bool OK = false;
 	const char *p, *pe;
 	const char *mark;
 	String sym;
 
-	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( host, site );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		site );
-	BIO_flush( buffer );
+	BIO_printf( tlsConnect.sbio, "fetch_response_relid %s\r\n", reqid );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, host );
-
-	/* Send the request. */
-	BIO_printf( sbio, "fetch_response_relid %s\r\n", reqid );
-	BIO_flush( sbio );
-
-	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -819,21 +750,15 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( ! OK )
+		return ERR_SERVER_ERROR;
 	
 	encsig.sym = sym.relinquish();
 
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 /*
@@ -849,46 +774,27 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	bool OK = false;
 	const char *p, *pe;
 	const char *mark;
 	String sym;
 
-	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( host, site );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		site );
-	BIO_flush( buffer );
+	BIO_printf( tlsConnect.sbio, "fetch_ftoken %s\r\n", flogin_reqid );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, host );
-
-	/* Send the request. */
-	BIO_printf( sbio, "fetch_ftoken %s\r\n", flogin_reqid );
-	BIO_flush( sbio );
-
-	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -906,21 +812,15 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%%  ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( ! OK )
+		return ERR_SERVER_ERROR;
 	
 	encsig.sym = sym.relinquish();
 
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 
@@ -983,7 +883,7 @@ long send_broadcast_net( const char *toSite, const char *relid,
 		long long generation, const char *msg, long mLen )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
@@ -995,44 +895,25 @@ long send_broadcast_net( const char *toSite, const char *relid,
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( site.host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( site.host, toSite );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		toSite );
-	BIO_flush( buffer );
-
-	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	::message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, site.host );
-
-	/* Send the request. */
-	BIO_printf( sbio, 
+	BIO_printf( tlsConnect.sbio, 
 		"broadcast %s %lld %ld\r\n", 
 		relid, generation, mLen );
-	BIO_write( sbio, msg, mLen );
-	BIO_write( sbio, "\r\n", 2 );
-	BIO_flush( sbio );
+	BIO_write( tlsConnect.sbio, msg, mLen );
+	BIO_write( tlsConnect.sbio, "\r\n", 2 );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -1050,19 +931,13 @@ long send_broadcast_net( const char *toSite, const char *relid,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( !OK )
+		return ERR_SERVER_ERROR;
 	
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 /*
@@ -1078,7 +953,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 		const char *message, long mLen, char **result_message )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
@@ -1093,42 +968,23 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( toIdent.host, toIdent.site );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		toIdent.site );
-	BIO_flush( buffer );
+	BIO_printf( tlsConnect.sbio, "notify_accept %s %ld\r\n", relid, mLen );
+	BIO_write( tlsConnect.sbio, message, mLen );
+	BIO_write( tlsConnect.sbio, "\r\n", 2 );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	::message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
-
-	/* Send the request. */
-	BIO_printf( sbio, "notify_accept %s %ld\r\n", relid, mLen );
-	BIO_write( sbio, message, mLen );
-	BIO_write( sbio, "\r\n", 2 );
-	BIO_flush( sbio );
-
-	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -1139,7 +995,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 				fgoto *parser_error;
 
 			char *user_message = new char[length+1];
-			BIO_read( sbio, user_message, length );
+			BIO_read( tlsConnect.sbio, user_message, length );
 			user_message[length] = 0;
 
 			::message( "about to decrypt RESULT\n" );
@@ -1162,19 +1018,13 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( !OK )
+		return ERR_SERVER_ERROR;
 	
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 /*
@@ -1306,7 +1156,7 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 		const char *type, const char *msg, long mLen )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
@@ -1320,44 +1170,25 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( toIdent.host, toIdent.site );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		toIdent.site );
-	BIO_flush( buffer );
-
-	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
-
-	/* Send the request. */
-	BIO_printf( sbio, 
+	BIO_printf( tlsConnect.sbio, 
 		"encrypt_remote_broadcast %s %s%s/ %s %lld %s %ld\r\n", 
 		toIdent.user, c->CFG_URI, from_user, token, seq_num, type, mLen );
-	BIO_write( sbio, msg, mLen );
-	BIO_write( sbio, "\r\n", 2 );
-	BIO_flush( sbio );
+	BIO_write( tlsConnect.sbio, msg, mLen );
+	BIO_write( tlsConnect.sbio, "\r\n", 2 );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -1375,141 +1206,16 @@ long send_remote_publish_net( char *&resultEnc, long long &resultGen,
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( !OK )
+		return ERR_SERVER_ERROR;
 
 	resultGen = strtoll( number_str, 0, 10 );
 	resultEnc = sym.relinquish();
 
 	::message( "resultGen: %lld\n", resultGen );
-	
-fail:
-	::close( socketFd );
-	return result;
+
+	return 0;
 }
-
-%%{
-	machine base64;
-	write data;
-}%%
-
-AllocString bin_to_base64( const u_char *data, long len )
-{
-	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-	long group;
-	long lenRem = len % 3;
-	long lenEven = len - lenRem;
-
-	long outLen = ( lenEven / 3 ) * 4 + ( lenRem > 0 ? 4 : 0 ) + 1;
-	char *output = new char[outLen];
-	char *dest = output;
-
-	for ( int i = 0; i < lenEven; i += 3 ) {
-		group = (long)data[i] << 16;
-		group |= (long)data[i+1] << 8;
-		group |= (long)data[i+2];
-
-		*dest++ = index[( group >> 18 ) & 0x3f];
-		*dest++ = index[( group >> 12 ) & 0x3f];
-		*dest++ = index[( group >> 6 ) & 0x3f];
-		*dest++ = index[group & 0x3f];
-	}
-
-	if ( lenRem > 0 ) {
-		group = (long)data[lenEven] << 16;
-		if ( lenRem > 1 )
-			group |= (long)data[lenEven+1] << 8;
-
-		/* Always need the first two six-bit groups.  */
-		*dest++ = index[( group >> 18 ) & 0x3f];
-		*dest++ = index[( group >> 12 ) & 0x3f];
-		if ( lenRem > 1 )
-			*dest++ = index[( group >> 6 ) & 0x3f];
-	}
-
-	*dest = 0;
-
-	return AllocString( output, strlen(output) );
-}
-
-long base64_to_bin( unsigned char *out, long len, const char *src )
-{
-	long sixBits;
-	long group;
-	unsigned char *dest = out;
-
-	/* Parser for response. */
-	%%{
-		action upperChar { sixBits = *p - 'A'; }
-		action lowerChar { sixBits = 26 + (*p - 'a'); }
-		action digitChar { sixBits = 52 + (*p - '0'); }
-		action dashChar  { sixBits = 62; }
-		action underscoreChar { sixBits = 63; }
-
-		sixBits = 
-			[A-Z] @upperChar |
-			[a-z] @lowerChar |
-			[0-9] @digitChar |
-			'-' @dashChar |
-			'_' @underscoreChar;
-
-		action c1 {
-			group = sixBits << 18;
-		}
-		action c2 {
-			group |= sixBits << 12;
-		}
-		action c3 {
-			group |= sixBits << 6;
-		}
-		action c4 {
-			group |= sixBits;
-		}
-
-		action three {
-			*dest++ = ( group >> 16 ) & 0xff;
-			*dest++ = ( group >> 8 ) & 0xff;
-			*dest++ = group & 0xff;
-		}
-		action two {
-			*dest++ = ( group >> 16 ) & 0xff;
-			*dest++ = ( group >> 8 ) & 0xff;
-		}
-		action one {
-			*dest++ = ( group >> 16 ) & 0xff;
-		}
-
-		group =
-			( sixBits @c1 sixBits @c2 sixBits @c3 sixBits @c4 ) %three;
-
-		short =
-			( sixBits @c1 sixBits @c2 sixBits ) %two |
-			( sixBits @c1 sixBits ) %one ;
-
-		# Lots of ambiguity, but duplicate removal makes it okay.
-		main := group* short? 0;
-			
-	}%%
-
-	/* Note: including the null. */
-	const char *p = src;
-	const char *pe = src + strlen(src) + 1;
-	int cs;
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return 0;
-
-	return dest - out;
-}
-

@@ -251,4 +251,10 @@ struct DbQuery
 	MYSQL_RES *result;
 };
 
+struct TlsConnect
+{
+	int connect( const char *host, const char *site );
+	BIO *sbio;
+};
+
 #endif

@@ -578,8 +578,9 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	static char buf[8192];
 	long cs;
 	const char *p, *pe;
-	const char *n1, *n2, *e1, *e2;
 	bool OK = false;
+	const char *mark;
+	String n, e;
 
 	TlsConnect tlsConnect;
 	int result = tlsConnect.connect( host, site );
@@ -601,8 +602,8 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	%%{
 		include common;
 
-		n = base64   >{n1 = p;} %{n2 = p;};
-		e = base64   >{e1 = p;} %{e2 = p;};
+		n = base64   >{mark = p;} %{n.set(mark, p);};
+		e = base64   >{mark = p;} %{e.set(mark, p);};
 
 		main := 
 			'OK ' n ' ' e EOL @{ OK = true; } |
@@ -622,12 +623,8 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	if ( ! OK )
 		return ERR_SERVER_ERROR;
 	
-	pub.n = (char*)malloc( n2-n1+1 );
-	pub.e = (char*)malloc( e2-e1+1 );
-	memcpy( pub.n, n1, n2-n1 );
-	memcpy( pub.e, e1, e2-e1 );
-	pub.n[n2-n1] = 0;
-	pub.e[e2-e1] = 0;
+	pub.n = n.relinquish();
+	pub.e = e.relinquish();
 
 	message("fetch_public_key_net returning %s %s\n", pub.n, pub.e );
 
@@ -1040,7 +1037,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 		const char *message, long mLen, char **result_message )
 {
 	static char buf[8192];
-	long result = 0, cs;
+	long cs;
 	const char *p, *pe;
 	bool OK = false;
 	long pres;
@@ -1055,42 +1052,23 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 	if ( pres < 0 )
 		return pres;
 
-	long socketFd = open_inet_connection( toIdent.host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return ERR_CONNECTION_FAILED;
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *buffer = BIO_new( BIO_f_buffer() );
-	BIO_push( buffer, socketBio );
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( toIdent.host, toIdent.site );
+	if ( result < 0 ) 
+		return result;
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
-		"start_tls\r\n",
-		toIdent.site );
-	BIO_flush( buffer );
+	BIO_printf( tlsConnect.sbio, "message %s %ld\r\n", relid, mLen );
+	BIO_write( tlsConnect.sbio, message, mLen );
+	BIO_write( tlsConnect.sbio, "\r\n", 2 );
+	BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
-	::message("return is %s", buf );
-
-	sslInitClient();
-	BIO *sbio = sslStartClient( socketBio, socketBio, toIdent.host );
-
-	/* Send the request. */
-	BIO_printf( sbio, "message %s %ld\r\n", relid, mLen );
-	BIO_write( sbio, message, mLen );
-	BIO_write( sbio, "\r\n", 2 );
-	BIO_flush( sbio );
-
-	/* Read the result. */
-	readRes = BIO_gets( sbio, buf, 8192 );
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
 
 	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 ) {
-		result = ERR_READ_ERROR;
-		goto fail;
-	}
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
 
 	/* Parser for response. */
 	%%{
@@ -1102,7 +1080,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 				fgoto *parser_error;
 
 			char *user_message = new char[length+1];
-			BIO_read( sbio, user_message, length );
+			BIO_read( tlsConnect.sbio, user_message, length );
 			user_message[length] = 0;
 
 			::message( "about to decrypt RESULT\n" );
@@ -1125,19 +1103,13 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% ) {
-		result = ERR_PARSE_ERROR;
-		goto fail;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
 	
-	if ( !OK ) {
-		result = ERR_SERVER_ERROR;
-		goto fail;
-	}
+	if ( !OK )
+		return ERR_SERVER_ERROR;
 	
-fail:
-	::close( socketFd );
-	return result;
+	return 0;
 }
 
 	

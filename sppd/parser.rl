@@ -342,30 +342,26 @@ int server_parse_loop()
 }
 
 /*
- * notify_accept_parser
+ * prefriend_message_parser
  */
 
 %%{
-	machine notify_accept_parser;
+	machine prefriend_message_parser;
 
 	include common;
 
-	action accept {
-		accept( mysql, user, friend_id, id_salt, requested_relid, returned_relid );
-	}
-
-	action registered {
-		registered( mysql, user, friend_id, requested_relid, returned_relid );
-	}
-
 	main :=
-		'accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @accept |
-		'registered'i ' ' requested_relid ' ' returned_relid EOL @registered;
+		'notify_accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @{
+			notify_accept( mysql, user, friend_id, id_salt, requested_relid, returned_relid );
+		} |
+		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
+			registered( mysql, user, friend_id, requested_relid, returned_relid );
+		};
 }%%
 
 %% write data;
 
-int notify_accept_parser( MYSQL *mysql, const char *relid,
+int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *message )
 {
 	long cs;

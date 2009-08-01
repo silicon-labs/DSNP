@@ -122,7 +122,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
-long accept( MYSQL *mysql, const char *for_user, const char *from_id,
+long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
@@ -200,7 +200,7 @@ long hex2bin( unsigned char *dest, long len, const char *src );
 int exec_query( MYSQL *mysql, const char *fmt, ... );
 int message_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *from_user, const char *message );
-int notify_accept_parser( MYSQL *mysql, const char *relid,
+int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *message );
 
 void login( MYSQL *mysql, const char *user, const char *pass );

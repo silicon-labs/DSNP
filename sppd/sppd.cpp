@@ -1091,7 +1091,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	returned_relid = row[2];
 
 	/* Notify the requester. */
-	sprintf( buf, "accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
+	sprintf( buf, "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
 	int nfa = send_prefriend_message( mysql, user, from_id, requested_relid, buf, &result_message );
 	message( "accept_friend received: %s\n", result_message );
@@ -2017,7 +2017,7 @@ void prefriend_message( MYSQL *mysql, const char *relid, const char *message )
 		goto free_result;
 	}
 
-	notify_accept_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
+	prefriend_message_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
 
 free_result:
 	mysql_free_result( result );
@@ -2292,7 +2292,7 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	return strdup((char*)encrypt.decrypted);
 }
 
-long accept( MYSQL *mysql, const char *for_user, const char *from_id,
+long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid )
 {
 	RSA *id_pub, *user_priv;
@@ -2300,8 +2300,6 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	char *returned_id_salt;
-
-	message("in accept\n");
 
 	/* Verify that there is a friend request. */
 	DbQuery checkSentRequest( mysql, 
@@ -2321,7 +2319,12 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, for_user, from_id, id_salt, returned_relid, requested_relid );
 
-	/* Execute the query. */
+	/* Clear the sent_freind_request. */
+	DbQuery removeSentRequest( mysql, 
+		"DELETE FROM sent_friend_request "
+		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e and returned_relid = %e",
+		for_user, from_id, requested_relid, returned_relid );
+
 	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", for_user );
 
 	/* Check for a result. */
@@ -2339,7 +2342,6 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 
-	message("finished accept\n");
 	return 0;
 }
 

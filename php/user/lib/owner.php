@@ -28,7 +28,8 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 <html>
 <head>
-<title><?php print $USER_NAME;?> </title>
+	<title><?php print $USER_NAME;?> </title>
+	<link rel="stylesheet" type="text/css" href="<?php print $CFG_PATH;?>style.css"/>
 </head>
 
 <body>
@@ -57,11 +58,28 @@ if ( mysql_num_rows( $result ) > 0 ) {
 	while ( $row = mysql_fetch_assoc($result) ) {
 		$from_id = $row['from_id'];
 		$reqid = $row['reqid'];
-		echo "friend request: <a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
+		echo "<a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
 		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
 				"&a=yes\">yes</a>&nbsp;&nbsp;\n";
 		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
 				"&a=no\">no</a><br>\n";
+	}
+}
+
+/* Display friend requests made to others. */
+$query = sprintf("SELECT for_id FROM sent_friend_request WHERE from_user = '%s';",
+	mysql_real_escape_string($USER_NAME)
+);
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+if ( mysql_num_rows( $result ) > 0 ) {
+	echo "<h1>Sent Friend Requests</h1>";
+	while ( $row = mysql_fetch_assoc($result) ) {
+		$for_id = $row['for_id'];
+		//$reqid = $row['reqid'];
+		echo "<a class=\"idlink\" href=\"$for_id\">$for_id</a>&nbsp;&nbsp;&nbsp;\n";
+		echo "<a href=\"abandon.php?reqid=" . /*urlencode($reqid) . */
+				"\">cancel</a><br>\n";
 	}
 }
 ?>
@@ -82,14 +100,8 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
 	$acknowledged = $row['acknowledged'];
 
-	if ( $acknowledged ) {
-		echo "<a href=\"${dest_id}sflogin.php?h=" . 
-			urlencode( $_SESSION['hash'] ) . "\"><small>$dest_id</small></a> ";
-	}
-	else {
-		echo "<a href=\"${dest_id}\"><small>$dest_id</small></a> ";
-		echo "<small>(awaiting confirmation)</small>";
-	}
+	echo "<a class=\"idlink\" href=\"${dest_id}sflogin.php?h=" . 
+		urlencode( $_SESSION['hash'] ) . "\">$dest_id</a> ";
 
 	echo "<br>\n";
 }

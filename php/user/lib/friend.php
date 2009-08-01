@@ -24,7 +24,8 @@ $BROWSER_ID = $_SESSION['identity'];
 
 <html>
 <head>
-<title><?php print $USER_NAME;?> </title>
+	<title><?php print $USER_NAME;?> </title>
+	<link rel="stylesheet" type="text/css" href="<?php print $CFG_PATH;?>style.css"/>
 </head>
 
 <body>

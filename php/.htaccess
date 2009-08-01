@@ -1,13 +1,12 @@
 RewriteEngine on
 
 RewriteRule ^robots.txt$                   robots.txt             [L]
+RewriteRule ^style.css$                    style.css              [L]
+RewriteRule ^admin/(.*)$                   admin/$1               [L]
+RewriteRule ^user/(.*)$                    user/$1                [L]
 
 # Add a trailing slash to all items underneath the root.
 RewriteRule ^([a-zA-Z0-9.]+)$              %{REQUEST_URI}/        [R,L]
-
-# Admin.
-RewriteRule ^admin/(.*)$                   admin/$1               [L]
-RewriteRule ^user/(.*)$                    user/$1                [L]
 
 # Images.
 RewriteRule ^([a-zA-Z0-9.]+)/img/([^\/]*)$   user/image.php?u=$1&i=$2      [L,QSA]

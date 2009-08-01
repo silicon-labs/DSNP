@@ -966,7 +966,7 @@ long run_message_queue_db( MYSQL *mysql )
 		char *relid = row[2];
 		char *message = row[3];
 
-		long send_res = send_message_net( mysql, from_user, to_id, relid, message, strlen(message), 0 );
+		long send_res = send_message_net( mysql, false, from_user, to_id, relid, message, strlen(message), 0 );
 		if ( send_res < 0 ) {
 			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
@@ -1093,7 +1093,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Notify the requester. */
 	sprintf( buf, "accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	int nfa = send_notify_accept( mysql, user, from_id, requested_relid, buf, &result_message );
+	int nfa = send_prefriend_message( mysql, user, from_id, requested_relid, buf, &result_message );
 	message( "accept_friend received: %s\n", result_message );
 
 	if ( nfa < 0 ) {
@@ -1108,7 +1108,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	send_notify_accept( mysql, user, from_id, requested_relid, buf, &result_message );
+	send_prefriend_message( mysql, user, from_id, requested_relid, buf, &result_message );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
@@ -1902,7 +1902,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	}
 }
 
-long send_notify_accept( MYSQL *mysql, const char *from_user,
+long send_prefriend_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg )
 {
@@ -1919,7 +1919,7 @@ long send_notify_accept( MYSQL *mysql, const char *from_user,
 	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
 
 	message( "send_message_now sending to: %s\n", to_identity );
-	return send_notify_accept_net( mysql, from_user, to_identity, put_relid, encrypt.sym,
+	return send_message_net( mysql, true, from_user, to_identity, put_relid, encrypt.sym,
 			strlen(encrypt.sym), result_msg );
 }
 
@@ -1982,7 +1982,7 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identi
 	return queue_message( mysql, from_user, to_identity, buf );
 }
 
-void notify_accept( MYSQL *mysql, const char *relid, const char *message )
+void prefriend_message( MYSQL *mysql, const char *relid, const char *message )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;

@@ -108,10 +108,12 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 void receive_message( MYSQL *mysql, const char *relid, const char *message );
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 		long long generation, const char *message );
-long send_message_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
+long send_message_net( MYSQL *mysql, bool prefriend, 
+		const char *from_user, const char *to_identity, const char *relid,
 		const char *message, long mLen, char **result_message );
-long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
-		const char *message, long mLen, char **result_message );
+long send_prefriend_message( MYSQL *mysql,
+		const char *from_user, const char *to_identity, const char *relid,
+		const char *message, char **result_message );
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
@@ -119,10 +121,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token, long long seq_num, const char *type, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
-long send_notify_accept( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *put_relid,
-		const char *message, char **result_message );
-void notify_accept( MYSQL *mysql, const char *relid, const char *message );
+void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
 long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,

@@ -211,9 +211,9 @@ bool gblKeySubmitted = false;
 				accept_friend( mysql, user, reqid );
 			} |
 
-		'notify_accept'i ' ' relid ' ' length 
+		'prefriend_message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
-				notify_accept( mysql, relid, message_buffer.data );
+				prefriend_message( mysql, relid, message_buffer.data );
 			} |
 
 		#
@@ -938,94 +938,6 @@ long send_broadcast_net( const char *toSite, const char *relid,
 }
 
 /*
- * send_notify_accept_net
- */
-
-%%{
-	machine send_notify_accept_net;
-	write data;
-}%%
-
-long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
-		const char *message, long mLen, char **result_message )
-{
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	long pres;
-	const char *mark;
-	String length_str;
-	long length;
-
-	/* Need to parse the identity. */
-	Identity toIdent( to_identity );
-	pres = toIdent.parse();
-
-	if ( pres < 0 )
-		return pres;
-
-	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( toIdent.host, toIdent.site );
-	if ( result < 0 ) 
-		return result;
-
-	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "notify_accept %s %ld\r\n", relid, mLen );
-	BIO_write( tlsConnect.sbio, message, mLen );
-	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	BIO_flush( tlsConnect.sbio );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
-	/* Parser for response. */
-	%%{
-		include common;
-
-		action result {
-			if ( length > MAX_MSG_LEN )
-				fgoto *parser_error;
-
-			char *user_message = new char[length+1];
-			BIO_read( tlsConnect.sbio, user_message, length );
-			user_message[length] = 0;
-
-			::message( "about to decrypt RESULT\n" );
-
-			if ( result_message != 0 ) 
-				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
-			::message( "finished with decrypt RESULT\n" );
-			OK = true;
-		}
-
-		main := 
-			'OK' EOL @{ OK = true; } |
-			'RESULT' ' ' length EOL @result |
-			'ERROR' EOL;
-	}%%
-
-	p = buf;
-	pe = buf + strlen(buf);
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( !OK )
-		return ERR_SERVER_ERROR;
-	
-	return 0;
-}
-
-/*
  * send_message_net
  */
 
@@ -1034,8 +946,9 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 	write data;
 }%%
 
-long send_message_net( MYSQL *mysql, const char *from_user, const char *to_identity, const char *relid,
-		const char *message, long mLen, char **result_message )
+long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
+		const char *to_identity, const char *relid, const char *message,
+		long mLen, char **result_message )
 {
 	static char buf[8192];
 	long cs;
@@ -1059,7 +972,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 		return result;
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "message %s %ld\r\n", relid, mLen );
+	BIO_printf( tlsConnect.sbio, "%smessage %s %ld\r\n", prefriend ? "prefriend_" : "", relid, mLen );
 	BIO_write( tlsConnect.sbio, message, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
 	BIO_flush( tlsConnect.sbio );
@@ -1076,7 +989,6 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 		include common;
 
 		action result {
-			length = strtoll( length_str, 0, 10 );
 			if ( length > MAX_MSG_LEN )
 				fgoto *parser_error;
 

@@ -181,8 +181,10 @@ int TlsConnect::connect( const char *host, const char *site )
 	BIO_flush( buffer );
 
 	/* Read the result. */
-	int readRes = BIO_gets( buffer, buf, 8192 );
+	BIO_gets( buffer, buf, 8192 );
 	message("return is %s", buf );
+
+	/* Verify the result here. */
 
 	sslInitClient();
 	sbio = sslStartClient( socketBio, socketBio, host );

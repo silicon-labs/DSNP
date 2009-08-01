@@ -1093,8 +1093,13 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Notify the requester. */
 	sprintf( buf, "accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	send_notify_accept( mysql, user, from_id, requested_relid, buf, &result_message );
+	int nfa = send_notify_accept( mysql, user, from_id, requested_relid, buf, &result_message );
 	message( "accept_friend received: %s\n", result_message );
+
+	if ( nfa < 0 ) {
+		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );
+		return;
+	}
 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
@@ -1899,7 +1904,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 long send_notify_accept( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *put_relid,
-		const char *message, char **result_message )
+		const char *msg, char **result_msg )
 {
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
@@ -1911,13 +1916,11 @@ long send_notify_accept( MYSQL *mysql, const char *from_user,
 	encrypt.load( id_pub, user_priv );
 
 	/* Include the null in the message. */
-	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
+	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
 
-	::message( "send_message_now sending to: %s\n", to_identity );
-	send_notify_accept_net( mysql, from_user, to_identity, put_relid, encrypt.sym,
-			strlen(encrypt.sym), result_message );
-
-	return 0;
+	message( "send_message_now sending to: %s\n", to_identity );
+	return send_notify_accept_net( mysql, from_user, to_identity, put_relid, encrypt.sym,
+			strlen(encrypt.sym), result_msg );
 }
 
 long queue_message( MYSQL *mysql, const char *from_user,
@@ -2298,7 +2301,19 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	MYSQL_ROW row;
 	char *returned_id_salt;
 
-	::message("in accept\n");
+	message("in accept\n");
+
+	/* Verify that there is a friend request. */
+	DbQuery checkSentRequest( mysql, 
+		"SELECT from_user FROM sent_friend_request "
+		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e and returned_relid = %e",
+		for_user, from_id, requested_relid, returned_relid );
+
+	if ( checkSentRequest.rows() != 1 ) {
+		message("accept friendship failed: could not find send_friend_request\r\n");
+		BIO_printf( bioOut, "ERROR request not found\r\n");
+		return 0;
+	}
 
 	user_priv = load_key( mysql, for_user );
 	id_pub = fetch_public_key( mysql, from_id );
@@ -2314,7 +2329,7 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	row = mysql_fetch_row( result );
 	if ( !row ) {
 		BIO_printf( bioOut, "ERROR request not found\r\n" );
-		goto close;
+		return 0;
 	}
 	returned_id_salt = row[0];
 
@@ -2324,8 +2339,7 @@ long accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 
-	::message("finished accept\n");
-close:
+	message("finished accept\n");
 	return 0;
 }
 

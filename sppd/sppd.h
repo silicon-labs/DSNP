@@ -246,6 +246,8 @@ struct DbQuery
 
 	MYSQL_ROW fetchRow()
 		{ return mysql_fetch_row( result ); }
+	long rows()
+		{ return mysql_num_rows( result ); }
 
 	MYSQL *mysql;
 	MYSQL_RES *result;

@@ -1000,6 +1000,7 @@ long send_notify_accept_net( MYSQL *mysql, const char *from_user, const char *to
 			if ( result_message != 0 ) 
 				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
 			::message( "finished with decrypt RESULT\n" );
+			OK = true;
 		}
 
 		main := 
@@ -1088,6 +1089,7 @@ long send_message_net( MYSQL *mysql, const char *from_user, const char *to_ident
 			if ( result_message != 0 ) 
 				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
 			::message( "finished with decrypt RESULT\n" );
+			OK = true;
 		}
 
 		main := 

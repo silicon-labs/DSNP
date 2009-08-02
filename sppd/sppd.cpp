@@ -1093,7 +1093,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Notify the requester. */
 	sprintf( buf, "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	int nfa = send_prefriend_message( mysql, user, from_id, requested_relid, buf, &result_message );
+	int nfa = send_message_now( mysql, true, user, from_id, requested_relid, buf, &result_message );
 
 	if ( nfa < 0 ) {
 		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );
@@ -1118,7 +1118,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	send_prefriend_message( mysql, user, from_id, requested_relid, buf, 0 );
+	send_message_now( mysql, true, user, from_id, requested_relid, buf, 0 );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
@@ -1677,8 +1677,6 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 		const char *token, const char *type, const char *msg, long mLen )
 {
 	int res;
-	char *resultEnc;
-	long long resultGen;
 	RSA *user_priv, *id_pub;
 	Encrypt encrypt;
 	time_t curTime;
@@ -1686,8 +1684,8 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	char time_str[64];
-	char *subjectId;
 	long long seq_num;
+	char *result_message;
 
 	/* Get the current time. */
 	curTime = time(NULL);
@@ -1701,15 +1699,25 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
 		return -1;
 
-	subjectId = new char[strlen(c->CFG_URI) + strlen(to_user) + 2];
-	sprintf( subjectId, "%s%s/", c->CFG_URI, to_user );
+	/* Find the relid from subject to author. */
+	DbQuery putRelidQuery( mysql,
+			"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+			to_user, author_id );
+	if ( putRelidQuery.rows() != 1 ) {
+		message("find of put_relid from subject to author failed\n");
+		return -1;
+	}
+
+	String putRelid = putRelidQuery.fetchRow()[0];
+
+	String subjectId( "%s%s/", c->CFG_URI, to_user );
 
 	/* Insert the broadcast message into the published table. */
 	exec_query( mysql,
 		"INSERT INTO published "
 		"( user, author_id, subject_id, time_published, type, message ) "
 		"VALUES ( %e, %e, %e, %e, %e, %d )",
-		to_user, author_id, subjectId, time_str, type, msg, mLen );
+		to_user, author_id, subjectId.data, time_str, type, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1725,27 +1733,41 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
-	res = send_remote_publish_net( resultEnc, resultGen, author_id,
-			to_user, token, seq_num, type, encrypt.sym, strlen(encrypt.sym) );
+	String remotePublishCmd(
+		"encrypt_remote_broadcast %s %lld %s %ld\r\n%s\r\n", 
+		token, seq_num, type, mLen, msg );
+
+	res = send_message_now( mysql, false, to_user, author_id, putRelid.data,
+			remotePublishCmd.data, &result_message );
 	if ( res < 0 ) {
+		message("encrypt_remote_broadcast message failed\n");
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto close;
+		return -1;
 	}
 
+	message("send_message_now returned: %s\n", result_message);
+
+	return encrypted_broadcast_parser( mysql, to_user, author_id, author_hash,
+			msg, mLen, result_message ) ;
+}
+
+
+long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id,
+		const char *author_hash, const char *msg, long mLen,
+		long long resultGen, const char *resultEnc )
+{
 	message("result enc: %s\n", resultEnc );
 	message("result gen: %lld\n", resultGen );
 
-	res = send_remote_broadcast( mysql, to_user, author_id, 
+	long res = send_remote_broadcast( mysql, to_user, author_id, 
 			author_hash, resultGen, msg, mLen, resultEnc );
 	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto close;
+		return -1;
 	}
 	
 	message("remote broadcast okay\n");
 	BIO_printf( bioOut, "OK\r\n" );
-
-close:
 	return 0;
 }
 
@@ -1911,7 +1933,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	}
 }
 
-long send_prefriend_message( MYSQL *mysql, const char *from_user,
+long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg )
 {
@@ -1928,7 +1950,7 @@ long send_prefriend_message( MYSQL *mysql, const char *from_user,
 	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
 
 	message( "send_message_now sending to: %s\n", to_identity );
-	return send_message_net( mysql, true, from_user, to_identity, put_relid, encrypt.sym,
+	return send_message_net( mysql, prefriend, from_user, to_identity, put_relid, encrypt.sym,
 			strlen(encrypt.sym), result_msg );
 }
 
@@ -2051,7 +2073,7 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
-		goto free_result;
+		return;
 	}
 	user = row[0];
 	friend_id = row[1];
@@ -2064,14 +2086,14 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 
 	if ( decrypt_res < 0 ) {
 		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
-		goto free_result;
+		return;
 	}
 
-	message_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
-
-free_result:
-	mysql_free_result( result );
-	return;
+	int parseResult = message_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
+	if ( parseResult < 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
+	}
 }
 
 void login( MYSQL *mysql, const char *user, const char *pass )
@@ -2173,13 +2195,12 @@ free_result:
 }
 
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, long long seq_num,
-		const char *type, const char *sym )
+		const char *subject_id, const char *token, long long seq_num,
+		const char *type, const char *msg )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	Encrypt encrypt1;
-	Encrypt encrypt2;
+	Encrypt encrypt;
 	RSA *user_priv, *id_pub;
 	int sigRes;
 	char *broadcast_key, *generation;
@@ -2190,18 +2211,23 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	struct tm curTM, *tmRes;
 	char time_str[64];
 
+	long mLen = strlen(msg);
+
+	message( "entering encrypt_remote_broadcast( %s, %s, %s )\n", user, subject_id, token );
+
 	message( "encrypt_remote_broadcast submitted token: %s\n", token );
 
 	exec_query( mysql,
 		"SELECT user FROM remote_flogin_token "
 		"WHERE user = %e AND identity = %e AND login_token = %e",
-		user, identity, token );
+		user, subject_id, token );
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
+		message("failed to find user from provided login token\n");
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
+		return;
 	}
 
 	/* Get the current time. */
@@ -2211,29 +2237,26 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	tmRes = localtime_r( &curTime, &curTM );
 	if ( tmRes == 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
+		return;
 	}
 
 	/* Format for the message. */
 	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 )  {
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
+		return;
 	}
 
 	authorId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
 	sprintf( authorId, "%s%s/", c->CFG_URI, user );
 
 	user_priv = load_key( mysql, user );
-	id_pub = fetch_public_key( mysql, identity );
-
-	encrypt1.load( id_pub, user_priv );
-	encrypt1.decryptVerify( sym );
+	id_pub = fetch_public_key( mysql, subject_id );
 
 	exec_query( mysql,
 		"INSERT INTO remote_published "
 		"( user, author_id, subject_id, time_published, type, message ) "
 		"VALUES ( %e, %e, %e, now(), %e, %d )",
-		user, authorId, identity, type, encrypt1.decrypted, encrypt1.decLen );
+		user, authorId, subject_id, type, msg, mLen );
 
 	::message( "encrypt_remote_broadcast type: %s\n", type );
 	
@@ -2256,23 +2279,25 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	broadcast_key = strdup(row[1]);
 
 	/* Make the full message. */
-	full = new char[128+encrypt1.decLen];
-	soFar = sprintf( full, "remote_inner %lld %s %s %ld\r\n", seq_num, time_str, type, encrypt1.decLen );
-	memcpy( full + soFar, encrypt1.decrypted, encrypt1.decLen );
-	full[soFar+encrypt1.decLen] = 0;
+	full = new char[128+mLen];
+	soFar = sprintf( full, "remote_inner %lld %s %s %ld\r\n", seq_num, time_str, type, mLen );
+	memcpy( full + soFar, msg, mLen );
+	full[soFar+mLen] = 0;
 
-	encrypt2.load( id_pub, user_priv );
-	sigRes = encrypt2.bkSignEncrypt( broadcast_key, (u_char*)full, soFar+encrypt1.decLen );
+	encrypt.load( id_pub, user_priv );
+	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)full, soFar+mLen );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
-	message( "encrypt_remote_broadcast enc: %s\n", encrypt2.sym );
-	BIO_printf( bioOut, "OK %s %s\r\n", generation, encrypt2.sym );
+	message( "encrypt_remote_broadcast enc: %s\n", encrypt.sym );
+	String resultCmd( "encrypted_broadcast %s %s\r\n", generation, encrypt.sym );
 
-free_result:
-	mysql_free_result( result );
+	encrypt.signEncrypt( (u_char*)resultCmd.data, resultCmd.length+1 );
+
+	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
+	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 }
 
 char *decrypt_result( MYSQL *mysql, const char *from_user, 

@@ -256,12 +256,6 @@ bool gblKeySubmitted = false;
 						token, type, message_buffer.data, length );
 			} |
 
-		'encrypt_remote_broadcast'i ' ' user ' ' identity ' ' token ' ' seq_num ' ' type ' ' length
-			M_EOL @check_ssl @{
-				encrypt_remote_broadcast( mysql, user, identity, token, 
-						seq_num, type, message_buffer.data );
-			} |
-
 		#
 		# Message sending.
 		#
@@ -292,7 +286,7 @@ int server_parse_loop()
 	String hash, key, relid, token, type;
 	String gen_str, seq_str, resource_id_str;
 	long length;
-	long long generation, seq_num, resource_id;
+	long long generation, resource_id;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
@@ -357,6 +351,7 @@ int server_parse_loop()
 		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
 			registered( mysql, user, friend_id, requested_relid, returned_relid );
 		};
+
 }%%
 
 %% write data;
@@ -400,27 +395,36 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		} |
 		'forward_to'i ' ' number ' ' identity ' ' relid EOL @{
 			forward_to( mysql, user, friend_id, number_str, identity, relid );
+		} |
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' type ' ' length EOL @{
+			/* Rest of the input is the msssage. */
+			const char *msg = p + 1;
+			encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, type, msg );
+			fbreak;
 		};
 }%%
 
 %% write data;
 
 int message_parser( MYSQL *mysql, const char *to_relid,
-		const char *user, const char *friend_id, const char *message )
+		const char *user, const char *friend_id, const char *msg )
 {
 	long cs;
 	const char *mark;
 	String identity, number_str, key, relid, gen_str;
-	long long generation;
+	String token, seq_str, type, length_str;
+	long length;
+	long long seq_num, generation;
 
 	%% write init;
 
-	const char *p = message;
-	const char *pe = message + strlen( message );
+	const char *p = msg;
+	const char *pe = msg + strlen( msg );
 
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% ) {
+		message("message_parser: parse error\n");
 		if ( cs == parser_error )
 			return ERR_PARSE_ERROR;
 		else
@@ -597,6 +601,48 @@ int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *use
 	return 0;
 }
 
+/*
+ * encrypted_broadcast_parser
+ */
+
+%%{
+	machine encrypted_broadcast_parser;
+
+	include common;
+
+	main :=
+		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
+			encrypted_broadcast( mysql, to_user, author_id, author_hash, 
+					origMsg, origMsgLen, generation, sym );
+		};
+}%%
+
+%% write data;
+
+long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *author_id,
+		const char *author_hash, const char *origMsg, long origMsgLen, const char *msg )
+{
+	long cs;
+	const char *mark;
+	String number_str, gen_str, sym;
+	long long generation;
+
+	%% write init;
+
+	const char *p = msg;
+	const char *pe = msg + strlen( msg );
+
+	%% write exec;
+
+	if ( cs < %%{ write first_final; }%% ) {
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else
+			return ERR_UNEXPECTED_END;
+	}
+
+	return 0;
+}
 
 /*
  * fetch_public_key_net
@@ -994,6 +1040,10 @@ long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
 	String length_str;
 	long length;
 
+	/* Initialize the result. */
+	if ( result_message != 0 ) 
+		*result_message = 0;
+
 	/* Need to parse the identity. */
 	Identity toIdent( to_identity );
 	pres = toIdent.parse();
@@ -1061,82 +1111,3 @@ long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
 	return 0;
 }
 
-	
-/*
- * send_remote_publish_net
- */
-
-%%{
-	machine send_remote_publish_net;
-	write data;
-}%%
-
-long send_remote_publish_net( char *&resultEnc, long long &resultGen,
-		const char *to_identity, const char *from_user, 
-		const char *token, long long seq_num,
-		const char *type, const char *msg, long mLen )
-{
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	long pres;
-	const char *mark;
-	String number_str, sym;
-
-	/* Need to parse the identity. */
-	Identity toIdent( to_identity );
-	pres = toIdent.parse();
-
-	if ( pres < 0 )
-		return pres;
-
-	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( toIdent.host, toIdent.site );
-	if ( result < 0 ) 
-		return result;
-
-	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, 
-		"encrypt_remote_broadcast %s %s%s/ %s %lld %s %ld\r\n", 
-		toIdent.user, c->CFG_URI, from_user, token, seq_num, type, mLen );
-	BIO_write( tlsConnect.sbio, msg, mLen );
-	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	BIO_flush( tlsConnect.sbio );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
-	/* Parser for response. */
-	%%{
-		include common;
-
-		main := 
-			'OK' ' ' number ' ' sym EOL @{ OK = true; } |
-			'ERROR' EOL;
-	}%%
-
-	p = buf;
-	pe = buf + strlen(buf);
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( !OK )
-		return ERR_SERVER_ERROR;
-
-	resultGen = strtoll( number_str, 0, 10 );
-	resultEnc = sym.relinquish();
-
-	::message( "resultGen: %lld\n", resultGen );
-
-	return 0;
-}

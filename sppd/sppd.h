@@ -111,9 +111,9 @@ long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 long send_message_net( MYSQL *mysql, bool prefriend, 
 		const char *from_user, const char *to_identity, const char *relid,
 		const char *message, long mLen, char **result_message );
-long send_prefriend_message( MYSQL *mysql,
-		const char *from_user, const char *to_identity, const char *relid,
-		const char *message, char **result_message );
+long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
+		const char *to_identity, const char *put_relid,
+		const char *msg, char **result_msg );
 long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
@@ -132,9 +132,6 @@ long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *identity, const char *hash, const char *token, const char *type,
 		const char *user_message, long mLen );
-long send_remote_publish_net( char *&resultEnc, long long &resultGen,
-		const char *to_identity, const char *from_identity,
-		const char *token, long long seq_num, const char *type, const char *sym, long mLen );
 
 int broadcast_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
@@ -265,4 +262,9 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 		const char *from_id, const char *requested_relid, 
 		const char *returned_relid, const char *returned_id_salt );
 
+long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *author_id,
+		const char *author_hash, const char *origMsg, long origMsgLen, const char *msg );
+
+long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
+		const char *msg, long mLen, long long resultGen, const char *resultEnc );
 #endif

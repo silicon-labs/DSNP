@@ -18,9 +18,7 @@ AllocString stringStartEnd( const char *s, const char *e )
 
 AllocString::AllocString( char *data, long length )
 	: data(data), length(length)
-{
-	message("AllocString()\n");
-}
+{}
 
 char *alloc_string( const char *s, const char *e )
 {

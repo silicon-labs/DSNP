@@ -1094,21 +1094,31 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	sprintf( buf, "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
 	int nfa = send_prefriend_message( mysql, user, from_id, requested_relid, buf, &result_message );
-	message( "accept_friend received: %s\n", result_message );
 
 	if ( nfa < 0 ) {
 		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );
 		return;
 	}
 
+	notify_accept_result_parser( mysql, user, user_reqid, from_id, 
+			requested_relid, returned_relid, result_message );
+}
+
+void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char *user_reqid, 
+		const char *from_id, const char *requested_relid, 
+		const char *returned_relid, const char *returned_id_salt )
+{
+	char buf[2048];
+	message( "accept_friend received: %s\n", returned_id_salt );
+
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
-	store_friend_claim( mysql, user, from_id, result_message, requested_relid, returned_relid );
+	store_friend_claim( mysql, user, from_id, returned_id_salt, requested_relid, returned_relid );
 
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	send_prefriend_message( mysql, user, from_id, requested_relid, buf, &result_message );
+	send_prefriend_message( mysql, user, from_id, requested_relid, buf, 0 );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
@@ -1117,8 +1127,6 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	forward_tree_insert( mysql, user, from_id, requested_relid );
 
 	BIO_printf( bioOut, "OK\r\n" );
-
-	mysql_free_result( result );
 }
 
 
@@ -1578,7 +1586,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* If this is a photo we need to read in the file. */
 	if ( strcmp( type, "PHT" ) == 0 ) {
-		String fileName( msg, msg+mLen );
+		String fileName = stringStartEnd( msg, msg+mLen );
 		String path( "%s/%s/%s", c->CFG_PHOTO_DIR, user, fileName.data );
 		fileData.allocate( MAX_BRD_PHOTO_SIZE );
 
@@ -1623,7 +1631,8 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	return 0;
 }
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *type, long long resource_id, const char *msg, long mLen )
+long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
+		long long resource_id, const char *msg, long mLen )
 {
 	int result = send_broadcast( mysql, user, type, resource_id, msg, mLen );
 
@@ -2336,8 +2345,10 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	}
 	returned_id_salt = row[0];
 
+	String resultCommand( "returned_id_salt %s\r\n", returned_id_salt );
+
 	encrypt.load( id_pub, user_priv );
-	encrypt.signEncrypt( (u_char*)returned_id_salt, strlen(returned_id_salt)+1 );
+	encrypt.signEncrypt( (u_char*)resultCommand.data, resultCommand.length+1 );
 
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );

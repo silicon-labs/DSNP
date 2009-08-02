@@ -6,16 +6,19 @@
 
 char *alloc_string( const char *s, const char *e );
 
+
 struct AllocString
 {
-	AllocString( char *data, long length )
-		: data(data), length(length) {}
+	explicit AllocString( char *data, long length );
 
 	operator char*() const { return data; }
 
 	char *data;
 	long length;
 };
+
+AllocString stringStartEnd( const char *s, const char *e );
+
 
 struct String
 {
@@ -25,10 +28,8 @@ struct String
 
 	operator char*() const { return data; }
 
-	String( const char *p1, const char *p2 );
 	String( const char *fmt, ... );
-	String( const AllocString &as )
-		: data(as.data), length(as.length) {}
+	String( const AllocString &as );
 
 	~String();
 

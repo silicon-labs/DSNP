@@ -394,17 +394,13 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 
 	include common;
 
-	action broadcast_key {
-		broadcast_key( mysql, to_relid, user, friend_id, generation, key );
-	}
-
-	action forward_to {
-		forward_to( mysql, user, friend_id, number_str, identity, relid );
-	}
-
 	main :=
-		'broadcast_key'i ' ' generation ' ' key EOL @broadcast_key |
-		'forward_to'i ' ' number ' ' identity ' ' relid EOL @forward_to;
+		'broadcast_key'i ' ' generation ' ' key EOL @{
+			broadcast_key( mysql, to_relid, user, friend_id, generation, key );
+		} |
+		'forward_to'i ' ' number ' ' identity ' ' relid EOL @{
+			forward_to( mysql, user, friend_id, number_str, identity, relid );
+		};
 }%%
 
 %% write data;
@@ -558,6 +554,49 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 
 	return 0;
 }
+
+/*
+ * notify_accept_result_parser
+ */
+
+%%{
+	machine notify_accept_result_parser;
+
+	include common;
+
+	main :=
+		'returned_id_salt'i ' ' token EOL @{
+			notify_accept_returned_id_salt( mysql, user, user_reqid, 
+				from_id, requested_relid, returned_relid, token );
+		};
+}%%
+
+%% write data;
+
+int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *user_reqid, 
+		const char *from_id, const char *requested_relid, const char *returned_relid, const char *msg )
+{
+	long cs;
+	const char *mark;
+	String token;
+
+	%% write init;
+
+	const char *p = msg;
+	const char *pe = msg + strlen( msg );
+
+	%% write exec;
+
+	if ( cs < %%{ write first_final; }%% ) {
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else
+			return ERR_UNEXPECTED_END;
+	}
+
+	return 0;
+}
+
 
 /*
  * fetch_public_key_net

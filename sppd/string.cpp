@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <stdarg.h>
 #include <stdio.h>
+#include <time.h>
 
 AllocString stringStartEnd( const char *s, const char *e )
 {
@@ -87,3 +87,23 @@ String::~String()
 		delete[] data;
 }
 
+
+AllocString timeNow()
+{
+	/* Get the current time. */
+	time_t curTime = time(NULL);
+
+	/* Convert to struct tm. */
+	struct tm curTM;
+	struct tm *tmRes = localtime_r( &curTime, &curTM );
+	if ( tmRes == 0 )
+		return AllocString( 0, 0 );
+
+	/* Format for the message. */
+	char *timeStr = new char[64];
+	long length = strftime( timeStr, 64, "%Y-%m-%d %H:%M:%S", &curTM );
+	if ( length == 0 ) 
+		return AllocString( 0, 0 );
+	
+	return AllocString( timeStr, length );
+}

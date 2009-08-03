@@ -1557,27 +1557,7 @@ close:
 long send_broadcast( MYSQL *mysql, const char *user,
 		const char *type, long long resource_id, const char *msg, long mLen )
 {
-	time_t curTime;
-	struct tm curTM, *tmRes;
-	char *full;
-	char time_str[64];
-	long sendResult, soFar;
-	long long seq_num;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-
-	/* Get the current time. */
-	curTime = time(NULL);
-
-	/* Convert to struct tm. */
-	tmRes = localtime_r( &curTime, &curTM );
-	if ( tmRes == 0 )
-		return -1;
-
-	/* Format for the message. */
-	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
-		return -1;
-
+	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
 
 	const char *insert = msg;
@@ -1593,7 +1573,7 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		FILE *file = fopen( path, "rb" );
 		if ( file == 0 ) {
 			::message( "failed to open %s\n", fileName.data );
-			return 0;
+			return -1;
 		}
 		long len = fread( fileData.data, 1, MAX_BRD_PHOTO_SIZE, file );
 		fclose( file );
@@ -1607,24 +1587,21 @@ long send_broadcast( MYSQL *mysql, const char *user,
 		"INSERT INTO published "
 		"( user, author_id, time_published, type, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
-		user, authorId.data, time_str, type, insert, insertLen );
+		user, authorId.data, timeStr.data, type, insert, insertLen );
 
 	/* Get the id that was assigned to the message. */
-	exec_query( mysql, "SELECT last_insert_id()" );
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row )
+	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
+	if ( lastInsertId.rows() != 1 )
 		return -1;
 
-	seq_num = strtoll( row[0], 0, 10 );
+	long long seq_num = strtoll( lastInsertId.fetchRow()[0], 0, 10 );
 
 	/* Make the full message. */
-	full = new char[128+mLen];
-	soFar = sprintf( full, "direct_broadcast %lld %s %s %lld %ld\r\n", seq_num, time_str, type, resource_id, mLen );
-	memcpy( full + soFar, msg, mLen );
-	full[soFar+mLen] = 0;
+	String broadcastCmd(
+		"direct_broadcast %lld %s %s %lld %ld\r\n%s\r\n", 
+		seq_num, timeStr.data, type, resource_id, mLen, msg );
 
-	sendResult = queue_broadcast( mysql, user, full, soFar+mLen );
+	long sendResult = queue_broadcast( mysql, user, broadcastCmd.data, broadcastCmd.length );
 	if ( sendResult < 0 )
 		return -1;
 

@@ -19,6 +19,8 @@ struct AllocString
 
 AllocString stringStartEnd( const char *s, const char *e );
 
+AllocString timeNow();
+
 
 struct String
 {
@@ -30,6 +32,7 @@ struct String
 
 	String( const char *fmt, ... );
 	String( const AllocString &as );
+	String( long size );
 
 	~String();
 

@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "sppd.h"
 

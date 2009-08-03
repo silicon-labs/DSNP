@@ -1628,21 +1628,15 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 		const char *author_hash, long long generation,
 		const char *msg, long mLen, const char *encMessage )
 {
-	char *full;
-	long sendResult;
-	long encMessageLen, soFar;
-
-	encMessageLen = strlen(encMessage);
+	long encMessageLen = strlen(encMessage);
 
 	/* Make the full message. */
-	full = new char[4096+encMessageLen];
-	soFar = sprintf( full, 
+	String command( 
 		"remote_broadcast %s %lld %ld\r\n", 
 		author_hash, generation, encMessageLen );
-	memcpy( full + soFar, encMessage, encMessageLen );
-	full[soFar+encMessageLen] = 0;
+	String full = addMessageData( command, encMessage, encMessageLen );
 
-	sendResult = queue_broadcast( mysql, user, full, soFar+encMessageLen );
+	long sendResult = queue_broadcast( mysql, user, full.data, full.length );
 	if ( sendResult < 0 )
 		return -1;
 

@@ -17,11 +17,6 @@ struct AllocString
 	long length;
 };
 
-AllocString stringStartEnd( const char *s, const char *e );
-
-AllocString timeNow();
-
-
 struct String
 {
 	String()
@@ -52,5 +47,9 @@ struct String
 	char *data;
 	long length;
 };
+
+AllocString stringStartEnd( const char *s, const char *e );
+AllocString timeNow();
+AllocString addMessageData( const String &root, const char *msg, long mLen );
 
 #endif

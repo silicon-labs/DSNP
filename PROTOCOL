@@ -1,64 +1,61 @@
 IDENTITY INITIALIZATION
+=======================
 
-A user name and password is requested. These credentials will be used by the
+1. A user name and password is requested. These credentials will be used by the
 user to login as the owner of the identity.
 
-A URI is requested. This is an internet facing web address that the user has
+2. A URI consiting of the site root name followed by the user name as the last
+component is assigned. This is an internet facing web address that the user has
 control of (possibly through a service provider). It represents their identity.
 
-A PGP key is created. The key has no passphrase. The user's URI is used as the
-key's user-id. The URI takes the place of the string that is normally comprised
-of a real name, a comment and an email address.
+3. An RSA key pair is created. The key has no passphrase. 
 
-The public portion of the key is exported and made available at $URI/id.asc.
-This must always be fetched using SSL.
-
-The key's fingerprint $FP is stored for use in the protocol.
+4. The public portion of the key is made publically available. The key must
+always be This must always be fetched using SSL.
 
 OWNER LOGIN
+===========
 
-User submits credentials via a web form underneath $URI and recieves a session
+User submits credentials via a web form underneath URI and recieves a session
 cookie that indicates to the server that the user is logged in.
 
 FRIENDSHIP REQUEST
+==================
 
-Person requesting friendship:                      friender, $URI,    $FP
-Potential friend who is receiving the request:     friendee, $FR-URI, $FR-FP
+The person requesting friendship is the friender, with identity URI.
+The person who is receiving the request is the friendee, with FR-URI
 
-1. The friender fills in a friend request form at $FR-URI
+1. The friender fills in a friend request form at FR-URI
       a) friender answers a challenge (generic CAPTCHA, or personalized)
-      b) friender submits $URI
+      b) friender submits URI
 
 2. Friendee server processes the request:
       a) verifies challenge response
-      b) fetches $URI/id.asc (using SSL)
-      c) randomly generates a one-way relationship id ($FR-RELID)
-      d) randomly generates a one-way request id ($FR-REQID)
-      e) encrypts $FR-RELID to friender and signs it
-      f) makes message available at $FR-URI/friend-request/$FR-REQID.asc
-      g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
+      b) fetches the public key for URI (using SSL)
+      c) randomly generates a one-way relationship id (REQUESTED-RELID)
+      d) randomly generates a one-way request id (REQUESTED-REQID)
+      e) encrypts REQUESTED-RELID to friender and signs it
+      f) makes message available to be fetched using REQUESTED-REQID to identify it
+      g) redirects the user's browser to https://URI/return-relid?uri=FR-URI&reqid=REQUESTED-REQID
 
 3. Friender server processes the return-relid request:
       a) verifies browser is logged in as owner
-      b) fetches $FR-URI/id.asc (using SSL)
-      c) fetches $FR-URI/friend-request/$FR-REQID.asc 
-      d) decrypts and verifies $FR-RELID
-      e) randomly generates $RELID
-      f) randomly generates $REQID
-      g) encrypts "$FR-RELID $RELID" to friendee and signs it
-      h) makes message available at $URI/request-return/$REQID.asc
-      i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
+      b) fetches public key for FR-URI (using SSL)
+      c) fetches encrypted REQUESTED-RELID from FR-URI using REQUESTED-REQID
+      d) decrypts and verifies REQUESTED-RELID
+      e) randomly generates RETURNED-RELID
+      f) randomly generates RETURNED-REQID
+      g) encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
+      h) makes message available at to be fetched using RETURNED-REQID to identify it
+      i) redirects the friender to https://FR-URI/friend-final?uri=URI&reqid=REQID
 
 4. Friendee server processes the friend-final request:
-      a) fetches $URI/request-return/$REQID.asc 
-      b) decrypts and verifies message, must contain correct $FR-RELID
+      a) fetches encrypted RETURNED-RELID using RETURNED-REQID
+      b) decrypts and verifies message, must contain correct REQUESTED-RELID
       c) stores request for friendee to accept/deny
 
-At this point friender considers friendee a friend, but not vice versa.
-
 FRIENDSHIP ACCEPT/DENY
-
-FRIENDSHIP ACCEPT
+======================
 
 The next time the friendee logs in they are presented with the friendship
 request. They can either accept or deny the request. 
@@ -70,46 +67,62 @@ send broadcast key and broadcast tree insertion messages. The other end can
 send these messages after it receives the registered message.
 
 PUBLISHING TO FRIENDS
+=====================
 
-For each friend ( $FR-URI, $FR-FP, $FR-RELID ): 
-      a) assemble the data they should see
-      b) encrypt it to them and sign it 
-      c) make it avaialable at $URI/feeds/$RELID.asc
+The most simple approach is to iterate through your list of friends and deliver
+broadcast messages. However, a large number of friends multiplied by lots of
+activity results in many messages.  
 
-FEED AGGREGATION
+To mitigate this cost a user's set of friends is organized into a complete
+binary tree and broadcast messages are forwarded through this tree, resulting
+in log n steps to distribute a broadcast.
 
-For each friend ( $FR-URI, $FR-FP, $FR-RELID ), 
-      a) fetch $FR-URI/feeds/$FR-RELID.asc
-      b) decrypt and verify feed
+Doing this means that each of your friends must know the server at which a
+couple of your other friends have their identity hosted. This revelation does
+not cross friend-partition boundaries, however. It is a minor weakening of the
+claim that your friend list is private.
+
+This reduces the time to get messages out, but complicates matters when a node
+fails to forward a message on behalf of a friend. The approach I'm considering
+is to send acknowledgment messages back up the tree of friends and back to the
+originator as confirmation. If the ack does not arrive back in time there is a
+distribution problem that needs to be corrected by discovering the faulty node
+and removing it or swapping it with a leaf node. The message can then be
+rebroadcast. 
+
+A faulty node can be reported to the originator at the point of failure, either
+due to a timeout, or an inability to connect. 
+
 
 LOGIN AS A FRIEND
+=================
 
 This allows people to login to a friend's page to see the content that has been
 summarized by their feed. It is an open-id style login.
 
-User:     $URI,    $FP,    $RELID
-Friend:   $FR-URI, $FR-FP, $FR-RELID
+User:     URI,    RELID
+Friend:   FR-URI, FR-RELID
 
 1. User fills in a login-as-friend form
-      a) User visits $FR-URI/login-as-friend
-      b) submits $URI
+      a) User visits https://FR-URI/login-as-friend
+      b) submits URI
 
 2. The friend's server processes the request.
-      a) verifies that $URI is a friend
+      a) verifies that URI is a friend
       b) randomly generates a token
       c) encrypts the token to the user and signs it.
-      d) makes it available under $FR-URI/tokens/$FR-RELID.asc
-      e) redirects user to $URI/return-token?uri=$FR-URI
+      d) makes it available under to be fetched with FR-RELID as identifier
+      e) redirects user to https://URI/return-token?uri=FR-URI
 
 3. The user's server verifies the user owns the identitiy.
-      a) checks that $FR-URI is a friend
-      b) if browser is not logged in fails the process (no redirect).
-      c) fetches $FR-URI/tokens/$FR-RELID.asc
+      a) checks that FR-URI is a friend
+      b) if browser is not logged in, fails the process (possibly with redirect to loging screen)
+      c) fetches the token using from FR-URI using FR-RELID to identify it
       d) decrypts and verifies the token
-      e) redirects the browser to $FP-URI/submit-token?uri=$URI&token=$TOK
+      e) redirects the browser to https://FP-URI/submit-token?uri=URI&token=TOK
 
 4. Friend login final
-      a) Verifies ($URI, $TOK)
+      a) Verifies (URI, TOK)
       b) grants friend credentials to the browser using cookie-based session.
 
 UNFRIENDING
@@ -123,9 +136,18 @@ Options:
 
 CHARACTERISTICS
 
--It is not possible to probe a person's list of friends.
--If someone is able to watch the HTTP traffic between servers they will be able
- to see RELIDs.
--Given the permanent nature of documents on the web, feeds may become archived
- if any RELID is made public. This is not a problem as long as OpenPGP remains
- unbreakable in practice. 
+* Your list of friends can be treated as private information. It is impossible
+for someone to probe your list of friends if you don't want to publish it.
+The list must be explictly granted, even to current friends (see next point
+for a minor exception). This makes it possible to partition your
+relationships into differnet groups, such as family, close friends,
+co-workers, and people you hardly know but might like to get to know better.
+
+
+*The user must trust the server that is hosting their identity. But like email,
+blogs, and other forms of internet identity, we are free to choose our service
+providers and the truely paranoid and technically inclined are free to host
+their own identity on their own server. Perhaps a more difficult problem is
+that the user must trust the server that is hosting their friend's identities.
+However, this is not a problem unique to DSNP. This is true of email as well.
+

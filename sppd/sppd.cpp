@@ -1492,65 +1492,50 @@ long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 
 long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	Encrypt encrypt;
-	RSA *user_priv;
-	char *broadcast_key, *generation;
-	char *friend_id, *put_relid;
-	Identity id;
-
-	/* Find youngest session key. In the future some sense of current session
+	/* Find youngest broadcast key. In the future some sense of current session
 	 * key should be maintained. */
-	exec_query( mysql,
+	DbQuery youngest( mysql,
 		"SELECT generation, broadcast_key FROM put_broadcast_key "
 		"WHERE user = %e "
 		"ORDER BY generation DESC "
-		"LIMIT 1",
-		user );
+		"LIMIT 1", user );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
+	if ( youngest.rows() < 1 ) {
 		BIO_printf( bioOut, "ERROR bad user\r\n" );
-		goto close;
+		return -1;
 	}
-	generation = strdup(row[0]);
-	broadcast_key = strdup(row[1]);
+
+	MYSQL_ROW row = youngest.fetchRow();
+	char *generation = strdup(row[0]);
+	char *broadcast_key = strdup(row[1]);
 
 	/* Find root user. */
-	exec_query( mysql,
+	DbQuery rootFriend( mysql,
 		"SELECT friend_id, put_relid FROM friend_claim "
 		"WHERE user = %e AND put_root = true",
 		user );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
-		/* Nothing here means that the user has no friends. */
+	if ( rootFriend.rows() == 0 ) {
+		/* Nothing here means that the user has no friends (sniff). */
 	}
 	else {
-		friend_id = row[0];
-		put_relid = row[1];
+		row = rootFriend.fetchRow();
+		char *friend_id = row[0];
+		char *put_relid = row[1];
 
 		/* Do the encryption. */
-		user_priv = load_key( mysql, user );
-		encrypt.load( 0, user_priv );
+		RSA *user_priv = load_key( mysql, user );
+		Encrypt encrypt( 0, user_priv );
 		encrypt.bkSignEncrypt( broadcast_key, (u_char*)msg, mLen );
 
-		message("finished encrypting\n");
-
 		/* Find the root user to send to. */
-		id.load( friend_id );
+		Identity id( friend_id );
 		id.parse();
-
-		message("finished encrypting\n");
 
 		queue_broadcast_db( mysql, id.site, put_relid,
 				strtoll(generation, 0, 10), encrypt.sym );
 	}
 
-close:
 	return 0;
 }
 

@@ -35,6 +35,12 @@ struct Encrypt
 		sym(0)
 	{}
 
+	Encrypt( RSA *pubEncVer, RSA *privDecSign )
+	:
+		pubEncVer(pubEncVer), privDecSign(privDecSign), 
+		sym(0)
+	{}
+
 	~Encrypt()
 	{
 		clear();

@@ -128,6 +128,11 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 			"SET put_root = true "
 			"WHERE user = %e AND friend_id = %e",
 			user, identity );
+
+		exec_query( mysql, 
+			"INSERT INTO put_tree_nodes "
+			"( user, friend_id, generation, put_root )"
+			"VALUES ( %e, %e, 1, true )", user, identity );
 	}
 	else {
 		NodeList queue = roots;
@@ -146,6 +151,12 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
+				exec_query( mysql,
+					"INSERT INTO put_tree_nodes "
+					"( user, friend_id, generation, put_forward1 ) "
+					"VALUES ( %e, %e, 1, %e ) ",
+					user, identity, front->identity.c_str() );
+
 				send_forward_to( mysql, user, front->identity.c_str(), 1, id.site, relid );
 				break;
 			}
@@ -159,6 +170,12 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"SET put_forward2 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
+
+				exec_query( mysql,
+					"INSERT INTO put_tree_nodes "
+					"( user, friend_id, generation, put_forward2 ) "
+					"VALUES ( %e, %e, 1, %e ) ",
+					user, identity, front->identity.c_str() );
 
 				send_forward_to( mysql, user, front->identity.c_str(), 2, id.site, relid );
 				break;

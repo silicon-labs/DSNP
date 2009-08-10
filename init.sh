@@ -124,6 +124,7 @@ CREATE TABLE user (
 
 	email VARCHAR(50),
 	id_salt CHAR(24),
+	put_generation BIGINT,
 
 	rsa_n TEXT,
 	rsa_e TEXT,
@@ -191,10 +192,28 @@ CREATE TABLE friend_claim (
 	friend_hash VARCHAR(48),
 	put_relid VARCHAR(48),
 	get_relid VARCHAR(48),
-	acknowledged BOOL,
 	put_root BOOL,
 	put_forward1 TEXT,
 	put_forward2 TEXT,
+	get_fwd_site1 TEXT,
+	get_fwd_site2 TEXT,
+	get_fwd_relid1 VARCHAR(48),
+	get_fwd_relid2 VARCHAR(48)
+);
+
+CREATE TABLE put_tree_nodes (
+	user VARCHAR(20),
+	friend_id TEXT,
+	generation BIGINT,
+	put_root BOOL,
+	put_forward1 TEXT,
+	put_forward2 TEXT
+);
+
+CREATE TABLE get_tree_nodes (
+	user VARCHAR(20),
+	friend_id TEXT,
+	generation BIGINT,
 	get_fwd_site1 TEXT,
 	get_fwd_site2 TEXT,
 	get_fwd_relid1 VARCHAR(48),

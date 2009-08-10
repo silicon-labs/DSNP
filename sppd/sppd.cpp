@@ -958,7 +958,8 @@ long run_message_queue_db( MYSQL *mysql )
 		char *relid = row[2];
 		char *message = row[3];
 
-		long send_res = send_message_net( mysql, false, from_user, to_id, relid, message, strlen(message), 0 );
+		long send_res = send_message_net( mysql, false, from_user, to_id, relid, 
+				message, strlen(message), 0 );
 		if ( send_res < 0 ) {
 			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
@@ -1940,7 +1941,7 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identi
 	return queue_message( mysql, from_user, to_identity, buf );
 }
 
-void prefriend_message( MYSQL *mysql, const char *relid, const char *message )
+void prefriend_message( MYSQL *mysql, const char *relid, const char *msg )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -1957,6 +1958,7 @@ void prefriend_message( MYSQL *mysql, const char *relid, const char *message )
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row == 0 ) {
+		message("prefriend_message: could not locate friend via sent_friend_request\n");
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
 		goto free_result;
 	}
@@ -1968,9 +1970,10 @@ void prefriend_message( MYSQL *mysql, const char *relid, const char *message )
 	id_pub = fetch_public_key( mysql, friend_id );
 
 	encrypt.load( id_pub, user_priv );
-	decrypt_res = encrypt.decryptVerify( message );
+	decrypt_res = encrypt.decryptVerify( msg );
 
 	if ( decrypt_res < 0 ) {
+		message("prefriend_message: decrypting message failed\n");
 		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
 		goto free_result;
 	}
@@ -2281,11 +2284,6 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	store_friend_claim( mysql, for_user, from_id, id_salt, returned_relid, requested_relid );
 
 	/* Clear the sent_freind_request. */
-	DbQuery removeSentRequest( mysql, 
-		"DELETE FROM sent_friend_request "
-		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e and returned_relid = %e",
-		for_user, from_id, requested_relid, returned_relid );
-
 	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", for_user );
 
 	/* Check for a result. */
@@ -2311,13 +2309,19 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid )
 {
-	::message("in registered\n");
-
-	BIO_printf( bioOut, "OK\r\n" );
+	::message("registered: starting\n");
 
 	send_current_broadcast_key( mysql, for_user, from_id );
 	forward_tree_insert( mysql, for_user, from_id, returned_relid );
 
-	::message("finished registered\n");
+	DbQuery removeSentRequest( mysql, 
+		"DELETE FROM sent_friend_request "
+		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e and returned_relid = %e",
+		for_user, from_id, requested_relid, returned_relid );
+
+	BIO_printf( bioOut, "OK\r\n" );
+
+	::message("registered: finished\n");
+
 	return 0;
 }

@@ -99,7 +99,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 long send_broadcast_net( const char *toSite, const char *relid,
 		long long generation, const char *message, long mLen );
 long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		const char *session_key, long long generation );
+		long long generation, const char *session_key );
 long send_forward_to( MYSQL *mysql, const char *from, const char *to, int childNum, 
 		const char *forwardToSite, const char *relid );
 void forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
@@ -267,5 +267,7 @@ long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *
 		const char *origMsg, long origMsgLen, const char *msg );
 
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
-		long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
+			long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
+
+int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 #endif

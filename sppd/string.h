@@ -34,7 +34,8 @@ struct String
 	void clear();
 	void allocate( long size );
 	void set( const char *p1, const char *p2 );
-	void set( const char *fmt, ... );
+	void set( const char *s );
+	void format( const char *fmt, ... );
 
 	char *relinquish()
 	{

@@ -145,40 +145,32 @@ char *pass_hash( const u_char *pass_salt, const char *pass )
 	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
 }
 
-int current_put_bk( MYSQL *mysql, const char *user, char *bk, long long *generation )
+int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk )
 {
 	int retVal = 0;
 
-	exec_query( mysql, 
-		"SELECT generation, broadcast_key "
-		"FROM put_broadcast_key "
-		"WHERE user = %e "
-		"ORDER BY generation DESC LIMIT 1",
-		user );
+	DbQuery query( mysql, 
+		"SELECT user.put_generation, broadcast_key "
+		"FROM put_broadcast_key JOIN user "
+		"WHERE user.user = put_broadcast_key.user AND "
+		"	user.put_generation = put_broadcast_key.generation AND"
+		"	user.user = %e", user );
 	
-	MYSQL_RES *result = mysql_store_result( mysql );
-	MYSQL_ROW row = mysql_fetch_row( result );
+	if ( query.rows() > 0 ) {
+		MYSQL_ROW row = query.fetchRow();
 
-	if ( row ) {
-		if ( generation != 0 )
-			*generation = strtoll( row[0], 0, 10 );
-		if ( bk != 0 ) 
-			strcpy( bk, row[1] );
+		generation = strtoll( row[0], 0, 10 );
+		bk.set( row[1] );
 		retVal = 1;
 	}
 
 	return retVal;
 }
 
-void new_broadcast_key( MYSQL *mysql, const char *user )
+void new_broadcast_key( MYSQL *mysql, const char *user, long long generation )
 {
 	unsigned char broadcast_key[RELID_SIZE];
 	const char *bk = 0;
-	long long generation = 0;
-
-	/* Get the latest generation. If there is no broadcast key then generation
-	 * is left alone. */
-	current_put_bk( mysql, user, 0, &generation );
 
 	/* Generate the relationship and request ids. */
 	RAND_bytes( broadcast_key, RELID_SIZE );
@@ -188,7 +180,7 @@ void new_broadcast_key( MYSQL *mysql, const char *user )
 		"INSERT INTO put_broadcast_key "
 		"( user, generation, broadcast_key ) "
 		"VALUES ( %e, %L, %e ) ",
-		user, generation + 1, bk );
+		user, generation, bk );
 }
 
 void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
@@ -229,10 +221,10 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 	exec_query( mysql,
 		"INSERT INTO user "
 		"("
-		"	user, pass_salt, pass, email, id_salt, "
+		"	user, pass_salt, pass, email, id_salt, put_generation, "
 		"	rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
 		")"
-		"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e, %e );", 
+		"VALUES ( %e, %e, %e, %e, %e, 1, %e, %e, %e, %e, %e, %e, %e, %e );", 
 		user, pass_salt_str, pass_hashed, email, id_salt_str,
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
@@ -261,7 +253,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 	exec_query( mysql, "UNLOCK TABLES;" );
 
 	/* Make the first broadcast key for the user. */
-	new_broadcast_key( mysql, user );
+	new_broadcast_key( mysql, user, 1 );
 }
 
 void public_key( MYSQL *mysql, const char *user )
@@ -1035,17 +1027,17 @@ close:
 
 int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *identity )
 {
-	char sk[SK_SIZE_HEX];
 	long long generation;
+	String broadcast_key;
 	int sk_result;
 
 	/* Get the latest put session key. */
-	sk_result = current_put_bk( mysql, user, sk, &generation );
+	sk_result = current_put_bk( mysql, user, generation, broadcast_key );
 	if ( sk_result != 1 ) {
 		BIO_printf( bioOut, "ERROR fetching session key\r\n");
 	}
 
-	int send_res = send_broadcast_key( mysql, user, identity, sk, generation );
+	int send_res = send_broadcast_key( mysql, user, identity, generation, broadcast_key );
 	if ( send_res < 0 )
 		error( "sending failed %d\n", send_res );
 
@@ -1925,7 +1917,7 @@ free_result:
 }
 
 long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		const char *broadcast_key, long long generation )
+		long long generation, const char *broadcast_key )
 {
 	static char buf[8192];
 

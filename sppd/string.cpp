@@ -40,6 +40,17 @@ void String::set( const char *s, const char *e )
 	data[length] = 0;
 }
 
+void String::set( const char *s )
+{
+	if ( data != 0 )
+		delete[] data;
+
+	length = strlen( s );
+	data = new char[ length+1 ];
+	memcpy( data, s, length );
+	data[length] = 0;
+}
+
 String::String( const AllocString &as )
 :
 	data(as.data),

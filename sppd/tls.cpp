@@ -191,3 +191,18 @@ int TlsConnect::connect( const char *host, const char *site )
 
 	return 0;
 }
+
+void start_tls()
+{
+	BIO_printf( bioOut, "OK\r\n" );
+	BIO_flush( bioOut );
+
+	/* Don't need the buffering wrappers anymore. */
+	bioIn = BIO_pop( bioIn );
+	bioOut = BIO_pop( bioOut );
+
+	sslInitServer();
+	bioIn = bioOut = sslStartServer( bioIn, bioOut );
+}
+
+

@@ -593,9 +593,9 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
-		"( user, friend_id, friend_salt, friend_hash, put_relid, get_relid, acknowledged, put_root ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e, %b, %b );",
-		user, identity, id_salt, friend_hash_str, put_relid, get_relid, true, false );
+		"( user, friend_id, friend_salt, friend_hash, put_relid, get_relid, put_root ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e, %b );",
+		user, identity, id_salt, friend_hash_str, put_relid, get_relid, false );
 
 	return 0;
 }
@@ -1383,27 +1383,6 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	free( flogin_token_str );
 }
 
-/* Check if we have an acknowledment of a friend claim. */
-bool is_acknowledged( MYSQL *mysql, const char *user, const char *identity )
-{
-	exec_query( mysql, 
-		"SELECT acknowledged "
-		"FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e",
-		user, identity );
-	
-	MYSQL_RES *result = mysql_store_result( mysql );
-	MYSQL_ROW row = mysql_fetch_row( result );
-
-	if ( row ) {
-		int b = atoi( row[0] );
-		if ( b )
-			return true;
-	}
-
-	return false;
-}
-
 void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 		const char *identity, long long generation, const char *bk )
 {
@@ -1611,14 +1590,14 @@ close:
 
 long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
 		const char *author_hash, long long generation,
-		const char *msg, long mLen, const char *encMessage )
+		long long seq_num, const char *msg, long mLen, const char *encMessage )
 {
 	long encMessageLen = strlen(encMessage);
 
 	/* Make the full message. */
 	String command( 
-		"remote_broadcast %s %lld %ld\r\n", 
-		author_hash, generation, encMessageLen );
+		"remote_broadcast %s %lld %lld %ld\r\n", 
+		author_hash, generation, seq_num, encMessageLen );
 	String full = addMessageData( command, encMessage, encMessageLen );
 
 	long sendResult = queue_broadcast( mysql, user, full.data, full.length );
@@ -1703,20 +1682,20 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 
 	message("send_message_now returned: %s\n", result_message);
 
-	return encrypted_broadcast_parser( mysql, to_user, author_id, author_hash,
+	return encrypted_broadcast_parser( mysql, to_user, author_id, author_hash, seq_num,
 			msg, mLen, result_message ) ;
 }
 
 
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, const char *msg, long mLen,
+		const char *author_hash, long long seq_num, const char *msg, long mLen,
 		long long resultGen, const char *resultEnc )
 {
 	message("result enc: %s\n", resultEnc );
 	message("result gen: %lld\n", resultGen );
 
 	long res = send_remote_broadcast( mysql, to_user, author_id, 
-			author_hash, resultGen, msg, mLen, resultEnc );
+			author_hash, resultGen, seq_num, msg, mLen, resultEnc );
 	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;

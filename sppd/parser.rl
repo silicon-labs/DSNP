@@ -469,7 +469,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 
 	main :=
 		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' resource_id ' ' length EOL @direct_broadcast |
-		'remote_broadcast'i ' ' hash ' ' generation ' ' length EOL @remote_broadcast;
+		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length EOL @remote_broadcast;
 }%%
 
 %% write data;
@@ -613,14 +613,14 @@ int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *use
 	main :=
 		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
 			encrypted_broadcast( mysql, to_user, author_id, author_hash, 
-					origMsg, origMsgLen, generation, sym );
+					seq_num, origMsg, origMsgLen, generation, sym );
 		};
 }%%
 
 %% write data;
 
 long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, const char *origMsg, long origMsgLen, const char *msg )
+		const char *author_hash, long long seq_num, const char *origMsg, long origMsgLen, const char *msg )
 {
 	long cs;
 	const char *mark;

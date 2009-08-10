@@ -263,8 +263,9 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 		const char *returned_relid, const char *returned_id_salt );
 
 long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, const char *origMsg, long origMsgLen, const char *msg );
+		const char *author_hash, long long seq_num,
+		const char *origMsg, long origMsgLen, const char *msg );
 
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
-		const char *msg, long mLen, long long resultGen, const char *resultEnc );
+		long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
 #endif

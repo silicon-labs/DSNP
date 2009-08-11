@@ -63,7 +63,7 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 
 	exec_query( mysql,
 		"SELECT friend_id, put_root, put_forward1, put_forward2 "
-		"FROM put_tree_nodes "
+		"FROM put_tree "
 		"WHERE user = %e AND generation = %L",
 		user, generation );
 	
@@ -115,6 +115,15 @@ void print_node( FriendNode *node, int level )
 void forward_tree_insert( MYSQL *mysql, const char *user,
 		const char *identity, const char *relid )
 {
+	/* Insert an entry for this relationship. */
+	exec_query( mysql, 
+		"INSERT INTO put_tree "
+		"( user, friend_id, generation, put_root )"
+		"VALUES ( "
+		"	%e, %e, "
+		"	( select put_generation from user where user = 'age' ), "
+		"	0 )", user, identity );
+
 	NodeList roots;
 	load_tree( mysql, user, 1, roots );
 
@@ -124,7 +133,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 	if ( roots.size() == 0 ) {
 		/* Set this friend claim to be the root of the put tree. */
 		exec_query( mysql,
-			"UPDATE put_tree_nodes "
+			"UPDATE put_tree "
 			"SET put_root = true "
 			"WHERE user = %e AND friend_id = %e",
 			user, identity );
@@ -142,7 +151,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 				front->left = newNode;
 
 				exec_query( mysql,
-					"UPDATE put_tree_nodes "
+					"UPDATE put_tree "
 					"SET put_forward1 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
@@ -157,7 +166,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 				front->right = newNode;
 
 				exec_query( mysql,
-					"UPDATE put_tree_nodes "
+					"UPDATE put_tree "
 					"SET put_forward2 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );

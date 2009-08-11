@@ -188,7 +188,7 @@ CREATE TABLE friend_claim (
 	get_relid VARCHAR(48)
 );
 
-CREATE TABLE put_tree_nodes (
+CREATE TABLE put_tree (
 	user VARCHAR(20),
 	friend_id TEXT,
 	generation BIGINT,
@@ -197,7 +197,7 @@ CREATE TABLE put_tree_nodes (
 	put_forward2 TEXT
 );
 
-CREATE TABLE get_tree_nodes (
+CREATE TABLE get_tree (
 	user VARCHAR(20),
 	friend_id TEXT,
 	generation BIGINT,

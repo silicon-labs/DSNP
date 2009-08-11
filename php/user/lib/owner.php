@@ -90,7 +90,7 @@ if ( mysql_num_rows( $result ) > 0 ) {
 <?php
 
 # Look for the user/pass combination.
-$query = sprintf("SELECT friend_id, acknowledged FROM friend_claim WHERE user = '%s';",
+$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
 	mysql_real_escape_string($USER_NAME)
 );
 
@@ -98,7 +98,6 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
-	$acknowledged = $row['acknowledged'];
 
 	echo "<a class=\"idlink\" href=\"${dest_id}sflogin.php?h=" . 
 		urlencode( $_SESSION['hash'] ) . "\">$dest_id</a> ";

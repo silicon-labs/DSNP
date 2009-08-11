@@ -57,15 +57,15 @@ FriendNode *find_node( char *identity, NodeMap &nodeMap )
 	}
 }
 
-void load_tree( const char *user, MYSQL *mysql, NodeList &roots )
+void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &roots )
 {
 	NodeMap nodeMap;
 
 	exec_query( mysql,
 		"SELECT friend_id, put_root, put_forward1, put_forward2 "
-		"FROM friend_claim "
-		"WHERE user = %e",
-		user );
+		"FROM put_tree_nodes "
+		"WHERE user = %e AND generation = %L",
+		user, generation );
 	
 	MYSQL_RES *result = mysql_use_result( mysql );
 	
@@ -116,7 +116,7 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 		const char *identity, const char *relid )
 {
 	NodeList roots;
-	load_tree( user, mysql, roots );
+	load_tree( mysql, user, 1, roots );
 
 	Identity id( identity );
 	id.parse();
@@ -124,15 +124,10 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 	if ( roots.size() == 0 ) {
 		/* Set this friend claim to be the root of the put tree. */
 		exec_query( mysql,
-			"UPDATE friend_claim "
+			"UPDATE put_tree_nodes "
 			"SET put_root = true "
 			"WHERE user = %e AND friend_id = %e",
 			user, identity );
-
-		exec_query( mysql, 
-			"INSERT INTO put_tree_nodes "
-			"( user, friend_id, generation, put_root )"
-			"VALUES ( %e, %e, 1, true )", user, identity );
 	}
 	else {
 		NodeList queue = roots;
@@ -145,17 +140,12 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 				queue.push_back( front->left );
 			else {
 				front->left = newNode;
+
 				exec_query( mysql,
-					"UPDATE friend_claim "
+					"UPDATE put_tree_nodes "
 					"SET put_forward1 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
-
-				exec_query( mysql,
-					"INSERT INTO put_tree_nodes "
-					"( user, friend_id, generation, put_forward1 ) "
-					"VALUES ( %e, %e, 1, %e ) ",
-					user, identity, front->identity.c_str() );
 
 				send_forward_to( mysql, user, front->identity.c_str(), 1, id.site, relid );
 				break;
@@ -165,17 +155,12 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 				queue.push_back( front->right );
 			else {
 				front->right = newNode;
+
 				exec_query( mysql,
-					"UPDATE friend_claim "
+					"UPDATE put_tree_nodes "
 					"SET put_forward2 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
-
-				exec_query( mysql,
-					"INSERT INTO put_tree_nodes "
-					"( user, friend_id, generation, put_forward2 ) "
-					"VALUES ( %e, %e, 1, %e ) ",
-					user, identity, front->identity.c_str() );
 
 				send_forward_to( mysql, user, front->identity.c_str(), 2, id.site, relid );
 				break;

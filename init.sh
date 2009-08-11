@@ -173,12 +173,6 @@ CREATE TABLE sent_friend_request (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE get_broadcast_key (
-	get_relid VARCHAR(48),
-	generation BIGINT,
-	broadcast_key VARCHAR(48)
-);
-
 CREATE TABLE put_broadcast_key (
 	user VARCHAR(20), 
 	generation BIGINT,
@@ -191,14 +185,7 @@ CREATE TABLE friend_claim (
 	friend_salt VARCHAR(48),
 	friend_hash VARCHAR(48),
 	put_relid VARCHAR(48),
-	get_relid VARCHAR(48),
-	put_root BOOL,
-	put_forward1 TEXT,
-	put_forward2 TEXT,
-	get_fwd_site1 TEXT,
-	get_fwd_site2 TEXT,
-	get_fwd_relid1 VARCHAR(48),
-	get_fwd_relid2 VARCHAR(48)
+	get_relid VARCHAR(48)
 );
 
 CREATE TABLE put_tree_nodes (
@@ -214,6 +201,7 @@ CREATE TABLE get_tree_nodes (
 	user VARCHAR(20),
 	friend_id TEXT,
 	generation BIGINT,
+	broadcast_key VARCHAR(48),
 	get_fwd_site1 TEXT,
 	get_fwd_site2 TEXT,
 	get_fwd_relid1 VARCHAR(48),

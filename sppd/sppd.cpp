@@ -585,9 +585,21 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 
 	/* Insert the friend claim. */
 	exec_query( mysql, "INSERT INTO friend_claim "
-		"( user, friend_id, friend_salt, friend_hash, put_relid, get_relid, put_root ) "
-		"VALUES ( %e, %e, %e, %e, %e, %e, %b );",
-		user, identity, id_salt, friend_hash_str, put_relid, get_relid, false );
+		"( user, friend_id, friend_salt, friend_hash, put_relid, get_relid ) "
+		"VALUES ( %e, %e, %e, %e, %e, %e );",
+		user, identity, id_salt, friend_hash_str, put_relid, get_relid );
+
+	/* Insert an entry for this relationship. */
+	exec_query( mysql, 
+		"INSERT INTO put_tree_nodes "
+		"( user, friend_id, generation, put_root )"
+		"VALUES ( %e, %e, 1, 0 )", user, identity );
+
+	/* Insert an entry for this relationship. */
+	exec_query( mysql, 
+		"INSERT INTO get_tree_nodes "
+		"( user, friend_id, generation )"
+		"VALUES ( %e, %e, 1 )", user, identity );
 
 	return 0;
 }
@@ -1379,25 +1391,12 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 		const char *identity, long long generation, const char *bk )
 {
-	RSA *user_priv, *id_pub;
-	long query_res;
-
-	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity );
-	if ( id_pub == 0 ) {
-		BIO_printf( bioOut, "ERROR fetch_public_key failed\n" );
-		return;
-	}
-
-	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
-
 	/* Make the query. */
-	query_res = exec_query( mysql, 
-			"INSERT INTO get_broadcast_key "
-			"( get_relid, generation, broadcast_key ) "
-			"VALUES ( %e, %L, %e ) ",
-			relid, generation, bk );
+	exec_query( mysql, 
+			"UPDATE get_tree_nodes "
+			"SET broadcast_key = %e "
+			"WHERE user = %e AND friend_id = %e AND generation = 1",
+			bk, user, identity );
 	
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -1407,16 +1406,16 @@ void forward_to( MYSQL *mysql, const char *user, const char *identity,
 {
 	if ( atoi( number ) == 1 ) {
 		exec_query( mysql, 
-				"UPDATE friend_claim "
+				"UPDATE get_tree_nodes "
 				"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
-				"WHERE user = %e AND friend_id = %e",
+				"WHERE user = %e AND friend_id = %e AND generation = 1",
 				to_site, relid, user, identity );
 	}
 	else if ( atoi( number ) == 2 ) {
 		exec_query( mysql, 
-				"UPDATE friend_claim "
+				"UPDATE get_tree_nodes "
 				"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
-				"WHERE user = %e AND friend_id = %e",
+				"WHERE user = %e AND friend_id = %e AND generation = 1",
 				to_site, relid, user, identity );
 	}
 
@@ -1483,8 +1482,12 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 
 	/* Find root user. */
 	DbQuery rootFriend( mysql,
-		"SELECT friend_id, put_relid FROM friend_claim "
-		"WHERE user = %e AND put_root = true",
+		"SELECT friend_claim.friend_id, friend_claim.put_relid "
+		"FROM friend_claim "
+		"JOIN put_tree_nodes "
+		"ON friend_claim.user = put_tree_nodes.user AND "
+		"friend_claim.friend_id = put_tree_nodes.friend_id "
+		"WHERE friend_claim.user = %e AND put_tree_nodes.put_root = true",
 		user );
 
 	if ( rootFriend.rows() == 0 ) {
@@ -1712,15 +1715,19 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	int decryptRes, parseRes, decLen;
 	char *decrypted;
 
+	/* Find the user. */
+
 	exec_query( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
-		"    get_fwd_site1, get_fwd_relid1, get_fwd_site2, get_fwd_relid2, "
-		"    broadcast_key "
+		"	get_tree_nodes.get_fwd_site1, get_tree_nodes.get_fwd_relid1, "
+		"	get_tree_nodes.get_fwd_site2, get_tree_nodes.get_fwd_relid2, "
+		"	get_tree_nodes.broadcast_key "
 		"FROM friend_claim "
-		"JOIN get_broadcast_key "
-		"ON friend_claim.get_relid = get_broadcast_key.get_relid "
-		"WHERE friend_claim.get_relid = %e AND generation = %L",
-		relid, generation );
+		"JOIN get_tree_nodes "
+		"ON friend_claim.user = get_tree_nodes.user AND "
+		"friend_claim.friend_id = get_tree_nodes.friend_id "
+		"WHERE friend_claim.get_relid = %e AND get_tree_nodes.generation = 1",
+		relid );
 	
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
@@ -1825,12 +1832,13 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	exec_query( mysql, 
-		"SELECT friend_claim.friend_id, broadcast_key "
+		"SELECT friend_claim.friend_id, get_tree_nodes.broadcast_key "
 		"FROM friend_claim "
-		"JOIN get_broadcast_key "
-		"ON friend_claim.get_relid = get_broadcast_key.get_relid "
-		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = %L",
-		user, hash, generation );
+		"JOIN get_tree_nodes "
+		"ON friend_claim.user = get_tree_nodes.user AND "
+		"friend_claim.friend_id = get_tree_nodes.friend_id "
+		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = 1",
+		user, hash );
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );

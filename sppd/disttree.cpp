@@ -112,17 +112,20 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
-void forward_tree_insert( MYSQL *mysql, const char *user,
+int forward_tree_insert( MYSQL *mysql, const char *user,
 		const char *identity, const char *relid )
 {
+	DbQuery genQuery( mysql, "SELECT put_generation from user where user = %e", user );
+	if ( genQuery.rows() != 1 )
+		return -1;
+	long long generation = strtoll( genQuery.fetchRow()[0], 0, 10 );
+
 	/* Insert an entry for this relationship. */
 	exec_query( mysql, 
 		"INSERT INTO put_tree "
 		"( user, friend_id, generation, put_root )"
-		"VALUES ( "
-		"	%e, %e, "
-		"	( select put_generation from user where user = 'age' ), "
-		"	0 )", user, identity );
+		"VALUES ( %e, %e, %L, 0 ) ",
+		user, identity, generation );
 
 	NodeList roots;
 	load_tree( mysql, user, 1, roots );
@@ -156,7 +159,8 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( mysql, user, front->identity.c_str(), 1, id.site, relid );
+				send_forward_to( mysql, user, front->identity.c_str(), 1,
+						generation, id.site, relid );
 				break;
 			}
 
@@ -171,11 +175,13 @@ void forward_tree_insert( MYSQL *mysql, const char *user,
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
-				send_forward_to( mysql, user, front->identity.c_str(), 2, id.site, relid );
+				send_forward_to( mysql, user, front->identity.c_str(), 2,
+						generation, id.site, relid );
 				break;
 			}
 
 			queue.pop_front();
 		}
 	}
+	return 0;
 }

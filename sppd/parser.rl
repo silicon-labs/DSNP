@@ -68,7 +68,10 @@ bool gblKeySubmitted = false;
 
 	number = [0-9]+           
 		>{mark=p;}
-		%{number_str.set(mark, p);};
+		%{
+			number_str.set(mark, p);
+			number = strtol( number_str, 0, 10 );
+		};
 
 	length = [0-9]+           
 		>{mark=p;}
@@ -393,8 +396,8 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		'broadcast_key'i ' ' generation ' ' key EOL @{
 			broadcast_key( mysql, to_relid, user, friend_id, generation, key );
 		} |
-		'forward_to'i ' ' number ' ' identity ' ' relid EOL @{
-			forward_to( mysql, user, friend_id, number_str, identity, relid );
+		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid EOL @{
+			forward_to( mysql, user, friend_id, number, generation, identity, relid );
 		} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' type ' ' length EOL @{
 			/* Rest of the input is the msssage. */
@@ -413,7 +416,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	const char *mark;
 	String identity, number_str, key, relid, gen_str;
 	String token, seq_str, type, length_str;
-	long length;
+	long length, number;
 	long long seq_num, generation;
 
 	%% write init;
@@ -625,6 +628,7 @@ long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *
 	long cs;
 	const char *mark;
 	String number_str, gen_str, sym;
+	long number;
 	long long generation;
 
 	%% write init;

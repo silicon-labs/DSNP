@@ -1389,28 +1389,28 @@ void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
 	exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET broadcast_key = %e "
-			"WHERE user = %e AND friend_id = %e AND generation = 1",
-			bk, user, identity );
+			"WHERE user = %e AND friend_id = %e AND generation = %L",
+			bk, user, identity, generation );
 	
 	BIO_printf( bioOut, "OK\n" );
 }
 
 void forward_to( MYSQL *mysql, const char *user, const char *identity,
-		const char *number, const char *to_site, const char *relid )
+		int child_num, long long generation, const char *to_site, const char *relid )
 {
-	if ( atoi( number ) == 1 ) {
+	if ( child_num == 1 ) {
 		exec_query( mysql, 
 				"UPDATE get_tree "
 				"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
-				"WHERE user = %e AND friend_id = %e AND generation = 1",
-				to_site, relid, user, identity );
+				"WHERE user = %e AND friend_id = %e AND generation = %L",
+				to_site, relid, user, identity, generation );
 	}
-	else if ( atoi( number ) == 2 ) {
+	else if ( child_num == 2 ) {
 		exec_query( mysql, 
 				"UPDATE get_tree "
 				"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
-				"WHERE user = %e AND friend_id = %e AND generation = 1",
-				to_site, relid, user, identity );
+				"WHERE user = %e AND friend_id = %e AND generation = %L",
+				to_site, relid, user, identity, generation );
 	}
 
 	BIO_printf( bioOut, "OK\n" );
@@ -1720,8 +1720,8 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 		"JOIN get_tree "
 		"ON friend_claim.user = get_tree.user AND "
 		"friend_claim.friend_id = get_tree.friend_id "
-		"WHERE friend_claim.get_relid = %e AND get_tree.generation = 1",
-		relid );
+		"WHERE friend_claim.get_relid = %e AND get_tree.generation = %L",
+		relid, generation );
 	
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
@@ -1830,15 +1830,14 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		"FROM friend_claim "
 		"JOIN get_tree "
 		"ON friend_claim.user = get_tree.user AND "
-		"friend_claim.friend_id = get_tree.friend_id "
-		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND generation = 1",
-		user, hash );
+		"	friend_claim.friend_id = get_tree.friend_id "
+		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND "
+		"	get_tree.generation = %L",
+		user, hash, generation );
 
 	result = mysql_store_result( mysql );
 	row = mysql_fetch_row( result );
 	if ( row ) {
-		message("YES\n");
-
 		author_id = row[0];
 		broadcast_key = row[1];
 
@@ -1932,13 +1931,13 @@ long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_ide
 }
 
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		int childNum, const char *forwardToSite, const char *relid )
+		int childNum, long long generation, const char *forwardToSite, const char *relid )
 {
 	static char buf[8192];
 
 	sprintf( buf, 
-		"forward_to %d %s %s\r\n", 
-		childNum, forwardToSite, relid );
+		"forward_to %d %lld %s %s\r\n", 
+		childNum, generation, forwardToSite, relid );
 
 	return queue_message( mysql, from_user, to_identity, buf );
 }

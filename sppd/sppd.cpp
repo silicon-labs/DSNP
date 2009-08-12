@@ -1474,8 +1474,12 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	/* Find youngest broadcast key. In the future some sense of current session
 	 * key should be maintained. */
 	DbQuery youngest( mysql,
-		"SELECT generation, broadcast_key FROM put_broadcast_key "
-		"WHERE user = %e "
+		"SELECT broadcast_key "
+		"FROM put_broadcast_key "
+		"JOIN user "
+		"ON user.user = put_broadcast_key.user "
+		"WHERE user.user = %e AND "
+		"	put_broadcast_key.generation <= user.put_generation "
 		"ORDER BY generation DESC "
 		"LIMIT 1", user );
 
@@ -1485,8 +1489,23 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	}
 
 	MYSQL_ROW row = youngest.fetchRow();
+	char *broadcast_key = strdup(row[0]);
+
+	/* Find youngest broadcast key. In the future some sense of current session
+	 * key should be maintained. */
+	DbQuery gen( mysql,
+		"SELECT put_generation FROM user "
+		"WHERE user = %e", user );
+
+	if ( gen.rows() < 1 ) {
+		BIO_printf( bioOut, "ERROR bad user\r\n" );
+		return -1;
+	}
+
+	row = gen.fetchRow();
 	char *generation = strdup(row[0]);
-	char *broadcast_key = strdup(row[1]);
+
+	message("queue_broadcast: using %s %s\n", generation, broadcast_key );
 
 	/* Find root user. */
 	DbQuery rootFriend( mysql,
@@ -1713,8 +1732,6 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 
 void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	char *user, *friend_id, *broadcast_key;
 	char *get_fwd_site1, *get_fwd_relid1;
 	char *get_fwd_site2, *get_fwd_relid2;
@@ -1723,9 +1740,8 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	int decryptRes, parseRes, decLen;
 	char *decrypted;
 
-	/* Find the user. */
-
-	exec_query( mysql, 
+	/* Find the recipient. */
+	DbQuery recipient( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
 		"	get_tree.get_fwd_site1, get_tree.get_fwd_relid1, "
 		"	get_tree.get_fwd_site2, get_tree.get_fwd_relid2, "
@@ -1734,16 +1750,16 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 		"JOIN get_tree "
 		"ON friend_claim.user = get_tree.user AND "
 		"friend_claim.friend_id = get_tree.friend_id "
-		"WHERE friend_claim.get_relid = %e AND get_tree.generation = %L",
+		"WHERE friend_claim.get_relid = %e AND get_tree.generation <= %L "
+		"ORDER BY get_tree.generation DESC LIMIT 1",
 		relid, generation );
 	
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
+	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR bad recipient\r\n");
 		return;
 	}
 
+	MYSQL_ROW row = recipient.fetchRow();
 	user = row[0];
 	friend_id = row[1];
 	get_fwd_site1 = row[2];
@@ -1783,8 +1799,6 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 
 	if ( get_fwd_site2 != 0 )
 		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, generation, encrypted );
-
-	mysql_free_result( result );
 
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -1846,7 +1860,8 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		"ON friend_claim.user = get_tree.user AND "
 		"	friend_claim.friend_id = get_tree.friend_id "
 		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND "
-		"	get_tree.generation = %L",
+		"	get_tree.generation <= %L "
+		"ORDER BY get_tree.generation DESC LIMIT 1",
 		user, hash, generation );
 
 	result = mysql_store_result( mysql );

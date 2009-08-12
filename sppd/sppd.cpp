@@ -589,12 +589,6 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 		"VALUES ( %e, %e, %e, %e, %e, %e );",
 		user, identity, id_salt, friend_hash_str, put_relid, get_relid );
 
-	/* Insert an entry for this relationship. */
-	exec_query( mysql, 
-		"INSERT INTO get_tree "
-		"( user, friend_id, generation )"
-		"VALUES ( %e, %e, 1 )", user, identity );
-
 	return 0;
 }
 
@@ -1382,35 +1376,55 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	free( flogin_token_str );
 }
 
-void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
-		const char *identity, long long generation, const char *bk )
+void add_get_tree( MYSQL *mysql, const char *user, const char *friend_id, long long generation )
 {
+	DbQuery check( mysql,
+		"SELECT user FROM get_tree "
+		"WHERE user = %e AND friend_id = %e AND generation = %L",
+		user, friend_id, generation );
+	
+	if ( check.rows() == 0 ) {
+		/* Insert an entry for this relationship. */
+		exec_query( mysql, 
+			"INSERT INTO get_tree "
+			"( user, friend_id, generation )"
+			"VALUES ( %e, %e, %L )", user, friend_id, generation );
+	}
+}
+
+void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
+		const char *friend_id, long long generation, const char *bk )
+{
+	add_get_tree( mysql, user, friend_id, generation );
+
 	/* Make the query. */
 	exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET broadcast_key = %e "
 			"WHERE user = %e AND friend_id = %e AND generation = %L",
-			bk, user, identity, generation );
+			bk, user, friend_id, generation );
 	
 	BIO_printf( bioOut, "OK\n" );
 }
 
-void forward_to( MYSQL *mysql, const char *user, const char *identity,
+void forward_to( MYSQL *mysql, const char *user, const char *friend_id,
 		int child_num, long long generation, const char *to_site, const char *relid )
 {
+	add_get_tree( mysql, user, friend_id, generation );
+
 	if ( child_num == 1 ) {
 		exec_query( mysql, 
 				"UPDATE get_tree "
 				"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
 				"WHERE user = %e AND friend_id = %e AND generation = %L",
-				to_site, relid, user, identity, generation );
+				to_site, relid, user, friend_id, generation );
 	}
 	else if ( child_num == 2 ) {
 		exec_query( mysql, 
 				"UPDATE get_tree "
 				"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
 				"WHERE user = %e AND friend_id = %e AND generation = %L",
-				to_site, relid, user, identity, generation );
+				to_site, relid, user, friend_id, generation );
 	}
 
 	BIO_printf( bioOut, "OK\n" );

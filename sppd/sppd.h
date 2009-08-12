@@ -244,6 +244,8 @@ struct DbQuery
 		{ return mysql_fetch_row( result ); }
 	long rows()
 		{ return mysql_num_rows( result ); }
+	long affectedRows()
+		{ return mysql_affected_rows( mysql ); }
 
 	MYSQL *mysql;
 	MYSQL_RES *result;

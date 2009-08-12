@@ -151,8 +151,14 @@ void test_current_put_bk()
 	printf( "%lld %s\n", generation, broadcastKey.data );
 }
 
-void forward_tree( MYSQL *mysql )
+void update( MYSQL *mysql )
 {
+	DbQuery update( mysql,
+		"UPDATE get_tree "
+		"SET broadcast_key = 'aaa' "
+		"WHERE user = 'foo' AND friend_id = 'bar' AND generation = 66" );
+
+	printf( "affected rows: %ld\n", update.affectedRows() );
 }
 
 void run_test()
@@ -165,6 +171,6 @@ void run_test()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
-	forward_tree( mysql );
+	update( mysql );
 }
 

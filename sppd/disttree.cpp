@@ -15,6 +15,7 @@
  */
 
 #include "sppd.h"
+#include "disttree.h"
 
 #include <mysql.h>
 #include <stdio.h>
@@ -23,35 +24,13 @@
 #include <string>
 #include <list>
 
-using std::map;
-using std::string;
-using std::pair;
-using std::list;
-
-struct FriendNode
-{
-	FriendNode( string identity )
-	:
-		identity(identity),
-		parent(0),
-		left(0),
-		right(0)
-	{}
-	string identity;
-
-	FriendNode *parent, *left, *right;
-};
-
-typedef map<string, FriendNode*> NodeMap;
-typedef list<FriendNode*> NodeList;
-
-FriendNode *find_node( char *identity, NodeMap &nodeMap )
+FriendNode *find_node( NodeMap &nodeMap, char *identity, long long generation )
 {
 	NodeMap::iterator i = nodeMap.find( identity );
 	if ( i != nodeMap.end() )
 		return i->second;
 	else {
-		FriendNode *friendNode = new FriendNode( identity );
+		FriendNode *friendNode = new FriendNode( identity, generation );
 		nodeMap.insert( pair<string, FriendNode*>( identity, friendNode ) );
 		return friendNode;
 	}
@@ -62,9 +41,10 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 	NodeMap nodeMap;
 
 	exec_query( mysql,
-		"SELECT friend_id, put_root, put_forward1, put_forward2 "
+		"SELECT friend_id, generation, put_root, put_forward1, put_forward2 "
 		"FROM put_tree "
-		"WHERE user = %e AND generation = %L",
+		"WHERE user = %e AND generation <= %L "
+		"ORDER BY generation DESC",
 		user, generation );
 	
 	MYSQL_RES *result = mysql_use_result( mysql );
@@ -76,22 +56,32 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 			break;
 
 		char *parentIdent = row[0];
-		int isRoot = atoi(row[1]);
-		char *leftIdent = row[2];
-		char *rightIdent = row[3];
+		long long generation = strtoll( row[1], 0, 10 );
+		int isRoot = atoi(row[2]);
+		char *leftIdent = row[3];
+		char *rightIdent = row[4];
 
-		FriendNode *parent = find_node( parentIdent, nodeMap );
+		FriendNode *parent = find_node( nodeMap, parentIdent, generation );
+
+		/* Skip if we would be downgrading the generation. */
+		if ( generation < parent->generation ) {
+			printf("skipping old generation for %s %s\n", user, parentIdent );
+			continue;
+		}
+		parent->generation = generation;
+		printf("loading %s %s\n", user, parentIdent );
 
 		if ( isRoot )
 			roots.push_back( parent );
 
 		if ( leftIdent != 0 ) {
-			FriendNode *left = find_node( leftIdent, nodeMap );
+			/* Use generation 0 since we don't know the generation. */
+			FriendNode *left = find_node( nodeMap, leftIdent, 0 );
 			parent->left = left;
 		}
 
 		if ( rightIdent != 0 ) {
-			FriendNode *right = find_node( rightIdent, nodeMap );
+			FriendNode *right = find_node( nodeMap, rightIdent, 0 );
 			parent->right = right;
 		}
 	}
@@ -144,7 +134,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 	else {
 		NodeList queue = roots;
 
-		FriendNode *newNode = new FriendNode( identity );
+		FriendNode *newNode = new FriendNode( identity, generation );
 
 		while ( queue.size() > 0 ) {
 			FriendNode *front = queue.front();

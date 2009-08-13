@@ -17,6 +17,7 @@
 #include "sppd.h"
 #include "encrypt.h"
 #include "string.h"
+#include "disttree.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -161,6 +162,12 @@ void update( MYSQL *mysql )
 	printf( "affected rows: %ld\n", update.affectedRows() );
 }
 
+void tree1( MYSQL *mysql )
+{
+	NodeList rootNodes;
+	load_tree( mysql, "age", 1, rootNodes );
+}
+
 void run_test()
 {
 	set_config_by_name( "spp" );
@@ -171,6 +178,6 @@ void run_test()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
-	update( mysql );
+	tree1( mysql );
 }
 

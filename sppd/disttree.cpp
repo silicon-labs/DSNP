@@ -62,7 +62,6 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 		char *rightIdent = row[4];
 
 		FriendNode *parent = find_node( nodeMap, parentIdent, generation );
-
 		/* Skip if we would be downgrading the generation. */
 		if ( generation < parent->generation ) {
 			printf("skipping old generation for %s %s\n", user, parentIdent );
@@ -71,8 +70,10 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 		parent->generation = generation;
 		printf("loading %s %s\n", user, parentIdent );
 
-		if ( isRoot )
+		if ( isRoot ) {
+			parent->isRoot = true;
 			roots.push_back( parent );
+		}
 
 		if ( leftIdent != 0 ) {
 			/* Use generation 0 since we don't know the generation. */
@@ -191,9 +192,15 @@ struct GetTreeWork
 
 typedef list<GetTreeWork*> WorkList;
 
-
-void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, FriendNode *n2 )
+void swap( MYSQL *mysql, const char *user, NodeList &roots, 
+		FriendNode *n1, FriendNode *n2 )
 {
+	/* Need the current broadcast key. */
+	long long generation;
+	String broadcast_key;
+	current_put_bk( mysql, user, generation, broadcast_key );
+	generation += 1;
+
 	WorkList workList;
 
 	/*
@@ -203,10 +210,19 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 	if ( n1->parent != 0 ) {
 		/* Update the parent of n1 to point to n2. */
 		if ( n1->parent->left == n1 ) {
-			DbQuery updateLeft( mysql,
-				"UPDATE put_tree SET put_forward1 = %e "
-				"WHERE user = %e AND friend_id = %e",
-				n2->identity.c_str(), user, n1->parent->identity.c_str() );
+			DbQuery insertLeft( mysql,
+				"INSERT INTO put_tree "
+				"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+				"VALUES ( %e, %e, %L, %l, %e, %e )",
+				user, n1->parent->identity.c_str(), generation,
+				n1->parent->isRoot ? 1 : 0, 
+				n2->identity.c_str(),
+				n1->parent->right != 0 ? n1->parent->right->identity.c_str() : 0 );
+				
+//			DbQuery updateLeft( mysql,
+//				"UPDATE put_tree SET put_forward1 = %e "
+//				"WHERE user = %e AND friend_id = %e",
+//				n2->identity.c_str(), user, n1->parent->identity.c_str() );
 
 			GetTreeWork *work = new GetTreeWork( 
 				n1->parent->identity.c_str(), 
@@ -216,10 +232,19 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 			workList.push_back( work );
 		}
 		else if ( n1->parent->right == n1 ) {
-			DbQuery updateLeft( mysql,
-				"UPDATE put_tree SET put_forward2 = %e "
-				"WHERE user = %e AND friend_id = %e",
-				n2->identity.c_str(), user, n1->parent->identity.c_str() );
+//			DbQuery updateLeft( mysql,
+//				"UPDATE put_tree SET put_forward2 = %e "
+//				"WHERE user = %e AND friend_id = %e",
+//				n2->identity.c_str(), user, n1->parent->identity.c_str() );
+
+			DbQuery insertRight( mysql,
+				"INSERT INTO put_tree "
+				"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+				"VALUES ( %e, %e, %L, %l, %e, %e )",
+				user, n1->parent->identity.c_str(), generation,
+				n1->parent->isRoot ? 1 : 0, 
+				n1->parent->left != 0 ? n1->parent->left->identity.c_str() : 0,
+				n2->identity.c_str() );
 
 			GetTreeWork *work = new GetTreeWork( 
 				n1->parent->identity.c_str(), 
@@ -230,13 +255,22 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 		}
 	}
 
-	DbQuery updateLeft( mysql,
-		"UPDATE put_tree SET put_root = %l, put_forward1 = %e, put_forward2 = %e "
-		"WHERE user = %e AND friend_id = %e",
+//	DbQuery updateLeft( mysql,
+//		"UPDATE put_tree SET put_root = %l, put_forward1 = %e, put_forward2 = %e "
+//		"WHERE user = %e AND friend_id = %e",
+//		n1->parent == 0 ? 1 : 0, 
+//		n1->left != 0 ? n1->left->identity.c_str() : 0 , 
+//		n1->right != 0 ? n1->right->identity.c_str() : 0, 
+//		user, n2->identity.c_str() );
+
+	DbQuery insertLeft( mysql,
+		"INSERT INTO put_tree "
+		"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+		"VALUES ( %e, %e, %L, %l, %e, %e )",
+		user, n2->identity.c_str(), generation,
 		n1->parent == 0 ? 1 : 0, 
 		n1->left != 0 ? n1->left->identity.c_str() : 0 , 
-		n1->right != 0 ? n1->right->identity.c_str() : 0, 
-		user, n2->identity.c_str() );
+		n1->right != 0 ? n1->right->identity.c_str() : 0 );
 		
 	GetTreeWork *work1 = new GetTreeWork( 
 		n2->identity.c_str(), 
@@ -251,10 +285,19 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 
 	if ( n2->parent != 0 ) {
 		if ( n2->parent->left == n2 ) {
-			DbQuery updateRight( mysql,
-				"UPDATE put_tree SET put_forward1 = %e "
-				"WHERE user = %e AND friend_id = %e",
-				n1->identity.c_str(), user, n2->parent->identity.c_str() );
+//			DbQuery updateRight( mysql,
+//				"UPDATE put_tree SET put_forward1 = %e "
+//				"WHERE user = %e AND friend_id = %e",
+//				n1->identity.c_str(), user, n2->parent->identity.c_str() );
+
+			DbQuery insertLeft( mysql,
+				"INSERT INTO put_tree "
+				"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+				"VALUES ( %e, %e, %L, %l, %e, %e )",
+				user, n2->parent->identity.c_str(), generation,
+				n2->parent->isRoot ? 1 : 0, 
+				n1->identity.c_str(),
+				n2->parent->right != 0 ? n2->parent->right->identity.c_str() : 0 );
 
 			GetTreeWork *work = new GetTreeWork( 
 				n2->parent->identity.c_str(), 
@@ -264,10 +307,19 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 			workList.push_back( work );
 		}
 		else if ( n2->parent->right == n2 ) {
-			DbQuery updateRight( mysql,
-				"UPDATE put_tree SET put_forward2 = %e "
-				"WHERE user = %e AND friend_id = %e",
-				n1->identity.c_str(), user, n2->parent->identity.c_str() );
+//			DbQuery updateRight( mysql,
+//				"UPDATE put_tree SET put_forward2 = %e "
+//				"WHERE user = %e AND friend_id = %e",
+//				n1->identity.c_str(), user, n2->parent->identity.c_str() );
+
+			DbQuery insertRight( mysql,
+				"INSERT INTO put_tree "
+				"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+				"VALUES ( %e, %e, %L, %l, %e, %e )",
+				user, n2->parent->identity.c_str(), generation,
+				n2->parent->isRoot ? 1 : 0, 
+				n2->parent->left != 0 ? n2->parent->left->identity.c_str() : 0,
+				n1->identity.c_str() );
 
 			GetTreeWork *work = new GetTreeWork( 
 				n2->parent->identity.c_str(), 
@@ -278,13 +330,22 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 		}
 	}
 
-	DbQuery updateRight( mysql,
-		"UPDATE put_tree SET put_root = %l, put_forward1 = %e, put_forward2 = %e "
-		"WHERE user = %e AND friend_id = %e",
-		n2->parent == 0 ? 1 : 0,
-		n2->left != 0 ? n2->left->identity.c_str() : 0, 
-		n2->right != 0 ? n2->right->identity.c_str() : 0, 
-		user, n1->identity.c_str() );
+//	DbQuery updateRight( mysql,
+//		"UPDATE put_tree SET put_root = %l, put_forward1 = %e, put_forward2 = %e "
+//		"WHERE user = %e AND friend_id = %e",
+//		n2->parent == 0 ? 1 : 0,
+//		n2->left != 0 ? n2->left->identity.c_str() : 0, 
+//		n2->right != 0 ? n2->right->identity.c_str() : 0, 
+//		user, n1->identity.c_str() );
+
+	DbQuery insertRight( mysql,
+		"INSERT INTO put_tree "
+		"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+		"VALUES ( %e, %e, %L, %l, %e, %e )",
+		user, n1->identity.c_str(), generation,
+		n2->parent == 0 ? 1 : 0, 
+		n2->left != 0 ? n2->left->identity.c_str() : 0 , 
+		n2->right != 0 ? n2->right->identity.c_str() : 0 );
 
 	GetTreeWork *work2 = new GetTreeWork( 
 		n1->identity.c_str(), 
@@ -292,12 +353,6 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 		n2->right != 0 ? n2->right->identity.c_str() : 0 );
 
 	workList.push_back( work2 );
-
-	/* Need the current broadcast key. */
-	long long generation;
-	String broadcast_key;
-	current_put_bk( mysql, user, generation, broadcast_key );
-	generation += 1;
 
 	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
 		GetTreeWork *w = *i;

@@ -17,6 +17,7 @@ struct FriendNode
 	:
 		identity(identity),
 		generation(0),
+		isRoot(false),
 		parent(0),
 		left(0),
 		right(0)
@@ -24,6 +25,7 @@ struct FriendNode
 	string identity;
 	long long generation;
 
+	bool isRoot;
 	FriendNode *parent, *left, *right;
 };
 

@@ -69,6 +69,17 @@ send these messages after it receives the registered message.
 PUBLISHING TO FRIENDS
 =====================
 
+1. Broadcast Encryption Keys
+----------------------------
+
+Use a broadcast key. Gives the sender some control over who can read broadcast
+messages. Requires sending out session keys ahead of time. This does not stop a
+bad friend from forwarding a session key. But the protocol doesn't have this
+feature. Session keys must be signed.
+
+2. Distribution Tree
+--------------------
+
 The most simple approach is to iterate through your list of friends and deliver
 broadcast messages. However, a large number of friends multiplied by lots of
 activity results in many messages.  
@@ -93,6 +104,53 @@ rebroadcast.
 A faulty node can be reported to the originator at the point of failure, either
 due to a timeout, or an inability to connect. 
 
+3. Tree Generaion Numbers
+-------------------------
+
+To speed up the distribution of messages, a user's list of friends is 
+organized into a tree. Each friend forwards broadcast messages on to 
+other friends. This requires that there be agreement on the correct 
+structure of the tree among a user's friends. Friends do not need to 
+have a view of the complete tree, just their children.
+
+Another way to view the issue of agreement is that all operations that 
+modify the friend's view of the tree need to be atomic across all 
+friends that are involved in the modification. A message that passes 
+through the tree must either see all of a change or none of it. When 
+adding a member to the tree this is easy, the new member is added as a 
+leaf node and just one node (its parent) needs to be modified.
+
+When removing a node from the distribution tree there is more than one 
+modification that needs to be made among the friends. To ensure that 
+these modifications are atomic, I am using a tree generation number. 
+Each broadcast message carries with it the generation of the 
+distribution tree that should be used to propagate the message. When the 
+tree is modified, the generation number is incremented. Friend nodes 
+that are modified keep the old tree generation data around during the 
+modification process and continue to use it for any messages that arrive 
+with the old generation number. When the changes are complete, new 
+messages are sent with the new generation number, making the new tree 
+effective.
+
+While this gives us atomic operations, it has the unfortunate property 
+that all nodes need to have their generation number updated even if they 
+are not involved in an update to the tree. To get around this, friends 
+do not look up the exact generation number of messages to find forward 
+information, but rather the youngest generation that is less than or 
+equal to the generation number of the message. This lets us avoid 
+updating the generation number with every friend.
+
+4. Roles and Friendship Types
+-----------------------------
+
+The different roles poeple play in their lives are often reflected in a
+categorization of their relationships. It would be useful in DSNP to support
+friendship categories. Each category should have it's own broadcast key and the
+distribution trees should not be disconnected. The categories should not
+necessarily be comprised of disjoint sets of friends however. Your brother can
+be both in your friend category and your family category. You grandmonther,
+however, can just be in your family category so you can shelter her from the
+details of that crazy weekend in Montreal.
 
 LOGIN AS A FRIEND
 =================
@@ -125,16 +183,8 @@ Friend:   FR-URI, FR-RELID
       a) Verifies (URI, TOK)
       b) grants friend credentials to the browser using cookie-based session.
 
-UNFRIENDING
-
-Options:
- 0. No friend-session key. Relies on friends to stop forwarding messages
- 1. Use a friend-session key. Gives the sender some control over who can read.
-    Requires sending out session key. Does not stop a bad friend from forwarding a session
-    key. But the protocol doesn't have this. Session keys must be signed.
- 2. Rolling relationship id.
-
 CHARACTERISTICS
+===============
 
 * Your list of friends can be treated as private information. It is impossible
 for someone to probe your list of friends if you don't want to publish it.
@@ -142,7 +192,6 @@ The list must be explictly granted, even to current friends (see next point
 for a minor exception). This makes it possible to partition your
 relationships into differnet groups, such as family, close friends,
 co-workers, and people you hardly know but might like to get to know better.
-
 
 *The user must trust the server that is hosting their identity. But like email,
 blogs, and other forms of internet identity, we are free to choose our service

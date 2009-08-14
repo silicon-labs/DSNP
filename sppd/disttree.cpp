@@ -217,7 +217,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 		}
 		else if ( n1->parent->right == n1 ) {
 			DbQuery updateLeft( mysql,
-				"UPDATE put_tree SET put_root = 0, put_forward2 = %e "
+				"UPDATE put_tree SET put_forward2 = %e "
 				"WHERE user = %e AND friend_id = %e",
 				n2->identity.c_str(), user, n1->parent->identity.c_str() );
 
@@ -252,7 +252,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 	if ( n2->parent != 0 ) {
 		if ( n2->parent->left == n2 ) {
 			DbQuery updateRight( mysql,
-				"UPDATE put_tree SET put_root = 0, put_forward1 = %e "
+				"UPDATE put_tree SET put_forward1 = %e "
 				"WHERE user = %e AND friend_id = %e",
 				n1->identity.c_str(), user, n2->parent->identity.c_str() );
 
@@ -265,7 +265,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, Frie
 		}
 		else if ( n2->parent->right == n2 ) {
 			DbQuery updateRight( mysql,
-				"UPDATE put_tree SET put_root = 0, put_forward2 = %e "
+				"UPDATE put_tree SET put_forward2 = %e "
 				"WHERE user = %e AND friend_id = %e",
 				n1->identity.c_str(), user, n2->parent->identity.c_str() );
 

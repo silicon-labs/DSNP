@@ -164,8 +164,9 @@ void update( MYSQL *mysql )
 
 void tree1( MYSQL *mysql )
 {
-	NodeList rootNodes;
-	load_tree( mysql, "age", 1, rootNodes );
+	forward_tree_swap( mysql, "age",
+		"https://localhost/spp/pat/",
+		"https://localhost/spp/sarah/" );
 }
 
 void run_test()

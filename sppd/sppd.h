@@ -272,4 +272,6 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 			long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
 
 int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk );
+int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
+
 #endif

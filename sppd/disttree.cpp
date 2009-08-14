@@ -78,11 +78,13 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 			/* Use generation 0 since we don't know the generation. */
 			FriendNode *left = find_node( nodeMap, leftIdent, 0 );
 			parent->left = left;
+			left->parent = parent;
 		}
 
 		if ( rightIdent != 0 ) {
 			FriendNode *right = find_node( nodeMap, rightIdent, 0 );
 			parent->right = right;
+			right->parent = right;
 		}
 	}
 
@@ -105,7 +107,8 @@ void print_node( FriendNode *node, int level )
 int forward_tree_insert( MYSQL *mysql, const char *user,
 		const char *identity, const char *relid )
 {
-	DbQuery genQuery( mysql, "SELECT put_generation from user where user = %e", user );
+	DbQuery genQuery( mysql,
+		"SELECT put_generation from user where user = %e", user );
 	if ( genQuery.rows() != 1 )
 		return -1;
 	long long generation = strtoll( genQuery.fetchRow()[0], 0, 10 );
@@ -173,5 +176,184 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 			queue.pop_front();
 		}
 	}
+	return 0;
+}
+
+struct GetTreeWork
+{
+	GetTreeWork( const char *identity, const char *left, const char *right )
+		: identity(identity), left(left), right(right) {}
+
+	const char *identity;
+	const char *left;
+	const char *right;
+};
+
+typedef list<GetTreeWork*> WorkList;
+
+
+void swap( MYSQL *mysql, const char *user, NodeList &roots, FriendNode *n1, FriendNode *n2 )
+{
+	WorkList workList;
+
+	/*
+	 * Put n2 into the place of n1.
+	 */
+
+	if ( n1->parent != 0 ) {
+		/* Update the parent of n1 to point to n2. */
+		if ( n1->parent->left == n1 ) {
+			DbQuery updateLeft( mysql,
+				"UPDATE put_tree SET put_forward1 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				n2->identity.c_str(), user, n1->parent->identity.c_str() );
+
+			GetTreeWork *work = new GetTreeWork( 
+				n1->parent->identity.c_str(), 
+				n2->identity.c_str(), 
+				n1->parent->right != 0 ? n1->parent->right->identity.c_str() : 0 );
+
+			workList.push_back( work );
+		}
+		else if ( n1->parent->right == n1 ) {
+			DbQuery updateLeft( mysql,
+				"UPDATE put_tree SET put_root = 0, put_forward2 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				n2->identity.c_str(), user, n1->parent->identity.c_str() );
+
+			GetTreeWork *work = new GetTreeWork( 
+				n1->parent->identity.c_str(), 
+				n1->parent->left != 0 ? n1->parent->left->identity.c_str() : 0,
+				n2->identity.c_str() );
+
+			workList.push_back( work );
+		}
+	}
+
+	DbQuery updateLeft( mysql,
+		"UPDATE put_tree SET put_root = %l, put_forward1 = %e, put_forward2 = %e "
+		"WHERE user = %e AND friend_id = %e",
+		n1->parent == 0 ? 1 : 0, 
+		n1->left != 0 ? n1->left->identity.c_str() : 0 , 
+		n1->right != 0 ? n1->right->identity.c_str() : 0, 
+		user, n2->identity.c_str() );
+		
+	GetTreeWork *work1 = new GetTreeWork( 
+		n2->identity.c_str(), 
+		n1->left != 0 ? n1->left->identity.c_str() : 0,
+		n1->right != 0 ? n1->right->identity.c_str() : 0 );
+
+	workList.push_back( work1 );
+
+	/* 
+	 * Put n1 into the place of n2.
+	 */
+
+	if ( n2->parent != 0 ) {
+		if ( n2->parent->left == n2 ) {
+			DbQuery updateRight( mysql,
+				"UPDATE put_tree SET put_root = 0, put_forward1 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				n1->identity.c_str(), user, n2->parent->identity.c_str() );
+
+			GetTreeWork *work = new GetTreeWork( 
+				n2->parent->identity.c_str(), 
+				n1->identity.c_str(), 
+				n2->parent->right != 0 ? n2->parent->right->identity.c_str() : 0 );
+
+			workList.push_back( work );
+		}
+		else if ( n2->parent->right == n2 ) {
+			DbQuery updateRight( mysql,
+				"UPDATE put_tree SET put_root = 0, put_forward2 = %e "
+				"WHERE user = %e AND friend_id = %e",
+				n1->identity.c_str(), user, n2->parent->identity.c_str() );
+
+			GetTreeWork *work = new GetTreeWork( 
+				n2->parent->identity.c_str(), 
+				n2->parent->left != 0 ? n2->parent->left->identity.c_str() : 0,
+				n1->identity.c_str() );
+
+			workList.push_back( work );
+		}
+	}
+
+	DbQuery updateRight( mysql,
+		"UPDATE put_tree SET put_root = %l, put_forward1 = %e, put_forward2 = %e "
+		"WHERE user = %e AND friend_id = %e",
+		n2->parent == 0 ? 1 : 0,
+		n2->left != 0 ? n2->left->identity.c_str() : 0, 
+		n2->right != 0 ? n2->right->identity.c_str() : 0, 
+		user, n1->identity.c_str() );
+
+	GetTreeWork *work2 = new GetTreeWork( 
+		n1->identity.c_str(), 
+		n2->left != 0 ? n2->left->identity.c_str() : 0,
+		n2->right != 0 ? n2->right->identity.c_str() : 0 );
+
+	workList.push_back( work2 );
+
+	/* Need the current broadcast key. */
+	long long generation;
+	String broadcast_key;
+	current_put_bk( mysql, user, generation, broadcast_key );
+	generation += 1;
+
+	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
+		GetTreeWork *w = *i;
+		printf("%s %s %s\n", w->identity, w->left, w->right );
+		send_broadcast_key( mysql, user, w->identity, generation, broadcast_key );
+
+		if ( w->left != 0 ) {
+			Identity leftId( w->left );
+			leftId.parse();
+			DbQuery relid( mysql,
+				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+				user, w->identity );
+			send_forward_to( mysql, user, w->identity, 1, generation,
+					leftId.site, relid.fetchRow()[0] );
+		}
+
+		if ( w->right != 0 ) {
+			Identity rightId( w->right );
+			rightId.parse();
+			DbQuery relid( mysql,
+				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+				user, w->identity );
+			send_forward_to( mysql, user, w->identity, 2, generation,
+					rightId.site, relid.fetchRow()[0] );
+		}
+	}
+}
+
+int forward_tree_swap( MYSQL *mysql, const char *user,
+		const char *id1, const char *id2 )
+{
+	NodeList roots;
+	load_tree( mysql, user, 1, roots );
+
+	FriendNode *n1, *n2;
+	NodeList queue = roots;
+	while ( queue.size() > 0 ) {
+		FriendNode *front = queue.front();
+
+		if ( front->identity == id1 )
+			n1 = front;
+
+		if ( front->identity == id2 )
+			n2 = front;
+			
+		if ( front->left != 0 )
+			queue.push_back( front->left );
+
+		if ( front->right != 0 )
+			queue.push_back( front->right );
+
+		queue.pop_front();
+	}
+
+	printf( "n1: %p n2: %p p1: %p p2: %p\n", n1, n2, n1->parent, n2->parent );
+	swap( mysql, user, roots, n1, n2 );
+
 	return 0;
 }

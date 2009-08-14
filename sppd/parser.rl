@@ -419,6 +419,8 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	long length, number;
 	long long seq_num, generation;
 
+	message( "message parser: parsing: %s\n", msg );
+
 	%% write init;
 
 	const char *p = msg;
@@ -627,8 +629,7 @@ long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *
 {
 	long cs;
 	const char *mark;
-	String number_str, gen_str, sym;
-	long number;
+	String gen_str, sym;
 	long long generation;
 
 	%% write init;

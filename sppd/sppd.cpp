@@ -1036,6 +1036,7 @@ int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *iden
 	sk_result = current_put_bk( mysql, user, generation, broadcast_key );
 	if ( sk_result != 1 ) {
 		BIO_printf( bioOut, "ERROR fetching session key\r\n");
+		return -1;
 	}
 
 	int send_res = send_broadcast_key( mysql, user, identity, generation, broadcast_key );
@@ -1414,17 +1415,17 @@ void forward_to( MYSQL *mysql, const char *user, const char *friend_id,
 
 	if ( child_num == 1 ) {
 		exec_query( mysql, 
-				"UPDATE get_tree "
-				"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
-				"WHERE user = %e AND friend_id = %e AND generation = %L",
-				to_site, relid, user, friend_id, generation );
+			"UPDATE get_tree "
+			"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
+			"WHERE user = %e AND friend_id = %e AND generation = %L",
+			to_site, relid, user, friend_id, generation );
 	}
 	else if ( child_num == 2 ) {
 		exec_query( mysql, 
-				"UPDATE get_tree "
-				"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
-				"WHERE user = %e AND friend_id = %e AND generation = %L",
-				to_site, relid, user, friend_id, generation );
+			"UPDATE get_tree "
+			"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
+			"WHERE user = %e AND friend_id = %e AND generation = %L",
+			to_site, relid, user, friend_id, generation );
 	}
 
 	BIO_printf( bioOut, "OK\n" );
@@ -2346,7 +2347,8 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 
 	DbQuery removeSentRequest( mysql, 
 		"DELETE FROM sent_friend_request "
-		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e and returned_relid = %e",
+		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e AND "
+		"	returned_relid = %e",
 		for_user, from_id, requested_relid, returned_relid );
 
 	BIO_printf( bioOut, "OK\r\n" );

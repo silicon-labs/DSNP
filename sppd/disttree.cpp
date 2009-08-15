@@ -199,9 +199,13 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 	/* Need the current broadcast key. */
 	long long generation;
 	String broadcast_key;
-	current_put_bk( mysql, user, generation, broadcast_key );
-	generation += 1;
+	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bkres < 0 ) {
+		printf("failed to get current_put_bk\n");
+		return;
+	}
 
+	generation += 1;
 	WorkList workList;
 
 	/*
@@ -304,13 +308,20 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 					rightId.site, relid.fetchRow()[0] );
 		}
 	}
+
+	DbQuery updateGen( mysql,
+		"UPDATE user SET put_generation = %L WHERE user = %e",
+		generation, user );
 }
 
 int forward_tree_swap( MYSQL *mysql, const char *user,
 		const char *id1, const char *id2 )
 {
 	NodeList roots;
-	load_tree( mysql, user, 1, roots );
+	DbQuery queryGen( mysql, "SELECT put_generation FROM user WHERE user = %e", user );
+	long long generation = strtoll( queryGen.fetchRow()[0], 0, 10 );
+	printf("loading generation: %lld\n", generation );
+	load_tree( mysql, user, generation, roots );
 
 	FriendNode *n1, *n2;
 	NodeList queue = roots;

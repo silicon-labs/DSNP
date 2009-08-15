@@ -153,8 +153,9 @@ int current_put_bk( MYSQL *mysql, const char *user, long long &generation, Strin
 		"SELECT user.put_generation, broadcast_key "
 		"FROM put_broadcast_key JOIN user "
 		"WHERE user.user = put_broadcast_key.user AND "
-		"	user.put_generation = put_broadcast_key.generation AND"
-		"	user.user = %e", user );
+		"	put_broadcast_key.generation <= user.put_generation AND"
+		"	user.user = %e "
+		"ORDER BY put_generation DESC", user );
 	
 	if ( query.rows() > 0 ) {
 		MYSQL_ROW row = query.fetchRow();
@@ -1030,11 +1031,10 @@ int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *iden
 {
 	long long generation;
 	String broadcast_key;
-	int sk_result;
 
 	/* Get the latest put session key. */
-	sk_result = current_put_bk( mysql, user, generation, broadcast_key );
-	if ( sk_result != 1 ) {
+	int bk_result = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bk_result != 1 ) {
 		BIO_printf( bioOut, "ERROR fetching session key\r\n");
 		return -1;
 	}
@@ -1472,59 +1472,39 @@ long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 
 long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
 {
-	/* Find youngest broadcast key. In the future some sense of current session
-	 * key should be maintained. */
-	DbQuery youngest( mysql,
-		"SELECT broadcast_key "
-		"FROM put_broadcast_key "
-		"JOIN user "
-		"ON user.user = put_broadcast_key.user "
-		"WHERE user.user = %e AND "
-		"	put_broadcast_key.generation <= user.put_generation "
-		"ORDER BY generation DESC "
-		"LIMIT 1", user );
+	long long generation;
+	String broadcast_key;
 
-	if ( youngest.rows() < 1 ) {
-		BIO_printf( bioOut, "ERROR bad user\r\n" );
+	/* Get the latest put session key. */
+	int bk_result = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bk_result != 1 ) {
+		BIO_printf( bioOut, "ERROR fetching broadcast key\r\n");
 		return -1;
 	}
 
-	MYSQL_ROW row = youngest.fetchRow();
-	char *broadcast_key = strdup(row[0]);
+	message("queue_broadcast: using %lld %s\n", generation, broadcast_key.data );
 
-	/* Find youngest broadcast key. In the future some sense of current session
-	 * key should be maintained. */
-	DbQuery gen( mysql,
-		"SELECT put_generation FROM user "
-		"WHERE user = %e", user );
-
-	if ( gen.rows() < 1 ) {
-		BIO_printf( bioOut, "ERROR bad user\r\n" );
-		return -1;
-	}
-
-	row = gen.fetchRow();
-	char *generation = strdup(row[0]);
-
-	message("queue_broadcast: using %s %s\n", generation, broadcast_key );
-
-	/* Find root user. */
+	/* Find root friend. */
 	DbQuery rootFriend( mysql,
 		"SELECT friend_claim.friend_id, friend_claim.put_relid "
 		"FROM friend_claim "
 		"JOIN put_tree "
 		"ON friend_claim.user = put_tree.user AND "
-		"friend_claim.friend_id = put_tree.friend_id "
-		"WHERE friend_claim.user = %e AND put_tree.put_root = true",
-		user );
+		"	friend_claim.friend_id = put_tree.friend_id "
+		"WHERE friend_claim.user = %e AND put_tree.put_root = true AND"
+		"	put_tree.generation <= %L "
+		"ORDER BY generation DESC LIMIT 1",
+		user, generation );
 
 	if ( rootFriend.rows() == 0 ) {
 		/* Nothing here means that the user has no friends (sniff). */
 	}
 	else {
-		row = rootFriend.fetchRow();
+		MYSQL_ROW row = rootFriend.fetchRow();
 		char *friend_id = row[0];
 		char *put_relid = row[1];
+
+		message( "queue_broadcast: using root node: %s\n", friend_id );
 
 		/* Do the encryption. */
 		RSA *user_priv = load_key( mysql, user );
@@ -1536,7 +1516,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		id.parse();
 
 		queue_broadcast_db( mysql, id.site, put_relid,
-				strtoll(generation, 0, 10), encrypt.sym );
+				generation, encrypt.sym );
 	}
 
 	return 0;
@@ -1747,10 +1727,9 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 		"	get_tree.get_fwd_site1, get_tree.get_fwd_relid1, "
 		"	get_tree.get_fwd_site2, get_tree.get_fwd_relid2, "
 		"	get_tree.broadcast_key "
-		"FROM friend_claim "
-		"JOIN get_tree "
+		"FROM friend_claim JOIN get_tree "
 		"ON friend_claim.user = get_tree.user AND "
-		"friend_claim.friend_id = get_tree.friend_id "
+		"	friend_claim.friend_id = get_tree.friend_id "
 		"WHERE friend_claim.get_relid = %e AND get_tree.generation <= %L "
 		"ORDER BY get_tree.generation DESC LIMIT 1",
 		relid, generation );

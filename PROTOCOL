@@ -11,7 +11,8 @@ control of (possibly through a service provider). It represents their identity.
 3. An RSA key pair is created. The key has no passphrase. 
 
 4. The public portion of the key is made publically available. The key must
-always be This must always be fetched using SSL.
+always be fetched using SSL. This guarantees that a key has been provided by
+the server hosting the identity and has not been tampered with.
 
 OWNER LOGIN
 ===========

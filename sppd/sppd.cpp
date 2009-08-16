@@ -1416,14 +1416,14 @@ void forward_to( MYSQL *mysql, const char *user, const char *friend_id,
 	if ( child_num == 1 ) {
 		exec_query( mysql, 
 			"UPDATE get_tree "
-			"SET get_fwd_site1 = %e, get_fwd_relid1 = %e "
+			"SET site1 = %e, relid1 = %e "
 			"WHERE user = %e AND friend_id = %e AND generation = %L",
 			to_site, relid, user, friend_id, generation );
 	}
 	else if ( child_num == 2 ) {
 		exec_query( mysql, 
 			"UPDATE get_tree "
-			"SET get_fwd_site2 = %e, get_fwd_relid2 = %e "
+			"SET site2 = %e, relid2 = %e "
 			"WHERE user = %e AND friend_id = %e AND generation = %L",
 			to_site, relid, user, friend_id, generation );
 	}
@@ -1491,7 +1491,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		"JOIN put_tree "
 		"ON friend_claim.user = put_tree.user AND "
 		"	friend_claim.friend_id = put_tree.friend_id "
-		"WHERE friend_claim.user = %e AND put_tree.put_root = true AND"
+		"WHERE friend_claim.user = %e AND put_tree.root = true AND"
 		"	put_tree.generation <= %L "
 		"ORDER BY generation DESC LIMIT 1",
 		user, generation );
@@ -1714,8 +1714,8 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
 	char *user, *friend_id, *broadcast_key;
-	char *get_fwd_site1, *get_fwd_relid1;
-	char *get_fwd_site2, *get_fwd_relid2;
+	char *site1, *relid1;
+	char *site2, *relid2;
 	RSA *id_pub;
 	Encrypt encrypt;
 	int decryptRes, parseRes, decLen;
@@ -1724,8 +1724,8 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	/* Find the recipient. */
 	DbQuery recipient( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
-		"	get_tree.get_fwd_site1, get_tree.get_fwd_relid1, "
-		"	get_tree.get_fwd_site2, get_tree.get_fwd_relid2, "
+		"	get_tree.site1, get_tree.relid1, "
+		"	get_tree.site2, get_tree.relid2, "
 		"	get_tree.broadcast_key "
 		"FROM friend_claim JOIN get_tree "
 		"ON friend_claim.user = get_tree.user AND "
@@ -1742,10 +1742,10 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	MYSQL_ROW row = recipient.fetchRow();
 	user = row[0];
 	friend_id = row[1];
-	get_fwd_site1 = row[2];
-	get_fwd_relid1 = row[3];
-	get_fwd_site2 = row[4];
-	get_fwd_relid2 = row[5];
+	site1 = row[2];
+	relid1 = row[3];
+	site2 = row[4];
+	relid2 = row[5];
 	broadcast_key = row[6];
 
 	/* Do the decryption. */
@@ -1774,11 +1774,11 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	 * Now do the forwarding.
 	 */
 
-	if ( get_fwd_site1 != 0 )
-		queue_broadcast_db( mysql, get_fwd_site1, get_fwd_relid1, generation, encrypted );
+	if ( site1 != 0 )
+		queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
 
-	if ( get_fwd_site2 != 0 )
-		queue_broadcast_db( mysql, get_fwd_site2, get_fwd_relid2, generation, encrypted );
+	if ( site2 != 0 )
+		queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
 
 	BIO_printf( bioOut, "OK\n" );
 }

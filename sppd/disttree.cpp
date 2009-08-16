@@ -41,7 +41,7 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 	NodeMap nodeMap;
 
 	exec_query( mysql,
-		"SELECT friend_id, generation, put_root, put_forward1, put_forward2 "
+		"SELECT friend_id, generation, root, forward1, forward2 "
 		"FROM put_tree "
 		"WHERE user = %e AND generation <= %L "
 		"ORDER BY generation DESC",
@@ -117,7 +117,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 	/* Insert an entry for this relationship. */
 	exec_query( mysql, 
 		"INSERT INTO put_tree "
-		"( user, friend_id, generation, put_root )"
+		"( user, friend_id, generation, root )"
 		"VALUES ( %e, %e, %L, 0 ) ",
 		user, identity, generation );
 
@@ -131,7 +131,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 		/* Set this friend claim to be the root of the put tree. */
 		exec_query( mysql,
 			"UPDATE put_tree "
-			"SET put_root = true "
+			"SET root = true "
 			"WHERE user = %e AND friend_id = %e",
 			user, identity );
 	}
@@ -149,7 +149,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 
 				exec_query( mysql,
 					"UPDATE put_tree "
-					"SET put_forward1 = %e "
+					"SET forward1 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
@@ -165,7 +165,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 
 				exec_query( mysql,
 					"UPDATE put_tree "
-					"SET put_forward2 = %e "
+					"SET forward2 = %e "
 					"WHERE user = %e AND friend_id = %e",
 					identity, user, front->identity.c_str() );
 
@@ -281,7 +281,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 
 		DbQuery localInsert( mysql,
 			"INSERT INTO put_tree "
-			"( user, friend_id, generation, put_root, put_forward1, put_forward2 )"
+			"( user, friend_id, generation, root, forward1, forward2 )"
 			"VALUES ( %e, %e, %L, %l, %e, %e )",
 			user, w->identity, generation,
 			w->isRoot, w->left, w->right );

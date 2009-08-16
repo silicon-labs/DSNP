@@ -192,9 +192,9 @@ CREATE TABLE put_tree (
 	user VARCHAR(20),
 	friend_id TEXT,
 	generation BIGINT,
-	put_root BOOL,
-	put_forward1 TEXT,
-	put_forward2 TEXT
+	root BOOL,
+	forward1 TEXT,
+	forward2 TEXT
 );
 
 CREATE TABLE get_tree (
@@ -202,10 +202,10 @@ CREATE TABLE get_tree (
 	friend_id TEXT,
 	generation BIGINT,
 	broadcast_key VARCHAR(48),
-	get_fwd_site1 TEXT,
-	get_fwd_site2 TEXT,
-	get_fwd_relid1 VARCHAR(48),
-	get_fwd_relid2 VARCHAR(48)
+	site1 TEXT,
+	site2 TEXT,
+	relid1 VARCHAR(48),
+	relid2 VARCHAR(48)
 );
 
 CREATE TABLE ftoken_request (

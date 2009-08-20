@@ -204,8 +204,10 @@ CREATE TABLE get_tree (
 	broadcast_key VARCHAR(48),
 	site1 TEXT,
 	site2 TEXT,
+	site_ret TEXT,
 	relid1 VARCHAR(48),
-	relid2 VARCHAR(48)
+	relid2 VARCHAR(48),
+	relid_ret VARCHAR(48)
 );
 
 CREATE TABLE ftoken_request (

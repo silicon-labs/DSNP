@@ -124,8 +124,8 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 	NodeList roots;
 	load_tree( mysql, user, 1, roots );
 
-	Identity id( identity );
-	id.parse();
+	Identity destId( identity );
+	destId.parse();
 
 	if ( roots.size() == 0 ) {
 		/* Set this friend claim to be the root of the put tree. */
@@ -154,7 +154,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 					identity, user, front->identity.c_str() );
 
 				send_forward_to( mysql, user, front->identity.c_str(), 1,
-						generation, id.site, relid );
+						generation, destId.site, relid );
 				break;
 			}
 
@@ -170,7 +170,7 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 					identity, user, front->identity.c_str() );
 
 				send_forward_to( mysql, user, front->identity.c_str(), 2,
-						generation, id.site, relid );
+						generation, destId.site, relid );
 				break;
 			}
 
@@ -192,6 +192,49 @@ struct GetTreeWork
 };
 
 typedef list<GetTreeWork*> WorkList;
+
+void exec_worklist( MYSQL *mysql, const char *user, long long generation,
+		const char *broadcast_key, WorkList &workList )
+{
+	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
+		GetTreeWork *w = *i;
+		printf("%s %s %s\n", w->identity, w->left, w->right );
+
+		DbQuery localInsert( mysql,
+			"INSERT INTO put_tree "
+			"( user, friend_id, generation, root, forward1, forward2 )"
+			"VALUES ( %e, %e, %L, %l, %e, %e )",
+			user, w->identity, generation,
+			w->isRoot, w->left, w->right );
+
+		send_broadcast_key( mysql, user, w->identity, generation, broadcast_key );
+
+		if ( w->left != 0 ) {
+			Identity leftId( w->left );
+			leftId.parse();
+			DbQuery relid( mysql,
+				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+				user, w->left );
+			send_forward_to( mysql, user, w->identity, 1, generation,
+					leftId.site, relid.fetchRow()[0] );
+		}
+
+		if ( w->right != 0 ) {
+			Identity rightId( w->right );
+			rightId.parse();
+			DbQuery relid( mysql,
+				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+				user, w->right );
+			send_forward_to( mysql, user, w->identity, 2, generation,
+					rightId.site, relid.fetchRow()[0] );
+		}
+	}
+
+	DbQuery updateGen( mysql,
+		"UPDATE user SET put_generation = %L WHERE user = %e",
+		generation, user );
+}
+
 
 void swap( MYSQL *mysql, const char *user, NodeList &roots, 
 		FriendNode *n1, FriendNode *n2 )
@@ -275,43 +318,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 
 	workList.push_back( work2 );
 
-	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
-		GetTreeWork *w = *i;
-		printf("%s %s %s\n", w->identity, w->left, w->right );
-
-		DbQuery localInsert( mysql,
-			"INSERT INTO put_tree "
-			"( user, friend_id, generation, root, forward1, forward2 )"
-			"VALUES ( %e, %e, %L, %l, %e, %e )",
-			user, w->identity, generation,
-			w->isRoot, w->left, w->right );
-
-		send_broadcast_key( mysql, user, w->identity, generation, broadcast_key );
-
-		if ( w->left != 0 ) {
-			Identity leftId( w->left );
-			leftId.parse();
-			DbQuery relid( mysql,
-				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-				user, w->left );
-			send_forward_to( mysql, user, w->identity, 1, generation,
-					leftId.site, relid.fetchRow()[0] );
-		}
-
-		if ( w->right != 0 ) {
-			Identity rightId( w->right );
-			rightId.parse();
-			DbQuery relid( mysql,
-				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-				user, w->right );
-			send_forward_to( mysql, user, w->identity, 2, generation,
-					rightId.site, relid.fetchRow()[0] );
-		}
-	}
-
-	DbQuery updateGen( mysql,
-		"UPDATE user SET put_generation = %L WHERE user = %e",
-		generation, user );
+	exec_worklist( mysql, user, generation, broadcast_key, workList );
 }
 
 int forward_tree_swap( MYSQL *mysql, const char *user,

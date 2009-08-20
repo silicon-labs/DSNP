@@ -1413,14 +1413,20 @@ void forward_to( MYSQL *mysql, const char *user, const char *friend_id,
 {
 	add_get_tree( mysql, user, friend_id, generation );
 
-	if ( child_num == 1 ) {
+	switch ( child_num ) {
+	case 0:
+		exec_query( mysql, 
+			"UPDATE get_tree "
+			"SET site_ret = %e, relid_ret = %e "
+			"WHERE user = %e AND friend_id = %e AND generation = %L",
+			to_site, relid, user, friend_id, generation );
+	case 1:
 		exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET site1 = %e, relid1 = %e "
 			"WHERE user = %e AND friend_id = %e AND generation = %L",
 			to_site, relid, user, friend_id, generation );
-	}
-	else if ( child_num == 2 ) {
+	case 2:
 		exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET site2 = %e, relid2 = %e "

@@ -105,81 +105,6 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
-int forward_tree_insert( MYSQL *mysql, const char *user,
-		const char *identity, const char *relid )
-{
-	DbQuery genQuery( mysql,
-		"SELECT put_generation from user where user = %e", user );
-	if ( genQuery.rows() != 1 )
-		return -1;
-	long long generation = strtoll( genQuery.fetchRow()[0], 0, 10 );
-
-	/* Insert an entry for this relationship. */
-	exec_query( mysql, 
-		"INSERT INTO put_tree "
-		"( user, friend_id, generation, root )"
-		"VALUES ( %e, %e, %L, 0 ) ",
-		user, identity, generation );
-
-	NodeList roots;
-	load_tree( mysql, user, 1, roots );
-
-	Identity destId( identity );
-	destId.parse();
-
-	if ( roots.size() == 0 ) {
-		/* Set this friend claim to be the root of the put tree. */
-		exec_query( mysql,
-			"UPDATE put_tree "
-			"SET root = true "
-			"WHERE user = %e AND friend_id = %e",
-			user, identity );
-	}
-	else {
-		NodeList queue = roots;
-
-		FriendNode *newNode = new FriendNode( identity, generation );
-
-		while ( queue.size() > 0 ) {
-			FriendNode *front = queue.front();
-			if ( front->left != 0 )
-				queue.push_back( front->left );
-			else {
-				front->left = newNode;
-
-				exec_query( mysql,
-					"UPDATE put_tree "
-					"SET forward1 = %e "
-					"WHERE user = %e AND friend_id = %e",
-					identity, user, front->identity.c_str() );
-
-				send_forward_to( mysql, user, front->identity.c_str(), 1,
-						generation, destId.site, relid );
-				break;
-			}
-
-			if ( front->right != 0 )
-				queue.push_back( front->right );
-			else {
-				front->right = newNode;
-
-				exec_query( mysql,
-					"UPDATE put_tree "
-					"SET forward2 = %e "
-					"WHERE user = %e AND friend_id = %e",
-					identity, user, front->identity.c_str() );
-
-				send_forward_to( mysql, user, front->identity.c_str(), 2,
-						generation, destId.site, relid );
-				break;
-			}
-
-			queue.pop_front();
-		}
-	}
-	return 0;
-}
-
 struct GetTreeWork
 {
 	GetTreeWork( const char *identity, bool isRoot, const char *left, const char *right )
@@ -233,6 +158,78 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 	DbQuery updateGen( mysql,
 		"UPDATE user SET put_generation = %L WHERE user = %e",
 		generation, user );
+}
+
+
+int forward_tree_insert( MYSQL *mysql, const char *user,
+		const char *identity, const char *relid )
+{
+	/* Need the current broadcast key. */
+	long long generation;
+	String broadcast_key;
+	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bkres < 0 ) {
+		printf("failed to get current_put_bk\n");
+		return -1;
+	}
+
+	generation += 1;
+	WorkList workList;
+
+	NodeList roots;
+	load_tree( mysql, user, generation, roots );
+
+	if ( roots.size() == 0 ) {
+		/* Set this friend claim to be the root of the put tree. */
+		GetTreeWork *work = new GetTreeWork( identity, 1, 0, 0 );
+		workList.push_back( work );
+	}
+	else {
+		NodeList queue = roots;
+
+		FriendNode *newNode = new FriendNode( identity, generation );
+
+		/* Need an entry for the node being inserted into the tree. It is not a
+		 * root node. */
+		GetTreeWork *work = new GetTreeWork( identity, 0, 0, 0 );
+		workList.push_back( work );
+
+		while ( queue.size() > 0 ) {
+			FriendNode *front = queue.front();
+			if ( front->left != 0 )
+				queue.push_back( front->left );
+			else {
+				front->left = newNode;
+
+				GetTreeWork *work = new GetTreeWork( 
+					front->identity.c_str(), 
+					front->isRoot ? 1 : 0,
+					identity, 
+					front->right != 0 ? front->right->identity.c_str() : 0 );
+				workList.push_back( work );
+				break;
+			}
+
+			if ( front->right != 0 )
+				queue.push_back( front->right );
+			else {
+				front->right = newNode;
+
+				GetTreeWork *work = new GetTreeWork( 
+					front->identity.c_str(), 
+					front->isRoot ? 1 : 0,
+					front->left != 0 ? front->left->identity.c_str() : 0,
+					identity );
+				workList.push_back( work );
+				break;
+			}
+
+			queue.pop_front();
+		}
+	}
+
+	exec_worklist( mysql, user, generation, broadcast_key, workList );
+	return 0;
 }
 
 

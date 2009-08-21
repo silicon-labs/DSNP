@@ -1117,7 +1117,6 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
 
-	send_current_broadcast_key( mysql, user, from_id );
 	forward_tree_insert( mysql, user, from_id, requested_relid );
 
 	BIO_printf( bioOut, "OK\r\n" );
@@ -2327,7 +2326,6 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 {
 	::message("registered: starting\n");
 
-	send_current_broadcast_key( mysql, for_user, from_id );
 	forward_tree_insert( mysql, for_user, from_id, returned_relid );
 
 	DbQuery removeSentRequest( mysql, 

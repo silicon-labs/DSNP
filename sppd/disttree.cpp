@@ -133,7 +133,13 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 			user, w->identity, generation,
 			w->isRoot, w->left, w->right );
 
-		send_broadcast_key( mysql, user, w->identity, generation, broadcast_key );
+		String bk( 
+			"broadcast_key %lld %s\r\n", 
+			generation, broadcast_key );
+		String parent, left, right;
+		parent.set("");
+		left.set("");
+		right.set("");
 
 		if ( w->parent != 0 ) {
 			Identity parentId( w->parent );
@@ -141,8 +147,10 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 			DbQuery relid( mysql,
 				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
 				user, w->parent );
-			send_forward_to( mysql, user, w->identity, 0, generation,
-					parentId.site, relid.fetchRow()[0] );
+
+			parent.format( 
+				"forward_to 0 %lld %s %s\r\n", 
+				generation, parentId.site, relid.fetchRow()[0] );
 		}
 
 		if ( w->left != 0 ) {
@@ -151,8 +159,10 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 			DbQuery relid( mysql,
 				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
 				user, w->left );
-			send_forward_to( mysql, user, w->identity, 1, generation,
-					leftId.site, relid.fetchRow()[0] );
+
+			left.format( 
+				"forward_to 1 %lld %s %s\r\n", 
+				generation, leftId.site, relid.fetchRow()[0] );
 		}
 
 		if ( w->right != 0 ) {
@@ -161,9 +171,14 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 			DbQuery relid( mysql,
 				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
 				user, w->right );
-			send_forward_to( mysql, user, w->identity, 2, generation,
-					rightId.site, relid.fetchRow()[0] );
+
+			right.format( 
+				"forward_to 2 %lld %s %s\r\n", 
+				generation, rightId.site, relid.fetchRow()[0] );
 		}
+
+		String msg( "%s%s%s%s", bk.data, parent.data, left.data, right.data );
+		queue_message( mysql, user, w->identity, msg.data );
 	}
 
 	DbQuery updateGen( mysql,

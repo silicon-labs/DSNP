@@ -2151,7 +2151,8 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	Encrypt encrypt;
 	RSA *user_priv, *id_pub;
 	int sigRes;
-	char *broadcast_key, *generation;
+	String broadcast_key;
+	long long generation;
 	char *authorId;
 	char *full;
 	long soFar;
@@ -2208,23 +2209,8 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 
 	::message( "encrypt_remote_broadcast type: %s\n", type );
 	
-	/* Find youngest session key. In the future some sense of current session
-	 * key should be maintained. */
-	exec_query( mysql,
-		"SELECT generation, broadcast_key FROM put_broadcast_key "
-		"WHERE user = %e "
-		"ORDER BY generation DESC "
-		"LIMIT 1",
-		user );
-
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
-	generation = strdup(row[0]);
-	broadcast_key = strdup(row[1]);
+	/* Find current generation and youngest broadcast key */
+	current_put_bk( mysql, user, generation, broadcast_key );
 
 	/* Make the full message. */
 	full = new char[128+mLen];
@@ -2240,7 +2226,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	}
 
 	message( "encrypt_remote_broadcast enc: %s\n", encrypt.sym );
-	String resultCmd( "encrypted_broadcast %s %s\r\n", generation, encrypt.sym );
+	String resultCmd( "encrypted_broadcast %lld %s\r\n", generation, encrypt.sym );
 
 	encrypt.signEncrypt( (u_char*)resultCmd.data, resultCmd.length+1 );
 

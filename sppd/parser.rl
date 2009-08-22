@@ -326,8 +326,9 @@ int server_parse_loop()
 			error( "parse error: %s", buf );
 			return ERR_PARSE_ERROR;
 		}
-		else if ( cs < %%{ write first_final; }%% )
+		else if ( cs < %%{ write first_final; }%% ) {
 			return ERR_UNEXPECTED_END;
+		}
 	}
 
 	if ( mysql != 0 ) {
@@ -392,19 +393,20 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 
 	include common;
 
-	main :=
+	main := (
 		'broadcast_key'i ' ' generation ' ' key EOL @{
 			broadcast_key( mysql, to_relid, user, friend_id, generation, key );
 		} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid EOL @{
 			forward_to( mysql, user, friend_id, number, generation, identity, relid );
 		} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' type ' ' length EOL @{
-			/* Rest of the input is the msssage. */
-			const char *msg = p + 1;
-			encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, type, msg );
-			fbreak;
-		};
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' type ' ' length 
+			EOL @{ msg = p+1; p += length; } 
+			EOL @{
+				/* Rest of the input is the msssage. */
+				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, type, msg );
+			}
+	)*;
 }%%
 
 %% write data;

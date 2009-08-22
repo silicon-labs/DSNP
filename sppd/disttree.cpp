@@ -107,11 +107,12 @@ void print_node( FriendNode *node, int level )
 
 struct GetTreeWork
 {
-	GetTreeWork( const char *identity, bool isRoot, const char *left, const char *right )
-		: identity(identity), isRoot(isRoot), left(left), right(right) {}
+	GetTreeWork( const char *identity, bool isRoot, const char *parent, const char *left, const char *right )
+		: identity(identity), isRoot(isRoot), parent(parent), left(left), right(right) {}
 
 	const char *identity;
 	bool isRoot;
+	const char *parent;
 	const char *left;
 	const char *right;
 };
@@ -133,6 +134,16 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 			w->isRoot, w->left, w->right );
 
 		send_broadcast_key( mysql, user, w->identity, generation, broadcast_key );
+
+		if ( w->parent != 0 ) {
+			Identity parentId( w->parent );
+			parentId.parse();
+			DbQuery relid( mysql,
+				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+				user, w->parent );
+			send_forward_to( mysql, user, w->identity, 0, generation,
+					parentId.site, relid.fetchRow()[0] );
+		}
 
 		if ( w->left != 0 ) {
 			Identity leftId( w->left );
@@ -181,18 +192,13 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 
 	if ( roots.size() == 0 ) {
 		/* Set this friend claim to be the root of the put tree. */
-		GetTreeWork *work = new GetTreeWork( identity, 1, 0, 0 );
+		GetTreeWork *work = new GetTreeWork( identity, 1, 0, 0, 0 );
 		workList.push_back( work );
 	}
 	else {
 		NodeList queue = roots;
 
 		FriendNode *newNode = new FriendNode( identity, generation );
-
-		/* Need an entry for the node being inserted into the tree. It is not a
-		 * root node. */
-		GetTreeWork *work = new GetTreeWork( identity, 0, 0, 0 );
-		workList.push_back( work );
 
 		while ( queue.size() > 0 ) {
 			FriendNode *front = queue.front();
@@ -204,8 +210,14 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 				GetTreeWork *work = new GetTreeWork( 
 					front->identity.c_str(), 
 					front->isRoot ? 1 : 0,
+					front->parent != 0 ? front->parent->identity.c_str() : 0,
 					identity, 
 					front->right != 0 ? front->right->identity.c_str() : 0 );
+				workList.push_back( work );
+
+				/* Need an entry for the node being inserted into the tree. It is not a
+				 * root node. */
+				work = new GetTreeWork( identity, 0, front->identity.c_str(), 0, 0 );
 				workList.push_back( work );
 				break;
 			}
@@ -218,8 +230,14 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 				GetTreeWork *work = new GetTreeWork( 
 					front->identity.c_str(), 
 					front->isRoot ? 1 : 0,
+					front->parent != 0 ? front->parent->identity.c_str() : 0,
 					front->left != 0 ? front->left->identity.c_str() : 0,
 					identity );
+				workList.push_back( work );
+
+				/* Need an entry for the node being inserted into the tree. It is not a
+				 * root node. */
+				work = new GetTreeWork( identity, 0, front->identity.c_str(), 0, 0 );
 				workList.push_back( work );
 				break;
 			}
@@ -258,6 +276,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 			GetTreeWork *work = new GetTreeWork( 
 				n1->parent->identity.c_str(), 
 				n1->parent->isRoot ? 1 : 0, 
+				0,
 				n2->identity.c_str(), 
 				n1->parent->right != 0 ? n1->parent->right->identity.c_str() : 0 );
 
@@ -267,6 +286,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 			GetTreeWork *work = new GetTreeWork( 
 				n1->parent->identity.c_str(), 
 				n1->parent->isRoot ? 1 : 0, 
+				0,
 				n1->parent->left != 0 ? n1->parent->left->identity.c_str() : 0,
 				n2->identity.c_str() );
 
@@ -277,6 +297,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 	GetTreeWork *work1 = new GetTreeWork( 
 		n2->identity.c_str(), 
 		n1->parent == 0 ? 1 : 0, 
+		0,
 		n1->left != 0 ? n1->left->identity.c_str() : 0,
 		n1->right != 0 ? n1->right->identity.c_str() : 0 );
 
@@ -291,6 +312,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 			GetTreeWork *work = new GetTreeWork( 
 				n2->parent->identity.c_str(), 
 				n2->parent->isRoot ? 1 : 0, 
+				0,
 				n1->identity.c_str(), 
 				n2->parent->right != 0 ? n2->parent->right->identity.c_str() : 0 );
 
@@ -300,6 +322,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 			GetTreeWork *work = new GetTreeWork( 
 				n2->parent->identity.c_str(), 
 				n2->parent->isRoot ? 1 : 0, 
+				0,
 				n2->parent->left != 0 ? n2->parent->left->identity.c_str() : 0,
 				n1->identity.c_str() );
 
@@ -310,6 +333,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 	GetTreeWork *work2 = new GetTreeWork( 
 		n1->identity.c_str(), 
 		n2->parent == 0 ? 1 : 0, 
+		0,
 		n2->left != 0 ? n2->left->identity.c_str() : 0,
 		n2->right != 0 ? n2->right->identity.c_str() : 0 );
 

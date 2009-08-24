@@ -55,37 +55,38 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 		if ( !row )
 			break;
 
-		char *parentIdent = row[0];
+		char *ident = row[0];
 		long long generation = strtoll( row[1], 0, 10 );
 		int isRoot = atoi(row[2]);
 		char *leftIdent = row[3];
 		char *rightIdent = row[4];
 
-		FriendNode *parent = find_node( nodeMap, parentIdent, generation );
+		FriendNode *node = find_node( nodeMap, ident, generation );
+
 		/* Skip if we would be downgrading the generation. */
-		if ( generation < parent->generation ) {
-			printf("skipping old generation for %s %s\n", user, parentIdent );
+		if ( generation < node->generation ) {
+			printf("skipping old generation for %s %s\n", user, ident );
 			continue;
 		}
-		parent->generation = generation;
-		printf("loading %s %s\n", user, parentIdent );
+		node->generation = generation;
+		printf("loading %s %s\n", user, ident );
 
 		if ( isRoot ) {
-			parent->isRoot = true;
-			roots.push_back( parent );
+			node->isRoot = true;
+			roots.push_back( node );
 		}
 
 		if ( leftIdent != 0 ) {
 			/* Use generation 0 since we don't know the generation. */
 			FriendNode *left = find_node( nodeMap, leftIdent, 0 );
-			parent->left = left;
-			left->parent = parent;
+			node->left = left;
+			left->parent = node;
 		}
 
 		if ( rightIdent != 0 ) {
 			FriendNode *right = find_node( nodeMap, rightIdent, 0 );
-			parent->right = right;
-			right->parent = right;
+			node->right = right;
+			right->parent = node;
 		}
 	}
 

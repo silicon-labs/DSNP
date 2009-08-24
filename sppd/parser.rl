@@ -270,7 +270,14 @@ bool gblKeySubmitted = false;
 		'broadcast'i ' ' relid ' ' generation ' ' length
 			M_EOL @check_ssl @{
 				broadcast( mysql, relid, generation, message_buffer.data );
+			} |
+
+		'acknowledgement'i ' ' relid ' ' generation ' ' seq_num
+			EOL @{ 
+				broadcast_forward_ack( mysql, relid, generation, seq_num );
+				BIO_printf( bioOut, "OK\r\n");
 			}
+
 	)*;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -289,7 +296,7 @@ int server_parse_loop()
 	String hash, key, relid, token, type;
 	String gen_str, seq_str, resource_id_str;
 	long length;
-	long long generation, resource_id;
+	long long generation, resource_id, seq_num;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
@@ -481,7 +488,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 
 %% write data;
 
-int broadcast_parser( MYSQL *mysql, const char *relid,
+int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen )
 {
 	long cs;
@@ -507,6 +514,7 @@ int broadcast_parser( MYSQL *mysql, const char *relid,
 			return ERR_UNEXPECTED_END;
 	}
 
+	ret_seq_num = seq_num;
 	return 0;
 }
 
@@ -964,31 +972,33 @@ long Identity::parse()
 	write data;
 }%%
 
-long send_broadcast_net( const char *toSite, const char *relid,
-		long long generation, const char *msg, long mLen )
+long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid,
+		long long to_generation, const char *msg, long mLen )
 {
 	static char buf[8192];
 	long cs;
-	const char *p, *pe;
+	const char *p, *pe, *mark;
 	bool OK = false;
 	long pres;
+	String relid, gen_str, seq_str;
+	long long generation, seq_num;
 
 	/* Need to parse the identity. */
-	Identity site( toSite );
+	Identity site( to_site );
 	pres = site.parse();
 
 	if ( pres < 0 )
 		return pres;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( site.host, toSite );
+	int result = tlsConnect.connect( site.host, to_site );
 	if ( result < 0 ) 
 		return result;
 
 	/* Send the request. */
 	BIO_printf( tlsConnect.sbio, 
 		"broadcast %s %lld %ld\r\n", 
-		relid, generation, mLen );
+		to_relid, to_generation, mLen );
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
 	BIO_flush( tlsConnect.sbio );
@@ -1006,6 +1016,10 @@ long send_broadcast_net( const char *toSite, const char *relid,
 
 		main := 
 			'OK' EOL @{ OK = true; } |
+			'LEAF_ACK ' relid ' ' generation ' ' seq_num EOL @{ 
+				OK = true; 
+				broadcast_forward_ack( mysql, relid, generation, seq_num );
+			} |
 			'ERROR' EOL;
 	}%%
 
@@ -1117,4 +1131,73 @@ long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
 	
 	return 0;
 }
+
+/*
+ * send_acknowledgement_net
+ */
+
+%%{
+	machine send_acknowledgement_net;
+	write data;
+}%%
+
+long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
+		long long to_generation, long long to_seq_num )
+{
+	static char buf[8192];
+	long cs;
+	const char *p, *pe;
+	bool OK = false;
+	long pres;
+
+	/* Need to parse the identity. */
+	Identity site( to_site );
+	pres = site.parse();
+
+	if ( pres < 0 )
+		return pres;
+
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( site.host, to_site );
+	if ( result < 0 ) 
+		return result;
+
+	/* Send the request. */
+	BIO_printf( tlsConnect.sbio, 
+		"acknowledgement %s %lld %lld\r\n", 
+		to_relid, to_generation, to_seq_num );
+	BIO_flush( tlsConnect.sbio );
+
+	/* Read the result. */
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
+
+	/* If there was an error then fail the fetch. */
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
+
+	/* Parser for response. */
+	%%{
+		include common;
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
+	
+	if ( !OK )
+		return ERR_SERVER_ERROR;
+	
+	return 0;
+}
+
 

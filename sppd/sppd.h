@@ -95,8 +95,8 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
-long send_broadcast_net( const char *toSite, const char *relid,
+long queue_broadcast( MYSQL *mysql, const char *fwd_relid, const char *user, const char *msg, long mLen );
+long send_broadcast_net( MYSQL *mysql, const char *toSite, const char *relid,
 		long long generation, const char *message, long mLen );
 long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		long long generation, const char *session_key );
@@ -133,7 +133,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *hash, const char *token, const char *type,
 		const char *user_message, long mLen );
 
-int broadcast_parser( MYSQL *mysql, const char *relid,
+int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
 		long long seqNum, const char *date, const char *type, long long resource_id, const char *msg, long length );
@@ -273,5 +273,8 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 
 int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
+int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation, long long seq_num );
+long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
+		long long to_generation, long long to_seq_num );
 
 #endif

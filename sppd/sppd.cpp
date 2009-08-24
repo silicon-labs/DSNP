@@ -875,10 +875,10 @@ long run_broadcast_queue_db( MYSQL *mysql )
 		long long generation = strtoll( row[2], 0, 10 );
 		char *msg = row[3];
 
-		long send_res = send_broadcast_net( to_site, relid,
+		long send_res = send_broadcast_net( mysql, to_site, relid,
 				generation, msg, strlen(msg) );
 		if ( send_res < 0 ) {
-			::message( "ERROR trouble sending message: %ld\n", send_res );
+			message( "ERROR trouble sending message: %ld\n", send_res );
 			sent[i] = false;
 			unsent = true;
 		}
@@ -896,18 +896,17 @@ long run_broadcast_queue_db( MYSQL *mysql )
 				char *to_site = row[0];
 				char *relid = row[1];
 				char *generation = row[2];
-				char *message = row[3];
+				char *msg = row[3];
 
-				::message( "Putting back to the queue: %s %s %s\n", 
+				message( "putting back to the queue: %s %s %s\n", 
 						to_site, relid, generation );
 
 				/* Queue the message. */
-
 				exec_query( mysql,
 					"INSERT INTO broadcast_queue "
 					"( to_site, relid, generation, message ) "
 					"VALUES ( %e, %e, %e, %e ) ",
-					to_site, relid, generation, message );
+					to_site, relid, generation, msg );
 			}
 		}
 
@@ -1457,8 +1456,8 @@ long queue_message_db( MYSQL *mysql, const char *from_user,
 	return 0;
 }
 
-long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
-		long long generation, const char *msg )
+long queue_broadcast_db( MYSQL *mysql, const char *to_site,
+		const char *relid, long long generation, const char *msg )
 {
 	message("queue_broadcast_db\n");
 
@@ -1722,16 +1721,19 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
 	char *user, *friend_id, *broadcast_key;
+	char *relid_ret;
 	char *site1, *relid1;
 	char *site2, *relid2;
 	RSA *id_pub;
 	Encrypt encrypt;
 	int decryptRes, parseRes, decLen;
 	char *decrypted;
+	long long seq_num;
 
 	/* Find the recipient. */
 	DbQuery recipient( mysql, 
 		"SELECT friend_claim.user, friend_claim.friend_id, "
+		"	get_tree.relid_ret, "
 		"	get_tree.site1, get_tree.relid1, "
 		"	get_tree.site2, get_tree.relid2, "
 		"	get_tree.broadcast_key "
@@ -1750,11 +1752,12 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	MYSQL_ROW row = recipient.fetchRow();
 	user = row[0];
 	friend_id = row[1];
-	site1 = row[2];
-	relid1 = row[3];
-	site2 = row[4];
-	relid2 = row[5];
-	broadcast_key = row[6];
+	relid_ret = row[2];
+	site1 = row[3];
+	relid1 = row[4];
+	site2 = row[5];
+	relid2 = row[6];
+	broadcast_key = row[7];
 
 	/* Do the decryption. */
 	id_pub = fetch_public_key( mysql, friend_id );
@@ -1774,7 +1777,7 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	decLen = encrypt.decLen;
 
 	message("dispatching broadcast_parser\n");
-	parseRes = broadcast_parser( mysql, relid, user, friend_id, decrypted, decLen );
+	parseRes = broadcast_parser( seq_num, mysql, relid, user, friend_id, decrypted, decLen );
 	if ( parseRes < 0 )
 		message("broadcast_parser failed\n");
 
@@ -1782,13 +1785,76 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	 * Now do the forwarding.
 	 */
 
+	if ( site1 != 0 || site2 != 0 ) {
+		/* We have forwarded to at least one other site.  */
+		DbQuery logForward( mysql,
+			"INSERT INTO unack_forward ( relid, children, generation, seq_num ) "
+			"VALUES ( %e, %l, %L, %L )",
+			relid, ( site1 != 0 ? 1 : 0 ) + ( site2 != 0 ? 1 : 0 ), generation, seq_num );
+		BIO_printf( bioOut, "OK\n" );
+	}
+
 	if ( site1 != 0 )
 		queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
 
 	if ( site2 != 0 )
 		queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
+	
+	if ( site1 == 0 && site2 == 0 ) {
+		/* Don't need to wait for any responses. */
+		BIO_printf( bioOut, "LEAF_ACK %s %lld %lld\r\n", relid_ret, generation, seq_num );
+	}
+}
 
-	BIO_printf( bioOut, "OK\n" );
+int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation, long long seq_num )
+{
+	message( "successful leaf ack: %s %lld %lld\r\n", relid, generation, seq_num );
+	DbQuery update( mysql,
+		"UPDATE unack_forward SET children = children - 1 "
+		"WHERE relid = %e AND generation = %L AND seq_num = %L",
+		relid, generation, seq_num );
+	
+	DbQuery check( mysql,
+		"SELECT children FROM unack_forward "
+		"WHERE relid = %e AND generation = %L AND seq_num = %L AND children = 0",
+		relid, generation, seq_num );
+	
+	if ( check.rows() > 0 ) {
+		DbQuery clean( mysql,
+			"DELETE FROM unack_forward "
+			"WHERE relid = %e AND generation = %L AND seq_num = %L AND children = 0",
+			relid, generation, seq_num );
+
+		/* Find the recipient. */
+		DbQuery recipient( mysql, 
+			"SELECT friend_claim.user, friend_claim.friend_id, "
+			"	get_tree.relid_ret, "
+			"	get_tree.site_ret, "
+			"	get_tree.broadcast_key "
+			"FROM friend_claim JOIN get_tree "
+			"ON friend_claim.user = get_tree.user AND "
+			"	friend_claim.friend_id = get_tree.friend_id "
+			"WHERE friend_claim.get_relid = %e AND get_tree.generation <= %L "
+			"ORDER BY get_tree.generation DESC LIMIT 1",
+			relid, generation );
+
+		if ( recipient.rows() == 0 )
+			return -1;
+
+		MYSQL_ROW row = recipient.fetchRow();
+		const char *user = row[0];
+		const char *friend_id = row[1];
+		const char *relid_ret = row[2];
+		const char *site_ret = row[3];
+		const char *broadcast_key = row[4];
+
+		if ( relid_ret != 0 && site_ret != 0 ) {
+			message("%s is returning mesage to %s %s on behalf of %s\n", user, site_ret, relid_ret, friend_id );
+			send_acknowledgement_net( mysql, site_ret, relid_ret, generation, seq_num );
+		}
+	}
+
+	return 0;
 }
 
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 

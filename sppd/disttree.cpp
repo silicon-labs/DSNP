@@ -392,3 +392,146 @@ int forward_tree_swap( MYSQL *mysql, const char *user,
 
 	return 0;
 }
+
+/* 
+
+Bottom up tree building, try to find:
+
+Try to find two trees of same height, use the shortest such pair. Make the new
+node a parent of these nodes.
+
+If no pair of the same height is found then make a single.
+
+Example:
+
+x
+
+x x
+
+ x
+x x
+
+ x
+x x  x
+
+ x
+x x   x x
+
+ x     x
+x x   x x
+
+    x
+ x     x
+x x   x x
+
+    x
+ x     x
+x x   x x   x
+
+    x
+ x     x
+x x   x x   x x
+
+    x
+ x     x     x
+x x   x x   x x
+
+    x
+ x     x     x
+x x   x x   x x   x
+
+
+    x
+ x     x     x
+x x   x x   x x   x x
+
+    x
+ x     x     x     x
+x x   x x   x x   x x
+
+    x           x
+ x     x     x     x
+x x   x x   x x   x x
+
+          x
+    x           x
+ x     x     x     x
+x x   x x   x x   x x
+
+          x
+    x           x
+ x     x     x     x
+x x   x x   x x   x x   x x
+
+          x
+    x           x
+ x     x     x     x     x
+x x   x x   x x   x x   x x
+
+          x
+    x           x
+ x     x     x     x     x
+x x   x x   x x   x x   x x   x
+
+          x
+    x           x
+ x     x     x     x     x
+x x   x x   x x   x x   x x   x x
+
+          x
+    x           x
+ x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x
+
+          x
+    x           x           x
+ x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x
+
+          x
+    x           x           x
+ x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x
+
+          x
+    x           x           x
+ x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x
+
+          x
+    x           x           x
+ x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x
+
+          x
+    x           x           x
+ x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x   x
+
+          x
+    x           x           x
+ x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x   x x
+
+          x
+    x           x           x
+ x     x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x   x x
+
+          x
+    x           x           x           x
+ x     x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x   x x
+
+          x                       x
+    x           x           x           x
+ x     x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x   x x
+
+                      x
+          x                       x
+    x           x           x           x
+ x     x     x     x     x     x     x     x
+x x   x x   x x   x x   x x   x x   x x   x x
+
+*/

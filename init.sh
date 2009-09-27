@@ -14,7 +14,6 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-PHP_CONF=php/config.php
 SPPD_CONF=sppd/sppd.conf
 
 #
@@ -27,8 +26,7 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 # Port for the server.
 CFG_PORT=7085
 
-# start the config files
-{ echo '<?php'; echo; } > $PHP_CONF
+# start the config file
 echo > $SPPD_CONF
 
 cat << EOF
@@ -305,30 +303,6 @@ CREATE TABLE image (
 EOF
 
 #
-# Add the site to the PHP config file.
-#
-
-cat >> $PHP_CONF << EOF
-if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
-	\$CFG_URI = '$CFG_URI';
-	\$CFG_HOST = '$CFG_HOST';
-	\$CFG_PATH = '$CFG_PATH';
-	\$CFG_DB_HOST = 'localhost';
-	\$CFG_DB_USER = '${NAME}_owner';
-	\$CFG_DB_DATABASE = '$NAME';
-	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
-	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
-	\$CFG_PORT = $CFG_PORT;
-	\$CFG_USE_RECAPTCHA = SET_THIS;
-	\$CFG_RC_PUBLIC_KEY = SET_THIS;
-	\$CFG_RC_PRIVATE_KEY = SET_THIS;
-	\$CFG_PHOTO_DIR = SET_THIS;
-	\$CFG_IM_CONVERT = SET_THIS;
-}
-
-EOF
-
-#
 # Add the site to the sppd config file.
 #
 
@@ -359,23 +333,3 @@ echo
 
 mysql -f -h localhost -u root -p < init.sql
 rm init.sql
-
-# Finish the PHP config file.
-cat >> $PHP_CONF << EOF
-if ( !\$CFG_URI ) {
-	die('config.php: could not select installation');
-}
-
-if ( get_magic_quotes_gpc() ) {
-	die('the SPP software assumes PHP magic quotes to be off');
-}
-
-\$USER_NAME = isset( \$_GET['u'] ) ? \$_GET['u'] : "";
-\$USER_PATH = "\${CFG_PATH}\$USER_NAME/";
-\$USER_URI = "\${CFG_URI}\$USER_NAME/";
-
-include('error.php');
-
-?>
-EOF
-

@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "sppd.h"
+#include "dsnpd.h"
 
 Config *c = 0, *config_first = 0, *config_last = 0;
 

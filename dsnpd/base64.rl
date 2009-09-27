@@ -15,7 +15,7 @@
  */
 
 
-#include "sppd.h"
+#include "dsnpd.h"
 #include <string.h>
 
 %%{

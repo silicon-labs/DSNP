@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "sppd.h"
+#include "dsnpd.h"
 #include <mysql.h>
 #include <string.h>
 #include <stdarg.h>

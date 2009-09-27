@@ -14,8 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _SPPD_H
-#define _SPPD_H
+#ifndef _DSNPD_H
+#define _DSNPD_H
 
 #include <mysql.h>
 #include <openssl/bio.h>

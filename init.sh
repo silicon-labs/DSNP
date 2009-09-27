@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2007, 2008, Adrian Thurston <thurston@complang.org>
+# Copyright (c) 2007-2009, Adrian Thurston <thurston@complang.org>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-SPPD_CONF=sppd/sppd.conf
+DSNPD_CONF=dsnpd/dsnpd.conf
 
 #
 # Config for all sites
@@ -27,7 +27,7 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 CFG_PORT=7085
 
 # start the config file
-echo > $SPPD_CONF
+echo > $DSNPD_CONF
 
 cat << EOF
 Please choose a password to protect the new database users with. Every site you
@@ -303,10 +303,10 @@ CREATE TABLE image (
 EOF
 
 #
-# Add the site to the sppd config file.
+# Add the site to the dsnpd config file.
 #
 
-cat >> $SPPD_CONF << EOF
+cat >> $DSNPD_CONF << EOF
 ===== $NAME =====
 CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST

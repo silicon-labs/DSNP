@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <openssl/bio.h>
-#include "sppd.h"
+#include "dsnpd.h"
 #include "string.h"
 
 #define MAX_MSG_LEN 16384

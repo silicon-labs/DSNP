@@ -12,8 +12,8 @@ dnl  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 dnl  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 dnl  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   
-AC_INIT(sppd/main.cpp)
-AC_CONFIG_HEADER(sppd/config.h)
+AC_INIT(src/main.cpp)
+AC_CONFIG_HEADER(src/config.h)
 
 dnl Checks for programs.
 AC_PROG_CXX
@@ -22,6 +22,6 @@ dnl Check for definition of MAKE.
 AC_PROG_MAKE_SET
 
 dnl write output files
-AC_OUTPUT(Makefile sppd/Makefile)
+AC_OUTPUT(Makefile src/Makefile)
 
-echo "configuration of spp complete"
+echo "configuration of dsnpd complete"

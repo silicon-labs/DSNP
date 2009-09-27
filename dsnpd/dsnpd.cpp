@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "sppd.h"
+#include "dsnpd.h"
 #include "encrypt.h"
 #include "string.h"
 
@@ -1846,7 +1846,7 @@ int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation
 		const char *friend_id = row[1];
 		const char *relid_ret = row[2];
 		const char *site_ret = row[3];
-		const char *broadcast_key = row[4];
+		//const char *broadcast_key = row[4];
 
 		if ( relid_ret != 0 && site_ret != 0 ) {
 			message("%s is returning mesage to %s %s on behalf of %s\n", user, site_ret, relid_ret, friend_id );

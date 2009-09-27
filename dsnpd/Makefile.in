@@ -20,7 +20,7 @@ CXXFLAGS += -g -Wall
 LDFLAGS += -L/usr/lib/mysql
 
 CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp disttree.cpp \
-	log.cpp db.cpp sppd.cpp tls.cpp base64.cpp test.cpp
+	log.cpp db.cpp dsnpd.cpp tls.cpp base64.cpp test.cpp
 GEN_SRCS = parser.cpp rcfile.cpp base64.cpp
 
 LIBS = -lssl -lmysqlclient
@@ -40,9 +40,9 @@ DEPS = $(CC_SRCS:%.cpp=.%.d)
 #include ../version.mk
 
 # Rules.
-all: sppd
+all: dsnpd
 
-sppd: $(GEN_SRCS) $(OBJS)
+dsnpd: $(GEN_SRCS) $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 parser.cpp: parser.rl
@@ -67,7 +67,7 @@ distclean: clean
 	rm -f Makefile 
 
 clean:
-	rm -f tags .*.d *.o sppd $(GEN_SRCS)
+	rm -f tags .*.d *.o dsnpd $(GEN_SRCS)
 
 install: all
 	install -d $(DESTDIR)$(prefix)/bin

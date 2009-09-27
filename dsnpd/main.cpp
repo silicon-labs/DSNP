@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "sppd.h"
+#include "dsnpd.h"
 
 BIO *bioIn = 0;
 BIO *bioOut = 0;

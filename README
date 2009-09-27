@@ -4,36 +4,25 @@ DEPENDENCIES
 
 Install and run this package you will need a few things.
 
-1. Apache with mod_rewrite installed. It must be configured to work in
-   .htaccess files.
+1. Mysql installed and running.
 
-2. Mysql installed and running.
+2. To build dsnpd: ragel, libssl and libmysql.
 
-3. PHP with Mysql and XML support
-
-4. To build sppd: ragel, libssl and libmysql.
-
-5. To run sppd: xinetd (or similar).
+3. To run dsnpd: xinetd (or similar).
 
 INTIALIZATION
 =============
 
 To initialize a new installation you will need to know its public URI and the
-root@localhost password for the database. You will also need to choose an admin
-password for the installation. This will be used as the password for the spp
-user in the database, as well as for the admin user for web-based
-administration of the installation.
+root@localhost password for the MySQL database. You will also need to choose an
+admin password for the installation. This will be used as the password for the
+dsnp user in the database.
 
 Run the ./init.sh script.
 
 The installation script will create:
-	./php/config.php
-	./sppd/sppd.conf
+	./dsnpd/dsnpd.conf
 
-Copy the PHP scripts (or make an alias) to the public URI you gave to the init
-script.
-
-Set up xinetd (a sample config file is given in sppd/) and make sure it
-receives sppd.conf as the first argument. The port for the spp service in
-/etc/services should be the same as the port specified in the PHP and sppd
-config files.
+Set up xinetd (a sample config file is given in dsnpd/) and make sure it
+receives dsnpd.conf as the first argument. The port for the DSNP service in
+/etc/services should be the same as the port specified in the dsnpd.conf file.

@@ -1573,10 +1573,14 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	String broadcastCmd(
-		"direct_broadcast %lld %s %s %lld %ld\r\n%s\r\n", 
-		seq_num, timeStr.data, type, resource_id, mLen, msg );
+		"direct_broadcast %lld %s %s %lld %ld\r\n",
+		seq_num, timeStr.data, type, resource_id, mLen );
+	char *full = new char[broadcastCmd.length + mLen + 2];
+	memcpy( full, broadcastCmd.data, broadcastCmd.length );
+	memcpy( full + broadcastCmd.length, msg, mLen );
+	memcpy( full + broadcastCmd.length + mLen, "\r\n", 2 );
 
-	long sendResult = queue_broadcast( mysql, user, broadcastCmd.data, broadcastCmd.length );
+	long sendResult = queue_broadcast( mysql, user, full, broadcastCmd.length + mLen + 2 );
 	if ( sendResult < 0 )
 		return -1;
 
@@ -1858,7 +1862,8 @@ int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation
 }
 
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
-		long long seq_num, const char *date, const char *type, long long resource_id, const char *msg, long length )
+		long long seq_num, const char *date, const char *type,
+		long long resource_id, const char *msg, long length )
 {
 	if ( strcmp( type, "PHT" ) == 0 ) {
 		char *name = new char[64];
@@ -1885,7 +1890,7 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 void remote_inner( MYSQL *mysql, const char *user, const char *friend_id, const char *author_id,
 		long long seq_num, const char *date, const char *type, const char *msg, long mLen )
 {
-	::message("storing remote innter\n");
+	::message("storing remote inner\n");
 	exec_query( mysql, 
 		"INSERT INTO received "
 		"	( for_user, author_id, subject_id, seq_num, time_published, time_received, type, message ) "

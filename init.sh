@@ -108,13 +108,13 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 #
 
 cat >> init.sql << EOF
-DROP USER '${NAME}_owner'@'localhost';
-CREATE USER '${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+DROP USER '${NAME}_be_owner'@'localhost';
+CREATE USER '${NAME}_be_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
-DROP DATABASE $NAME;
-CREATE DATABASE $NAME;
-GRANT ALL ON $NAME.* TO '${NAME}_owner'@'localhost';
-USE $NAME;
+DROP DATABASE ${NAME}_be;
+CREATE DATABASE ${NAME}_be;
+GRANT ALL ON ${NAME}_be.* TO '${NAME}_be_owner'@'localhost';
+USE ${NAME}_be;
 CREATE TABLE user ( 
 	user VARCHAR(20), 
 	pass_salt CHAR(24),
@@ -312,8 +312,8 @@ CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
-CFG_DB_USER = ${NAME}_owner
-CFG_DB_DATABASE = $NAME
+CFG_DB_USER = ${NAME}_be_owner
+CFG_DB_DATABASE = ${NAME}_be
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
@@ -321,6 +321,7 @@ CFG_TLS_CA_CERTS = SET_THIS
 CFG_TLS_CRT = SET_THIS
 CFG_TLS_KEY = SET_THIS
 CFG_PHOTO_DIR = SET_THIS
+CFG_NOTIFICATION = SET_THIS
 
 EOF
 

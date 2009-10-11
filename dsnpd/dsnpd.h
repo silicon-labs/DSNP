@@ -163,6 +163,7 @@ struct Config
 	char *CFG_TLS_KEY;
 	char *CFG_TLS_CA_CERTS;
 	char *CFG_PHOTO_DIR;
+	char *CFG_NOTIFICATION;
 
 	char *name;
 	Config *next;
@@ -275,5 +276,7 @@ int current_put_bk( MYSQL *mysql, const char *user, long long &generation, Strin
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
 long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
 		long long to_generation, long long to_seq_num );
+
+void app_notification( const char *user, const char *type );
 
 #endif

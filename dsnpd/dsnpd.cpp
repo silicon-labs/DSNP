@@ -1817,6 +1817,8 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		length = strlen( msg );
 	}
 
+	app_notification( user, "direct_broadcast" );
+
 	exec_query( mysql, 
 		"INSERT INTO received "
 		"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) "
@@ -2336,4 +2338,14 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	::message("registered: finished\n");
 
 	return 0;
+}
+
+void app_notification( const char *user, const char *type )
+{
+	message( "notification callout\n" );
+
+	String notificationCmd("%s %s %s >/dev/null 2>/dev/null", c->CFG_NOTIFICATION, user, type );
+	int result = system( notificationCmd.data );
+	if ( result != 0 )
+		message("system command %s failed with %d\n", notificationCmd.data, result );
 }

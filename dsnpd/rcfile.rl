@@ -35,7 +35,8 @@ const char *cfgVals[] = {
 	"CFG_TLS_CRT",
 	"CFG_TLS_KEY",
 	"CFG_TLS_CA_CERTS",
-	"CFG_PHOTO_DIR"
+	"CFG_PHOTO_DIR",
+	"CFG_NOTIFICATION"
 };
 
 void process_value( const char *n, long nl, const char *v, long vl )

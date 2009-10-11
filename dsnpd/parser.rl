@@ -270,14 +270,7 @@ bool gblKeySubmitted = false;
 		'broadcast'i ' ' relid ' ' generation ' ' length
 			M_EOL @check_ssl @{
 				broadcast( mysql, relid, generation, message_buffer.data );
-			} |
-
-		'acknowledgement'i ' ' relid ' ' generation ' ' seq_num
-			EOL @{ 
-				broadcast_forward_ack( mysql, relid, generation, seq_num );
-				BIO_printf( bioOut, "OK\r\n");
 			}
-
 	)*;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -296,7 +289,7 @@ int server_parse_loop()
 	String hash, key, relid, token, type;
 	String gen_str, seq_str, resource_id_str;
 	long length;
-	long long generation, resource_id, seq_num;
+	long long generation, resource_id;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
@@ -977,11 +970,10 @@ long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid
 {
 	static char buf[8192];
 	long cs;
-	const char *p, *pe, *mark;
+	const char *p, *pe;
 	bool OK = false;
 	long pres;
 	String relid, gen_str, seq_str;
-	long long generation, seq_num;
 
 	/* Need to parse the identity. */
 	Identity site( to_site );
@@ -1016,10 +1008,6 @@ long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid
 
 		main := 
 			'OK' EOL @{ OK = true; } |
-			'LEAF_ACK ' relid ' ' generation ' ' seq_num EOL @{ 
-				OK = true; 
-				broadcast_forward_ack( mysql, relid, generation, seq_num );
-			} |
 			'ERROR' EOL;
 	}%%
 

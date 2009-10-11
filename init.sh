@@ -223,13 +223,6 @@ CREATE TABLE broadcast_queue (
 	message TEXT
 );
 
-CREATE TABLE unack_forward (
-	relid  VARCHAR(48),
-	children INT,
-	generation BIGINT,
-	seq_num BIGINT
-);
-
 CREATE TABLE message_queue (
 	from_user VARCHAR(20),
 	to_id TEXT,

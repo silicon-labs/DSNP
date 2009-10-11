@@ -273,7 +273,6 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 
 int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
-int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation, long long seq_num );
 long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
 		long long to_generation, long long to_seq_num );
 

@@ -1789,80 +1789,17 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	 * Now do the forwarding.
 	 */
 
-	if ( site1 != 0 || site2 != 0 ) {
-		/* We have forwarded to at least one other site.  */
-		DbQuery logForward( mysql,
-			"INSERT INTO unack_forward ( relid, children, generation, seq_num ) "
-			"VALUES ( %e, %l, %L, %L )",
-			relid, ( site1 != 0 ? 1 : 0 ) + ( site2 != 0 ? 1 : 0 ), generation, seq_num );
-		BIO_printf( bioOut, "OK\n" );
-	}
-
 	if ( site1 != 0 )
 		queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
 
 	if ( site2 != 0 )
 		queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
 	
-	if ( site1 == 0 && site2 == 0 ) {
-		/* Don't need to wait for any responses. */
-		BIO_printf( bioOut, "LEAF_ACK %s %lld %lld\r\n", relid_ret, generation, seq_num );
-	}
+	BIO_printf( bioOut, "OK\r\n" );
 }
 
-int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation, long long seq_num )
-{
-	message( "successful leaf ack: %s %lld %lld\r\n", relid, generation, seq_num );
-	DbQuery update( mysql,
-		"UPDATE unack_forward SET children = children - 1 "
-		"WHERE relid = %e AND generation = %L AND seq_num = %L",
-		relid, generation, seq_num );
-	
-	DbQuery check( mysql,
-		"SELECT children FROM unack_forward "
-		"WHERE relid = %e AND generation = %L AND seq_num = %L AND children = 0",
-		relid, generation, seq_num );
-	
-	if ( check.rows() > 0 ) {
-		DbQuery clean( mysql,
-			"DELETE FROM unack_forward "
-			"WHERE relid = %e AND generation = %L AND seq_num = %L AND children = 0",
-			relid, generation, seq_num );
-
-		/* Find the recipient. */
-		DbQuery recipient( mysql, 
-			"SELECT friend_claim.user, friend_claim.friend_id, "
-			"	get_tree.relid_ret, "
-			"	get_tree.site_ret, "
-			"	get_tree.broadcast_key "
-			"FROM friend_claim JOIN get_tree "
-			"ON friend_claim.user = get_tree.user AND "
-			"	friend_claim.friend_id = get_tree.friend_id "
-			"WHERE friend_claim.get_relid = %e AND get_tree.generation <= %L "
-			"ORDER BY get_tree.generation DESC LIMIT 1",
-			relid, generation );
-
-		if ( recipient.rows() == 0 )
-			return -1;
-
-		MYSQL_ROW row = recipient.fetchRow();
-		const char *user = row[0];
-		const char *friend_id = row[1];
-		const char *relid_ret = row[2];
-		const char *site_ret = row[3];
-		//const char *broadcast_key = row[4];
-
-		if ( relid_ret != 0 && site_ret != 0 ) {
-			message("%s is returning mesage to %s %s on behalf of %s\n", user, site_ret, relid_ret, friend_id );
-			send_acknowledgement_net( mysql, site_ret, relid_ret, generation, seq_num );
-		}
-	}
-
-	return 0;
-}
-
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
-		long long seq_num, const char *date, const char *type,
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
+		const char *author_id, long long seq_num, const char *date, const char *type,
 		long long resource_id, const char *msg, long length )
 {
 	if ( strcmp( type, "PHT" ) == 0 ) {

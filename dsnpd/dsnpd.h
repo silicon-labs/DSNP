@@ -277,6 +277,6 @@ int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const ch
 long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
 		long long to_generation, long long to_seq_num );
 
-void app_notification( const char *user, const char *type );
+void app_notification( const char *args, const char *data, long length );
 
 #endif

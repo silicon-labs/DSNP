@@ -19,6 +19,7 @@
 #include "string.h"
 
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/wait.h>
+
 
 #define LOGIN_TOKEN_LASTS 86400
 
@@ -1817,7 +1820,8 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		length = strlen( msg );
 	}
 
-	app_notification( user, "direct_broadcast" );
+	String args("%s %s", user, type );
+	app_notification( args, msg, length );
 
 	exec_query( mysql, 
 		"INSERT INTO received "
@@ -2340,12 +2344,32 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	return 0;
 }
 
-void app_notification( const char *user, const char *type )
+void app_notification( const char *args, const char *data, long length )
 {
 	message( "notification callout\n" );
 
-	String notificationCmd("%s %s %s >/dev/null 2>/dev/null", c->CFG_NOTIFICATION, user, type );
-	int result = system( notificationCmd.data );
-	if ( result != 0 )
-		message("system command %s failed with %d\n", notificationCmd.data, result );
+	int fds[2];	
+	int res = pipe( fds );
+	if ( res < 0 ) {
+		error("pipe creation failed\n");
+		return;
+	}
+
+	pid_t pid = fork();
+	if ( pid < 0 ) {
+		error("error forking for app notification\n");
+	}
+	else if ( pid == 0 ) {
+		dup2( fds[0], 0 );
+		close( fds[1] );
+		execlp( "php", "php", "/home/thurston/devel/spp/notification.php", NULL );
+		exit(0);
+	}
+	
+	close( fds[0] );
+
+	FILE *p = fdopen( fds[1], "wb" );
+	fwrite( data, 1, length, p );
+	fclose( p );
+	wait( 0 );
 }

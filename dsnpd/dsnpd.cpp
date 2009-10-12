@@ -1820,7 +1820,8 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		length = strlen( msg );
 	}
 
-	String args("%s %s", user, type );
+	String args( "%s %s %s %s %s %lld %s %lld", 
+			c->CFG_HOST, c->CFG_PATH, type, user, author_id, seq_num, date, resource_id );
 	app_notification( args, msg, length );
 
 	exec_query( mysql, 
@@ -2344,6 +2345,41 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	return 0;
 }
 
+char *const*make_notif_argv( const char *args )
+{
+	/* Assume at least one. */
+	int n = 1;
+	for ( const char *src = args; *src != 0; src++ ) {
+		if ( *src == ' ' )
+			n++;
+	}
+
+	char **argv = new char*[4 + n];
+	argv[0] = strdup("php");
+	argv[1] = strdup("/home/thurston/devel/spp/notification.php");
+	argv[2] = strdup("--");
+
+	long dst = 3;
+	const char *last = args;
+	for ( const char *src = args; ; src++ ) {
+		if ( *src == ' ' || *src == 0 ) {
+			argv[dst] = new char[src-last+1];
+			memcpy( argv[dst], last, src-last );
+			argv[dst][src-last] = 0;
+
+			dst++;
+			last = src + 1;
+		}
+
+		if ( *src == 0 )
+			break;
+	}
+
+	argv[dst++] = 0;
+
+	return argv;
+}
+
 void app_notification( const char *args, const char *data, long length )
 {
 	message( "notification callout\n" );
@@ -2360,9 +2396,12 @@ void app_notification( const char *args, const char *data, long length )
 		error("error forking for app notification\n");
 	}
 	else if ( pid == 0 ) {
-		dup2( fds[0], 0 );
 		close( fds[1] );
-		execlp( "php", "php", "/home/thurston/devel/spp/notification.php", NULL );
+		FILE *log = fopen("/tmp/notification.log", "at");
+		dup2( fds[0], 0 );
+		dup2( fileno(log), 1 );
+		dup2( fileno(log), 2 );
+		execvp( "php", make_notif_argv("a b cc") );
 		exit(0);
 	}
 	

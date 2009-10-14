@@ -26,6 +26,11 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 # Port for the server.
 CFG_PORT=7085
 
+# Backup the conf before wrting it. 
+if test -f $DSNPD_CONF; then
+	mv $DSNPD_CONF ${DSNPD_CONF}.bak
+fi
+
 # start the config file
 echo > $DSNPD_CONF
 

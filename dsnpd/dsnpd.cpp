@@ -1820,15 +1820,10 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		length = strlen( msg );
 	}
 
-	String args( "%s %s %s %s %s %lld %s %lld", 
-			c->CFG_HOST, c->CFG_PATH, type, user, author_id, seq_num, date, resource_id );
+	String args( "%s %s %s %s %s %lld %s %lld %ld", 
+			c->CFG_HOST, c->CFG_PATH, type, user, author_id, seq_num, 
+			date, resource_id, length );
 	app_notification( args, msg, length );
-
-	exec_query( mysql, 
-		"INSERT INTO received "
-		"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) "
-		"VALUES ( %e, %e, %L, %e, now(), %e, %L, %d )",
-		user, author_id, seq_num, date, type, resource_id, msg, length );
 }
 
 void remote_inner( MYSQL *mysql, const char *user, const char *friend_id, const char *author_id,
@@ -2354,12 +2349,11 @@ char *const*make_notif_argv( const char *args )
 			n++;
 	}
 
-	char **argv = new char*[4 + n];
+	char **argv = new char*[3 + n];
 	argv[0] = strdup("php");
 	argv[1] = strdup("/home/thurston/devel/spp/notification.php");
-	argv[2] = strdup("--");
 
-	long dst = 3;
+	long dst = 2;
 	const char *last = args;
 	for ( const char *src = args; ; src++ ) {
 		if ( *src == ' ' || *src == 0 ) {
@@ -2401,7 +2395,7 @@ void app_notification( const char *args, const char *data, long length )
 		dup2( fds[0], 0 );
 		dup2( fileno(log), 1 );
 		dup2( fileno(log), 2 );
-		execvp( "php", make_notif_argv("a b cc") );
+		execvp( "php", make_notif_argv( args ) );
 		exit(0);
 	}
 	

@@ -1820,9 +1820,8 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		length = strlen( msg );
 	}
 
-	String args( "%s %s %s %s %s %lld %s %lld %ld", 
-			c->CFG_HOST, c->CFG_PATH, type, user, author_id, seq_num, 
-			date, resource_id, length );
+	String args( "direct_broadcast %s %s %s %lld %s %lld %ld", 
+			type, user, author_id, seq_num, date, resource_id, length );
 	app_notification( args, msg, length );
 }
 
@@ -2340,20 +2339,19 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	return 0;
 }
 
-char *const*make_notif_argv( const char *args )
+int maxArgs( const char *src )
 {
 	/* Assume at least one. */
 	int n = 1;
-	for ( const char *src = args; *src != 0; src++ ) {
+	for ( ; *src != 0; src++ ) {
 		if ( *src == ' ' )
 			n++;
 	}
+	return n;
+}
 
-	char **argv = new char*[3 + n];
-	argv[0] = strdup("php");
-	argv[1] = strdup("/home/thurston/devel/spp/notification.php");
-
-	long dst = 2;
+void parseArgs( char **argv, long &dst, const char *args )
+{
 	const char *last = args;
 	for ( const char *src = args; ; src++ ) {
 		if ( *src == ' ' || *src == 0 ) {
@@ -2368,7 +2366,17 @@ char *const*make_notif_argv( const char *args )
 		if ( *src == 0 )
 			break;
 	}
+}
 
+char *const*make_notif_argv( const char *args )
+{
+	int n = maxArgs(c->CFG_NOTIFICATION) + 2 + maxArgs(args) + 1;
+	char **argv = new char*[n];
+	long dst = 0;
+	parseArgs( argv, dst, c->CFG_NOTIFICATION );
+	argv[dst++] = strdup(c->CFG_HOST);
+	argv[dst++] = strdup(c->CFG_PATH);
+	parseArgs( argv, dst, args );
 	argv[dst++] = 0;
 
 	return argv;

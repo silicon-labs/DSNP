@@ -162,7 +162,6 @@ struct Config
 	char *CFG_TLS_CRT;
 	char *CFG_TLS_KEY;
 	char *CFG_TLS_CA_CERTS;
-	char *CFG_PHOTO_DIR;
 	char *CFG_NOTIFICATION;
 
 	char *name;

@@ -1641,7 +1641,7 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 
 	/* Insert the broadcast message into the published table. */
 	exec_query( mysql,
-		"INSERT INTO published "
+		"INSERT INTO broadcasted "
 		"( user, author_id, subject_id, time_published, type, message ) "
 		"VALUES ( %e, %e, %e, %e, %e, %d )",
 		to_user, author_id, subjectId.data, time_str, type, msg, mLen );

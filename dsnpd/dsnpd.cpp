@@ -233,10 +233,6 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
 	RSA_free( rsa );
-	
-	String photoDirCmd( "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
-	message("system: %s\n", photoDirCmd.data );
-	system( photoDirCmd );
 }
 
 void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
@@ -1538,34 +1534,12 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
 
-	const char *insert = msg;
-	long insertLen = mLen;
-	String fileData;
-
-	/* If this is a photo we need to read in the file. */
-	if ( strcmp( type, "PHT" ) == 0 ) {
-		String fileName = stringStartEnd( msg, msg+mLen );
-		String path( "%s/%s/%s", c->CFG_PHOTO_DIR, user, fileName.data );
-		fileData.allocate( MAX_BRD_PHOTO_SIZE );
-
-		FILE *file = fopen( path, "rb" );
-		if ( file == 0 ) {
-			::message( "failed to open %s\n", fileName.data );
-			return -1;
-		}
-		long len = fread( fileData.data, 1, MAX_BRD_PHOTO_SIZE, file );
-		fclose( file );
-
-		msg = fileData.data;
-		mLen = len;
-	}
-
-	/* Insert the broadcast message into the published table. */
+	/* insert the broadcast message into the published table. */
 	exec_query( mysql,
-		"INSERT INTO published "
-		"( user, author_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, %e, %d )",
-		user, authorId.data, timeStr.data, type, insert, insertLen );
+		"INSERT INTO broadcasted "
+		"( user, author_id, time_published, type ) "
+		"VALUES ( %e, %e, %e, %e )",
+		user, authorId.data, timeStr.data, type );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
@@ -1805,21 +1779,6 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		const char *author_id, long long seq_num, const char *date, const char *type,
 		long long resource_id, const char *msg, long length )
 {
-	if ( strcmp( type, "PHT" ) == 0 ) {
-		char *name = new char[64];
-		sprintf( name, "pub-%lld.jpg", seq_num );
-
-		char *path = new char[strlen(c->CFG_PHOTO_DIR) + strlen(user) + 64];
-		sprintf( path, "%s/%s/pub-%lld.jpg", c->CFG_PHOTO_DIR, user, seq_num );
-
-		FILE *f = fopen( path, "wb" );
-		fwrite( msg, 1, length, f );
-		fclose( f );
-
-		msg = name;
-		length = strlen( msg );
-	}
-
 	String args( "direct_broadcast %s %s %s %lld %s %lld %ld", 
 			type, user, author_id, seq_num, date, resource_id, length );
 	app_notification( args, msg, length );

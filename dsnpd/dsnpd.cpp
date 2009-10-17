@@ -680,6 +680,9 @@ void relid_response( MYSQL *mysql, const char *user,
 		"( from_user, for_id, requested_relid, returned_relid ) "
 		"VALUES ( %e, %e, %e, %e );",
 		user, identity, requested_relid_str, response_relid_str );
+
+	String args( "sent_friend_request %s %s", user, identity );
+	app_notification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", response_reqid_str );
@@ -819,6 +822,10 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 		" ( for_user, from_id, reqid, requested_relid, returned_relid ) "
 		" VALUES ( %e, %e, %e, %e, %e ) ",
 		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
+	
+	String args( "friend_request %s %s %s %s %s",
+		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
+	app_notification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK\r\n" );
@@ -2167,11 +2174,10 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, subject_id );
 
-	exec_query( mysql,
-		"INSERT INTO remote_published "
-		"( user, author_id, subject_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, now(), %e, %d )",
-		user, authorId, subject_id, type, msg, mLen );
+	/* Notifiy the frontend. */
+	String args( "remote_publication %s %s %s %s %ld", 
+			type, user, subject_id, authorId, mLen );
+	app_notification( args, msg, mLen );
 
 	::message( "encrypt_remote_broadcast type: %s\n", type );
 	
@@ -2367,7 +2373,8 @@ void app_notification( const char *args, const char *data, long length )
 	close( fds[0] );
 
 	FILE *p = fdopen( fds[1], "wb" );
-	fwrite( data, 1, length, p );
+	if ( length > 0 ) 
+		fwrite( data, 1, length, p );
 	fclose( p );
 	wait( 0 );
 }

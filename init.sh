@@ -169,7 +169,7 @@ CREATE TABLE friend_request (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE sent_friend_request (
+CREATE TABLE sent_friend_request2 (
 	from_user VARCHAR(20),
 	for_id TEXT,
 	requested_relid VARCHAR(48),
@@ -245,16 +245,6 @@ CREATE TABLE broadcasted (
 	resource_id BIGINT,
 	message BLOB,
 	PRIMARY KEY(user, seq_num)
-);
-
-CREATE TABLE remote_published (
-	user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
-	time_published TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB
 );
 
 CREATE TABLE login_token (

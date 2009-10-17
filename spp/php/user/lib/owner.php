@@ -48,7 +48,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 <?php
 
 /* Display friend requests. */
-$query = sprintf("SELECT from_id, reqid FROM friend_request2 WHERE for_user = '%s';",
+$query = sprintf("SELECT from_id, reqid FROM friend_request WHERE for_user = '%s';",
 	mysql_real_escape_string($USER_NAME)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -67,7 +67,7 @@ if ( mysql_num_rows( $result ) > 0 ) {
 }
 
 /* Display friend requests made to others. */
-$query = sprintf("SELECT for_id FROM sent_friend_request2 WHERE from_user = '%s';",
+$query = sprintf("SELECT for_id FROM sent_friend_request WHERE from_user = '%s';",
 	mysql_real_escape_string($USER_NAME)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -90,7 +90,7 @@ if ( mysql_num_rows( $result ) > 0 ) {
 <?php
 
 # Look for the user/pass combination.
-$query = sprintf("SELECT friend_id FROM friend_claim2 WHERE user = '%s';",
+$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
 	mysql_real_escape_string($USER_NAME)
 );
 

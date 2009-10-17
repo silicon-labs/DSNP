@@ -30,7 +30,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
 $query = sprintf(
-	"DELETE FROM friend_request2 ".
+	"DELETE FROM friend_request ".
 	"WHERE for_user = '%s' AND reqid = '%s'",
 	$USER_NAME, $reqid );
 

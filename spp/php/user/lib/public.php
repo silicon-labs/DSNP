@@ -23,7 +23,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
 # Look for the user/pass combination.
-$query = sprintf("SELECT user FROM user2 WHERE user='%s'",
+$query = sprintf("SELECT user FROM user WHERE user='%s'",
     mysql_real_escape_string($USER_NAME)
 );
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());

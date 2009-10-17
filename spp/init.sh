@@ -115,12 +115,12 @@ DROP DATABASE ${NAME}_fe;
 CREATE DATABASE ${NAME}_fe;
 GRANT ALL ON ${NAME}_fe.* TO '${NAME}_fe_owner'@'localhost';
 USE ${NAME}_fe;
-CREATE TABLE user2 ( 
+CREATE TABLE user ( 
 	user VARCHAR(20), 
 	email VARCHAR(50)
 );
 
-CREATE TABLE friend_request2 (
+CREATE TABLE friend_request (
 	for_user VARCHAR(20), 
 	from_id TEXT,
 	reqid VARCHAR(48),
@@ -128,12 +128,12 @@ CREATE TABLE friend_request2 (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE sent_friend_request2 (
+CREATE TABLE sent_friend_request (
 	from_user VARCHAR(20),
 	for_id TEXT
 );
 
-CREATE TABLE friend_claim2 (
+CREATE TABLE friend_claim (
 	user VARCHAR(20), 
 	friend_id TEXT
 );

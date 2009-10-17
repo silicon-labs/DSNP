@@ -139,7 +139,7 @@ case "sent_friend_request": {
 	$for_id = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO sent_friend_request2 " .
+		"INSERT INTO sent_friend_request " .
 		"	( from_user, for_id ) " .
 		"VALUES ( '%s', '%s' )",
 		mysql_real_escape_string($from_user), 
@@ -158,7 +158,7 @@ case "friend_request": {
 	$returned_relid = $argv[$b+4];
 
 	$query = sprintf(
-		"INSERT INTO friend_request2 " .
+		"INSERT INTO friend_request " .
 		" ( for_user, from_id, reqid, requested_relid, returned_relid ) " .
 		" VALUES ( '%s', '%s', '%s', '%s', '%s' ) ",
 		$for_user, $from_id, $user_reqid, $requested_relid, $returned_relid);
@@ -171,7 +171,7 @@ case "friend_claim": {
 	$identity = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO friend_claim2 ( user, friend_id ) " .
+		"INSERT INTO friend_claim ( user, friend_id ) " .
 		" VALUES ( '%s', '%s' ) ", $user, $identity );
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());

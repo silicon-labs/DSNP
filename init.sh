@@ -235,30 +235,6 @@ CREATE TABLE message_queue (
 	message TEXT
 );
 
-CREATE TABLE received ( 
-	for_user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
-	seq_num BIGINT,
-	time_published TIMESTAMP,
-	time_received TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB
-);
-
-CREATE TABLE published (
-	user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
-	seq_num BIGINT NOT NULL AUTO_INCREMENT,
-	time_published TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB,
-	PRIMARY KEY(user, seq_num)
-);
-
 CREATE TABLE broadcasted (
 	user VARCHAR(20),
 	author_id TEXT,

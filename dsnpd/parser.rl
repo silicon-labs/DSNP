@@ -528,7 +528,7 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		remote_inner( mysql, user, friend_id, author_id, seq_num, date, type, msg, length );
+		remote_inner( mysql, user, subject_id, author_id, seq_num, date, type, msg, length );
 		fbreak;
 	}
 
@@ -540,7 +540,7 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 %% write data;
 
 int remote_broadcast_parser( MYSQL *mysql, const char *user,
-		const char *friend_id, const char *author_id, const char *msg, long mLen )
+		const char *subject_id, const char *author_id, const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;

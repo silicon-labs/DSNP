@@ -1777,22 +1777,20 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
 		const char *author_id, long long seq_num, const char *date, const char *type,
-		long long resource_id, const char *msg, long length )
+		long long resource_id, const char *msg, long mLen )
 {
 	String args( "direct_broadcast %s %s %s %lld %s %lld %ld", 
-			type, user, author_id, seq_num, date, resource_id, length );
-	app_notification( args, msg, length );
+			type, user, author_id, seq_num, date, resource_id, mLen );
+	app_notification( args, msg, mLen );
 }
 
-void remote_inner( MYSQL *mysql, const char *user, const char *friend_id, const char *author_id,
+void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date, const char *type, const char *msg, long mLen )
 {
-	::message("storing remote inner\n");
-	exec_query( mysql, 
-		"INSERT INTO received "
-		"	( for_user, author_id, subject_id, seq_num, time_published, time_received, type, message ) "
-		"VALUES ( %e, %e, %e, %L, %e, now(), %e, %d )",
-		user, author_id, friend_id, seq_num, date, type, msg, mLen );
+	String args( "remote_broadcast %s %s %s %s %lld %s %ld", 
+			type, user, subject_id, author_id, seq_num, date, mLen );
+	app_notification( args, msg, mLen );
+
 }
 
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 

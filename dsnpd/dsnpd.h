@@ -135,11 +135,11 @@ long submit_remote_broadcast( MYSQL *mysql, const char *user,
 
 int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
 		long long seqNum, const char *date, const char *type, long long resource_id, const char *msg, long length );
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
 		const char *hash, long long generation, const char *msg, long length );
-void remote_inner( MYSQL *mysql, const char *user, const char *author_id, const char *friend_id,
+void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date, const char *type, const char *msg, long mLen );
 int remote_broadcast_parser( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *author_id, const char *msg, long mLen );

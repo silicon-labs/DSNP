@@ -1,0 +1,18 @@
+RewriteEngine on
+
+RewriteRule ^robots.txt$                   robots.txt             [L]
+RewriteRule ^style.css$                    style.css              [L]
+RewriteRule ^admin/(.*)$                   admin/$1               [L]
+RewriteRule ^user/(.*)$                    user/$1                [L]
+
+# Add a trailing slash to all items underneath the root.
+RewriteRule ^([a-zA-Z0-9.]+)$              %{REQUEST_URI}/        [R,L]
+
+# Images.
+RewriteRule ^([a-zA-Z0-9.]+)/img/([^\/]*)$   user/image.php?u=$1&i=$2      [L,QSA]
+
+# Users.
+RewriteRule ^([a-zA-Z0-9.]+)/([^\/]*)$       user/$2?u=$1                  [L,QSA]
+
+php_flag display_errors on
+php_flag upload_max_filesize 3271557120

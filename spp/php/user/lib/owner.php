@@ -90,7 +90,7 @@ if ( mysql_num_rows( $result ) > 0 ) {
 <?php
 
 # Look for the user/pass combination.
-$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
+$query = sprintf("SELECT friend_id FROM friend_claim2 WHERE user = '%s';",
 	mysql_real_escape_string($USER_NAME)
 );
 

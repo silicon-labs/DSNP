@@ -165,6 +165,17 @@ case "friend_request": {
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
+}
+case "friend_claim": {
+	$user = $argv[$b+0];
+	$identity = $argv[$b+1];
+
+	$query = sprintf(
+		"INSERT INTO friend_claim2 ( user, friend_id ) " .
+		" VALUES ( '%s', '%s' ) ", $user, $identity );
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	break;
 }}
 
 

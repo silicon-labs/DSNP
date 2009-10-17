@@ -26,14 +26,6 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 # Port for the server.
 CFG_PORT=7085
 
-# Backup the conf before wrting it. 
-if test -f $DSNPD_CONF; then
-	mv $DSNPD_CONF ${DSNPD_CONF}.bak
-fi
-
-# start the config file
-echo > $DSNPD_CONF
-
 cat << EOF
 Please choose a password to protect the new database users with. Every site you
 create during this run will have a new user with this password. The user name
@@ -169,7 +161,7 @@ CREATE TABLE friend_request (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE sent_friend_request2 (
+CREATE TABLE sent_friend_request (
 	from_user VARCHAR(20),
 	for_id TEXT,
 	requested_relid VARCHAR(48),
@@ -264,16 +256,6 @@ CREATE TABLE remote_flogin_token (
 	user VARCHAR(20),
 	identity TEXT,
 	login_token VARCHAR(48)
-);
-
-CREATE TABLE image (
-	user VARCHAR(20),
-	seq_num BIGINT NOT NULL AUTO_INCREMENT,
-	rows INT,
-	cols INT,
-	mime_type VARCHAR(32),
-
-	PRIMARY KEY(user, seq_num)
 );
 
 EOF

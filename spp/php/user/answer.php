@@ -23,6 +23,19 @@ requireOwner();
 
 $reqid = $_GET['reqid'];
 
+# Connect to the database.
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+	('Could not connect to database');
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
+
+$query = sprintf(
+	"DELETE FROM friend_request2 ".
+	"WHERE for_user = '%s' AND reqid = '%s'",
+	$USER_NAME, $reqid );
+
+$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
 $fp = fsockopen( 'localhost', $CFG_PORT );
 if ( !$fp )
 	exit(1);

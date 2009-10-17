@@ -26,14 +26,8 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 # Port for the server.
 CFG_PORT=7085
 
-# Backup the conf before wrting it. 
-if test -f $PHP_CONF; then
-	mv $PHP_CONF ${PHP_CONF}.bak
-fi
-
-
-# start the config files
-{ echo '<?php'; echo; } > $PHP_CONF
+# Start the config file.
+{ echo '<?php'; echo; } >> $PHP_CONF
 
 cat << EOF
 Please choose a password to protect the new database users with. Every site you
@@ -126,28 +120,6 @@ CREATE TABLE user2 (
 	email VARCHAR(50)
 );
 
-CREATE TABLE public_key (
-	identity TEXT,
-	rsa_n TEXT,
-	rsa_e TEXT
-);
-
-CREATE TABLE relid_request (
-	for_user VARCHAR(20),
-	from_id TEXT,
-	requested_relid VARCHAR(48),
-	reqid VARCHAR(48),
-	msg_sym TEXT
-);
-
-CREATE TABLE relid_response (
-	from_id TEXT,
-	requested_relid VARCHAR(48),
-	returned_relid VARCHAR(48),
-	reqid VARCHAR(48),
-	msg_sym TEXT
-);
-
 CREATE TABLE friend_request2 (
 	for_user VARCHAR(20), 
 	from_id TEXT,
@@ -156,75 +128,14 @@ CREATE TABLE friend_request2 (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE pending_friend_request (
+CREATE TABLE sent_friend_request2 (
 	from_user VARCHAR(20),
 	for_id TEXT
 );
 
-CREATE TABLE put_broadcast_key (
+CREATE TABLE friend_claim2 (
 	user VARCHAR(20), 
-	generation BIGINT,
-	broadcast_key VARCHAR(48)
-);
-
-CREATE TABLE friend_claim (
-	user VARCHAR(20), 
-	friend_id TEXT,
-	friend_salt VARCHAR(48),
-	friend_hash VARCHAR(48),
-	put_relid VARCHAR(48),
-	get_relid VARCHAR(48)
-);
-
-CREATE TABLE put_tree (
-	user VARCHAR(20),
-	friend_id TEXT,
-	generation BIGINT,
-	root BOOL,
-	forward1 TEXT,
-	forward2 TEXT
-);
-
-CREATE TABLE get_tree (
-	user VARCHAR(20),
-	friend_id TEXT,
-	generation BIGINT,
-	broadcast_key VARCHAR(48),
-	site1 TEXT,
-	site2 TEXT,
-	site_ret TEXT,
-	relid1 VARCHAR(48),
-	relid2 VARCHAR(48),
-	relid_ret VARCHAR(48)
-);
-
-CREATE TABLE ftoken_request (
-	user VARCHAR(20), 
-	from_id TEXT,
-	token VARCHAR(48),
-	reqid VARCHAR(48),
-	msg_sym TEXT
-);
-
-CREATE TABLE broadcast_queue (
-	to_site TEXT,
-	relid VARCHAR(48),
-	generation BIGINT,
-	message TEXT
-);
-
-CREATE TABLE unack_forward (
-	relid  VARCHAR(48),
-	children INT,
-	generation BIGINT,
-	seq_num BIGINT
-);
-
-CREATE TABLE message_queue (
-	from_user VARCHAR(20),
-	to_id TEXT,
-	relid VARCHAR(48),
-	message TEXT
+	friend_id TEXT
 );
 
 CREATE TABLE received ( 
@@ -259,25 +170,6 @@ CREATE TABLE remote_published (
 	type CHAR(4),
 	resource_id BIGINT,
 	message BLOB
-);
-
-CREATE TABLE login_token (
-	user VARCHAR(20),
-	login_token VARCHAR(48),
-	expires TIMESTAMP
-);
-
-CREATE TABLE flogin_token (
-	user VARCHAR(20),
-	identity TEXT,
-	login_token VARCHAR(48),
-	expires TIMESTAMP
-);
-
-CREATE TABLE remote_flogin_token (
-	user VARCHAR(20),
-	identity TEXT,
-	login_token VARCHAR(48)
 );
 
 CREATE TABLE image (

@@ -519,7 +519,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 		"( for_user, from_id, requested_relid, reqid, msg_sym ) "
 		"VALUES( %e, %e, %e, %e, %e )",
 		user, identity, requested_relid_str, reqid_str, encrypt.sym );
-	
+
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 
@@ -589,6 +589,9 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 		"VALUES ( %e, %e, %e, %e, %e, %e );",
 		user, identity, id_salt, friend_hash_str, put_relid, get_relid );
 
+	String args( "friend_claim %s %s", user, identity );
+	app_notification( args, 0, 0 );
+	
 	return 0;
 }
 

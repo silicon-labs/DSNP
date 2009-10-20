@@ -98,7 +98,7 @@ if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 		"vendors root directory.", E_USER_ERROR);
 }
 
-include( ROOT . "../../php/config.php" );
+include( "config.php" );
 
 if (isset($_GET['url']) && $_GET['url'] === 'favicon.ico') {
 	return;

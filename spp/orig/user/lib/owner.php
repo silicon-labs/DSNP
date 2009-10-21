@@ -16,7 +16,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include( "lib/functions.php" );
+include( ROOT . '/../orig/user/lib/functions.php' );
+
+global $CFG_DB_HOST;
+global $CFG_DB_USER;
+global $CFG_ADMIN_PASS;
+global $CFG_DB_DATABASE;
+global $CFG_URI;
+global $CFG_PATH;
+global $USER_NAME;
+global $USER_URI;
 
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 

@@ -16,6 +16,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+global $CFG_DB_HOST;
+global $CFG_DB_USER;
+global $CFG_ADMIN_PASS;
+global $CFG_DB_DATABASE;
+global $CFG_URI;
+global $USER_NAME;
+
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
 	('Could not connect to database');
@@ -26,6 +33,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 $query = sprintf("SELECT user FROM user WHERE user='%s'",
     mysql_real_escape_string($USER_NAME)
 );
+
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 $line = mysql_fetch_array($result, MYSQL_ASSOC);
@@ -35,23 +43,11 @@ if ( !$line ) {
 
 ?>
 
-<html>
-<head>
-<title><?php print $USER_NAME?> </title>
-</head>
+<h2>SPP: <?php print $USER_NAME;?></h2>
 
-<table width="100%" cellpadding=12 cellspacing=0>
-<tr><td>
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
-<h1>SPP: <?php print $USER_NAME;?></h1>
+<p><a href="login">owner login</a>
 
-<p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
-
-<p><a href="login.php">owner login</a>
-
-<h1>Actions</h1>
+<h2>Actions</h2>
 <a href="become.php">become friend</a>
-
-</td></tr>
-
-</html>

@@ -100,16 +100,15 @@ if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 
 include( "config.php" );
 
-if (isset($_GET['url']) && $_GET['url'] === 'favicon.ico') {
+if (isset($_GET['url']) && $_GET['url'] === 'favicon.ico')
 	return;
-} else {
-
+else {
 	if ( isset( $_GET['url'] ) ) {
 		$url = $_GET['url'];
 		if ( preg_match( '/^[^\/]+\//', $url ) ) {
+			$USER_NAME = preg_replace( '/([^\/]+).*/', '\1', $url );
 			$url = preg_replace( '/^[^\/]+\//', '', $url );
 
-			$USER_NAME = isset( $_GET['u'] ) ? $_GET['u'] : "";
 			$USER_PATH = "${CFG_PATH}$USER_NAME/";
 			$USER_URI = "${CFG_URI}$USER_NAME/";
 

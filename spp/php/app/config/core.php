@@ -126,7 +126,7 @@
 /**
  * If set to false, sessions are not automatically started.
  */
-	Configure::write('Session.start', true);
+	Configure::write('Session.start', false);
 /**
  * When set to false, HTTP_USER_AGENT will not be checked
  * in the session

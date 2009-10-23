@@ -16,17 +16,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include( ROOT . '/../orig/user/lib/session.php');
+#include( ROOT . '/../orig/user/lib/session.php');
 
 if ( isset( $_SESSION ) && isset( $_SESSION['auth'] ) ) {
 	if ( $_SESSION['auth'] == 'owner' )
-		include( ROOT . '/../orig/user/lib/owner.php' );
+		include( 'owner.php' );
 	else if ( $_SESSION['auth'] == 'friend' )
-		include( ROOT . '/../orig/user/lib/friend.php' );
+		include( 'friend.php' );
 	else 
-		include( ROOT . '/../orig/user/lib/public.php' );
+		include( 'public.php' );
 }
 else
-	include( ROOT . '/../orig/user/lib/public.php' );
+	include( 'public.php' );
 
 ?>

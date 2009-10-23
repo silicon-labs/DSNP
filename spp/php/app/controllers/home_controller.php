@@ -3,7 +3,16 @@
 class HomeController extends AppController
 {
 	var $name = 'Home';
-	function index() {
+
+	function beforeFilter()
+	{
+		global $USER_NAME;
+		$this->Session->activate( '/spp/' . $USER_NAME . '/' );
+	}
+
+	function index()
+	{
+
 	}
 }
 

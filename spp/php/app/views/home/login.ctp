@@ -1,8 +1,12 @@
+<br>
+
+Owner Login to Iduri:
+
 <?php
 global $USER_NAME;
 ?>
 
-<form method="post" action="login/submit">
+<form method="post" action="slogin">
 <table>
 <tbody>
 <tr><td>Login:</td> <td><input type="text" name="user" value="<?php echo $USER_NAME?>"></td></tr>
@@ -11,4 +15,3 @@ global $USER_NAME;
 </table>
 <input type="submit">
 </form>
-

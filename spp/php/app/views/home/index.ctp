@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007, 2009, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,17 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include( ROOT . '/../orig/user/lib/session.php');
 
-if ( isset( $_SESSION ) && isset( $_SESSION['auth'] ) ) {
-	if ( $_SESSION['auth'] == 'owner' )
-		include( 'owner.php' );
-	else if ( $_SESSION['auth'] == 'friend' )
-		include( 'friend.php' );
-	else 
-		include( 'public.php' );
-}
-else
+if ( $auth === 'owner' )
+	include( 'owner.php' );
+else if ( $auth === 'friend' )
+	include( 'friend.php' );
+else 
 	include( 'public.php' );
 
 ?>

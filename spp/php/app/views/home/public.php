@@ -47,7 +47,7 @@ if ( !$line ) {
 
 <p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
-<p><a href="login">owner login</a>
+<p><a href="home/login">owner login</a>
 
 <h2>Actions</h2>
 <a href="become.php">become friend</a>

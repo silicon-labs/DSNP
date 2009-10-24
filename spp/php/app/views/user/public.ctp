@@ -16,10 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-global $CFG_DB_HOST;
-global $CFG_DB_USER;
-global $CFG_ADMIN_PASS;
-global $CFG_DB_DATABASE;
 global $CFG_URI;
 global $USER_NAME;
 
@@ -29,7 +25,7 @@ global $USER_NAME;
 
 <p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
-<p><a href="user/login">owner login</a>
+<p><a href="login">owner login</a>
 
 <h2>Actions</h2>
 <a href="become.php">become friend</a>

@@ -107,13 +107,19 @@ else {
 		$url = $_GET['url'];
 		if ( preg_match( '/^[^\/]+\//', $url ) ) {
 			$USER_NAME = preg_replace( '/([^\/]+).*/', '\1', $url );
-			$url = preg_replace( '/^[^\/]+\//', '', $url );
 
-			$USER_PATH = "${CFG_PATH}$USER_NAME/";
-			$USER_URI = "${CFG_URI}$USER_NAME/";
+			if ( $USER_NAME === 'admin' ) {
+				# Do nothing here. Use the admin controller. 
+			}
+			else {
+				$url = preg_replace( '/^[^\/]+\//', 'user/', $url );
 
-			if ( $url == null || strlen( $url ) == 0 )
-				$url = "user";
+				$USER_PATH = "${CFG_PATH}$USER_NAME/";
+				$USER_URI = "${CFG_URI}$USER_NAME/";
+
+				if ( $url == null || strlen( $url ) == 0 )
+					$url = "user";
+			}
 		}
 	}
 

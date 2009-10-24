@@ -15,37 +15,27 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
-
-# Look for the user/pass combination.
-$query = "SELECT user FROM user22";
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+global $CFG_URI;
+global $CFG_PATH;
 
 ?>
 
-<html>
-<head>
-<title><?php print $data['name']?> </title>
-</head>
-
-<h1>SPP: Administration</h1>
+<h2>SPP: Administration</h2>
 
 <p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
 <p>You are logged in as <b>admin</b> (<a href="logout.php">logout</a>)<br>
-<h1>Actions</h1>
+<h2>Actions</h2>
 <a href="newuser.php">new user</a>
 
-<h1>Users</h1>
+<h2>Users</h2>
 
 <?php
-while ( $row = mysql_fetch_assoc($result) )
-    echo '<a href="' . $CFG_PATH . $row['user'] . '/"/>' . $row['user'] . '</a><br>';
+
+//while ( $row = mysql_fetch_assoc($result) )
+foreach ( $users as $row ) {
+	$user = $row['User']['user'];
+	echo '<a href="' . $CFG_PATH . $user . '/"/>' . $user . '</a><br>';
+}
+
 ?>
-
-</html>
-

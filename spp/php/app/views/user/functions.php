@@ -37,7 +37,7 @@ function printName( $identity, $possessive )
 			echo "'s";
 	}
 	else {
-		echo "<a href=\"${identity}sflogin.php?h=" . urlencode($_SESSION['hash']);
+		echo "<a href=\"${identity}sflogin?h=" . urlencode($_SESSION['hash']);
 
 		echo "\">$identity</a>";
 		if ( $possessive )

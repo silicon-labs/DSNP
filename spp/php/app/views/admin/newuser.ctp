@@ -1,6 +1,6 @@
 <?php
 /* 
- * Copyright (c) 2007, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,8 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-
 ?>
 
 <html>
@@ -29,7 +27,7 @@ include('../config.php');
 
 <h1>Create User</h1>
 
-<form method="post" action="snewuser.php">
+<form method="post" action="snewuser">
 <table>
 <tr>
 <td>Desired User:</td>   <td> <input type="text"     name="user"></td></tr>
@@ -39,6 +37,8 @@ include('../config.php');
 
 <p>
 <?php
+
+global $CFG_USE_RECAPTCHA;
 
 if ( $CFG_USE_RECAPTCHA ) {
 	require_once('../recaptcha-php-1.10/recaptchalib.php');

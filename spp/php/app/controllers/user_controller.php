@@ -63,7 +63,6 @@ class UserController extends AppController
 	function indexUser()
 	{
 		global $USER_NAME;
-		$this->set( 'auth', 'owner' );
 		$this->setUser();
 
 		# Load the user's sent friend requests
@@ -111,17 +110,20 @@ class UserController extends AppController
 
 		$activity = $this->User->query( $query );
 		$this->set( 'activity', $activity );
+
+		$this->render( 'owner' );
 	}
 
 	function indexFriend()
 	{
-		$this->set( 'auth', 'friend' );
 		$this->setUser();
+		$this->render( 'friend' );
 	}
 
 	function indexPublic()
 	{
 		$this->setUser();
+		$this->render( 'public' );
 	}
 
 	function index()
@@ -195,7 +197,7 @@ class UserController extends AppController
 
 		$path = "$CFG_PHOTO_DIR/$USER_NAME/$file";
 		$this->set( 'path', $path );
-		$this->render( null, 'img' );
+		$this->render( 'img', 'img' );
 	}
 }
 

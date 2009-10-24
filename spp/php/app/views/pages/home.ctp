@@ -24,7 +24,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 <p>Installation: <?php print $CFG_URI;?>
 
 <p>
-<a href="admin/newuser.php">create new user</a>
+<a href="admin/newuser">create new user</a>
 
 <h3>Users</h3>
 <p>

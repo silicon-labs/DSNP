@@ -1,8 +1,8 @@
 <?php
 
-class HomeController extends AppController
+class UserController extends AppController
 {
-	var $name = 'Home';
+	var $name = 'User';
 
 	function activateSession()
 	{
@@ -24,17 +24,52 @@ class HomeController extends AppController
 		$this->maybeActivateSession();
 	}
 
+	function setUser()
+	{
+		global $USER_NAME;
+		$user = $this->User->find( 'first', 
+				array('conditions' => array('user' => $USER_NAME)));
+
+		if ( $user == null )
+			$this->cakeError("userNotFound", array('user' => $USER_NAME));
+
+		$this->set( 'user', $user );
+	}
+
+	function indexUser()
+	{
+		$this->set( 'auth', 'owner' );
+		$this->setUser();
+
+		$this->loadModel('Image');
+		$images = $this->Image->find('all');
+		$this->set('images', $images);
+	}
+
+	function indexFriend()
+	{
+		$this->set( 'auth', 'friend' );
+		$this->setUser();
+	}
+
+	function indexPublic()
+	{
+		$this->setUser();
+	}
+
 	function index()
 	{
 		$this->set( 'auth', 'public' );
 		if ( $this->Session->valid() ) {
-			if ( $this->Session->read('auth') === 'owner' ) {
-				$this->set( 'auth', 'owner' );
-			}
-			else if ( $this->Session->read('auth') === 'friend' ) {
-				$this->set( 'auth', 'friend' );
-			}
+			if ( $this->Session->read('auth') === 'owner' )
+				$this->indexUser();
+			else if ( $this->Session->read('auth') === 'friend' )
+				$this->indexFriend();
+			else
+				$this->indexPublic();
 		}
+		else
+			$this->indexPublic();
 	}
 
 	function login()

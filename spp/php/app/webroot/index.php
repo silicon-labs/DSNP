@@ -113,7 +113,7 @@ else {
 			$USER_URI = "${CFG_URI}$USER_NAME/";
 
 			if ( $url == null || strlen( $url ) == 0 )
-				$url = "home";
+				$url = "user";
 		}
 	}
 

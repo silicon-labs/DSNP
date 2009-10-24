@@ -16,17 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/session.php');
-
-requireFriendOrOwnerLogin();
-
-if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $_GET['i'] ) )
-	die("bad image");
-
-$file = $_GET['i'];
-$path = "$CFG_PHOTO_DIR/$USER_NAME/$file";
-
 $stat = stat( $path );
 $size = $stat['size'];
 
@@ -34,5 +23,4 @@ header("Content-Type: image/jpeg");
 header("Content-Size: $size");
 readfile($path);
 exit;
-
 ?>

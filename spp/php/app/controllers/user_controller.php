@@ -4,6 +4,30 @@ class UserController extends AppController
 {
 	var $name = 'User';
 
+	function requireOwner()
+	{
+		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
+			$this->cakeError("error403");
+
+	}
+
+	function requireFriend()
+	{
+		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
+			$this->cakeError("error403");
+
+	}
+
+	function requireOwnerOrFriend()
+	{
+		if ( !$this->Session->valid() || ( 
+				$this->Session->read('auth') !== 'owner' &&
+				$this->Session->read('auth') !== 'friend' ) )
+		{
+			$this->cakeError("userNotFound");
+		}
+	}
+
 	function activateSession()
 	{
 		global $USER_NAME;
@@ -66,7 +90,7 @@ class UserController extends AppController
 				array( 'user' => $USER_NAME )));
 		$this->set( 'images', $images );
 
-
+		# Load up activity.
 		$query = sprintf(
 			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
 			"FROM received " .
@@ -119,7 +143,8 @@ class UserController extends AppController
 	{
 	}
 
-	function slogin()  {
+	function slogin()
+	{
 		$this->activateSession();
 
 		global $CFG_PORT;
@@ -141,8 +166,6 @@ class UserController extends AppController
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
-		#echo $res;
-		#exit;
 		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)", $res, $regs) ) {
 			include('lib/loginfailed.php');
 		}
@@ -154,6 +177,25 @@ class UserController extends AppController
 
 			$this->redirect( "/$USER_NAME/" );
 		}
+	}
+
+	function img()
+	{
+		Configure::write( 'debug', 0 );
+
+		global $CFG_PHOTO_DIR;
+		global $USER_NAME;
+
+		$this->requireOwnerOrFriend();
+
+		$file = $this->params['pass'][0];
+
+		if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
+			die("bad image");
+
+		$path = "$CFG_PHOTO_DIR/$USER_NAME/$file";
+		$this->set( 'path', $path );
+		$this->render( null, 'img' );
 	}
 }
 

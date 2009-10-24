@@ -16,22 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include( ROOT . '/../orig/user/lib/functions.php' );
+include( 'functions.php' );
 
-global $CFG_DB_HOST;
-global $CFG_DB_USER;
-global $CFG_ADMIN_PASS;
-global $CFG_DB_DATABASE;
 global $CFG_URI;
 global $CFG_PATH;
 global $USER_NAME;
 global $USER_URI;
-
-# Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
 
 ?>
 
@@ -47,7 +37,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 <tr>
 <td valign="top">
 
-<h1>SPP: <?php print $USER_NAME;?></h1>
+<h2>SPP: <?php print $USER_NAME;?></h2>
 
 <p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
@@ -56,17 +46,11 @@ mysql_select_db($CFG_DB_DATABASE) or die
 <p>
 <?php
 
-/* Display friend requests. */
-$query = sprintf("SELECT from_id, reqid FROM friend_request WHERE for_user = '%s';",
-	mysql_real_escape_string($USER_NAME)
-);
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-if ( mysql_num_rows( $result ) > 0 ) {
-	echo "<h1>Friend Requests</h1>";
-	while ( $row = mysql_fetch_assoc($result) ) {
-		$from_id = $row['from_id'];
-		$reqid = $row['reqid'];
+if ( count( $friendRequests ) ) {
+	echo "<h2>Friend Requests</h2>";
+	foreach ( $friendRequests as $row ) {
+		$from_id = $row['FriendRequest']['from_id'];
+		$reqid = $row['FriendRequest']['reqid'];
 		echo "<a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
 		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
 				"&a=yes\">yes</a>&nbsp;&nbsp;\n";
@@ -75,16 +59,11 @@ if ( mysql_num_rows( $result ) > 0 ) {
 	}
 }
 
-/* Display friend requests made to others. */
-$query = sprintf("SELECT for_id FROM sent_friend_request WHERE from_user = '%s';",
-	mysql_real_escape_string($USER_NAME)
-);
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+if ( count( $sentFriendRequests ) > 0 ) {
+	echo "<h2>Sent Friend Requests</h2>";
+	foreach ( $sentFriendRequests as $row ) {
+		$for_id = $row['SentFriendRequest']['for_id'];
 
-if ( mysql_num_rows( $result ) > 0 ) {
-	echo "<h1>Sent Friend Requests</h1>";
-	while ( $row = mysql_fetch_assoc($result) ) {
-		$for_id = $row['for_id'];
 		//$reqid = $row['reqid'];
 		echo "<a class=\"idlink\" href=\"$for_id\">$for_id</a>&nbsp;&nbsp;&nbsp;\n";
 		echo "<a href=\"abandon.php?reqid=" . /*urlencode($reqid) . */
@@ -93,20 +72,12 @@ if ( mysql_num_rows( $result ) > 0 ) {
 }
 ?>
 
-
-<h1>Friend List</h1>
+<h2>Friend List</h2>
 
 <?php
 
-# Look for the user/pass combination.
-$query = sprintf("SELECT friend_id FROM friend_claim WHERE user = '%s';",
-	mysql_real_escape_string($USER_NAME)
-);
-
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-while ( $row = mysql_fetch_assoc($result) ) {
-	$dest_id = $row['friend_id'];
+foreach ( $friendClaims as $row ) {
+	$dest_id = $row['FriendClaim']['friend_id'];
 
 	echo "<a class=\"idlink\" href=\"${dest_id}sflogin.php?h=" . 
 		urlencode( $_SESSION['hash'] ) . "\">$dest_id</a> ";
@@ -116,21 +87,15 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 ?>
 
-<h1>Photo Stream</h1>
+<h2>Photo Stream</h2>
 
 <?php
 
-# Look for the user/pass combination.
-$query = sprintf("SELECT seq_num FROM image WHERE user = '%s' ORDER BY seq_num DESC LIMIT 20;",
-	mysql_real_escape_string($USER_NAME)
-);
-
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-while ( $row = mysql_fetch_assoc($result) ) {
-	$seq_num = $row['seq_num'];
+foreach ( $images as $row ) {
+	$seq_num = $row['Image']['seq_num'];
 	echo "<a href=\"${USER_URI}img/img-$seq_num.jpg\">";
 	echo "<img src=\"${USER_URI}img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
+
 }
 
 ?>
@@ -140,7 +105,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <hr>
 
 <!--
-<h1>Broadcast</h1>
+<h2>Broadcast</h2>
 <small> Messages typed here are sent to all of your friends. At present, only
 text messages are supported. However, one can imagine many different types of
 notifications being implemented, including picutre uploads, tag notifications,
@@ -174,33 +139,13 @@ Photo Upload: <input name="photo" type="file" />
 
 <?
 
-$query = sprintf(
-	"SELECT author_id, subject_id, time_published, type, resource_id, message " .
-	"FROM received " .
-	"WHERE for_user = '%s' " .
-	"UNION " .
-	"SELECT author_id, subject_id, time_published, type, resource_id, message " .
-	"FROM published " . 
-	"WHERE user = '%s' " .
-	"UNION " .
-	"SELECT author_id, subject_id, time_published, type, resource_id, message " .
-	"FROM remote_published " .
-	"WHERE user = '%s' " .
-	"ORDER BY time_published DESC",
-	mysql_real_escape_string($USER_NAME),
-	mysql_real_escape_string($USER_NAME),
-	mysql_real_escape_string($USER_NAME)
-);
-
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-while ( $row = mysql_fetch_assoc($result) ) {
-	$author_id = $row['author_id'];
-	$subject_id = $row['subject_id'];
-	$time_published = $row['time_published'];
-	$type = $row['type'];
-	$resource_id = $row['resource_id'];
-	$message = $row['message'];
+foreach ( $activity as $row ) {
+	$author_id = $row[0]['author_id'];
+	$subject_id = $row[0]['subject_id'];
+	$time_published = $row[0]['time_published'];
+	$type = $row[0]['type'];
+	$resource_id = $row[0]['resource_id'];
+	$message = $row[0]['message'];
 
 	echo "<p>\n";
 	printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published );

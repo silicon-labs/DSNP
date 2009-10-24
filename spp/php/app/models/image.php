@@ -1,7 +1,7 @@
 <?php
-	class Image extends AppModel {
+	class Image extends AppModel
+	{
 		var $useTable = 'image';
 		var $name = 'Image';
 	}
 ?>
-

@@ -27,8 +27,8 @@ class UserController extends AppController
 	function setUser()
 	{
 		global $USER_NAME;
-		$user = $this->User->find( 'first', 
-				array('conditions' => array('user' => $USER_NAME)));
+		$user = $this->User->find( 'first', array('conditions' => 
+				array('user' => $USER_NAME)));
 
 		if ( $user == null )
 			$this->cakeError("userNotFound", array('user' => $USER_NAME));
@@ -38,12 +38,55 @@ class UserController extends AppController
 
 	function indexUser()
 	{
+		global $USER_NAME;
 		$this->set( 'auth', 'owner' );
 		$this->setUser();
 
+		# Load the user's sent friend requests
+		$this->loadModel('SentFriendRequest');
+		$sentFriendRequests = $this->SentFriendRequest->find('all', 
+				array( 'conditions' => array( 'from_user' => $USER_NAME )));
+		$this->set( 'sentFriendRequests', $sentFriendRequests );
+
+		# Load the user's friend requests. 
+		$this->loadModel('FriendRequest');
+		$friendRequests = $this->FriendRequest->find( 'all',
+				array( 'conditions' => array( 'for_user' => $USER_NAME )));
+		$this->set( 'friendRequests', $friendRequests );
+
+		# Load the friend list.
+		$this->loadModel( 'FriendClaim' );
+		$friendClaims = $this->FriendClaim->find('all', 
+				array( 'conditions' => array( 'user' => $USER_NAME )));
+		$this->set( 'friendClaims', $friendClaims );
+
+		# Load the user's images.
 		$this->loadModel('Image');
-		$images = $this->Image->find('all');
-		$this->set('images', $images);
+		$images = $this->Image->find('all', array( 'conditions' => 
+				array( 'user' => $USER_NAME )));
+		$this->set( 'images', $images );
+
+
+		$query = sprintf(
+			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
+			"FROM received " .
+			"WHERE for_user = '%s' " .
+			"UNION " .
+			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
+			"FROM published " . 
+			"WHERE user = '%s' " .
+			"UNION " .
+			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
+			"FROM remote_published " .
+			"WHERE user = '%s' " .
+			"ORDER BY time_published DESC",
+			mysql_real_escape_string($USER_NAME),
+			mysql_real_escape_string($USER_NAME),
+			mysql_real_escape_string($USER_NAME)
+		);
+
+		$activity = $this->User->query( $query );
+		$this->set( 'activity', $activity );
 	}
 
 	function indexFriend()

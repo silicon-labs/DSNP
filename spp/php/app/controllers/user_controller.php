@@ -199,6 +199,125 @@ class UserController extends AppController
 		$this->set( 'path', $path );
 		$this->render( 'img', 'img' );
 	}
-}
 
+	function become()
+	{
+	}
+
+	function sbecome()
+	{
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_URI;
+		$identity = $_POST['identity'];
+
+		//require_once('../recaptcha-php-1.10/recaptchalib.php');
+		//$resp = recaptcha_check_answer ($CFG_RC_PRIVATE_KEY,
+		//              $_SERVER["REMOTE_ADDR"],
+		//              $_POST["recaptcha_challenge_field"],
+		//              $_POST["recaptcha_response_field"]);
+		//
+		//if (!$resp->is_valid) {
+		//      die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
+		//                      "(reCAPTCHA said: " . $resp->error . ")");
+		//}
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			die( "!!! There was a problem connecting to the local SPP server.");
+		
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"relid_request $USER_NAME $identity\r\n";
+		fwrite($fp, $send);
+		
+		$res = fgets($fp);
+
+		if ( ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) ) {
+			$arg_identity = 'identity=' . urlencode( $USER_URI );
+			$arg_reqid = 'fr_reqid=' . urlencode( $regs[1] );
+
+			header("Location: ${identity}retrelid?${arg_identity}&${arg_reqid}" );
+		}
+		else if ( ereg("^ERROR ([0-9]+)", $res, $regs) ) {
+			die( "!!! There was an error:<br>" .
+			$ERROR[$regs[1]] . "<br>" .
+			"Check that the URI you submitted is correct.");
+		}
+		else {
+			die( "!!! The local SPP server did not respond. How rude.<br>" . 
+				"Check that the URI you submitted is correct.");
+		}
+	}
+
+	function retrelid()
+	{
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_URI;
+
+		$this->requireOwner();
+
+		$identity = $_GET['identity'];
+		$fr_reqid = $_GET['fr_reqid'];
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"relid_response $USER_NAME $fr_reqid $identity\r\n";
+		fwrite($fp, $send);
+
+		$res = fgets($fp);
+
+		if ( ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) ) {
+			$arg_identity = 'identity=' . urlencode( $USER_URI );
+			$arg_reqid = 'reqid=' . urlencode( $regs[1] );
+
+			header("Location: ${identity}frfinal?${arg_identity}&${arg_reqid}" );
+		}
+		else {
+			echo $res;
+		}
+	}
+
+	function frfinal()
+	{
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_URI;
+
+		$identity = $_GET['identity'];
+		$reqid = $_GET['reqid'];
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"friend_final $USER_NAME $reqid $identity\r\n";
+		fwrite($fp, $send);
+
+		$res = fgets($fp);
+
+		if ( ereg("^OK", $res) ) {
+			header("Location: ${USER_URI}" );
+		}
+		else {
+			echo $res;
+		}
+	}
+}
 ?>

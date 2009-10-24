@@ -28,4 +28,4 @@ global $USER_NAME;
 <p><a href="login">owner login</a>
 
 <h2>Actions</h2>
-<a href="become.php">become friend</a>
+<a href="become">become friend</a>

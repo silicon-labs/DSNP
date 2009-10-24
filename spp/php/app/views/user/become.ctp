@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2009, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,21 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('../config.php');
-include('lib/session.php');
-
 ?>
-<html>
 
-<head>
-<title>Become Friend</title>
-</head>
 
-<body>
+<h2>Become Friend</h2>
 
-<h1>Become Friend</h1>
-
-<form method="post" action="sbecome.php">
+<form method="post" action="sbecome">
 Please submit your identity (case-sensitive). <br><br>
 For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 <input type="text" size=70 name="identity">
@@ -46,7 +37,3 @@ For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 
 <input type="submit">
 </form>
-
-<body>
-
-</html>

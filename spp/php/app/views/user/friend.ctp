@@ -44,7 +44,7 @@ global $USER_PATH;
 
 <p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
-<p>You are logged in as a <a href="<?php echo $BROWSER_ID;?>"><b>friend</b></a> (<a href="logout.php">logout</a>)<br>
+<p>You are logged in as a <a href="<?php echo $BROWSER_ID;?>"><b>friend</b></a> (<a href="logout">logout</a>)<br>
 
 <h2>Friend List</h2>
 

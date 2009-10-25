@@ -41,7 +41,7 @@ global $USER_URI;
 
 <p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
-<p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout.php">logout</a>)
+<p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout">logout</a>)
 
 <p>
 <?php
@@ -130,7 +130,7 @@ status changes, and contact information changes.</small>
 
 <hr>
 
-<form method="post" enctype="multipart/form-data" action="upload.php">
+<form method="post" enctype="multipart/form-data" action="upload">
 Photo Upload: <input name="photo" type="file" />
 <input type="submit" value="Upload" />
 </form> 

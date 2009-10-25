@@ -123,7 +123,7 @@ define( 'CFG_PHOTO_DIR', $CFG_PHOTO_DIR );
 define( 'CFG_IM_CONVERT', $CFG_IM_CONVERT );
 
 
-if (isset($_GET['url']) && $_GET['url'] === 'favicon.ico')
+if (isset($_GET['url']) && ( $_GET['url'] === 'favicon.ico' || $_GET['url'] === 'robots.txt' ) )
 	return;
 else {
 	if ( isset( $_GET['url'] ) ) {

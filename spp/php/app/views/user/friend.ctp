@@ -16,32 +16,37 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-include('lib/functions.php');
+include('functions.php');
 
 $BROWSER_ID = $_SESSION['identity'];
 
+global $CFG_DB_DATABASE;
+global $CFG_DB_USER;
+global $CFG_DB_HOST;
+global $CFG_ADMIN_PASS;
+global $CFG_URI;
+global $CFG_PORT;
+global $CFG_COMM_KEY;
+global $CFG_PATH;
+global $USER_NAME;
+global $USER_URI;
+global $USER_PATH;
+
+
 ?>
-
-<html>
-<head>
-	<title><?php print $USER_NAME;?> </title>
-	<link rel="stylesheet" type="text/css" href="<?php print $CFG_PATH;?>style.css"/>
-</head>
-
-<body>
 
 <table width="100%" cellpadding=12 cellspacing=0>
 
 <tr>
 <td valign="top">
 
-<h1>SPP: <?php print $USER_NAME;?></h1>
+<h2>SPP: <?php print $USER_NAME;?></h2>
 
 <p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
 
 <p>You are logged in as a <a href="<?php echo $BROWSER_ID;?>"><b>friend</b></a> (<a href="logout.php">logout</a>)<br>
 
-<h1>Friend List</h1>
+<h2>Friend List</h2>
 
 <?php
 
@@ -72,7 +77,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 
 ?>
 
-<h1>Photo Stream</h1>
+<h2>Photo Stream</h2>
 
 <?php
 
@@ -95,7 +100,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 <td width="%70" valign="top">
 
 <!--
-<h1>Stories</h1>
+<h2>Stories</h2>
 
 <small> Messages typed here are sent to all of <?php print $USER_NAME;?>'s friends. 
 </small>
@@ -103,7 +108,7 @@ while ( $row = mysql_fetch_assoc($result) ) {
 -->
 
 <hr>
-<form method="post" action="wall.php">
+<form method="post" action="wall">
 <table>
 <tr><td>Write on <?php print $USER_NAME;?>'s message board:</td></tr>
 <!--<input type="text" name="message" size="50">-->
@@ -152,6 +157,3 @@ while ( $row = mysql_fetch_assoc($result) ) {
 </tr>
 </table>
 
-</body>
-
-</html>

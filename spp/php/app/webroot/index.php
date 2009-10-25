@@ -100,6 +100,29 @@ if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 
 include( "config.php" );
 
+if ( !$CFG_URI )
+	die("config.php: could not select installation\n");
+
+if ( get_magic_quotes_gpc() )
+	die("the SPP software assumes PHP magic quotes to be off\n");
+
+define( 'CFG_URI', $CFG_URI );
+define( 'CFG_HOST', $CFG_HOST );
+define( 'CFG_PATH', $CFG_PATH );
+define( 'CFG_DB_HOST', $CFG_DB_HOST );
+define( 'CFG_DB_USER', $CFG_DB_USER );
+define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
+define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
+define( 'CFG_COMM_KEY', $CFG_COMM_KEY );
+define( 'CFG_PORT', $CFG_PORT );
+
+define( 'CFG_USE_RECAPTCHA', $CFG_USE_RECAPTCHA );
+define( 'CFG_RC_PUBLIC_KEY', $CFG_RC_PUBLIC_KEY );
+define( 'CFG_RC_PRIVATE_KEY', $CFG_RC_PRIVATE_KEY );
+define( 'CFG_PHOTO_DIR', $CFG_PHOTO_DIR );
+define( 'CFG_IM_CONVERT', $CFG_IM_CONVERT );
+
+
 if (isset($_GET['url']) && $_GET['url'] === 'favicon.ico')
 	return;
 else {

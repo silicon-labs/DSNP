@@ -220,20 +220,6 @@ rm init.sql
 
 # Finish the PHP config file.
 cat >> $PHP_CONF << EOF
-if ( !\$CFG_URI ) {
-	die("config.php: could not select installation\n");
-}
-
-if ( get_magic_quotes_gpc() ) {
-	die("the SPP software assumes PHP magic quotes to be off\n");
-}
-
-\$USER_NAME = isset( \$_GET['u'] ) ? \$_GET['u'] : "";
-\$USER_PATH = "\${CFG_PATH}\$USER_NAME/";
-\$USER_URI = "\${CFG_URI}\$USER_NAME/";
-
-include('error.php');
-
 ?>
 EOF
 

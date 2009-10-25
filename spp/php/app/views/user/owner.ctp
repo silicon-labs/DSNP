@@ -52,9 +52,9 @@ if ( count( $friendRequests ) ) {
 		$from_id = $row['FriendRequest']['from_id'];
 		$reqid = $row['FriendRequest']['reqid'];
 		echo "<a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
-		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
+		echo "<a href=\"answer?reqid=" . urlencode($reqid) . 
 				"&a=yes\">yes</a>&nbsp;&nbsp;\n";
-		echo "<a href=\"answer.php?reqid=" . urlencode($reqid) . 
+		echo "<a href=\"answer?reqid=" . urlencode($reqid) . 
 				"&a=no\">no</a><br>\n";
 	}
 }
@@ -113,7 +113,7 @@ status changes, and contact information changes.</small>
 <p>
 -->
 
-<form method="post" action="broadcast.php">
+<form method="post" action="broadcast">
 <table>
 <tr><td>Broadcast a Message:</td></tr>
 <!--<input type="text" name="message" size="50">-->

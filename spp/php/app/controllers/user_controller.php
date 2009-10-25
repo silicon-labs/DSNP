@@ -319,5 +319,318 @@ class UserController extends AppController
 			echo $res;
 		}
 	}
+
+	function answer()
+	{
+		global $CFG_DB_DATABASE;
+		global $CFG_DB_USER;
+		global $CFG_DB_HOST;
+		global $CFG_ADMIN_PASS;
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_URI;
+
+		$this->requireOwner();
+
+		$reqid = $_GET['reqid'];
+
+		# Connect to the database.
+		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+			('Could not connect to database');
+		mysql_select_db($CFG_DB_DATABASE) or die
+			('Could not select database ' . $CFG_DB_DATABASE);
+
+		$query = sprintf(
+			"DELETE FROM friend_request ".
+			"WHERE for_user = '%s' AND reqid = '%s'",
+			$USER_NAME, $reqid );
+
+		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"accept_friend $USER_NAME $reqid\r\n";
+		fwrite($fp, $send);
+
+		$res = fgets($fp);
+		if ( !ereg("^OK", $res) ) {
+			echo "FAILURE *** Friend accept failed with: <br>";
+			echo $res;
+		}
+		else {
+			header("Location: $USER_URI" );
+		}
+	}
+
+	function sflogin()
+	{
+		global $CFG_DB_DATABASE;
+		global $CFG_DB_USER;
+		global $CFG_DB_HOST;
+		global $CFG_ADMIN_PASS;
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_URI;
+		global $USER_PATH;
+
+		$hash = $_REQUEST['h'];
+
+		if ( !$hash )
+			die('no hash given');
+
+		/* Maybe we are already logged in as this friend. */
+		if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && 
+				isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
+			header( "Location: $USER_PATH" );
+		}
+		else {
+			/* Not logged in as the hashed user. */
+			$fp = fsockopen( 'localhost', $CFG_PORT );
+			if ( !$fp )
+				exit(1);
+
+			$send = 
+				"SPP/0.1 $CFG_URI\r\n" . 
+				"comm_key $CFG_COMM_KEY\r\n" .
+				"ftoken_request $USER_NAME $hash\r\n";
+			fwrite($fp, $send);
+
+			$res = fgets($fp);
+
+			if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\n\r]+) ([-A-Za-z0-9_]+)", $res, $regs) ) {
+				$arg_h = 'h=' . urlencode( $regs[3] );
+				$arg_reqid = 'reqid=' . urlencode( $regs[1] );
+				$friend_id = $regs[2];
+				$dest = "";
+				if ( isset( $_GET['d'] ) )
+					$dest = "&d=" . urlencode($_GET['d']);
+					
+				header( "Location: ${friend_id}retftok?${arg_h}&${arg_reqid}" . $dest );
+			}
+		}
+	}
+	
+	function retftok()
+	{
+		global $CFG_DB_DATABASE;
+		global $CFG_DB_USER;
+		global $CFG_DB_HOST;
+		global $CFG_ADMIN_PASS;
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_URI;
+
+		$this->requireOwner();
+
+		$hash = $_REQUEST['h'];
+		$reqid = $_GET['reqid'];
+
+		if ( !$hash )
+			die('no hash given');
+
+		if ( !$reqid )
+			die('no reqid given');
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"ftoken_response $USER_NAME $hash $reqid\r\n";
+		fwrite($fp, $send);
+
+		$res = fgets($fp);
+
+		if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\r\n]*)", $res, $regs) ) {
+			$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
+			$friend_id = $regs[2];
+			$dest = "";
+			if ( isset( $_GET['d'] ) )
+				$dest = "&d=" . urlencode($_GET['d']);
+			header("Location: ${friend_id}sftoken?${arg_ftoken}" . $dest );
+		}
+		else {
+			echo $res;
+		}
+	}
+	
+	function sftoken()
+	{
+		$this->activateSession();
+
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_PATH;
+
+		# No session yet. Maybe going to set it up.
+
+		$ftoken = $_GET['ftoken'];
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"submit_ftoken $ftoken\r\n";
+		fwrite($fp, $send);
+
+		$res = fgets($fp);
+
+		# If there is a result then the login is successful. 
+		if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+			# Login successful.
+			$this->Session->write( 'auth', 'friend' );
+			$this->Session->write( 'token', $ftoken );
+			$this->Session->write( 'hash', $regs[1] );
+			$this->Session->write( 'identity', $regs[3] );
+
+			if ( isset( $_GET['d'] ) )
+				$this->redirect( $_GET['d'] );
+			else
+				$this->redirect( "/$USER_NAME/" );
+		}
+		else {
+			echo "<center>\n";
+			echo "FRIEND LOGIN FAILED<br>\n";
+			echo "</center>\n";
+		}
+	}
+
+	function broadcast()
+	{
+		global $CFG_DB_DATABASE;
+		global $CFG_DB_USER;
+		global $CFG_DB_HOST;
+		global $CFG_ADMIN_PASS;
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_PATH;
+
+		$this->requireOwner();
+
+		/* User message */
+		$message = $_POST['message'];
+		$len = strlen( $message );
+
+		# Connect to the database.
+		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+			('Could not connect to database');
+		mysql_select_db($CFG_DB_DATABASE) or die
+			('Could not select database ' . $CFG_DB_DATABASE);
+
+		$authorId = "$CFG_URI$USER_NAME/";
+		$query = sprintf(
+			"INSERT INTO published ( user, author_id, type, message ) " .
+			"VALUES ( '%s', '%s', '%s', '%s' );",
+			mysql_real_escape_string($USER_NAME),
+			mysql_real_escape_string($authorId),
+			mysql_real_escape_string("MSG"),
+			mysql_real_escape_string($message)
+		);
+
+		mysql_query( $query ) or die('Query failed: ' . mysql_error());
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"submit_broadcast $USER_NAME MSG 0 $len\r\n";
+
+		fwrite( $fp, $send );
+		fwrite( $fp, $message, $len );
+		fwrite( $fp, "\r\n", 2 );
+
+		$res = fgets($fp);
+
+		if ( ereg("^OK", $res, $regs) )
+			$this->redirect( "/$USER_NAME/" );
+		else
+			echo $res;
+	}
+
+	function wall()
+	{
+		global $CFG_DB_DATABASE;
+		global $CFG_DB_USER;
+		global $CFG_DB_HOST;
+		global $CFG_ADMIN_PASS;
+		global $CFG_URI;
+		global $CFG_PORT;
+		global $CFG_COMM_KEY;
+		global $USER_NAME;
+		global $USER_PATH;
+		global $USER_URI;
+
+		$this->requireFriend();
+		$BROWSER_ID = $_SESSION['identity'];
+
+		/* User message. */
+		$message = $_POST['message'];
+		$len = strlen( $message );
+
+		# Connect to the database.
+		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+			('Could not connect to database');
+		mysql_select_db($CFG_DB_DATABASE) or die
+			('Could not select database ' . $CFG_DB_DATABASE);
+
+		$subjectId = "$CFG_URI$USER_NAME/";
+		$query = sprintf(
+			"INSERT INTO published ( user, author_id, subject_id, type, message ) " .
+			"VALUES ( '%s', '%s', '%s', '%s', '%s' );",
+			mysql_real_escape_string($USER_NAME),
+			mysql_real_escape_string($BROWSER_ID),
+			mysql_real_escape_string($subjectId),
+			mysql_real_escape_string("MSG"),
+			mysql_real_escape_string($message)
+		);
+
+		mysql_query( $query ) or die('Query failed: ' . mysql_error());
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$token = $_SESSION['token'];
+		$hash = $_SESSION['hash'];
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"submit_remote_broadcast $USER_NAME $BROWSER_ID $hash $token BRD $len\r\n";
+
+		fwrite( $fp, $send );
+		fwrite( $fp, $message, $len );
+		fwrite( $fp, "\r\n", 2 );
+
+		$res = fgets($fp);
+
+		if ( ereg("^OK", $res, $regs) )
+			$this->redirect( "/$USER_NAME/" );
+		else
+			echo $res;
+	}
 }
 ?>

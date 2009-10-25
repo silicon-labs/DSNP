@@ -30,8 +30,7 @@ class UserController extends AppController
 
 	function activateSession()
 	{
-		global $USER_NAME;
-		$this->Session->activate( '/spp/' . $USER_NAME . '/' );
+		$this->Session->activate( '/spp/' . USER_NAME . '/' );
 	}
 
 	function maybeActivateSession()
@@ -50,43 +49,41 @@ class UserController extends AppController
 
 	function setUser()
 	{
-		global $USER_NAME;
 		$user = $this->User->find( 'first', array('conditions' => 
-				array('user' => $USER_NAME)));
+				array('user' => USER_NAME)));
 
 		if ( $user == null )
-			$this->cakeError("userNotFound", array('user' => $USER_NAME));
+			$this->cakeError("userNotFound", array('user' => USER_NAME));
 
 		$this->set( 'user', $user );
 	}
 
 	function indexUser()
 	{
-		global $USER_NAME;
 		$this->setUser();
 
 		# Load the user's sent friend requests
 		$this->loadModel('SentFriendRequest');
 		$sentFriendRequests = $this->SentFriendRequest->find('all', 
-				array( 'conditions' => array( 'from_user' => $USER_NAME )));
+				array( 'conditions' => array( 'from_user' => USER_NAME )));
 		$this->set( 'sentFriendRequests', $sentFriendRequests );
 
 		# Load the user's friend requests. 
 		$this->loadModel('FriendRequest');
 		$friendRequests = $this->FriendRequest->find( 'all',
-				array( 'conditions' => array( 'for_user' => $USER_NAME )));
+				array( 'conditions' => array( 'for_user' => USER_NAME )));
 		$this->set( 'friendRequests', $friendRequests );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user' => $USER_NAME )));
+				array( 'conditions' => array( 'user' => USER_NAME )));
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
 		$this->loadModel('Image');
 		$images = $this->Image->find('all', array( 'conditions' => 
-				array( 'user' => $USER_NAME )));
+				array( 'user' => USER_NAME )));
 		$this->set( 'images', $images );
 
 		# Load up activity.
@@ -103,9 +100,9 @@ class UserController extends AppController
 			"FROM remote_published " .
 			"WHERE user = '%s' " .
 			"ORDER BY time_published DESC",
-			mysql_real_escape_string($USER_NAME),
-			mysql_real_escape_string($USER_NAME),
-			mysql_real_escape_string($USER_NAME)
+			mysql_real_escape_string(USER_NAME),
+			mysql_real_escape_string(USER_NAME),
+			mysql_real_escape_string(USER_NAME)
 		);
 
 		$activity = $this->User->query( $query );
@@ -149,22 +146,16 @@ class UserController extends AppController
 	{
 		$this->activateSession();
 
-		global $CFG_PORT;
-		global $CFG_URI;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_PATH;
-
 		$pass = $_POST['pass'];
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"login $USER_NAME $pass\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"login " . USER_NAME . " $pass\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -177,7 +168,7 @@ class UserController extends AppController
 			$this->Session->write( 'hash', $regs[1] );
 			$this->Session->write( 'token', $regs[2] );
 
-			$this->redirect( "/$USER_NAME/" );
+			$this->redirect( "/" . USER_NAME . "/" );
 		}
 	}
 
@@ -186,7 +177,6 @@ class UserController extends AppController
 		Configure::write( 'debug', 0 );
 
 		global $CFG_PHOTO_DIR;
-		global $USER_NAME;
 
 		$this->requireOwnerOrFriend();
 
@@ -195,7 +185,7 @@ class UserController extends AppController
 		if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
 			die("bad image");
 
-		$path = "$CFG_PHOTO_DIR/$USER_NAME/$file";
+		$path = "$CFG_PHOTO_DIR/" . USER_NAME . "/$file";
 		$this->set( 'path', $path );
 		$this->render( 'img', 'img' );
 	}
@@ -206,11 +196,6 @@ class UserController extends AppController
 
 	function sbecome()
 	{
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_URI;
 		$identity = $_POST['identity'];
 
 		//require_once('../recaptcha-php-1.10/recaptchalib.php');
@@ -224,20 +209,20 @@ class UserController extends AppController
 		//                      "(reCAPTCHA said: " . $resp->error . ")");
 		//}
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			die( "!!! There was a problem connecting to the local SPP server.");
 		
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"relid_request $USER_NAME $identity\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"relid_request " . USER_NAME . " $identity\r\n";
 		fwrite($fp, $send);
 		
 		$res = fgets($fp);
 
 		if ( ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) ) {
-			$arg_identity = 'identity=' . urlencode( $USER_URI );
+			$arg_identity = 'identity=' . urlencode( USER_URI );
 			$arg_reqid = 'fr_reqid=' . urlencode( $regs[1] );
 
 			header("Location: ${identity}retrelid?${arg_identity}&${arg_reqid}" );
@@ -255,31 +240,25 @@ class UserController extends AppController
 
 	function retrelid()
 	{
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_URI;
-
 		$this->requireOwner();
 
 		$identity = $_GET['identity'];
 		$fr_reqid = $_GET['fr_reqid'];
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"relid_response $USER_NAME $fr_reqid $identity\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"relid_response " . USER_NAME . " $fr_reqid $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
 
 		if ( ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) ) {
-			$arg_identity = 'identity=' . urlencode( $USER_URI );
+			$arg_identity = 'identity=' . urlencode( USER_URI );
 			$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 
 			header("Location: ${identity}frfinal?${arg_identity}&${arg_reqid}" );
@@ -291,29 +270,23 @@ class UserController extends AppController
 
 	function frfinal()
 	{
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_URI;
-
 		$identity = $_GET['identity'];
 		$reqid = $_GET['reqid'];
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"friend_final $USER_NAME $reqid $identity\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"friend_final " . USER_NAME . " $reqid $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
 
 		if ( ereg("^OK", $res) ) {
-			header("Location: ${USER_URI}" );
+			header("Location: " . USER_URI );
 		}
 		else {
 			echo $res;
@@ -322,41 +295,25 @@ class UserController extends AppController
 
 	function answer()
 	{
-		global $CFG_DB_DATABASE;
-		global $CFG_DB_USER;
-		global $CFG_DB_HOST;
-		global $CFG_ADMIN_PASS;
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_URI;
-
 		$this->requireOwner();
 
 		$reqid = $_GET['reqid'];
 
-		# Connect to the database.
-		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-			('Could not connect to database');
-		mysql_select_db($CFG_DB_DATABASE) or die
-			('Could not select database ' . $CFG_DB_DATABASE);
-
 		$query = sprintf(
 			"DELETE FROM friend_request ".
 			"WHERE for_user = '%s' AND reqid = '%s'",
-			$USER_NAME, $reqid );
+			USER_NAME, $reqid );
 
-		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+		$this->User->query( $query );
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"accept_friend $USER_NAME $reqid\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"accept_friend " . USER_NAME . " $reqid\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -365,23 +322,12 @@ class UserController extends AppController
 			echo $res;
 		}
 		else {
-			header("Location: $USER_URI" );
+			header("Location: " . USER_URI );
 		}
 	}
 
 	function sflogin()
 	{
-		global $CFG_DB_DATABASE;
-		global $CFG_DB_USER;
-		global $CFG_DB_HOST;
-		global $CFG_ADMIN_PASS;
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_URI;
-		global $USER_PATH;
-
 		$hash = $_REQUEST['h'];
 
 		if ( !$hash )
@@ -390,18 +336,18 @@ class UserController extends AppController
 		/* Maybe we are already logged in as this friend. */
 		if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && 
 				isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
-			header( "Location: $USER_PATH" );
+			header( "Location: " . USER_PATH );
 		}
 		else {
 			/* Not logged in as the hashed user. */
-			$fp = fsockopen( 'localhost', $CFG_PORT );
+			$fp = fsockopen( 'localhost', CFG_PORT );
 			if ( !$fp )
 				exit(1);
 
 			$send = 
-				"SPP/0.1 $CFG_URI\r\n" . 
-				"comm_key $CFG_COMM_KEY\r\n" .
-				"ftoken_request $USER_NAME $hash\r\n";
+				"SPP/0.1 " . CFG_URI . "\r\n" . 
+				"comm_key " . CFG_COMM_KEY . "\r\n" .
+				"ftoken_request " . USER_NAME . " $hash\r\n";
 			fwrite($fp, $send);
 
 			$res = fgets($fp);
@@ -421,16 +367,6 @@ class UserController extends AppController
 	
 	function retftok()
 	{
-		global $CFG_DB_DATABASE;
-		global $CFG_DB_USER;
-		global $CFG_DB_HOST;
-		global $CFG_ADMIN_PASS;
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_URI;
-
 		$this->requireOwner();
 
 		$hash = $_REQUEST['h'];
@@ -442,14 +378,14 @@ class UserController extends AppController
 		if ( !$reqid )
 			die('no reqid given');
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"ftoken_response $USER_NAME $hash $reqid\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"ftoken_response " . USER_NAME . " $hash $reqid\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -471,23 +407,17 @@ class UserController extends AppController
 	{
 		$this->activateSession();
 
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_PATH;
-
 		# No session yet. Maybe going to set it up.
 
 		$ftoken = $_GET['ftoken'];
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
 			"submit_ftoken $ftoken\r\n";
 		fwrite($fp, $send);
 
@@ -504,7 +434,7 @@ class UserController extends AppController
 			if ( isset( $_GET['d'] ) )
 				$this->redirect( $_GET['d'] );
 			else
-				$this->redirect( "/$USER_NAME/" );
+				$this->redirect( "/" . USER_NAME . "/" );
 		}
 		else {
 			echo "<center>\n";
@@ -515,48 +445,28 @@ class UserController extends AppController
 
 	function broadcast()
 	{
-		global $CFG_DB_DATABASE;
-		global $CFG_DB_USER;
-		global $CFG_DB_HOST;
-		global $CFG_ADMIN_PASS;
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_PATH;
-
 		$this->requireOwner();
 
 		/* User message */
 		$message = $_POST['message'];
 		$len = strlen( $message );
 
-		# Connect to the database.
-		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-			('Could not connect to database');
-		mysql_select_db($CFG_DB_DATABASE) or die
-			('Could not select database ' . $CFG_DB_DATABASE);
+		$this->loadModel('Published');
+		$this->Published->save( array( 
+			"user"  => USER_NAME,
+			"author_id" => CFG_URI . USER_NAME . "/",
+			"type" => "MSG",
+			"message" => $message,
+		));
 
-		$authorId = "$CFG_URI$USER_NAME/";
-		$query = sprintf(
-			"INSERT INTO published ( user, author_id, type, message ) " .
-			"VALUES ( '%s', '%s', '%s', '%s' );",
-			mysql_real_escape_string($USER_NAME),
-			mysql_real_escape_string($authorId),
-			mysql_real_escape_string("MSG"),
-			mysql_real_escape_string($message)
-		);
-
-		mysql_query( $query ) or die('Query failed: ' . mysql_error());
-
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"submit_broadcast $USER_NAME MSG 0 $len\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"submit_broadcast " . USER_NAME . " MSG 0 $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $message, $len );
@@ -565,24 +475,13 @@ class UserController extends AppController
 		$res = fgets($fp);
 
 		if ( ereg("^OK", $res, $regs) )
-			$this->redirect( "/$USER_NAME/" );
+			$this->redirect( "/" . USER_NAME . "/" );
 		else
 			echo $res;
 	}
 
 	function wall()
 	{
-		global $CFG_DB_DATABASE;
-		global $CFG_DB_USER;
-		global $CFG_DB_HOST;
-		global $CFG_ADMIN_PASS;
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_PATH;
-		global $USER_URI;
-
 		$this->requireFriend();
 		$BROWSER_ID = $_SESSION['identity'];
 
@@ -590,26 +489,16 @@ class UserController extends AppController
 		$message = $_POST['message'];
 		$len = strlen( $message );
 
-		# Connect to the database.
-		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-			('Could not connect to database');
-		mysql_select_db($CFG_DB_DATABASE) or die
-			('Could not select database ' . $CFG_DB_DATABASE);
+		$this->loadModel('Published');
+		$this->Published->save( array( 
+			'user' => USER_NAME,
+			'author_id' => $BROWSER_ID,
+			'subject_id' => CFG_URI . USER_NAME . "/",
+			'type' => 'MSG',
+			'message' => $message,
+		));
 
-		$subjectId = "$CFG_URI$USER_NAME/";
-		$query = sprintf(
-			"INSERT INTO published ( user, author_id, subject_id, type, message ) " .
-			"VALUES ( '%s', '%s', '%s', '%s', '%s' );",
-			mysql_real_escape_string($USER_NAME),
-			mysql_real_escape_string($BROWSER_ID),
-			mysql_real_escape_string($subjectId),
-			mysql_real_escape_string("MSG"),
-			mysql_real_escape_string($message)
-		);
-
-		mysql_query( $query ) or die('Query failed: ' . mysql_error());
-
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
@@ -617,9 +506,9 @@ class UserController extends AppController
 		$hash = $_SESSION['hash'];
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"submit_remote_broadcast $USER_NAME $BROWSER_ID $hash $token BRD $len\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"submit_remote_broadcast " . USER_NAME . " $BROWSER_ID $hash $token BRD $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $message, $len );
@@ -628,30 +517,16 @@ class UserController extends AppController
 		$res = fgets($fp);
 
 		if ( ereg("^OK", $res, $regs) )
-			$this->redirect( "/$USER_NAME/" );
+			$this->redirect( "/" . USER_NAME . "/" );
 		else
 			echo $res;
 	}
 
 	function upload()
 	{
-		global $CFG_URI;
-		global $CFG_PORT;
-		global $CFG_COMM_KEY;
-		global $USER_NAME;
-		global $USER_PATH;
-		global $USER_URI;
-		global $CFG_PHOTO_DIR;
-		global $CFG_IM_CONVERT;
-
 		$max_image_size = 10485760;
 
 		$this->requireOwner();
-
-		#echo $_FILES['photo']['name'] . "<br>";
-		#echo $_FILES['photo']['tmp_name'] . "<br>";
-		#echo $_FILES['photo']['type'] . "<br>";
-		#echo $_FILES['photo']['size'] . "<br>";
 
 		if ( $_FILES['photo']['size'] > $max_image_size )
 			die("image excedes max size of $max_image_size bytes");
@@ -665,7 +540,7 @@ class UserController extends AppController
 
 		$this->loadModel('Image');
 		$this->Image->save( array( 
-			'user' => $USER_NAME,
+			'user' => USER_NAME,
 			'rows' => $image_size[1], 
 			'cols' => $image_size[0], 
 			'mime_type' => $image_size['mime']
@@ -673,14 +548,14 @@ class UserController extends AppController
 
 		$result = $this->User->query( "SELECT last_insert_id() as id" );
 		$id = $result[0][0]['id'];
-		$path = "$CFG_PHOTO_DIR/$USER_NAME/img-$id.jpg";
+		$path = CFG_PHOTO_DIR . "/" . USER_NAME . "/img-$id.jpg";
 
 		if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
 			die( "bad image file" );
 
-		$thumb = "$CFG_PHOTO_DIR/$USER_NAME/thm-$id.jpg";
+		$thumb = CFG_PHOTO_DIR . "/" . USER_NAME . "/thm-$id.jpg";
 
-		system($CFG_IM_CONVERT . " " .
+		system(CFG_IM_CONVERT . " " .
 			"-define jpeg:preserve-settings " .
 			"-size 120x120 " .
 			$path . " " .
@@ -690,13 +565,13 @@ class UserController extends AppController
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
-			'user' => $USER_NAME,
+			'user' => USER_NAME,
 			'author_id' => CFG_URI . USER_NAME . "/",
 			'type' => "PHT",
 			'message' => "thm-$id.jpg"
 		));
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
@@ -708,24 +583,21 @@ class UserController extends AppController
 		$len = strlen( $data );
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"submit_broadcast $USER_NAME PHT $id $len\r\n";
+			"SPP/0.1 " . CFG_URI . "\r\n" . 
+			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"submit_broadcast " . USER_NAME . " PHT $id $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $data, $len );
 		fwrite( $fp, "\r\n", 2 );
 
-		$this->redirect( "/$USER_NAME/" );
+		$this->redirect( "/" . USER_NAME . "/" );
 	}
 
 	function logout()
 	{
-		global $USER_NAME;
-		global $USER_PATH;
-
 		$this->Session->destroy();
-		$this->redirect( "/$USER_NAME/" );
+		$this->redirect( "/" . USER_NAME . "/" );
 	}
 }
 ?>

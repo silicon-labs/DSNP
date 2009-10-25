@@ -115,7 +115,6 @@ define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
 define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
 define( 'CFG_COMM_KEY', $CFG_COMM_KEY );
 define( 'CFG_PORT', $CFG_PORT );
-
 define( 'CFG_USE_RECAPTCHA', $CFG_USE_RECAPTCHA );
 define( 'CFG_RC_PUBLIC_KEY', $CFG_RC_PUBLIC_KEY );
 define( 'CFG_RC_PRIVATE_KEY', $CFG_RC_PRIVATE_KEY );
@@ -129,16 +128,21 @@ else {
 	if ( isset( $_GET['url'] ) ) {
 		$url = $_GET['url'];
 		if ( preg_match( '/^[^\/]+\//', $url ) ) {
-			$USER_NAME = preg_replace( '/([^\/]+).*/', '\1', $url );
+			$u = preg_replace( '/([^\/]+).*/', '\1', $url );
 
-			if ( $USER_NAME === 'admin' ) {
+			if ( $u === 'admin' ) {
 				# Do nothing here. Use the admin controller. 
 			}
 			else {
 				$url = preg_replace( '/^[^\/]+\//', 'user/', $url );
 
+				$USER_NAME = $u;
 				$USER_PATH = "${CFG_PATH}$USER_NAME/";
 				$USER_URI = "${CFG_URI}$USER_NAME/";
+
+				define( 'USER_NAME', $USER_NAME );
+				define( 'USER_PATH', $USER_PATH );
+				define( 'USER_URI', $USER_URI );
 
 				if ( $url == null || strlen( $url ) == 0 )
 					$url = "user";

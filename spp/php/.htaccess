@@ -3,3 +3,7 @@
    RewriteRule    ^$ app/webroot/    [L]
    RewriteRule    (.*) app/webroot/$1 [L]
 </IfModule>
+
+#php_flag display_errors on
+php_flag upload_max_filesize 3271557120
+

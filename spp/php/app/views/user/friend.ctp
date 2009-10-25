@@ -42,7 +42,7 @@ global $USER_PATH;
 
 <h2>SPP: <?php print $USER_NAME;?></h2>
 
-<p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
 
 <p>You are logged in as a <a href="<?php echo $BROWSER_ID;?>"><b>friend</b></a> (<a href="logout">logout</a>)<br>
 
@@ -66,12 +66,12 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 while ( $row = mysql_fetch_assoc($result) ) {
 	$dest_id = $row['friend_id'];
 	if ( $dest_id == $BROWSER_ID ) {
-		echo "you: <a href=\"${dest_id}\"><small>$dest_id</small></a> <br>\n";
+		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
 	}
 	else {
 		echo "<a href=\"${dest_id}sflogin.php?h=" . 
 			urlencode( $_SESSION['hash'] ) .
-			"\"><small>$dest_id</small></a> <br>\n";
+			"\">$dest_id</a> <br>\n";
 	}
 }
 

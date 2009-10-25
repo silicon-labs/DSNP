@@ -55,26 +55,26 @@ h1 {
 	background:#fff;
 	color: #003d4c;
 	font-size: 100%;
-	margin: 0.1em 0;
+/*	margin: 0.1em 0; */
 }
 h2 {
 	background:#fff;
 	color: #e32;
 	font-family:'Gill Sans','lucida grande',helvetica, arial, sans-serif;
 	font-size: 190%;
-	margin: 0.3em 0;
-	padding-top: 0.8em;
+/*	margin: 0 0;*/
+/*	padding-top: 0.8em; */
 }
 h3 {
 	color: #993;
 	font-family:'Gill Sans','lucida grande',helvetica, arial, sans-serif;
 	font-size: 165%;
-	padding-top: 1.5em;
+/*	padding-top: 1.5em; */
 }
 h4 {
 	color: #993;
 	font-weight: normal;
-	padding-top: 0.5em;
+/*	padding-top: 0.5em; */
 }
 ul, li {
 	margin: 0 12px;
@@ -104,13 +104,87 @@ ul, li {
 	background: #003d4c;
 	text-decoration: underline;
 }
+
 #content{
 	background: #fff;
 	clear: both;
 	color: #333;
-	padding: 10px 20px 40px 20px;
 	overflow: auto;
 }
+
+#leftcol {
+	float: left;
+	width: 30%;
+}
+
+#details {
+	padding: 10px 10px 10px 10px;
+	/*background: #ff0000;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#friend_requests {
+	padding: 10px 10px 10px 10px;
+	/*background: #0000ff;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#sent_friend_requests {
+	padding: 10px 10px 10px 10px;
+	/*background: #ff00ff;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#friend_list {
+	padding: 10px 10px 10px 10px;
+	/*background: #00ffff; */
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#photo_stream {
+	padding: 10px 10px 10px 10px;
+	/*background: #ffff00;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#activity {
+	float: left;
+	width: 70%;
+}
+
+#broadcast {
+	padding: 10px 10px 10px 10px;
+	/*background: #ff0000;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+#upload {
+	padding: 10px 10px 10px 10px;
+	/*background: #00ff00;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#activity_stream {
+	padding: 10px 10px 10px 10px;
+	/*background: #0000ff;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
 #footer {
 	clear: both;
 	padding: 6px 10px;

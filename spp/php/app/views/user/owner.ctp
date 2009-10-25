@@ -33,20 +33,22 @@ global $USER_URI;
 
 <body>
 
-<table width="100%" cellpadding=12 cellspacing=0>
-<tr>
-<td valign="top">
+
+<div id="leftcol">
+
+<div id="details">
 
 <h2>SPP: <?php print $USER_NAME;?></h2>
 
-<p>Installation: <a href="../"><small><?php print $CFG_URI;?></small></a>
+<p>Installation: <a href="../"><?php print $CFG_URI;?></a></p>
 
-<p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout">logout</a>)
+<p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout">logout</a>)</p>
 
-<p>
+</div>
+
 <?php
-
 if ( count( $friendRequests ) ) {
+	echo '<div id="friend_requests">';
 	echo "<h2>Friend Requests</h2>";
 	foreach ( $friendRequests as $row ) {
 		$from_id = $row['FriendRequest']['from_id'];
@@ -57,9 +59,14 @@ if ( count( $friendRequests ) ) {
 		echo "<a href=\"answer?reqid=" . urlencode($reqid) . 
 				"&a=no\">no</a><br>\n";
 	}
+	echo "</div>";
 }
+?>
+
+<?php
 
 if ( count( $sentFriendRequests ) > 0 ) {
+	echo '<div id="sent_friend_requests">';
 	echo "<h2>Sent Friend Requests</h2>";
 	foreach ( $sentFriendRequests as $row ) {
 		$for_id = $row['SentFriendRequest']['for_id'];
@@ -69,9 +76,11 @@ if ( count( $sentFriendRequests ) > 0 ) {
 		echo "<a href=\"abandon.php?reqid=" . /*urlencode($reqid) . */
 				"\">cancel</a><br>\n";
 	}
+	echo "</div>";
 }
 ?>
 
+<div id="friend_list">
 <h2>Friend List</h2>
 
 <?php
@@ -84,8 +93,10 @@ foreach ( $friendClaims as $row ) {
 
 	echo "<br>\n";
 }
-
 ?>
+</div>
+
+<div id="photo_stream">
 
 <h2>Photo Stream</h2>
 
@@ -99,10 +110,10 @@ foreach ( $images as $row ) {
 }
 
 ?>
-</td>
-<td width="70%" valign="top">
+</div>
+</div>
 
-<hr>
+<div id="activity">
 
 <!--
 <h2>Broadcast</h2>
@@ -113,30 +124,22 @@ status changes, and contact information changes.</small>
 <p>
 -->
 
+<div id="broadcast">
 <form method="post" action="broadcast">
-<table>
-<tr><td>Broadcast a Message:</td></tr>
-<!--<input type="text" name="message" size="50">-->
-<tr><td>
+Broadcast a Message:
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
-</td></tr>
-<tr><td>
 <input value="Submit Message" type="submit">
-</td></tr>
-
-
-</table>
 </form>
+</div>
 
-<hr>
-
+<div id="upload">
 <form method="post" enctype="multipart/form-data" action="upload">
 Photo Upload: <input name="photo" type="file" />
 <input type="submit" value="Upload" />
 </form> 
+</div>
 
-<hr>
-
+<div id="activity_stream">
 <?
 
 foreach ( $activity as $row ) {
@@ -153,10 +156,7 @@ foreach ( $activity as $row ) {
 
 ?>
 
-</td>
-</tr>
-</table>
+</div>
 
-</body>
-</html>
+</div>
 

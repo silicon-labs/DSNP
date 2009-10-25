@@ -51,9 +51,9 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 	global $USER_URI;
 
 	if ( $type == 'PHT' ) {
-		echo "<small>$time_published ";
+		echo "$time_published ";
 		printName( $author_id, false );
-		echo " uploaded a photo:</small><br>";
+		echo " uploaded a photo:<br>";
 		if ( $resource_id > 0 ) {
 			echo "<a href=\"${author_id}img/img-$resource_id.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
@@ -64,13 +64,13 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		echo "<img src=\"img/$message\" alt=\"$message\"></a><br>\n";
 	}
 	else if ( $type == 'MSG' ) {
-		echo "<small>$time_published ";
+		echo "$time_published ";
 		printName( $author_id, false );
-		echo " said:</small><br>";
+		echo " said:<br>";
 		echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
 	}
 	else if ( $type == 'BRD' ) {
-		echo "<small>$time_published ";
+		echo "$time_published ";
 
 		printName( $author_id, false );
 
@@ -78,7 +78,7 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 
 		printName( $subject_id, true );
 
-		echo " wall:</small><br>";
+		echo " wall:<br>";
 		echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
 	}
 }

@@ -149,6 +149,24 @@ case "sent_friend_request": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
+case "sent_friend_request_accepted": {
+	$user = $argv[$b+0];
+	$identity = $argv[$b+1];
+
+	$query = sprintf(
+		"INSERT INTO friend_claim ( user, friend_id ) " .
+		" VALUES ( '%s', '%s' ) ", $user, $identity );
+
+	$query = sprintf(
+		"DELETE FROM sent_friend_request " .
+		"WHERE from_user = '%s' AND for_id = '%s'",
+		mysql_real_escape_string($user), 
+		mysql_real_escape_string($identity)
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	break;
+}
 case "friend_request": {
 	# Collect the args.
 	$for_user = $argv[$b+0];
@@ -166,7 +184,7 @@ case "friend_request": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
-case "friend_claim": {
+case "friend_request_accepted": {
 	$user = $argv[$b+0];
 	$identity = $argv[$b+1];
 
@@ -177,6 +195,4 @@ case "friend_claim": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }}
-
-
 ?>

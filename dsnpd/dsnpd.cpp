@@ -589,9 +589,6 @@ long store_friend_claim( MYSQL *mysql, const char *user,
 		"VALUES ( %e, %e, %e, %e, %e, %e );",
 		user, identity, id_salt, friend_hash_str, put_relid, get_relid );
 
-	String args( "friend_claim %s %s", user, identity );
-	app_notification( args, 0, 0 );
-	
 	return 0;
 }
 
@@ -1116,6 +1113,9 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, from_id, returned_id_salt, requested_relid, returned_relid );
+
+	String args( "friend_request_accepted %s %s", user, from_id );
+	app_notification( args, 0, 0 );
 
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
@@ -2261,6 +2261,9 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, for_user, from_id, id_salt, returned_relid, requested_relid );
+
+	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
+	app_notification( args, 0, 0 );
 
 	/* Clear the sent_freind_request. */
 	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", for_user );

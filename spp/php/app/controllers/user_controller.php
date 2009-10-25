@@ -635,10 +635,6 @@ class UserController extends AppController
 
 	function upload()
 	{
-		global $CFG_DB_DATABASE;
-		global $CFG_DB_USER;
-		global $CFG_DB_HOST;
-		global $CFG_ADMIN_PASS;
 		global $CFG_URI;
 		global $CFG_PORT;
 		global $CFG_COMM_KEY;
@@ -667,26 +663,16 @@ class UserController extends AppController
 		if ( ! $image_size )
 			die( "file doesn't appear to be a valid image" );
 
-		# Connect to the database.
-		$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
-			('Could not connect to database');
-		mysql_select_db($CFG_DB_DATABASE) or die
-			('Could not select database ' . $CFG_DB_DATABASE);
+		$this->loadModel('Image');
+		$this->Image->save( array( 
+			'user' => $USER_NAME,
+			'rows' => $image_size[1], 
+			'cols' => $image_size[0], 
+			'mime_type' => $image_size['mime']
+		));
 
-		$query = sprintf(
-			"INSERT INTO image ( user, rows, cols, mime_type ) " .
-			"VALUES( '%s', '%s', '%s', '%s' );",
-			mysql_real_escape_string($USER_NAME), 
-			$image_size[1], $image_size[0], 
-			$image_size['mime']
-		);
-
-		mysql_query( $query ) or die('Query failed: ' . mysql_error());
-
-		$result = mysql_query("SELECT last_insert_id() as id") or die('Query failed: ' . mysql_error());
-		$row = mysql_fetch_assoc($result);
-		$id = $row['id'];
-		#echo "image id: " . $id;
+		$result = $this->User->query( "SELECT last_insert_id() as id" );
+		$id = $result[0][0]['id'];
 		$path = "$CFG_PHOTO_DIR/$USER_NAME/img-$id.jpg";
 
 		if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
@@ -702,17 +688,13 @@ class UserController extends AppController
 			"+profile '*' " .
 			$thumb );
 
-		$authorId = "$CFG_URI$USER_NAME/";
-		$query = sprintf(
-			"INSERT INTO published ( user, author_id, type, message ) " .
-			"VALUES ( '%s', '%s', '%s', '%s' );",
-			mysql_real_escape_string($USER_NAME),
-			mysql_real_escape_string($authorId),
-			mysql_real_escape_string("PHT"),
-			mysql_real_escape_string("thm-$id.jpg")
-		);
-
-		mysql_query( $query ) or die('Query failed: ' . mysql_error());
+		$this->loadModel('Published');
+		$this->Published->save( array( 
+			'user' => $USER_NAME,
+			'author_id' => CFG_URI . USER_NAME . "/",
+			'type' => "PHT",
+			'message' => "thm-$id.jpg"
+		));
 
 		$fp = fsockopen( 'localhost', $CFG_PORT );
 		if ( !$fp )

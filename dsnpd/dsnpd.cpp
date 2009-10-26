@@ -2353,7 +2353,7 @@ char *const*make_notif_argv( const char *args )
 
 void app_notification( const char *args, const char *data, long length )
 {
-	message( "notification callout\n" );
+	message( "notification callout with args %s\n" );
 
 	int fds[2];	
 	int res = pipe( fds );
@@ -2369,6 +2369,9 @@ void app_notification( const char *args, const char *data, long length )
 	else if ( pid == 0 ) {
 		close( fds[1] );
 		FILE *log = fopen("/tmp/notification.log", "at");
+		if ( log == 0 )
+			fatal ( "could not open notification log file\n");
+
 		dup2( fds[0], 0 );
 		dup2( fileno(log), 1 );
 		dup2( fileno(log), 2 );

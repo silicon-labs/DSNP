@@ -19,11 +19,9 @@
 
 function printName( $identity, $possessive )
 {
-	global $USER_URI;
-	global $USER_NAME;
 	global $BROWSER_ID;
 
-	if ( !$identity || !isset($BROWSER_ID) && $identity == $USER_URI || 
+	if ( !$identity || !isset($BROWSER_ID) && $identity == USER_URI || 
 			isset($BROWSER_ID) && $BROWSER_ID == $identity )
 	{
 		if ( $possessive )
@@ -31,8 +29,8 @@ function printName( $identity, $possessive )
 		else
 			echo "you";
 	}
-	else if ( isset($BROWSER_ID) && $identity == $USER_URI ) {
-		echo $USER_NAME;
+	else if ( isset($BROWSER_ID) && $identity == USER_URI ) {
+		echo USER_NAME;
 		if ( $possessive )
 			echo "'s";
 	}
@@ -47,9 +45,6 @@ function printName( $identity, $possessive )
 
 function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published )
 {
-	global $USER_NAME;
-	global $USER_URI;
-
 	if ( $type == 'PHT' ) {
 		echo "$time_published ";
 		printName( $author_id, false );

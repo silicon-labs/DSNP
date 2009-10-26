@@ -27,7 +27,7 @@
 <head>
 	<?php echo $html->charset(); ?>
 	<title>
-		<?php __('Friends in Feed: distributed social networking.'); ?>
+		<?php __('DSNP User Agent One:'); ?>
 		<?php echo USER_NAME; ?>
 	</title>
 	<?php
@@ -39,8 +39,22 @@
 <body>
 	<div id="container">
 		<div id="header">
-			<h1><?php echo $html->link(__('Friends in Feed: a DSNP user agent', true), 
+			<div id="header_left">
+			<h1><?php echo $html->link(__('DSNP User Agent One', true), 
 					'http://www.complang.org/dsnp/'); ?></h1>
+			</div>
+			<div id="header_middle">
+			<h1><?php
+				if ( defined('USER_URI') )
+					echo '<a href="' . USER_URI . '">' . USER_NAME . '</a>';
+			?></h1>
+			</div>
+			<div id="header_right">
+			<h1><?php 
+			if ( isset( $BROWSER_ID ) )
+				echo "<a href=\"$BROWSER_ID\">$BROWSER_ID</a>";
+			?></h1>
+			</div>
 		</div>
 		<div id="content">
 			<?php $session->flash(); ?>

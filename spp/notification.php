@@ -18,7 +18,6 @@ include("php/app/webroot/config.php");
 $notification_type = $argv[3];
 $b = 4;
 
-
 # Connect to the database.
 $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
 	('Could not connect to database');

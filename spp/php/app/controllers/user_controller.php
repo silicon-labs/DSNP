@@ -47,20 +47,18 @@ class UserController extends AppController
 		$this->maybeActivateSession();
 	}
 
-	function setUser()
+	function checkUser()
 	{
 		$user = $this->User->find( 'first', array('conditions' => 
 				array('user' => USER_NAME)));
 
 		if ( $user == null )
 			$this->cakeError("userNotFound", array('user' => USER_NAME));
-
-		$this->set( 'user', $user );
 	}
 
 	function indexUser()
 	{
-		$this->setUser();
+		$this->checkUser();
 
 		# Load the user's sent friend requests
 		$this->loadModel('SentFriendRequest');
@@ -104,7 +102,6 @@ class UserController extends AppController
 			mysql_real_escape_string(USER_NAME),
 			mysql_real_escape_string(USER_NAME)
 		);
-
 		$activity = $this->User->query( $query );
 		$this->set( 'activity', $activity );
 
@@ -113,13 +110,43 @@ class UserController extends AppController
 
 	function indexFriend()
 	{
-		$this->setUser();
+		$this->checkUser();
+		$identity = $this->Session->read('identity');
+		$this->set( 'BROWSER_ID', $identity );
+
+		# Load the friend list.
+		$this->loadModel( 'FriendClaim' );
+		$friendClaims = $this->FriendClaim->find('all', 
+				array( 'conditions' => array( 'user' => USER_NAME )));
+		$this->set( 'friendClaims', $friendClaims );
+
+		# Load the user's images.
+		$this->loadModel('Image');
+		$images = $this->Image->find('all', array( 'conditions' => 
+				array( 'user' => USER_NAME )));
+		$this->set( 'images', $images );
+
+		$query = sprintf(
+			"SELECT author_id, subject_id, time_published, type, message " .
+			"FROM published " . 
+			"WHERE user = '%s' " .
+			"UNION " .
+			"SELECT author_id, subject_id, time_published, type, message " .
+			"FROM remote_published " .
+			"WHERE user = '%s' " .
+			"ORDER BY time_published DESC",
+			mysql_real_escape_string(USER_NAME),
+			mysql_real_escape_string(USER_NAME)
+		);
+		$activity = $this->User->query( $query );
+		$this->set( 'activity', $activity );
+
 		$this->render( 'friend' );
 	}
 
 	function indexPublic()
 	{
-		$this->setUser();
+		$this->checkUser();
 		$this->render( 'public' );
 	}
 

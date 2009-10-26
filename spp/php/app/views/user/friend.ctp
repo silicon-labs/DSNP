@@ -26,10 +26,6 @@ include('functions.php');
 
 <h2>SPP: <?php print USER_NAME;?></h2>
 
-<p>Installation: <a href="../"><?php print CFG_URI;?></a>
-
-<p>You are logged in as a <a href="<?php echo $BROWSER_ID;?>"><b>friend</b></a> (<a href="logout">logout</a>)<br>
-
 </div>
 
 <div id="friend_list">
@@ -44,7 +40,7 @@ foreach ( $friendClaims as $row ) {
 		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
 	}
 	else {
-		echo "<a href=\"${dest_id}sflogin.php?h=" . 
+		echo "<a href=\"${dest_id}sflogin?h=" . 
 			urlencode( $_SESSION['hash'] ) .
 			"\">$dest_id</a> <br>\n";
 	}

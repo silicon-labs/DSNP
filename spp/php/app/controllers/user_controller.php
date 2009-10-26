@@ -59,6 +59,7 @@ class UserController extends AppController
 	function indexUser()
 	{
 		$this->checkUser();
+		$this->set( 'auth', 'owner' );
 
 		# Load the user's sent friend requests
 		$this->loadModel('SentFriendRequest');
@@ -80,8 +81,11 @@ class UserController extends AppController
 
 		# Load the user's images.
 		$this->loadModel('Image');
-		$images = $this->Image->find('all', array( 'conditions' => 
-				array( 'user' => USER_NAME )));
+		$images = $this->Image->find('all', array(
+			'conditions' => 
+				array( 'user' => USER_NAME ),
+			'order' => array( 'Image.seq_num DESC' )
+		));
 		$this->set( 'images', $images );
 
 		# Load up activity.
@@ -111,8 +115,11 @@ class UserController extends AppController
 	function indexFriend()
 	{
 		$this->checkUser();
+		$this->set( 'auth', 'friend' );
+
 		$identity = $this->Session->read('identity');
 		$this->set( 'BROWSER_ID', $identity );
+		define( 'BROWSER_ID', $identity );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -122,8 +129,11 @@ class UserController extends AppController
 
 		# Load the user's images.
 		$this->loadModel('Image');
-		$images = $this->Image->find('all', array( 'conditions' => 
-				array( 'user' => USER_NAME )));
+		$images = $this->Image->find('all', array( 
+			'conditions' => 
+				array( 'user' => USER_NAME ),
+			'order' => array( 'Image.seq_num DESC' )
+		));
 		$this->set( 'images', $images );
 
 		$query = sprintf(

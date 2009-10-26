@@ -88,24 +88,27 @@ ul, li {
 #header { }
 
 #header_left {
+	text-align: left;
 	background: #f00;
 	float: left;
 	width: 33%;
 }
 
 #header_middle {
+	text-align: center;
 	background: #f00;
 	float: left;
 	width: 34%;
 }
 #header_right {
+	text-align: right;
 	background: #f00;
 	float: left;
 	width: 33%;
 }
 
 #header h1 {
-	text-align: center;
+/*	text-align: center; */
 	padding: 10px 10px 10px 10px; 
 	background: #003d4c; 
 	color: #fff;

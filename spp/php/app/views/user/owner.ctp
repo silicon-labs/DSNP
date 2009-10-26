@@ -40,10 +40,6 @@ global $USER_URI;
 
 <h2>SPP: <?php print $USER_NAME;?></h2>
 
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a></p>
-
-<p>You are logged in as <b><?php echo $USER_NAME;?></b> (<a href="logout">logout</a>)</p>
-
 </div>
 
 <?php

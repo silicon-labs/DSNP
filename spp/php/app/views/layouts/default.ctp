@@ -41,18 +41,26 @@
 		<div id="header">
 			<div id="header_left">
 			<h1><?php echo $html->link(__('DSNP User Agent One', true), 
-					'http://www.complang.org/dsnp/'); ?></h1>
+				'http://www.complang.org/dsnp/'); ?>
+				<a href="<?php echo CFG_URI; ?>">(site)</a>
+				</h1>
 			</div>
 			<div id="header_middle">
 			<h1><?php
 				if ( defined('USER_URI') )
-					echo '<a href="' . USER_URI . '">' . USER_NAME . '</a>';
+					echo '<a href="' . USER_URI . '">' . USER_URI . '</a>';
 			?></h1>
 			</div>
 			<div id="header_right">
 			<h1><?php 
-			if ( isset( $BROWSER_ID ) )
-				echo "<a href=\"$BROWSER_ID\">$BROWSER_ID</a>";
+			if ( isset( $auth ) && $auth == 'friend' ) {
+				echo "<a href=\"" . BROWSER_ID . "\">" . BROWSER_ID . "</a>";
+				echo "<a href=\"logout\">logout</a>";
+			}
+			else if ( isset( $auth ) && $auth == 'owner' ) {
+				echo "<a href=\"" . USER_URI . "\">" . USER_URI . "</a>";
+				echo "<a href=\"logout\">logout</a>";
+			}
 			?></h1>
 			</div>
 		</div>

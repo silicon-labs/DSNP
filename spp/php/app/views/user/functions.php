@@ -19,17 +19,15 @@
 
 function printName( $identity, $possessive )
 {
-	global $BROWSER_ID;
-
-	if ( !$identity || !isset($BROWSER_ID) && $identity == USER_URI || 
-			isset($BROWSER_ID) && $BROWSER_ID == $identity )
+	if ( !$identity || !defined('BROWSER_ID') && $identity == USER_URI || 
+			defined('BROWSER_ID') && BROWSER_ID == $identity )
 	{
 		if ( $possessive )
 			echo "your";
 		else
 			echo "you";
 	}
-	else if ( isset($BROWSER_ID) && $identity == USER_URI ) {
+	else if ( defined('BROWSER_ID') && $identity == USER_URI ) {
 		echo USER_NAME;
 		if ( $possessive )
 			echo "'s";

@@ -19,6 +19,16 @@
 ?>
 
 
+<div id="leftcol">
+
+<div id="details">
+<h2><?php print USER_NAME;?></h2>
+</div>
+
+</div>
+
+<div id="activity">
+
 <div class="item">
 
 <h2>Become Friend</h2>
@@ -39,4 +49,6 @@ For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 
 <input type="submit">
 </form>
+</div>
+
 </div>

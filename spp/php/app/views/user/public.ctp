@@ -24,6 +24,15 @@
 <h2><?php print USER_NAME;?></h2>
 </div>
 
+</div>
+
+<div id="activity">
+
+<div class="item">
+<h3>Login</h3>
+<a href="login">login as <?php echo USER_NAME;?></a>
+</div>
+
 <div id="user_actions">
 <h3>Become Friend</h3>
 <a href="become">become a friend of <?php echo USER_NAME;?></a>
@@ -31,5 +40,4 @@
 
 </div>
 
-<div id="activity">
 </div>

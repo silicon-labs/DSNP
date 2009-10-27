@@ -38,14 +38,16 @@ global $USER_URI;
 
 <div id="details">
 
-<h2>SPP: <?php print $USER_NAME;?></h2>
+<a id="edit" href="edit">edit</a>
+<h2><?php print $USER_NAME;?></h2>
+
 
 </div>
 
 <?php
 if ( count( $friendRequests ) ) {
 	echo '<div id="friend_requests">';
-	echo "<h2>Friend Requests</h2>";
+	echo "<h3>Friend Requests</h3>";
 	foreach ( $friendRequests as $row ) {
 		$from_id = $row['FriendRequest']['from_id'];
 		$reqid = $row['FriendRequest']['reqid'];
@@ -63,7 +65,7 @@ if ( count( $friendRequests ) ) {
 
 if ( count( $sentFriendRequests ) > 0 ) {
 	echo '<div id="sent_friend_requests">';
-	echo "<h2>Sent Friend Requests</h2>";
+	echo "<h3>Sent Friend Requests</h3>";
 	foreach ( $sentFriendRequests as $row ) {
 		$for_id = $row['SentFriendRequest']['for_id'];
 
@@ -77,7 +79,7 @@ if ( count( $sentFriendRequests ) > 0 ) {
 ?>
 
 <div id="friend_list">
-<h2>Friend List</h2>
+<h3>Friend List</h3>
 
 <?php
 
@@ -94,7 +96,7 @@ foreach ( $friendClaims as $row ) {
 
 <div id="photo_stream">
 
-<h2>Photo Stream</h2>
+<h3>Photo Stream</h3>
 
 <?php
 
@@ -113,7 +115,7 @@ foreach ( $images as $row ) {
 <div id="activity">
 
 <!--
-<h2>Broadcast</h2>
+<h3>Broadcast</h3>
 <small> Messages typed here are sent to all of your friends. At present, only
 text messages are supported. However, one can imagine many different types of
 notifications being implemented, including picutre uploads, tag notifications,

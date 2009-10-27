@@ -166,6 +166,11 @@ div.item {
 	border-color: #000;
 }
 
+#edit {
+	float: right;
+	font-size: small;
+}
+
 #user_actions {
 	padding: 15px 15px 15px 15px;
 	/*background: #f00;*/

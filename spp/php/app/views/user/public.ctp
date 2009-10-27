@@ -21,11 +21,11 @@
 <div id="leftcol">
 
 <div id="details">
-<h2>SPP: <?php print USER_NAME;?></h2>
+<h2><?php print USER_NAME;?></h2>
 </div>
 
 <div id="user_actions">
-<h2>Become Friend</h2>
+<h3>Become Friend</h3>
 <a href="become">become a friend of <?php echo USER_NAME;?></a>
 </div>
 

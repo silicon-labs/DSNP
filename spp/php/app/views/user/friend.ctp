@@ -24,13 +24,13 @@ include('functions.php');
 
 <div id="details">
 
-<h2>SPP: <?php print USER_NAME;?></h2>
+<h2><?php print USER_NAME;?></h2>
 
 </div>
 
 <div id="friend_list">
 
-<h2>Friend List</h2>
+<h3>Friend List</h3>
 
 <?php
 
@@ -51,7 +51,7 @@ foreach ( $friendClaims as $row ) {
 </div>
 <div id="photo_stream">
 
-<h2>Photo Stream</h2>
+<h3>Photo Stream</h3>
 
 <?php
 
@@ -67,7 +67,7 @@ foreach ( $images as $row ) {
 </div>
 
 <!--
-<h2>Stories</h2>
+<h3>Stories</h3>
 
 <small> Messages typed here are sent to all of <?php print USER_NAME;?>'s friends. 
 </small>

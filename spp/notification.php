@@ -26,6 +26,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 
 function parse( $len )
 {
+	$headers = array();
 	$left = $len;
 	while ( true ) {
 		$line = fgets( STDIN );
@@ -35,10 +36,16 @@ function parse( $len )
 		}
 		$left -= strlen( $line );
 
+		/* Parse headers. */
+		$replaced = preg_replace( '/Content-Type:[\t ]*/i', '', $line );
+		if ( $replaced !== $line )
+			$headers['content-type'] = trim($replaced);
+
 		if ( $left <= 0 )
 			break;
 	}
-	return fread( STDIN, $left );
+	$msg = fread( STDIN, $left );
+	return array( $headers, $msg );
 }
 
 switch ( $notification_type ) {
@@ -56,17 +63,20 @@ case "direct_broadcast": {
 	# Read the message from stdin.
 	$msg = parse( $length );
 
-	if ( strcmp( $type, "PHT" ) == 0 ) {
-		$name = sprintf( "pub-%ld.jpg", $seq_num );
+	print_r( $msg[0] );
 
+	if ( isset( $msg[0]['content-type'] ) && $msg[0]['content-type'] == 'image/jpg' ) {
+		print( "message is a photo, capturing\n" );
+
+		$name = sprintf( "pub-%ld.jpg", $seq_num );
 		$path = sprintf( "%s/%s/pub-%ld.jpg", $CFG_PHOTO_DIR, $for_user, $seq_num );
 
 		$f = fopen( $path, "wb" );
-		fwrite( $f, $msg, $length );
+		fwrite( $f, $msg[1], $length );
 		fclose( $f );
 
-		$msg = $name;
-		$length = strlen( $msg );
+		$msg[1] = $name;
+		$length = strlen( $msg[1] );
 	}
 
 	$query = sprintf(
@@ -79,7 +89,7 @@ case "direct_broadcast": {
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string($type),
 		$resource_id, 
-		mysql_real_escape_string($msg)
+		mysql_real_escape_string($msg[1])
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -115,7 +125,7 @@ case "remote_broadcast": {
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string($type),
 		$resource_id, 
-		mysql_real_escape_string($msg)
+		mysql_real_escape_string($msg[1])
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -143,7 +153,7 @@ case "remote_publication": {
 		mysql_real_escape_string($subject_id), 
 		mysql_real_escape_string($author_id), 
 		mysql_real_escape_string($type),
-		mysql_real_escape_string($msg)
+		mysql_real_escape_string($msg[1])
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());

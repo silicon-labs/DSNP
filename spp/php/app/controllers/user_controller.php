@@ -576,8 +576,6 @@ class UserController extends AppController
 		if ( $_FILES['photo']['size'] > $max_image_size )
 			die("image excedes max size of $max_image_size bytes");
 
-		#echo $_FILES['photo']['size'] . "<br>";
-
 		# Validate it as an image.
 		$image_size = @getimagesize( $_FILES['photo']['tmp_name'] );
 		if ( ! $image_size )

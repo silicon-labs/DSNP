@@ -17,13 +17,7 @@
 
 ?>
 
-<html>
-
-<head>
-<title>Create User</title>
-</head>
-
-<body>
+<div class="item">
 
 <h1>Create User</h1>
 
@@ -50,6 +44,4 @@ if ( $CFG_USE_RECAPTCHA ) {
 <input type="submit">
 </form>
 
-<body>
-
-</html>
+</div>

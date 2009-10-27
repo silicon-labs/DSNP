@@ -19,6 +19,8 @@
 ?>
 
 
+<div class="item">
+
 <h2>Become Friend</h2>
 
 <form method="post" action="sbecome">
@@ -37,3 +39,4 @@ For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
 
 <input type="submit">
 </form>
+</div>

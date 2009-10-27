@@ -108,13 +108,13 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 #
 
 cat >> init.sql << EOF
-DROP USER '${NAME}_fe_owner'@'localhost';
-CREATE USER '${NAME}_fe_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+DROP USER 'spp_${NAME}_owner'@'localhost';
+CREATE USER 'spp_${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
-DROP DATABASE ${NAME}_fe;
-CREATE DATABASE ${NAME}_fe;
-GRANT ALL ON ${NAME}_fe.* TO '${NAME}_fe_owner'@'localhost';
-USE ${NAME}_fe;
+DROP DATABASE spp_${NAME};
+CREATE DATABASE spp_${NAME};
+GRANT ALL ON spp_${NAME}.* TO 'spp_${NAME}_owner'@'localhost';
+USE spp_${NAME};
 CREATE TABLE user ( 
 	user VARCHAR(20), 
 	email VARCHAR(50)
@@ -194,8 +194,8 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';
 	\$CFG_DB_HOST = 'localhost';
-	\$CFG_DB_USER = '${NAME}_fe_owner';
-	\$CFG_DB_DATABASE = '${NAME}_fe';
+	\$CFG_DB_USER = 'spp_${NAME}_owner';
+	\$CFG_DB_DATABASE = 'spp_${NAME}';
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 	\$CFG_PORT = $CFG_PORT;
@@ -222,4 +222,11 @@ rm init.sql
 cat >> $PHP_CONF << EOF
 ?>
 EOF
+
+(
+	set -x
+	mkdir data;
+	mkdir data/photos/
+	rm -Rf data/photos/*
+)
 

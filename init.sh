@@ -105,13 +105,13 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 #
 
 cat >> init.sql << EOF
-DROP USER '${NAME}_be_owner'@'localhost';
-CREATE USER '${NAME}_be_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+DROP USER 'dsnp_${NAME}_owner'@'localhost';
+CREATE USER 'dsnp_${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
-DROP DATABASE ${NAME}_be;
-CREATE DATABASE ${NAME}_be;
-GRANT ALL ON ${NAME}_be.* TO '${NAME}_be_owner'@'localhost';
-USE ${NAME}_be;
+DROP DATABASE dsnp_${NAME};
+CREATE DATABASE dsnp_${NAME};
+GRANT ALL ON dsnp_${NAME}.* TO 'dsnp_${NAME}_owner'@'localhost';
+USE dsnp_${NAME};
 CREATE TABLE user ( 
 	user VARCHAR(20), 
 	pass_salt CHAR(24),
@@ -270,8 +270,8 @@ CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
-CFG_DB_USER = ${NAME}_be_owner
-CFG_DB_DATABASE = ${NAME}_be
+CFG_DB_USER = dsnp_${NAME}_owner
+CFG_DB_DATABASE = dsnp_${NAME}
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT

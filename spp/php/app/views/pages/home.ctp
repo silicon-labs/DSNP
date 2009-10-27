@@ -19,14 +19,14 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 ?>
 
-<h2>Secure Personal Publishing</h2>
+<div class="item">
 
-<p>Installation: <?php print $CFG_URI;?>
+<h2>Secure Personal Publishing</h2>
 
 <p>
 <a href="admin/newuser">create new user</a>
 
-<h3>Users</h3>
+<h2>Users</h2>
 <p>
 <?php
 
@@ -34,3 +34,4 @@ while ( $row = mysql_fetch_assoc($result) )
     echo '<a href="' . $row['user'] . '/"/>' . $row['user'] . '</a><br>';
 ?>
 
+</div>

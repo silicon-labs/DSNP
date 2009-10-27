@@ -34,48 +34,58 @@ body {
 	font-size:90%;
 	margin: 0;
 }
+
 a {
 	background:#fff;
 	color: #003d4c;
 	text-decoration: underline;
 	font-weight: bold;
 }
+
 a:hover {
 	background:#fff;
 	color: #003d4c;
 	text-decoration:none;
 }
+
 a img {
 	border:none;
 }
+
 h1, h2, h3, h4 {
 	font-weight: normal;
 }
+
 h1 {
 	background:#fff;
 	color: #003d4c;
 	font-size: 100%;
-/*	margin: 0.1em 0; */
+	/*margin: 0.1em 0; */
 }
+
 h2 {
 	background:#fff;
-	color: #e32;
+	color: #933;
 	font-family:'Gill Sans','lucida grande',helvetica, arial, sans-serif;
 	font-size: 190%;
-/*	margin: 0 0;*/
-/*	padding-top: 0.8em; */
+	/*margin: 0 0;*/
+	/*padding-top: 0.8em; */
 }
+
 h3 {
-	color: #993;
+	color: #111;
 	font-family:'Gill Sans','lucida grande',helvetica, arial, sans-serif;
-	font-size: 165%;
-/*	padding-top: 1.5em; */
+	font-size: 150%;
+	/*padding-top: 1.5em; */
 }
+
 h4 {
-	color: #993;
+	color: #999;
 	font-weight: normal;
-/*	padding-top: 0.5em; */
+	font-size: 120%;
+	/*padding-top: 0.5em; */
 }
+
 ul, li {
 	margin: 0 12px;
 }
@@ -108,11 +118,12 @@ ul, li {
 }
 
 #header h1 {
-/*	text-align: center; */
+	/*text-align: center; */
 	padding: 10px 10px 10px 10px; 
 	background: #003d4c; 
 	color: #fff;
 }
+
 #header h1 a {
 	padding: 10px 10px 10px 10px; 
 	background: #003d4c;
@@ -120,6 +131,7 @@ ul, li {
 	font-weight: normal;
 	text-decoration: none;
 }
+
 #header h1 a:hover {
 	padding: 10px 10px 10px 10px; 
 	background: #003d4c;
@@ -127,11 +139,18 @@ ul, li {
 	text-decoration: underline;
 }
 
-#content{
+#content {
 	background: #fff;
 	clear: both;
 	color: #333;
 	overflow: auto;
+}
+
+div.item {
+	padding: 15px 15px 15px 15px;
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
 }
 
 #leftcol {
@@ -140,43 +159,54 @@ ul, li {
 }
 
 #details {
-	padding: 10px 10px 10px 10px;
-	/*background: #ff0000;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #f00;*/
+	border: solid;
+	border-width: 1px;
+	border-color: #000;
+}
+
+#user_actions {
+	padding: 15px 15px 15px 15px;
+	/*background: #f00;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
 }
 
 #friend_requests {
-	padding: 10px 10px 10px 10px;
-	/*background: #0000ff;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #00f;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
 }
 
 #sent_friend_requests {
-	padding: 10px 10px 10px 10px;
-	/*background: #ff00ff;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #f0f;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
 }
 
+
+
 #friend_list {
-	padding: 10px 10px 10px 10px;
-	/*background: #00ffff; */
+	padding: 15px 15px 15px 15px;
+	/*background: #0ff; */
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
 }
 
 #photo_stream {
-	padding: 10px 10px 10px 10px;
-	/*background: #ffff00;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #ff0;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
+	overflow: auto;
 }
 
 #activity {
@@ -185,23 +215,23 @@ ul, li {
 }
 
 #broadcast {
-	padding: 10px 10px 10px 10px;
-	/*background: #ff0000;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #f00;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
 }
 #upload {
-	padding: 10px 10px 10px 10px;
-	/*background: #00ff00;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #0f0;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
 }
 
 #activity_stream {
-	padding: 10px 10px 10px 10px;
-	/*background: #0000ff;*/
+	padding: 15px 15px 15px 15px;
+	/*background: #00f;*/
 	border: solid;
 	border-width: 1px;
 	border-color: #000;
@@ -211,6 +241,11 @@ ul, li {
 	clear: both;
 	padding: 6px 10px;
 	text-align: right;
+}
+
+div.photo {
+	padding: 5px 5px 5px 5px;
+	float: left;
 }
 
 /* Tables */

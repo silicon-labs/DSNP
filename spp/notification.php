@@ -156,6 +156,8 @@ case "sent_friend_request_accepted": {
 		"INSERT INTO friend_claim ( user, friend_id ) " .
 		" VALUES ( '%s', '%s' ) ", $user, $identity );
 
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
 	$query = sprintf(
 		"DELETE FROM sent_friend_request " .
 		"WHERE from_user = '%s' AND for_id = '%s'",

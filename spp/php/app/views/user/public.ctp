@@ -16,16 +16,20 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-global $CFG_URI;
-global $USER_NAME;
-
 ?>
 
-<h2>SPP: <?php print $USER_NAME;?></h2>
+<div id="leftcol">
 
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
+<div id="details">
+<h2>SPP: <?php print USER_NAME;?></h2>
+</div>
 
-<p><a href="login">owner login</a>
+<div id="user_actions">
+<h2>Become Friend</h2>
+<a href="become">become a friend of <?php echo USER_NAME;?></a>
+</div>
 
-<h2>Actions</h2>
-<a href="become">become friend</a>
+</div>
+
+<div id="activity">
+</div>

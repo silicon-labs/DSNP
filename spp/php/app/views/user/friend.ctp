@@ -57,8 +57,10 @@ foreach ( $friendClaims as $row ) {
 
 foreach ( $images as $row ) {
 	$seq_num = $row['Image']['seq_num'];
+	echo "<div class=\"photo\">";
 	echo "<a href=\"". USER_URI . "img/img-$seq_num.jpg\">";
 	echo "<img src=\"" . USER_URI . "img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
+	echo "</div>";
 }
 
 ?>

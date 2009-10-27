@@ -61,6 +61,9 @@
 				echo "<a href=\"" . USER_URI . "\">" . USER_URI . "</a>";
 				echo "<a href=\"logout\">logout</a>";
 			}
+			else {
+				echo "<a href=\"login\">login</a>";
+			}
 			?></h1>
 			</div>
 		</div>

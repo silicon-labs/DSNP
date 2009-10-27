@@ -485,8 +485,11 @@ class UserController extends AppController
 		$this->requireOwner();
 
 		/* User message */
+		$headers = 
+			"Content-Type: text/plain\r\n" .
+			"\r\n";
 		$message = $_POST['message'];
-		$len = strlen( $message );
+		$len = strlen( $headers ) + strlen( $message );
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
@@ -506,7 +509,8 @@ class UserController extends AppController
 			"submit_broadcast " . USER_NAME . " MSG 0 $len\r\n";
 
 		fwrite( $fp, $send );
-		fwrite( $fp, $message, $len );
+		fwrite( $fp, $headers, strlen($headers) );
+		fwrite( $fp, $message, strlen($message) );
 		fwrite( $fp, "\r\n", 2 );
 
 		$res = fgets($fp);
@@ -517,14 +521,17 @@ class UserController extends AppController
 			echo $res;
 	}
 
-	function wall()
+	function board()
 	{
 		$this->requireFriend();
 		$BROWSER_ID = $_SESSION['identity'];
 
 		/* User message. */
+		$headers = 
+			"Content-Type: text/plain\r\n" .
+			"\r\n";
 		$message = $_POST['message'];
-		$len = strlen( $message );
+		$len = strlen( $headers ) + strlen( $message );
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
@@ -548,7 +555,8 @@ class UserController extends AppController
 			"submit_remote_broadcast " . USER_NAME . " $BROWSER_ID $hash $token BRD $len\r\n";
 
 		fwrite( $fp, $send );
-		fwrite( $fp, $message, $len );
+		fwrite( $fp, $headers, strlen($headers) );
+		fwrite( $fp, $message, strlen($message) );
 		fwrite( $fp, "\r\n", 2 );
 
 		$res = fgets($fp);
@@ -617,7 +625,10 @@ class UserController extends AppController
 		$data = fread( $file, $MAX_BRD_PHOTO_SIZE );
 		fclose( $file );
 
-		$len = strlen( $data );
+		$headers = 
+			"Content-Type: image/jpg\r\n" .
+			"\r\n";
+		$len = strlen( $headers ) + strlen( $data );
 
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
@@ -625,7 +636,8 @@ class UserController extends AppController
 			"submit_broadcast " . USER_NAME . " PHT $id $len\r\n";
 
 		fwrite( $fp, $send );
-		fwrite( $fp, $data, $len );
+		fwrite( $fp, $headers, strlen($headers) );
+		fwrite( $fp, $data, strlen($data) );
 		fwrite( $fp, "\r\n", 2 );
 
 		$this->redirect( "/" . USER_NAME . "/" );

@@ -24,6 +24,23 @@ $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die
 mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
+function parse( $len )
+{
+	$left = $len;
+	while ( true ) {
+		$line = fgets( STDIN );
+		if ( $line === "\r\n" ) {
+			$left -= 2;
+			break;
+		}
+		$left -= strlen( $line );
+
+		if ( $left <= 0 )
+			break;
+	}
+	return fread( STDIN, $left );
+}
+
 switch ( $notification_type ) {
 case "direct_broadcast": {
 	# Collect the args.
@@ -37,7 +54,7 @@ case "direct_broadcast": {
 	$length = $argv[$b+7];
 
 	# Read the message from stdin.
-	$msg = fread( STDIN, $length );
+	$msg = parse( $length );
 
 	if ( strcmp( $type, "PHT" ) == 0 ) {
 		$name = sprintf( "pub-%ld.jpg", $seq_num );
@@ -80,7 +97,7 @@ case "remote_broadcast": {
 	$length = $argv[$b+7];
 
 	# Read the message from stdin.
-	$msg = fread( STDIN, $length );
+	$msg = parse( $length );
 
 	printf( "notification %s of %s %s %s %s %s %s %s %s %s\n", 
 		$notification_type, $type, $for_user, $subject_id, $author_id, $seq_num,
@@ -113,7 +130,7 @@ case "remote_publication": {
 	$length = $argv[$b+4];
 
 	# Read the message from stdin.
-	$msg = fread( STDIN, $length );
+	$msg = parse( $length );
 
 	printf( "notification %s of %s %s %s %s %s\n", 
 		$notification_type, $type, $user, $subject_id, $author_id, $length );

@@ -57,19 +57,17 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-	background:#fff;
+	background: #fff;
 	color: #003d4c;
 	font-size: 100%;
 	/*margin: 0.1em 0; */
 }
 
 h2 {
-	background:#fff;
 	color: #933;
 	font-family:'Gill Sans','lucida grande',helvetica, arial, sans-serif;
 	font-size: 190%;
 	/*margin: 0 0;*/
-	/*padding-top: 0.8em; */
 }
 
 h3 {
@@ -148,9 +146,6 @@ ul, li {
 
 div.item {
 	padding: 15px 15px 15px 15px;
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
 
 #leftcol {
@@ -161,57 +156,39 @@ div.item {
 #details {
 	padding: 15px 15px 15px 15px;
 	/*background: #f00;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
+	background: #eef;
 }
 
 #edit {
 	float: right;
 	font-size: small;
+	background: #eef;
 }
 
 #user_actions {
 	padding: 15px 15px 15px 15px;
 	/*background: #f00;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
 
 #friend_requests {
 	padding: 15px 15px 15px 15px;
 	/*background: #00f;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
 
 #sent_friend_requests {
 	padding: 15px 15px 15px 15px;
 	/*background: #f0f;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
-
 
 
 #friend_list {
 	padding: 15px 15px 15px 15px;
 	/*background: #0ff; */
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
 
 #photo_stream {
 	padding: 15px 15px 15px 15px;
 	/*background: #ff0;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
-	overflow: auto;
 }
 
 #activity {
@@ -222,24 +199,16 @@ div.item {
 #broadcast {
 	padding: 15px 15px 15px 15px;
 	/*background: #f00;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
+
 #upload {
 	padding: 15px 15px 15px 15px;
 	/*background: #0f0;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
 
 #activity_stream {
 	padding: 15px 15px 15px 15px;
 	/*background: #00f;*/
-	border: solid;
-	border-width: 1px;
-	border-color: #000;
 }
 
 #footer {

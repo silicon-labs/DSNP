@@ -79,7 +79,7 @@ foreach ( $images as $row ) {
 
 <div id="broadcast">
 
-<form method="post" action="wall">
+<form method="post" action="board">
 
 Write on <?php print USER_NAME;?>'s message board:
 <!--<input type="text" name="message" size="50">-->

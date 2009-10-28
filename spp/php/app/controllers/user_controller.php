@@ -507,7 +507,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"submit_broadcast " . USER_NAME . " MSG 0 $len\r\n";
+			"submit_broadcast " . USER_NAME . " 0 $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
@@ -635,7 +635,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"submit_broadcast " . USER_NAME . " PHT $id $len\r\n";
+			"submit_broadcast " . USER_NAME . " $id $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

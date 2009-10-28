@@ -245,9 +245,9 @@ bool gblKeySubmitted = false;
 		#
 		# Broadcasting
 		#
-		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' length 
+		'submit_broadcast'i ' ' user ' ' resource_id ' ' length 
 			M_EOL @check_key @{
-				submit_broadcast( mysql, user, type, resource_id, message_buffer.data, length );
+				submit_broadcast( mysql, user, resource_id, message_buffer.data, length );
 			} |
 
 		#

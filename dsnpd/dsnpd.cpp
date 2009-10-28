@@ -1539,7 +1539,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 }
 
 long send_broadcast( MYSQL *mysql, const char *user,
-		const char *type, long long resource_id, const char *msg, long mLen )
+		long long resource_id, const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
@@ -1547,9 +1547,9 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	/* insert the broadcast message into the published table. */
 	exec_query( mysql,
 		"INSERT INTO broadcasted "
-		"( user, author_id, time_published, type ) "
-		"VALUES ( %e, %e, %e, %e )",
-		user, authorId.data, timeStr.data, type );
+		"( user, author_id, time_published ) "
+		"VALUES ( %e, %e, %e )",
+		user, authorId.data, timeStr.data );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
@@ -1574,10 +1574,10 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	return 0;
 }
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
+long submit_broadcast( MYSQL *mysql, const char *user,
 		long long resource_id, const char *msg, long mLen )
 {
-	int result = send_broadcast( mysql, user, type, resource_id, msg, mLen );
+	int result = send_broadcast( mysql, user, resource_id, msg, mLen );
 
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );

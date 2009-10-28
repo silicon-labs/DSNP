@@ -127,7 +127,7 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
+long submit_broadcast( MYSQL *mysql, const char *user,
 		long long resource_id, const char *user_message, long mLen );
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *identity, const char *hash, const char *token, const char *type,

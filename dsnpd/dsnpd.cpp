@@ -1560,8 +1560,8 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	String broadcastCmd(
-		"direct_broadcast %lld %s %s %lld %ld\r\n",
-		seq_num, timeStr.data, type, resource_id, mLen );
+		"direct_broadcast %lld %s %lld %ld\r\n",
+		seq_num, timeStr.data, resource_id, mLen );
 	char *full = new char[broadcastCmd.length + mLen + 2];
 	memcpy( full, broadcastCmd.data, broadcastCmd.length );
 	memcpy( full + broadcastCmd.length, msg, mLen );
@@ -1786,19 +1786,19 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 }
 
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
-		const char *author_id, long long seq_num, const char *date, const char *type,
+		const char *author_id, long long seq_num, const char *date,
 		long long resource_id, const char *msg, long mLen )
 {
-	String args( "direct_broadcast %s %s %s %lld %s %lld %ld", 
-			type, user, author_id, seq_num, date, resource_id, mLen );
+	String args( "direct_broadcast %s %s %lld %s %lld %ld", 
+			user, author_id, seq_num, date, resource_id, mLen );
 	app_notification( args, msg, mLen );
 }
 
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
-		long long seq_num, const char *date, const char *type, const char *msg, long mLen )
+		long long seq_num, const char *date, const char *msg, long mLen )
 {
-	String args( "remote_broadcast %s %s %s %s %lld %s %ld", 
-			type, user, subject_id, author_id, seq_num, date, mLen );
+	String args( "remote_broadcast %s %s %s %lld %s %ld", 
+			user, subject_id, author_id, seq_num, date, mLen );
 	app_notification( args, msg, mLen );
 
 }
@@ -2189,7 +2189,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	full = new char[128+mLen];
-	soFar = sprintf( full, "remote_inner %lld %s %s %ld\r\n", seq_num, time_str, type, mLen );
+	soFar = sprintf( full, "remote_inner %lld %s %ld\r\n", seq_num, time_str, mLen );
 	memcpy( full + soFar, msg, mLen );
 	full[soFar+mLen] = 0;
 

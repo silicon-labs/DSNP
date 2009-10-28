@@ -59,14 +59,13 @@ function parse( $len )
 switch ( $notification_type ) {
 case "direct_broadcast": {
 	# Collect the args.
-	$type = $argv[$b+0];
-	$for_user = $argv[$b+1];
-	$author_id = $argv[$b+2];
-	$seq_num = $argv[$b+3];
-	$date = $argv[$b+4];
-	$time = $argv[$b+5];
-	$resource_id = $argv[$b+6];
-	$length = $argv[$b+7];
+	$for_user = $argv[$b+0];
+	$author_id = $argv[$b+1];
+	$seq_num = $argv[$b+2];
+	$date = $argv[$b+3];
+	$time = $argv[$b+4];
+	$resource_id = $argv[$b+5];
+	$length = $argv[$b+6];
 
 	# Read the message from stdin.
 	$msg = parse( $length );
@@ -111,14 +110,13 @@ case "direct_broadcast": {
 }
 case "remote_broadcast": {
 	# Collect the args.
-	$type = $argv[$b+0];
-	$for_user = $argv[$b+1];
-	$subject_id = $argv[$b+2];
-	$author_id = $argv[$b+3];
-	$seq_num = $argv[$b+4];
-	$date = $argv[$b+5];
-	$time = $argv[$b+6];
-	$length = $argv[$b+7];
+	$for_user = $argv[$b+0];
+	$subject_id = $argv[$b+1];
+	$author_id = $argv[$b+2];
+	$seq_num = $argv[$b+3];
+	$date = $argv[$b+4];
+	$time = $argv[$b+5];
+	$length = $argv[$b+6];
 
 	# Read the message from stdin.
 	$msg = parse( $length );

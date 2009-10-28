@@ -458,7 +458,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, type, resource_id, msg, length );
+		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, resource_id, msg, length );
 		fbreak;
 	}
 
@@ -475,7 +475,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	}
 
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' resource_id ' ' length EOL @direct_broadcast |
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' resource_id ' ' length EOL @direct_broadcast |
 		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length EOL @remote_broadcast;
 }%%
 
@@ -528,12 +528,12 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		remote_inner( mysql, user, subject_id, author_id, seq_num, date, type, msg, length );
+		remote_inner( mysql, user, subject_id, author_id, seq_num, date, msg, length );
 		fbreak;
 	}
 
 	main :=
-		'remote_inner'i ' ' seq_num ' ' date ' ' type ' ' length EOL @remote_inner;
+		'remote_inner'i ' ' seq_num ' ' date ' ' length EOL @remote_inner;
 
 }%%
 

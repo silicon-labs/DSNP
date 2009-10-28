@@ -554,7 +554,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"submit_remote_broadcast " . USER_NAME . " $BROWSER_ID $hash $token BRD $len\r\n";
+			"submit_remote_broadcast " . USER_NAME . " $BROWSER_ID $hash $token $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

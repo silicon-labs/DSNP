@@ -150,19 +150,27 @@ case "remote_broadcast": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
+
 case "remote_publication": {
 	# Collect the args.
-	$type = $argv[$b+0];
-	$user = $argv[$b+1];
-	$subject_id = $argv[$b+2];
-	$author_id = $argv[$b+3];
-	$length = $argv[$b+4];
+	$user = $argv[$b+0];
+	$subject_id = $argv[$b+1];
+	$author_id = $argv[$b+2];
+	$length = $argv[$b+3];
 
 	# Read the message from stdin.
 	$msg = parse( $length );
 
 	printf( "notification %s of %s %s %s %s %s\n", 
 		$notification_type, $type, $user, $subject_id, $author_id, $length );
+
+	$type = 'UKN';
+	if ( isset( $msg[0]['type'] ) )
+		$type = $msg[0]['type'];
+
+	$resource_id = 0;
+	if ( isset( $msg[0]['resource-id'] ) )
+		$resource_id = (int) $msg[0]['resource-id'];
 
 	$query = sprintf(
 		"INSERT INTO remote_published " .
@@ -178,6 +186,7 @@ case "remote_publication": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
+
 case "sent_friend_request": {
 	# Collect the args.
 	$from_user = $argv[$b+0];

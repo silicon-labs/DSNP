@@ -253,10 +253,10 @@ bool gblKeySubmitted = false;
 		#
 		# Remote broadcasting
 		#
-		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' ' type ' ' length
+		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
 			M_EOL @check_key @{
 				submit_remote_broadcast( mysql, user, identity, hash, 
-						token, type, message_buffer.data, length );
+						token, message_buffer.data, length );
 			} |
 
 		#
@@ -286,7 +286,7 @@ int server_parse_loop()
 	const char *mark;
 	String user, pass, email, identity; 
 	String length_str, reqid;
-	String hash, key, relid, token, type;
+	String hash, key, relid, token;
 	String gen_str, seq_str, resource_id_str;
 	long length;
 	long long generation, resource_id;
@@ -400,11 +400,11 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid EOL @{
 			forward_to( mysql, user, friend_id, number, generation, identity, relid );
 		} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' type ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @{ msg = p+1; p += length; } 
 			EOL @{
 				/* Rest of the input is the msssage. */
-				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, type, msg );
+				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, msg );
 			}
 	)*;
 }%%
@@ -417,7 +417,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	long cs;
 	const char *mark;
 	String identity, number_str, key, relid, gen_str;
-	String token, seq_str, type, length_str;
+	String token, seq_str, length_str;
 	long length, number;
 	long long seq_num, generation;
 
@@ -486,7 +486,7 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 {
 	long cs;
 	const char *mark;
-	String date, length_str, hash, type;
+	String date, length_str, hash;
 	String seq_str, gen_str, resource_id_str;
 	long length;
 	long long generation, seq_num, resource_id;
@@ -544,7 +544,7 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 {
 	long cs;
 	const char *mark;
-	String date, length_str, type, seq_str;
+	String date, length_str, seq_str;
 	long long seq_num;
 	long length;
 

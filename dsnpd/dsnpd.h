@@ -118,7 +118,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, long long seq_num, const char *type, const char *msg );
+		const char *identity, const char *token, long long seq_num, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
@@ -130,7 +130,7 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 long submit_broadcast( MYSQL *mysql, const char *user,
 		long long resource_id, const char *user_message, long mLen );
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 
-		const char *identity, const char *hash, const char *token, const char *type,
+		const char *identity, const char *hash, const char *token,
 		const char *user_message, long mLen );
 
 int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,

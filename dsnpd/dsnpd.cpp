@@ -1611,7 +1611,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 
 long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
 		const char *author_id, const char *author_hash, 
-		const char *token, const char *type, const char *msg, long mLen )
+		const char *token, const char *msg, long mLen )
 {
 	int res;
 	RSA *user_priv, *id_pub;
@@ -1652,9 +1652,9 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	/* Insert the broadcast message into the published table. */
 	exec_query( mysql,
 		"INSERT INTO broadcasted "
-		"( user, author_id, subject_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, %e, %e, %d )",
-		to_user, author_id, subjectId.data, time_str, type, msg, mLen );
+		"( user, author_id, subject_id, time_published, message ) "
+		"VALUES ( %e, %e, %e, %e, %d )",
+		to_user, author_id, subjectId.data, time_str, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1671,8 +1671,8 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
 	String remotePublishCmd(
-		"encrypt_remote_broadcast %s %lld %s %ld\r\n%s\r\n", 
-		token, seq_num, type, mLen, msg );
+		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
+		token, seq_num, mLen, msg );
 
 	res = send_message_now( mysql, false, to_user, author_id, putRelid.data,
 			remotePublishCmd.data, &result_message );
@@ -1800,7 +1800,6 @@ void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const
 	String args( "remote_broadcast %s %s %s %lld %s %ld", 
 			user, subject_id, author_id, seq_num, date, mLen );
 	app_notification( args, msg, mLen );
-
 }
 
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
@@ -2120,7 +2119,7 @@ free_result:
 
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *subject_id, const char *token, long long seq_num,
-		const char *type, const char *msg )
+		const char *msg )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -2178,12 +2177,10 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	id_pub = fetch_public_key( mysql, subject_id );
 
 	/* Notifiy the frontend. */
-	String args( "remote_publication %s %s %s %s %ld", 
-			type, user, subject_id, authorId, mLen );
+	String args( "remote_publication %s %s %s %ld", 
+			user, subject_id, authorId, mLen );
 	app_notification( args, msg, mLen );
 
-	::message( "encrypt_remote_broadcast type: %s\n", type );
-	
 	/* Find current generation and youngest broadcast key */
 	current_put_bk( mysql, user, generation, broadcast_key );
 
@@ -2353,7 +2350,7 @@ char *const*make_notif_argv( const char *args )
 
 void app_notification( const char *args, const char *data, long length )
 {
-	message( "notification callout with args %s\n" );
+	message( "notification callout with args %s\n", args );
 
 	int fds[2];	
 	int res = pipe( fds );

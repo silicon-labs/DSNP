@@ -487,6 +487,7 @@ class UserController extends AppController
 		/* User message */
 		$headers = 
 			"Content-Type: text/plain\r\n" .
+			"Type: MSG\r\n" .
 			"\r\n";
 		$message = $_POST['message'];
 		$len = strlen( $headers ) + strlen( $message );
@@ -529,6 +530,7 @@ class UserController extends AppController
 		/* User message. */
 		$headers = 
 			"Content-Type: text/plain\r\n" .
+			"Type: BRD\r\n" .
 			"\r\n";
 		$message = $_POST['message'];
 		$len = strlen( $headers ) + strlen( $message );
@@ -625,6 +627,8 @@ class UserController extends AppController
 
 		$headers = 
 			"Content-Type: image/jpg\r\n" .
+			"Resource-Id: $id\r\n" .
+			"Type: PHT\r\n" .
 			"\r\n";
 		$len = strlen( $headers ) + strlen( $data );
 

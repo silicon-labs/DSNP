@@ -41,6 +41,14 @@ function parse( $len )
 		if ( $replaced !== $line )
 			$headers['content-type'] = trim($replaced);
 
+		$replaced = preg_replace( '/Resource-Id:[\t ]*/i', '', $line );
+		if ( $replaced !== $line )
+			$headers['resource-id'] = trim($replaced);
+
+		$replaced = preg_replace( '/Type:[\t ]*/i', '', $line );
+		if ( $replaced !== $line )
+			$headers['type'] = trim($replaced);
+
 		if ( $left <= 0 )
 			break;
 	}
@@ -63,8 +71,6 @@ case "direct_broadcast": {
 	# Read the message from stdin.
 	$msg = parse( $length );
 
-	print_r( $msg[0] );
-
 	if ( isset( $msg[0]['content-type'] ) && $msg[0]['content-type'] == 'image/jpg' ) {
 		print( "message is a photo, capturing\n" );
 
@@ -79,6 +85,14 @@ case "direct_broadcast": {
 		$length = strlen( $msg[1] );
 	}
 
+	$type = 'UKN';
+	if ( isset( $msg[0]['type'] ) )
+		$type = $msg[0]['type'];
+
+	$resource_id = 0;
+	if ( isset( $msg[0]['resource-id'] ) )
+		$resource_id = (int) $msg[0]['resource-id'];
+	
 	$query = sprintf(
 		"INSERT INTO received " .
 		"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) " .
@@ -109,22 +123,29 @@ case "remote_broadcast": {
 	# Read the message from stdin.
 	$msg = parse( $length );
 
-	printf( "notification %s of %s %s %s %s %s %s %s %s %s\n", 
+	printf( "notification %s of %s %s %s %s %s %s %s %s\n", 
 		$notification_type, $type, $for_user, $subject_id, $author_id, $seq_num,
-		$date, $time, $resource_id, $length );
+		$date, $time, $length );
+
+	$type = 'UKN';
+	if ( isset( $msg[0]['type'] ) )
+		$type = $msg[0]['type'];
+
+	$resource_id = 0;
+	if ( isset( $msg[0]['resource-id'] ) )
+		$resource_id = (int) $msg[0]['resource-id'];
 
 	$query = sprintf(
 		"INSERT INTO received " .
 		"	( for_user, subject_id, author_id, seq_num, time_published, time_received, ".
-		"		type, resource_id, message ) " .
-		"VALUES ( '%s', '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
+		"		type, message ) " .
+		"VALUES ( '%s', '%s', '%s', %ld, '%s', now(), '%s', '%s' )",
 		mysql_real_escape_string($for_user), 
 		mysql_real_escape_string($subject_id), 
 		mysql_real_escape_string($author_id), 
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string($type),
-		$resource_id, 
 		mysql_real_escape_string($msg[1])
 	);
 

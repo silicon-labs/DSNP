@@ -64,8 +64,7 @@ case "direct_broadcast": {
 	$seq_num = $argv[$b+2];
 	$date = $argv[$b+3];
 	$time = $argv[$b+4];
-	$resource_id = $argv[$b+5];
-	$length = $argv[$b+6];
+	$length = $argv[$b+5];
 
 	# Read the message from stdin.
 	$msg = parse( $length );

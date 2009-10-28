@@ -1539,7 +1539,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 }
 
 long send_broadcast( MYSQL *mysql, const char *user,
-		long long resource_id, const char *msg, long mLen )
+		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
@@ -1560,8 +1560,8 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	String broadcastCmd(
-		"direct_broadcast %lld %s %lld %ld\r\n",
-		seq_num, timeStr.data, resource_id, mLen );
+		"direct_broadcast %lld %s %ld\r\n",
+		seq_num, timeStr.data, mLen );
 	char *full = new char[broadcastCmd.length + mLen + 2];
 	memcpy( full, broadcastCmd.data, broadcastCmd.length );
 	memcpy( full + broadcastCmd.length, msg, mLen );
@@ -1575,9 +1575,9 @@ long send_broadcast( MYSQL *mysql, const char *user,
 }
 
 long submit_broadcast( MYSQL *mysql, const char *user,
-		long long resource_id, const char *msg, long mLen )
+		const char *msg, long mLen )
 {
-	int result = send_broadcast( mysql, user, resource_id, msg, mLen );
+	int result = send_broadcast( mysql, user, msg, mLen );
 
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -1787,10 +1787,10 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
 		const char *author_id, long long seq_num, const char *date,
-		long long resource_id, const char *msg, long mLen )
+		const char *msg, long mLen )
 {
-	String args( "direct_broadcast %s %s %lld %s %lld %ld", 
-			user, author_id, seq_num, date, resource_id, mLen );
+	String args( "direct_broadcast %s %s %lld %s %ld", 
+			user, author_id, seq_num, date, mLen );
 	app_notification( args, msg, mLen );
 }
 

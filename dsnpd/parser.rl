@@ -45,7 +45,6 @@ bool gblKeySubmitted = false;
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
 	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
-	type = [a-zA-Z]+          >{mark=p;} %{type.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -85,13 +84,6 @@ bool gblKeySubmitted = false;
 		%{
 			seq_str.set(mark, p);
 			seq_num = strtoll( seq_str, 0, 10 );
-		};
-
-	resource_id = [0-9]+
-		>{mark=p;}
-		%{
-			resource_id_str.set(mark, p);
-			resource_id = strtoll( resource_id_str, 0, 10 );
 		};
 
 	EOL = '\r'? '\n';
@@ -245,9 +237,9 @@ bool gblKeySubmitted = false;
 		#
 		# Broadcasting
 		#
-		'submit_broadcast'i ' ' user ' ' resource_id ' ' length 
+		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
-				submit_broadcast( mysql, user, resource_id, message_buffer.data, length );
+				submit_broadcast( mysql, user, message_buffer.data, length );
 			} |
 
 		#
@@ -287,9 +279,9 @@ int server_parse_loop()
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token;
-	String gen_str, seq_str, resource_id_str;
+	String gen_str, seq_str;
 	long length;
-	long long generation, resource_id;
+	long long generation;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
@@ -458,7 +450,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, resource_id, msg, length );
+		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, msg, length );
 		fbreak;
 	}
 
@@ -475,7 +467,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	}
 
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' resource_id ' ' length EOL @direct_broadcast |
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' length EOL @direct_broadcast |
 		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length EOL @remote_broadcast;
 }%%
 
@@ -487,9 +479,9 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 	long cs;
 	const char *mark;
 	String date, length_str, hash;
-	String seq_str, gen_str, resource_id_str;
+	String seq_str, gen_str;
 	long length;
-	long long generation, seq_num, resource_id;
+	long long generation, seq_num;
 
 	//message("parsing broadcast string: %s\n", msg );
 

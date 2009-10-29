@@ -36,14 +36,14 @@ body {
 }
 
 a {
-	background:#fff;
+/*	background:#fff;*/
 	color: #003d4c;
 	text-decoration: underline;
 	font-weight: bold;
 }
 
 a:hover {
-	background:#fff;
+	/*background:#fff;*/
 	color: #003d4c;
 	text-decoration:none;
 }
@@ -108,6 +108,7 @@ ul, li {
 	float: left;
 	width: 34%;
 }
+
 #header_right {
 	text-align: right;
 	background: #f00;
@@ -155,40 +156,33 @@ div.item {
 
 #details {
 	padding: 15px 15px 15px 15px;
-	/*background: #f00;*/
 	background: #eef;
 }
 
 #edit {
 	float: right;
 	font-size: small;
-	background: #eef;
 }
 
 #user_actions {
 	padding: 15px 15px 15px 15px;
-	/*background: #f00;*/
 }
 
 #friend_requests {
 	padding: 15px 15px 15px 15px;
-	/*background: #00f;*/
 }
 
 #sent_friend_requests {
 	padding: 15px 15px 15px 15px;
-	/*background: #f0f;*/
 }
 
 
 #friend_list {
 	padding: 15px 15px 15px 15px;
-	/*background: #0ff; */
 }
 
 #photo_stream {
 	padding: 15px 15px 15px 15px;
-	/*background: #ff0;*/
 }
 
 #activity {
@@ -268,7 +262,7 @@ div.msgdisp {
 }
 
 #photo_upload {
-	padding: 5px 5px 5px 5px;
+	padding: 10px 0px 10px 0px;
 }
 
 table.photos {

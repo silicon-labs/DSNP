@@ -135,18 +135,9 @@ if ( $count % 2 == 1 )
 
 <div id="activity">
 
-<!--
-<h3>Broadcast</h3>
-<small> Messages typed here are sent to all of your friends. At present, only
-text messages are supported. However, one can imagine many different types of
-notifications being implemented, including picutre uploads, tag notifications,
-status changes, and contact information changes.</small>
-<p>
--->
-
 <div id="broadcast">
 <form method="post" action="broadcast">
-Broadcast a Message:
+Broadcast a Message to all Friends
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 <input value="Submit Message" type="submit">
 </form>

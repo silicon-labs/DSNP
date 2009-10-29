@@ -23,30 +23,36 @@ function printName( $identity, $possessive )
 			defined('BROWSER_ID') && BROWSER_ID == $identity )
 	{
 		if ( $possessive )
-			echo "your";
+			echo "<font class=\"msgwho\"> your </font>";
 		else
-			echo "you";
+			echo "<font class=\"msgwho\"> you </font>";
 	}
 	else if ( defined('BROWSER_ID') && $identity == USER_URI ) {
+		echo "<font class=\"msgwho\">";
 		echo USER_NAME;
 		if ( $possessive )
 			echo "'s";
+		echo "</font>";
 	}
 	else {
 		echo "<a href=\"${identity}sflogin?h=" . urlencode($_SESSION['hash']);
-
-		echo "\">$identity</a>";
+		echo "\"> <font class=\"msgwho\">$identity</font></a>";
 		if ( $possessive )
-			echo "'s";
+			echo "<font class=\"msgwho\">'s</font>";
 	}
 }
 
 function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published )
 {
+	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
-		echo "$time_published ";
+		echo '<div class="msgabout">';
+		echo "<font class=\"msgtime\">$time_published</font><br>";
 		printName( $author_id, false );
-		echo " uploaded a photo:<br>";
+		echo "<font class=\"msgaction\"> uploaded a photo: </font>";
+		echo '</div>';
+
+		echo '<div class="msgbody">';
 		if ( $resource_id > 0 ) {
 			echo "<a href=\"${author_id}img/img-$resource_id.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
@@ -54,26 +60,34 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		else {
 			echo "<a href=\"img/$message\">";
 		}
-		echo "<img src=\"img/$message\" alt=\"$message\"></a><br>\n";
+		echo "<img src=\"img/$message\" alt=\"$message\"></a>\n";
+		echo '</div>';
 	}
 	else if ( $type == 'MSG' ) {
-		echo "$time_published ";
+		echo '<div class="msgabout">';
+		echo "<font class=\"msgtime\">$time_published</font><br>";
 		printName( $author_id, false );
-		echo " said:<br>";
-		echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
+		echo "<font class=\"msgaction\"> said: </font>";
+		echo '</div>';
+
+		echo '<div class="msgbody">';
+		echo htmlspecialchars($message);
+		echo '</div>';
 	}
 	else if ( $type == 'BRD' ) {
-		echo "$time_published ";
-
+		echo '<div class="msgabout">';
+		echo "<font class=\"msgtime\">$time_published</font><br>";
 		printName( $author_id, false );
-
-		echo " wrote on ";
-
+		echo "<font class=\"msgaction\"> wrote on ";
 		printName( $subject_id, true );
+		echo " board</font>";
+		echo '</div>';
 
-		echo " wall:<br>";
-		echo "&nbsp;&nbsp;" . htmlspecialchars($message) . "<br>";
+		echo '<div class="msgbody">';
+		echo htmlspecialchars($message);
+		echo '</div>';
 	}
+	echo '</div>';
 }
 
 ?>

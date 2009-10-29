@@ -209,6 +209,7 @@ div.item {
 #activity_stream {
 	padding: 15px 15px 15px 15px;
 	/*background: #00f;*/
+	width: 70%;
 }
 
 #footer {
@@ -220,6 +221,31 @@ div.item {
 div.photo {
 	padding: 5px 5px 5px 5px;
 	float: left;
+}
+
+font.msgwho {
+	/*color: red;*/
+}
+
+div.msgabout {
+	float: left;
+}
+
+div.msgbody {
+	float: right;
+}
+font.msgtime {
+	padding: 2px 2px 2px 2px;
+	font-size: 80%;
+	color: #262;
+}
+
+div.msgdisp {
+	border-top: solid;
+	border-width: 2px;
+	border-color: #000;
+	padding: 5px 2px 5px 2px;
+	overflow: auto;
 }
 
 /* Tables */

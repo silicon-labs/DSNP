@@ -53,27 +53,32 @@ foreach ( $friendClaims as $row ) {
 
 <h3>Photo Stream</h3>
 
+<table class="photos">
 <?php
-
+$count = 0;
 foreach ( $images as $row ) {
 	$seq_num = $row['Image']['seq_num'];
-	echo "<div class=\"photo\">";
+	if ( $count % 2 == 0 ) {
+		echo "<tr div class=\"photorow\">";
+		echo "<td class=\"photo0\">";
+	}
+	else
+		echo "<td class=\"photo1\">";
+
 	echo "<a href=\"". USER_URI . "img/img-$seq_num.jpg\">";
 	echo "<img src=\"" . USER_URI . "img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
-	echo "</div>";
+	echo "</td>";
+
+	if ( $count % 2 == 1 )
+		echo "</tr>";
+	$count += 1;
 }
 
+if ( $count % 2 == 1 )
+	echo "</tr>";
 ?>
+</table>
 </div>
-
-<!--
-<h3>Stories</h3>
-
-<small> Messages typed here are sent to all of <?php print USER_NAME;?>'s friends. 
-</small>
-<p>
--->
-
 </div>
 <div id="activity">
 

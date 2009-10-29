@@ -98,17 +98,38 @@ foreach ( $friendClaims as $row ) {
 
 <h3>Photo Stream</h3>
 
-<?php
+<div id="photo_upload">
+<form method="post" enctype="multipart/form-data" action="upload">
+<input name="photo" type="file"/>
+<input type="submit" value="Upload"/>
+</form> 
+</div>
 
+<table class="photos">
+<?php
+$count = 0;
 foreach ( $images as $row ) {
 	$seq_num = $row['Image']['seq_num'];
-	echo "<div class=\"photo\">";
-	echo "<a href=\"${USER_URI}img/img-$seq_num.jpg\">";
-	echo "<img src=\"${USER_URI}img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
-	echo "</div>";
+	if ( $count % 2 == 0 ) {
+		echo "<tr div class=\"photorow\">";
+		echo "<td class=\"photo0\">";
+	}
+	else
+		echo "<td class=\"photo1\">";
+
+	echo "<a href=\"" . USER_URI . "img/img-$seq_num.jpg\">";
+	echo "<img src=\"" . USER_URI . "img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
+	echo "</td>";
+
+	if ( $count % 2 == 1 )
+		echo "</tr>";
+	$count += 1;
 }
 
+if ( $count % 2 == 1 )
+	echo "</tr>";
 ?>
+</table>
 </div>
 </div>
 
@@ -131,16 +152,8 @@ Broadcast a Message:
 </form>
 </div>
 
-<div id="upload">
-<form method="post" enctype="multipart/form-data" action="upload">
-Photo Upload: <input name="photo" type="file" />
-<input type="submit" value="Upload" />
-</form> 
-</div>
-
 <div id="activity_stream">
 <?
-
 foreach ( $activity as $row ) {
 	$author_id = $row[0]['author_id'];
 	$subject_id = $row[0]['subject_id'];
@@ -152,7 +165,6 @@ foreach ( $activity as $row ) {
 	echo "<p>\n";
 	printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published );
 }
-
 ?>
 
 </div>

@@ -49,10 +49,10 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
 		printName( $author_id, false );
-		echo "<font class=\"msgaction\"> uploaded a photo: </font>";
+		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
 
-		echo '<div class="msgbody">';
+		echo '<div class="msgphoto">';
 		if ( $resource_id > 0 ) {
 			echo "<a href=\"${author_id}img/img-$resource_id.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
@@ -67,12 +67,10 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
 		printName( $author_id, false );
-		echo "<font class=\"msgaction\"> said: </font>";
+		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
 
-		echo '<div class="msgbody">';
 		echo htmlspecialchars($message);
-		echo '</div>';
 	}
 	else if ( $type == 'BRD' ) {
 		echo '<div class="msgabout">';
@@ -83,9 +81,7 @@ function printMessage( $author_id, $subject_id, $type, $resource_id, $message, $
 		echo " board</font>";
 		echo '</div>';
 
-		echo '<div class="msgbody">';
 		echo htmlspecialchars($message);
-		echo '</div>';
 	}
 	echo '</div>';
 }

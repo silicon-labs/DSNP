@@ -540,7 +540,7 @@ class UserController extends AppController
 			'user' => USER_NAME,
 			'author_id' => $BROWSER_ID,
 			'subject_id' => CFG_URI . USER_NAME . "/",
-			'type' => 'MSG',
+			'type' => 'BRD',
 			'message' => $message,
 		));
 

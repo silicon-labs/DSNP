@@ -55,14 +55,15 @@
 			<h1><?php 
 			if ( isset( $auth ) && $auth == 'friend' ) {
 				echo "<a href=\"" . BROWSER_ID . "\">" . BROWSER_ID . "</a>";
-				echo "<a href=\"logout\">logout</a>";
+				echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
 			}
 			else if ( isset( $auth ) && $auth == 'owner' ) {
 				echo "<a href=\"" . USER_URI . "\">" . USER_URI . "</a>";
-				echo "<a href=\"logout\">logout</a>";
+				echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
 			}
 			else {
-				echo "<a href=\"login\">login</a>";
+				//echo "<a href=\"login\">login</a>";
+				echo "<a href=\"" . CFG_PATH . USER_NAME . "/login\">login</a>";
 			}
 			?></h1>
 			</div>

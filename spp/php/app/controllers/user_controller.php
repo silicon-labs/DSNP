@@ -18,14 +18,11 @@ class UserController extends AppController
 
 	}
 
-	function requireOwnerOrFriend()
+	function isOwnerOrFriend()
 	{
-		if ( !$this->Session->valid() || ( 
-				$this->Session->read('auth') !== 'owner' &&
-				$this->Session->read('auth') !== 'friend' ) )
-		{
-			$this->cakeError("userNotFound");
-		}
+		return ( $this->Session->valid() && ( 
+				$this->Session->read('auth') === 'owner' ||
+				$this->Session->read('auth') === 'friend' ) );
 	}
 
 	function activateSession()
@@ -211,20 +208,20 @@ class UserController extends AppController
 
 	function img()
 	{
-		Configure::write( 'debug', 0 );
-
-		global $CFG_PHOTO_DIR;
-
-		$this->requireOwnerOrFriend();
-
 		$file = $this->params['pass'][0];
+		if ( !$this->isOwnerOrFriend() ) {
+			$this->cakeError("notAuthorized", 
+				array('url' => $this->params['url']['url'] ));
+		}
+		else {
+			if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
+				die("bad image");
 
-		if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
-			die("bad image");
-
-		$path = "$CFG_PHOTO_DIR/" . USER_NAME . "/$file";
-		$this->set( 'path', $path );
-		$this->render( 'img', 'img' );
+			Configure::write( 'debug', 0 );
+			$path = CFG_PHOTO_DIR . "/" . USER_NAME . "/$file";
+			$this->set( 'path', $path );
+			$this->render( 'img', 'img' );
+		}
 	}
 
 	function become()

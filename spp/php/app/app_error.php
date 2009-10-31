@@ -15,11 +15,16 @@ class AppError extends ErrorHandler
 	}
 	
 	function userNotFound($params) {
-		$this->controller->set('user', $params['user']);
+		if ( defined( 'USER_NAME' ) )
+			$this->controller->set('user', USER_NAME );
+
 		$this->_outputMessage('user_not_found');
 	}
 
 	function notAuthorized($params) {
+		if ( defined( 'USER_NAME' ) )
+			$this->controller->set('user', USER_NAME );
+
 		$this->controller->set('url', h(Router::normalize($this->controller->here)) );
 		$this->_outputMessage('not_authorized');
 	}

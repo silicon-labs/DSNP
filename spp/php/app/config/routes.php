@@ -26,14 +26,58 @@
  * @lastmodified  $Date$
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
+
 /**
  * Here, we are connecting '/' (base path) to controller called 'Pages',
  * its action called 'display', and we pass a param to select the view file
  * to use (in this case, /app/views/pages/home.ctp)...
  */
-	Router::connect('/', array('controller' => 'pages', 'action' => 'display', 'home'));
+
+Router::connect('/', array('controller' => 'pages', 'action' => 'display', 'home'));
+
 /**
  * ...and connect the rest of 'Pages' controller's urls.
  */
-	Router::connect('/pages/*', array('controller' => 'pages', 'action' => 'display'));
+Router::connect('/pages/*', array('controller' => 'pages', 'action' => 'display'));
+
+Router::connect('/:user/', 
+	array(
+		'controller' => 'user', 
+		'action' => 'index',
+	),
+	array(
+		'user' => '[a-zA-Z.]+'
+	)
+); 
+
+Router::connect('/:user/:controller/', 
+	array(
+		'action' => 'index'
+	),
+	array(
+		'user' => '[a-zA-Z.]+',
+		'controller' => '[a-z]+',
+		'action' => '[a-z]+'
+	)
+); 
+
+Router::connect('/:user/image/:file', 
+	array(
+		'controller' => 'image',
+		'action' => 'index'
+	),
+	array(
+		'user' => '[a-zA-Z.]+',
+		'file' => '[^\/]+',
+		'pass' => array( 'file' )
+	)
+); 
+
+Router::connect('/:user/:controller/:action/*', 
+	array(),
+	array(
+		'user' => '[a-zA-Z.]+'
+	)
+); 
+
 ?>

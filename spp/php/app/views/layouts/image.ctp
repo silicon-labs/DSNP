@@ -16,11 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-if ( isset( $auth ) && $auth === "no" )  {
-	$this->error( 404, 'Not Authorized', 'suck it bitches' );
-	return;
-}
-
 $stat = stat( $path );
 $size = $stat['size'];
 

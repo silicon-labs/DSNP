@@ -4,55 +4,20 @@ class UserController extends AppController
 {
 	var $name = 'User';
 
-
-	function activateSession()
-	{
-		$this->Session->activate( '/spp/' . USER_NAME . '/' );
-	}
-
-	function maybeActivateSession()
-	{
-		# Only resume sessions or start a new one when *a* session variable is provided
-		# Note that it might not be the right one.
-		if ( isset( $_COOKIE['CAKEPHP'] ) ) {
-			$this->activateSession();
-		}
-	}
-
-	function checkUser()
-	{
-		$user = $this->User->find( 'first', array('conditions' => 
-				array('user' => USER_NAME)));
-
-		if ( $user == null )
-			$this->cakeError("userNotFound", array('user' => USER_NAME));
-	}
-
 	function beforeFilter()
 	{
+		$USER_NAME = $this->params['user'];
+		$USER_PATH = CFG_PATH . "$USER_NAME/";
+		$USER_URI = CFG_URI . "$USER_NAME/";
+
+		define( 'USER_NAME', $USER_NAME );
+		define( 'USER_PATH', $USER_PATH );
+		define( 'USER_URI', $USER_URI );
+
 		$this->checkUser();
 		$this->maybeActivateSession();
 	}
 
-	function requireOwner()
-	{
-		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
-			$this->cakeError("error403");
-
-	}
-
-	function requireFriend()
-	{
-		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
-			$this->cakeError("error403");
-	}
-
-	function isOwnerOrFriend()
-	{
-		return ( $this->Session->valid() && ( 
-				$this->Session->read('auth') === 'owner' ||
-				$this->Session->read('auth') === 'friend' ) );
-	}
 
 	function indexUser()
 	{
@@ -201,24 +166,6 @@ class UserController extends AppController
 			$this->Session->write( 'token', $regs[2] );
 
 			$this->redirect( "/" . USER_NAME . "/" );
-		}
-	}
-
-	function img()
-	{
-		$file = $this->params['pass'][0];
-		if ( !$this->isOwnerOrFriend() ) {
-			$this->cakeError("notAuthorized", 
-				array('url' => $this->params['url']['url'] ));
-		}
-		else {
-			if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
-				die("bad image");
-
-			Configure::write( 'debug', 0 );
-			$path = CFG_PHOTO_DIR . "/" . USER_NAME . "/$file";
-			$this->set( 'path', $path );
-			$this->render( 'img', 'img' );
 		}
 	}
 

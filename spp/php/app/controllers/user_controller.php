@@ -6,18 +6,9 @@ class UserController extends AppController
 
 	function beforeFilter()
 	{
-		$USER_NAME = $this->params['user'];
-		$USER_PATH = CFG_PATH . "$USER_NAME/";
-		$USER_URI = CFG_URI . "$USER_NAME/";
-
-		define( 'USER_NAME', $USER_NAME );
-		define( 'USER_PATH', $USER_PATH );
-		define( 'USER_URI', $USER_URI );
-
 		$this->checkUser();
 		$this->maybeActivateSession();
 	}
-
 
 	function indexUser()
 	{
@@ -26,26 +17,26 @@ class UserController extends AppController
 		# Load the user's sent friend requests
 		$this->loadModel('SentFriendRequest');
 		$sentFriendRequests = $this->SentFriendRequest->find('all', 
-				array( 'conditions' => array( 'from_user' => USER_NAME )));
+				array( 'conditions' => array( 'from_user' => $this->USER_NAME )));
 		$this->set( 'sentFriendRequests', $sentFriendRequests );
 
 		# Load the user's friend requests. 
 		$this->loadModel('FriendRequest');
 		$friendRequests = $this->FriendRequest->find( 'all',
-				array( 'conditions' => array( 'for_user' => USER_NAME )));
+				array( 'conditions' => array( 'for_user' => $this->USER_NAME )));
 		$this->set( 'friendRequests', $friendRequests );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user' => USER_NAME )));
+				array( 'conditions' => array( 'user' => $this->USER_NAME )));
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
 		$this->loadModel('Image');
 		$images = $this->Image->find('all', array(
 			'conditions' => 
-				array( 'user' => USER_NAME ),
+				array( 'user' => $this->USER_NAME ),
 			'order' => array( 'Image.seq_num DESC' )
 		));
 		$this->set( 'images', $images );
@@ -64,9 +55,9 @@ class UserController extends AppController
 			"FROM remote_published " .
 			"WHERE user = '%s' " .
 			"ORDER BY time_published DESC",
-			mysql_real_escape_string(USER_NAME),
-			mysql_real_escape_string(USER_NAME),
-			mysql_real_escape_string(USER_NAME)
+			mysql_real_escape_string($this->USER_NAME),
+			mysql_real_escape_string($this->USER_NAME),
+			mysql_real_escape_string($this->USER_NAME)
 		);
 		$activity = $this->User->query( $query );
 		$this->set( 'activity', $activity );
@@ -85,14 +76,14 @@ class UserController extends AppController
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user' => USER_NAME )));
+				array( 'conditions' => array( 'user' => $this->USER_NAME )));
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
 		$this->loadModel('Image');
 		$images = $this->Image->find('all', array( 
 			'conditions' => 
-				array( 'user' => USER_NAME ),
+				array( 'user' => $this->USER_NAME ),
 			'order' => array( 'Image.seq_num DESC' )
 		));
 		$this->set( 'images', $images );
@@ -106,8 +97,8 @@ class UserController extends AppController
 			"FROM remote_published " .
 			"WHERE user = '%s' " .
 			"ORDER BY time_published DESC",
-			mysql_real_escape_string(USER_NAME),
-			mysql_real_escape_string(USER_NAME)
+			mysql_real_escape_string($this->USER_NAME),
+			mysql_real_escape_string($this->USER_NAME)
 		);
 		$activity = $this->User->query( $query );
 		$this->set( 'activity', $activity );
@@ -152,7 +143,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"login " . USER_NAME . " $pass\r\n";
+			"login " . $this->USER_NAME . " $pass\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -165,7 +156,7 @@ class UserController extends AppController
 			$this->Session->write( 'hash', $regs[1] );
 			$this->Session->write( 'token', $regs[2] );
 
-			$this->redirect( "/" . USER_NAME . "/" );
+			$this->redirect( "/" . $this->USER_NAME . "/" );
 		}
 	}
 
@@ -195,7 +186,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"relid_request " . USER_NAME . " $identity\r\n";
+			"relid_request " . $this->USER_NAME . " $identity\r\n";
 		fwrite($fp, $send);
 		
 		$res = fgets($fp);
@@ -231,7 +222,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"relid_response " . USER_NAME . " $fr_reqid $identity\r\n";
+			"relid_response " . $this->USER_NAME . " $fr_reqid $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -259,7 +250,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"friend_final " . USER_NAME . " $reqid $identity\r\n";
+			"friend_final " . $this->USER_NAME . " $reqid $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -281,7 +272,7 @@ class UserController extends AppController
 		$query = sprintf(
 			"DELETE FROM friend_request ".
 			"WHERE for_user = '%s' AND reqid = '%s'",
-			USER_NAME, $reqid );
+			$this->USER_NAME, $reqid );
 
 		$this->User->query( $query );
 
@@ -292,7 +283,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"accept_friend " . USER_NAME . " $reqid\r\n";
+			"accept_friend " . $this->USER_NAME . " $reqid\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -326,7 +317,7 @@ class UserController extends AppController
 			$send = 
 				"SPP/0.1 " . CFG_URI . "\r\n" . 
 				"comm_key " . CFG_COMM_KEY . "\r\n" .
-				"ftoken_request " . USER_NAME . " $hash\r\n";
+				"ftoken_request " . $this->USER_NAME . " $hash\r\n";
 			fwrite($fp, $send);
 
 			$res = fgets($fp);
@@ -364,7 +355,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"ftoken_response " . USER_NAME . " $hash $reqid\r\n";
+			"ftoken_response " . $this->USER_NAME . " $hash $reqid\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -413,7 +404,7 @@ class UserController extends AppController
 			if ( isset( $_GET['d'] ) )
 				$this->redirect( $_GET['d'] );
 			else
-				$this->redirect( "/" . USER_NAME . "/" );
+				$this->redirect( "/" . $this->USER_NAME . "/" );
 		}
 		else {
 			echo "<center>\n";
@@ -436,8 +427,8 @@ class UserController extends AppController
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
-			"user"  => USER_NAME,
-			"author_id" => CFG_URI . USER_NAME . "/",
+			"user"  => $this->USER_NAME,
+			"author_id" => CFG_URI . $this->USER_NAME . "/",
 			"type" => "MSG",
 			"message" => $message,
 		));
@@ -449,7 +440,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"submit_broadcast " . USER_NAME . " $len\r\n";
+			"submit_broadcast " . $this->USER_NAME . " $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
@@ -459,7 +450,7 @@ class UserController extends AppController
 		$res = fgets($fp);
 
 		if ( ereg("^OK", $res, $regs) )
-			$this->redirect( "/" . USER_NAME . "/" );
+			$this->redirect( "/" . $this->USER_NAME . "/" );
 		else
 			echo $res;
 	}
@@ -479,9 +470,9 @@ class UserController extends AppController
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
-			'user' => USER_NAME,
+			'user' => $this->USER_NAME,
 			'author_id' => $BROWSER_ID,
-			'subject_id' => CFG_URI . USER_NAME . "/",
+			'subject_id' => CFG_URI . $this->USER_NAME . "/",
 			'type' => 'BRD',
 			'message' => $message,
 		));
@@ -496,7 +487,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"submit_remote_broadcast " . USER_NAME . " $BROWSER_ID $hash $token $len\r\n";
+			"submit_remote_broadcast " . $this->USER_NAME . " $BROWSER_ID $hash $token $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
@@ -506,7 +497,7 @@ class UserController extends AppController
 		$res = fgets($fp);
 
 		if ( ereg("^OK", $res, $regs) )
-			$this->redirect( "/" . USER_NAME . "/" );
+			$this->redirect( "/" . $this->USER_NAME . "/" );
 		else
 			echo $res;
 	}
@@ -527,7 +518,7 @@ class UserController extends AppController
 
 		$this->loadModel('Image');
 		$this->Image->save( array( 
-			'user' => USER_NAME,
+			'user' => $this->USER_NAME,
 			'rows' => $image_size[1], 
 			'cols' => $image_size[0], 
 			'mime_type' => $image_size['mime']
@@ -535,12 +526,12 @@ class UserController extends AppController
 
 		$result = $this->User->query( "SELECT last_insert_id() as id" );
 		$id = $result[0][0]['id'];
-		$path = CFG_PHOTO_DIR . "/" . USER_NAME . "/img-$id.jpg";
+		$path = CFG_PHOTO_DIR . "/" . $this->USER_NAME . "/img-$id.jpg";
 
 		if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
 			die( "bad image file" );
 
-		$thumb = CFG_PHOTO_DIR . "/" . USER_NAME . "/thm-$id.jpg";
+		$thumb = CFG_PHOTO_DIR . "/" . $this->USER_NAME . "/thm-$id.jpg";
 
 		system(CFG_IM_CONVERT . " " .
 			"-define jpeg:preserve-settings " .
@@ -552,8 +543,8 @@ class UserController extends AppController
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
-			'user' => USER_NAME,
-			'author_id' => CFG_URI . USER_NAME . "/",
+			'user' => $this->USER_NAME,
+			'author_id' => CFG_URI . $this->USER_NAME . "/",
 			'type' => "PHT",
 			'message' => "thm-$id.jpg"
 		));
@@ -577,20 +568,14 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 " . CFG_URI . "\r\n" . 
 			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"submit_broadcast " . USER_NAME . " $len\r\n";
+			"submit_broadcast " . $this->USER_NAME . " $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
 		fwrite( $fp, $data, strlen($data) );
 		fwrite( $fp, "\r\n", 2 );
 
-		$this->redirect( "/" . USER_NAME . "/" );
-	}
-
-	function logout()
-	{
-		$this->Session->destroy();
-		$this->redirect( "/" . USER_NAME . "/" );
+		$this->redirect( "/" . $this->USER_NAME . "/" );
 	}
 }
 ?>

@@ -18,17 +18,12 @@
 
 include( 'functions.php' );
 
-global $CFG_URI;
-global $CFG_PATH;
-global $USER_NAME;
-global $USER_URI;
-
 ?>
 
 <html>
 <head>
-	<title><?php print $USER_NAME;?> </title>
-	<link rel="stylesheet" type="text/css" href="<?php print $CFG_PATH;?>style.css"/>
+	<title><?php echo $USER_NAME;?> </title>
+	<link rel="stylesheet" type="text/css" href="<?php print CFG_PATH;?>style.css"/>
 </head>
 
 <body>
@@ -39,7 +34,7 @@ global $USER_URI;
 <div id="details">
 
 <a id="edit" href="edit">edit</a>
-<h2><?php print $USER_NAME;?></h2>
+<h2><?php echo $USER_NAME;?></h2>
 
 
 </div>
@@ -117,8 +112,8 @@ foreach ( $images as $row ) {
 	else
 		echo "<td class=\"photo1\">";
 
-	echo "<a href=\"" . USER_URI . "image/img-$seq_num.jpg\">";
-	echo "<img src=\"" . USER_URI . "image/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
+	echo "<a href=\"" . $USER_URI . "image/img-$seq_num.jpg\">";
+	echo "<img src=\"" . $USER_URI . "image/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
 	echo "</td>";
 
 	if ( $count % 2 == 1 )
@@ -154,7 +149,7 @@ foreach ( $activity as $row ) {
 	$message = $row[0]['message'];
 
 	echo "<p>\n";
-	printMessage( $author_id, $subject_id, $type, $resource_id, $message, $time_published );
+	printMessage( $USER_URI, $author_id, $subject_id, $type, $resource_id, $message, $time_published );
 }
 ?>
 

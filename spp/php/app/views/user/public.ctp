@@ -21,7 +21,7 @@
 <div id="leftcol">
 
 <div id="details">
-<h2><?php print $user;?></h2>
+<h2><?php print $USER_NAME;?></h2>
 </div>
 
 </div>
@@ -31,13 +31,13 @@
 <div class="content">
 <h3>Login</h3>
 
-<? echo $html->link( "login as $user", "/$user/user/login" );?>
+<? echo $html->link( "login as $USER_NAME", "/$USER_NAME/cred/login" );?>
 
 </div>
 
 <div id="user_actions">
 <h3>Become Friend</h3>
-<? echo $html->link( "become a friend of $user", "/$user/user/become" ); ?>
+<? echo $html->link( "become a friend of $USER_NAME", "/$USER_NAME/user/become" ); ?>
 </div>
 
 </div>

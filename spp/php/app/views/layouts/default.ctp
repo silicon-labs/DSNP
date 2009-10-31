@@ -46,23 +46,22 @@
 		</div>
 		<div id="header_middle">
 		<h1><?php
-			if ( defined('USER_URI') )
-				echo '<a href="' . USER_URI . '">' . USER_URI . '</a>';
+			if ( isset( $USER_URI ) )
+				echo $html->link( $USER_URI, $USER_URI );
 		?></h1>
 		</div>
 		<div id="header_right">
 		<h1><?php 
 		if ( isset( $auth ) && $auth == 'friend' ) {
 			echo "<a href=\"" . BROWSER_ID . "\">" . BROWSER_ID . "</a>";
-			echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
+			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $auth ) && $auth == 'owner' ) {
-			echo "<a href=\"" . USER_URI . "\">" . USER_URI . "</a>";
-			echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
+			echo $html->link( $USER_URI, $USER_URI );
+			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
-		else if ( defined('USER_NAME') ) {
-			//echo "<a href=\"login\">login</a>";
-			echo "<a href=\"" . CFG_PATH . USER_NAME . "/login\">login</a>";
+		else if ( isset( $USER_NAME ) ) {
+			echo $html->link( 'login', "/$USER_NAME/cred/login" );
 		}
 		?></h1>
 		</div>

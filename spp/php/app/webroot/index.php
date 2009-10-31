@@ -121,39 +121,46 @@ define( 'CFG_RC_PRIVATE_KEY', $CFG_RC_PRIVATE_KEY );
 define( 'CFG_PHOTO_DIR', $CFG_PHOTO_DIR );
 define( 'CFG_IM_CONVERT', $CFG_IM_CONVERT );
 
+/* If there is no url, then just pass through to dispatcher. */
+if ( isset( $_GET['url'] ) ) {
+	/* Pull off the user. */
+	
+	$url = $_GET['url'];
+	$user = preg_replace( '/([^\/]*)\/.*/', '\1', $url );
 
-if (isset($_GET['url']) && ( $_GET['url'] === 'favicon.ico' || $_GET['url'] === 'robots.txt' ) )
-	return;
-else {
-	if ( isset( $_GET['url'] ) ) {
-		$url = $_GET['url'];
-		if ( preg_match( '/^[^\/]+\//', $url ) ) {
-			$u = preg_replace( '/([^\/]+).*/', '\1', $url );
-
-			if ( $u === 'admin' ) {
-				# Do nothing here. Use the admin controller. 
-			}
-			else {
-				$url = preg_replace( '/^[^\/]+\//', 'user/', $url );
-
-				$USER_NAME = $u;
-				$USER_PATH = "${CFG_PATH}$USER_NAME/";
-				$USER_URI = "${CFG_URI}$USER_NAME/";
-
-				define( 'USER_NAME', $USER_NAME );
-				define( 'USER_PATH', $USER_PATH );
-				define( 'USER_URI', $USER_URI );
-
-				if ( $url == null || strlen( $url ) == 0 )
-					$url = "user";
-			}
-		}
+	/* If we couldn't pull off a user then it meas we had no /. Add one. */
+	if ( $user === $url ) {
+		header( "Location: ${CFG_PATH}$url/\r\n" );
+		exit;
 	}
 
-	$Dispatcher = new Dispatcher();
-	$Dispatcher->dispatch($url);
+	/* Check for an empty user. This is not likely as it doesn't seems the
+	 * multiple slashes are removed by the HTTP server before arriving here. */
+	if ( $user === '' ) {
+		header( "Location: ${CFG_PATH}empty/\r\n" );
+		exit;
+	}
+
+	/* Threre was at least one item + slash. Some user names we reserve for
+	 * the system. */
+	if ( $user !== 'admin' ) {
+		# Change the user to the 'user'. */
+		$url = preg_replace( '/^[^\/]+\//', 'user/', $url );
+
+		$USER_NAME = $user;
+		$USER_PATH = "${CFG_PATH}$USER_NAME/";
+		$USER_URI = "${CFG_URI}$USER_NAME/";
+
+		define( 'USER_NAME', $USER_NAME );
+		define( 'USER_PATH', $USER_PATH );
+		define( 'USER_URI', $USER_URI );
+	}
 }
-if (Configure::read() > 0) {
-	echo "<!-- " . round(getMicrotime() - $TIME_START, 4) . "s -->";
-}
+
+$Dispatcher = new Dispatcher();
+$Dispatcher->dispatch($url);
+
+//if (Configure::read() > 0) {
+//echo "<!-- " . round(getMicrotime() - $TIME_START, 4) . "s -->";
+//}
 ?>

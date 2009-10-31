@@ -37,51 +37,51 @@
 	?>
 </head>
 <body>
-	<div id="container">
-		<div id="header">
-			<div id="header_left">
-			<h1><?php echo $html->link(__('DSNP User Agent One', true), 
-				'http://www.complang.org/dsnp/'); ?>
-				<a href="<?php echo CFG_URI; ?>">(site)</a>
-				</h1>
-			</div>
-			<div id="header_middle">
-			<h1><?php
-				if ( defined('USER_URI') )
-					echo '<a href="' . USER_URI . '">' . USER_URI . '</a>';
-			?></h1>
-			</div>
-			<div id="header_right">
-			<h1><?php 
-			if ( isset( $auth ) && $auth == 'friend' ) {
-				echo "<a href=\"" . BROWSER_ID . "\">" . BROWSER_ID . "</a>";
-				echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
-			}
-			else if ( isset( $auth ) && $auth == 'owner' ) {
-				echo "<a href=\"" . USER_URI . "\">" . USER_URI . "</a>";
-				echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
-			}
-			else {
-				//echo "<a href=\"login\">login</a>";
-				echo "<a href=\"" . CFG_PATH . USER_NAME . "/login\">login</a>";
-			}
-			?></h1>
-			</div>
+	<div id="header">
+		<div id="header_left">
+		<h1><?php echo $html->link(__('DSNP User Agent One', true), 
+			'http://www.complang.org/dsnp/'); ?>
+			<a href="<?php echo CFG_URI; ?>">(site)</a>
+			</h1>
 		</div>
-		<div id="content">
-			<?php $session->flash(); ?>
-			<?php echo $content_for_layout; ?>
+		<div id="header_middle">
+		<h1><?php
+			if ( defined('USER_URI') )
+				echo '<a href="' . USER_URI . '">' . USER_URI . '</a>';
+		?></h1>
 		</div>
-		<div id="footer">
-			<?php echo $html->link(
-					$html->image('cake.power.gif', array(
-						'alt'=> __("CakePHP: the rapid development php framework", true), 
-						'border'=>"0")),
-					'http://www.cakephp.org/',
-					array('target'=>'_blank'), null, false
-				);
-			?>
+		<div id="header_right">
+		<h1><?php 
+		if ( isset( $auth ) && $auth == 'friend' ) {
+			echo "<a href=\"" . BROWSER_ID . "\">" . BROWSER_ID . "</a>";
+			echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
+		}
+		else if ( isset( $auth ) && $auth == 'owner' ) {
+			echo "<a href=\"" . USER_URI . "\">" . USER_URI . "</a>";
+			echo "<a href=\"" . CFG_PATH . USER_NAME . "/logout\">logout</a>";
+		}
+		else if ( defined('USER_NAME') ) {
+			//echo "<a href=\"login\">login</a>";
+			echo "<a href=\"" . CFG_PATH . USER_NAME . "/login\">login</a>";
+		}
+		?></h1>
 		</div>
+	</div>
+
+	<div id="page_body">
+		<?php $session->flash(); ?>
+		<?php echo $content_for_layout; ?>
+	</div>
+
+	<div id="footer">
+		<?php echo $html->link(
+				$html->image('cake.power.gif', array(
+					'alt'=> __("CakePHP: the rapid development php framework", true), 
+					'border'=>"0")),
+				'http://www.cakephp.org/',
+				array('target'=>'_blank'), null, false
+			);
+		?>
 	</div>
 	<?php echo $cakeDebug; ?>
 </body>

@@ -17,7 +17,7 @@
 
 ?>
 
-<div class="item">
+<div class="content">
 
 <h1>Create User</h1>
 

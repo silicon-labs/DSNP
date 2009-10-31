@@ -8,7 +8,7 @@
 
 <div id="activity">
 
-<div class="item">
+<div class="content">
 <h3>Login</h3>
 
 <form method="post" action="slogin">

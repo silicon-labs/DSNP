@@ -14,7 +14,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <div id="leftcol">
 
-<div class="item">
+<div class="content">
 
 <h2>Secure Personal Publishing</h2>
 
@@ -26,7 +26,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <div id="activity">
 
-<div class="item">
+<div class="content">
 <h2>Users</h2>
 <p>
 <?php

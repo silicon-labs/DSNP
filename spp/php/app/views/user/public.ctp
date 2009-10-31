@@ -28,7 +28,7 @@
 
 <div id="activity">
 
-<div class="item">
+<div class="content">
 <h3>Login</h3>
 <a href="login">login as <?php echo USER_NAME;?></a>
 </div>

@@ -138,14 +138,14 @@ ul, li {
 	text-decoration: underline;
 }
 
-#content {
+#page_body {
 	background: #fff;
 	clear: both;
 	color: #333;
 	overflow: auto;
 }
 
-div.item {
+div.content {
 	padding: 15px 15px 15px 15px;
 }
 

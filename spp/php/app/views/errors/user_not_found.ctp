@@ -1,5 +1,8 @@
 <?php 
-header("HTTP/ 403 Not Authorized");
+header("HTTP/ 404 Not Found");
 ?>
+
+<div class="content">
 <h2>User Not Found</h2>
-<p>The user <?php echo( $user ); ?> does not exist on this system.</p>
+<p class="error"><strong>Error:</strong> The user <?php echo( $user ); ?> does not exist on this system.</p>
+</div>

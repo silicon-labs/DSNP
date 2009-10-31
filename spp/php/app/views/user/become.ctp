@@ -29,7 +29,7 @@
 
 <div id="activity">
 
-<div class="item">
+<div class="content">
 
 <h2>Become Friend</h2>
 

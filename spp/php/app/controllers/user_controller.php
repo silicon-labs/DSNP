@@ -4,26 +4,6 @@ class UserController extends AppController
 {
 	var $name = 'User';
 
-	function requireOwner()
-	{
-		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
-			$this->cakeError("error403");
-
-	}
-
-	function requireFriend()
-	{
-		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
-			$this->cakeError("error403");
-
-	}
-
-	function isOwnerOrFriend()
-	{
-		return ( $this->Session->valid() && ( 
-				$this->Session->read('auth') === 'owner' ||
-				$this->Session->read('auth') === 'friend' ) );
-	}
 
 	function activateSession()
 	{
@@ -39,11 +19,6 @@ class UserController extends AppController
 		}
 	}
 
-	function beforeFilter()
-	{
-		$this->maybeActivateSession();
-	}
-
 	function checkUser()
 	{
 		$user = $this->User->find( 'first', array('conditions' => 
@@ -53,9 +28,34 @@ class UserController extends AppController
 			$this->cakeError("userNotFound", array('user' => USER_NAME));
 	}
 
-	function indexUser()
+	function beforeFilter()
 	{
 		$this->checkUser();
+		$this->maybeActivateSession();
+	}
+
+	function requireOwner()
+	{
+		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
+			$this->cakeError("error403");
+
+	}
+
+	function requireFriend()
+	{
+		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
+			$this->cakeError("error403");
+	}
+
+	function isOwnerOrFriend()
+	{
+		return ( $this->Session->valid() && ( 
+				$this->Session->read('auth') === 'owner' ||
+				$this->Session->read('auth') === 'friend' ) );
+	}
+
+	function indexUser()
+	{
 		$this->set( 'auth', 'owner' );
 
 		# Load the user's sent friend requests
@@ -111,7 +111,6 @@ class UserController extends AppController
 
 	function indexFriend()
 	{
-		$this->checkUser();
 		$this->set( 'auth', 'friend' );
 
 		$identity = $this->Session->read('identity');
@@ -153,7 +152,6 @@ class UserController extends AppController
 
 	function indexPublic()
 	{
-		$this->checkUser();
 		$this->render( 'public' );
 	}
 

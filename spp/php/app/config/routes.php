@@ -64,7 +64,7 @@ Router::connect('/:user/:controller/',
 Router::connect('/:user/image/:file', 
 	array(
 		'controller' => 'image',
-		'action' => 'index'
+		'action' => 'view'
 	),
 	array(
 		'user' => '[a-zA-Z.]+',

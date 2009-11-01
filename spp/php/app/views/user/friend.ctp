@@ -24,7 +24,7 @@ include('functions.php');
 
 <div id="details">
 
-<h2><?php print USER_NAME;?></h2>
+<h2><?php print $USER_NAME;?></h2>
 
 </div>
 
@@ -65,8 +65,8 @@ foreach ( $images as $row ) {
 	else
 		echo "<td class=\"photo1\">";
 
-	echo "<a href=\"". USER_URI . "img/img-$seq_num.jpg\">";
-	echo "<img src=\"" . USER_URI . "img/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
+	echo "<a href=\"". $USER_URI . "image/img-$seq_num.jpg\">";
+	echo "<img src=\"" . $USER_URI . "image/thm-$seq_num.jpg\" alt=\"$seq_num\"></a><br>\n";
 	echo "</td>";
 
 	if ( $count % 2 == 1 )
@@ -86,7 +86,7 @@ if ( $count % 2 == 1 )
 
 <form method="post" action="board">
 
-Write on <?php print USER_NAME;?>'s message board:
+Write on <?php print $USER_NAME;?>'s message board:
 <!--<input type="text" name="message" size="50">-->
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 <input value="Submit" type="submit">
@@ -107,7 +107,7 @@ foreach ( $activity as $row ) {
 
 	echo "<p>\n";
 	
-	printMessage( $author_id, $subject_id, $type, 0, $message, $time_published );
+	printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, 0, $message, $time_published );
 }
 ?>
 </div>

@@ -28,7 +28,7 @@
 	<?php echo $html->charset(); ?>
 	<title>
 		<?php __('DSNP User Agent One:'); ?>
-		<?php echo USER_NAME; ?>
+		<?php echo $USER_NAME; ?>
 	</title>
 	<?php
 		echo $html->meta('icon');
@@ -41,7 +41,7 @@
 		<div id="header_left">
 		<h1><?php echo $html->link(__('DSNP User Agent One', true), 
 			'http://www.complang.org/dsnp/'); ?>
-			<a href="<?php echo CFG_URI; ?>">(site)</a>
+			<a href="<?php echo $CFG_URI; ?>">(site)</a>
 			</h1>
 		</div>
 		<div id="header_middle">

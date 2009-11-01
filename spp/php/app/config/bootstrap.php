@@ -24,6 +24,7 @@
  * @lastmodified  $Date$
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
+
 /**
  *
  * This file is loaded automatically by the app/webroot/index.php file after the core bootstrap.php is loaded
@@ -31,6 +32,7 @@
  * You can also use this to include or require any files in your application.
  *
  */
+
 /**
  * The settings below can be used to set additional paths to models, views and controllers.
  * This is related to Ticket #470 (https://trac.cakephp.org/ticket/470)
@@ -40,5 +42,14 @@
  * $controllerPaths = array('this path to controllers', 'second full path to controllers', 'etc...');
  *
  */
-//EOF
+
+
+include( 'config.php' );
+
+if ( !defined( 'HAVE_CONFIG' ) )
+	die("config.php: could not select installation\n");
+
+if ( get_magic_quotes_gpc() )
+	die("the SPP software assumes PHP magic quotes to be off\n");
+
 ?>

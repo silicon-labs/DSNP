@@ -14,23 +14,23 @@ class AppError extends ErrorHandler
 		parent::__construct($method, $messages);
 	}
 
-	function collectUserData()
+	function collectUserData( $params )
 	{
-		if ( defined( 'USER_NAME' ) ) {
-			$this->controller->set( 'USER_NAME', USER_NAME );
-			$this->controller->set( 'USER_PATH', USER_PATH );
-			$this->controller->set( 'USER_URI', USER_URI );
+		if ( isset( $params['USER_NAME'] ) ) {
+			$this->controller->set( 'USER_NAME', $params['USER_NAME'] );
+			$this->controller->set( 'USER_PATH', $params['USER_PATH'] );
+			$this->controller->set( 'USER_URI', $params['USER_URI'] );
 		}
 	}
 	
 	function userNotFound( $params ) {
-		$this->collectUserData();
+		$this->collectUserData( $params );
 		$this->_outputMessage('user_not_found');
 	}
 
-	function notAuthorized( $params ) {
-
-		$this->collectUserData();
+	function notAuthorized( $params )
+	{
+		$this->collectUserData( $params );
 		$this->controller->set( 'url', h(Router::normalize($this->controller->here)) );
 		$this->_outputMessage('not_authorized');
 	}

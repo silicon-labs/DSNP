@@ -1,10 +1,15 @@
 <?php
 
+$CFG_DB_HOST = Configure::read('CFG_DB_HOST');
+$CFG_DB_USER = Configure::read('CFG_DB_USER');
+$CFG_ADMIN_PASS = Configure::read('CFG_ADMIN_PASS');
+$CFG_DB_DATABASE = Configure::read('CFG_DB_DATABASE');
+
 # Connect to the database.
-$conn = mysql_connect(CFG_DB_HOST, CFG_DB_USER, CFG_ADMIN_PASS) or die 
+$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
 	('Could not connect to database');
-mysql_select_db(CFG_DB_DATABASE) or die
-	('Could not select database ' . CFG_DB_DATABASE);
+mysql_select_db($CFG_DB_DATABASE) or die
+	('Could not select database ' . $CFG_DB_DATABASE);
 
 # Look for the user/pass combination.
 $query = "SELECT user FROM user";

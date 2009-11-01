@@ -69,9 +69,9 @@ class CredController extends AppController
 				exit(1);
 
 			$send = 
-				"SPP/0.1 " . CFG_URI . "\r\n" . 
-				"comm_key " . CFG_COMM_KEY . "\r\n" .
-				"ftoken_request " . USER_NAME . " $hash\r\n";
+				"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
+				"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
+				"ftoken_request " . $this->USER_NAME . " $hash\r\n";
 			fwrite($fp, $send);
 
 			$res = fgets($fp);
@@ -84,7 +84,7 @@ class CredController extends AppController
 				if ( isset( $_GET['d'] ) )
 					$dest = "&d=" . urlencode($_GET['d']);
 					
-				header( "Location: ${friend_id}retftok?${arg_h}&${arg_reqid}" . $dest );
+				header( "Location: ${friend_id}cred/retftok?${arg_h}&${arg_reqid}" . $dest );
 			}
 		}
 	}
@@ -107,8 +107,8 @@ class CredController extends AppController
 			exit(1);
 
 		$send = 
-			"SPP/0.1 " . CFG_URI . "\r\n" . 
-			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
+			"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
 			"ftoken_response " . $this->USER_NAME . " $hash $reqid\r\n";
 		fwrite($fp, $send);
 
@@ -120,7 +120,7 @@ class CredController extends AppController
 			$dest = "";
 			if ( isset( $_GET['d'] ) )
 				$dest = "&d=" . urlencode($_GET['d']);
-			header("Location: ${friend_id}sftoken?${arg_ftoken}" . $dest );
+			header("Location: ${friend_id}cred/sftoken?${arg_ftoken}" . $dest );
 		}
 		else {
 			echo $res;
@@ -140,8 +140,8 @@ class CredController extends AppController
 			exit(1);
 
 		$send = 
-			"SPP/0.1 " . CFG_URI . "\r\n" . 
-			"comm_key " . CFG_COMM_KEY . "\r\n" .
+			"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
+			"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
 			"submit_ftoken $ftoken\r\n";
 		fwrite($fp, $send);
 

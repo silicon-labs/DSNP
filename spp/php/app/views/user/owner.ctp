@@ -23,7 +23,7 @@ include( 'functions.php' );
 <html>
 <head>
 	<title><?php echo $USER_NAME;?> </title>
-	<link rel="stylesheet" type="text/css" href="<?php print CFG_PATH;?>style.css"/>
+	<link rel="stylesheet" type="text/css" href="<?php print $CFG_PATH;?>style.css"/>
 </head>
 
 <body>
@@ -35,7 +35,6 @@ include( 'functions.php' );
 
 <a id="edit" href="edit">edit</a>
 <h2><?php echo $USER_NAME;?></h2>
-
 
 </div>
 
@@ -81,7 +80,7 @@ if ( count( $sentFriendRequests ) > 0 ) {
 foreach ( $friendClaims as $row ) {
 	$dest_id = $row['FriendClaim']['friend_id'];
 
-	echo "<a class=\"idlink\" href=\"${dest_id}sflogin?h=" . 
+	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
 		urlencode( $_SESSION['hash'] ) . "\">$dest_id</a> ";
 
 	echo "<br>\n";
@@ -149,7 +148,7 @@ foreach ( $activity as $row ) {
 	$message = $row[0]['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_URI, $author_id, $subject_id, $type, $resource_id, $message, $time_published );
+	printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, $resource_id, $message, $time_published );
 }
 ?>
 

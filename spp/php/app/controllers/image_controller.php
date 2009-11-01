@@ -9,11 +9,11 @@ class ImageController extends AppController
 		$this->maybeActivateSession();
 	}
 
-	function index( $file )
+	function view( $file )
 	{
 		if ( !$this->isOwnerOrFriend() ) {
-			$this->cakeError("notAuthorized", 
-				array('url' => $this->params['url']['url'] ));
+			$this->userError("notAuthorized", array(
+					'url' => $this->params['url']['url'] ));
 		}
 		else {
 			if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
@@ -24,7 +24,7 @@ class ImageController extends AppController
 			Configure::write( 'debug', 0 );
 			$path = "$this->CFG_PHOTO_DIR/$this->USER_NAME/$file";
 			$this->set( 'path', $path );
-			$this->render( 'index', 'image' );
+			$this->render( 'view', 'image' );
 		}
 	}
 }

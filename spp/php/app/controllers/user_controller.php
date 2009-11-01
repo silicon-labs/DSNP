@@ -179,23 +179,23 @@ class UserController extends AppController
 		//                      "(reCAPTCHA said: " . $resp->error . ")");
 		//}
 
-		$fp = fsockopen( 'localhost', CFG_PORT );
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			die( "!!! There was a problem connecting to the local SPP server.");
 		
 		$send = 
-			"SPP/0.1 " . CFG_URI . "\r\n" . 
-			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"relid_request " . $this->USER_NAME . " $identity\r\n";
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"relid_request $this->USER_NAME $identity\r\n";
 		fwrite($fp, $send);
 		
 		$res = fgets($fp);
 
 		if ( ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) ) {
-			$arg_identity = 'identity=' . urlencode( USER_URI );
+			$arg_identity = 'identity=' . urlencode( $this->USER_URI );
 			$arg_reqid = 'fr_reqid=' . urlencode( $regs[1] );
 
-			header("Location: ${identity}retrelid?${arg_identity}&${arg_reqid}" );
+			header("Location: ${identity}user/retrelid?${arg_identity}&${arg_reqid}" );
 		}
 		else if ( ereg("^ERROR ([0-9]+)", $res, $regs) ) {
 			die( "!!! There was an error:<br>" .
@@ -215,23 +215,23 @@ class UserController extends AppController
 		$identity = $_GET['identity'];
 		$fr_reqid = $_GET['fr_reqid'];
 
-		$fp = fsockopen( 'localhost', CFG_PORT );
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 " . CFG_URI . "\r\n" . 
-			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"relid_response " . $this->USER_NAME . " $fr_reqid $identity\r\n";
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"relid_response $this->USER_NAME $fr_reqid $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
 
 		if ( ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) ) {
-			$arg_identity = 'identity=' . urlencode( USER_URI );
+			$arg_identity = 'identity=' . urlencode( $this->USER_URI );
 			$arg_reqid = 'reqid=' . urlencode( $regs[1] );
 
-			header("Location: ${identity}frfinal?${arg_identity}&${arg_reqid}" );
+			header("Location: ${identity}user/frfinal?${arg_identity}&${arg_reqid}" );
 		}
 		else {
 			echo $res;
@@ -243,20 +243,20 @@ class UserController extends AppController
 		$identity = $_GET['identity'];
 		$reqid = $_GET['reqid'];
 
-		$fp = fsockopen( 'localhost', CFG_PORT );
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 " . CFG_URI . "\r\n" . 
-			"comm_key " . CFG_COMM_KEY . "\r\n" .
-			"friend_final " . $this->USER_NAME . " $reqid $identity\r\n";
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"friend_final $this->USER_NAME $reqid $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
 
 		if ( ereg("^OK", $res) ) {
-			header("Location: " . USER_URI );
+			header("Location: $this->USER_URI" );
 		}
 		else {
 			echo $res;
@@ -366,7 +366,7 @@ class UserController extends AppController
 			$dest = "";
 			if ( isset( $_GET['d'] ) )
 				$dest = "&d=" . urlencode($_GET['d']);
-			header("Location: ${friend_id}sftoken?${arg_ftoken}" . $dest );
+			header("Location: ${friend_id}sftoken?${arg_ftoken}$dest" );
 		}
 		else {
 			echo $res;

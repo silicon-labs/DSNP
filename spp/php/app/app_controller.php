@@ -23,6 +23,14 @@ class AppController extends Controller
 	var $USER_PATH = null;
 	var $USER_URI = null;
 
+	function hereFull()
+	{
+		/* Make the full url for sending back here in if the user does get authorized. */
+		$params = $this->params['url'];
+		unset( $params['url'] );
+		return Router::url( null, true ) . Router::queryString( $params );
+	}
+
 	function __construct() 
 	{
 		$this->CFG_URI = Configure::read('CFG_URI');

@@ -40,7 +40,7 @@ foreach ( $friendClaims as $row ) {
 		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
 	}
 	else {
-		echo "<a href=\"${dest_id}sflogin?h=" . 
+		echo "<a href=\"${dest_id}cred/sflogin?h=" . 
 			urlencode( $_SESSION['hash'] ) .
 			"\">$dest_id</a> <br>\n";
 	}

@@ -41,12 +41,22 @@ class AppError extends ErrorHandler
 		$this->controller->set( 'url', h(Router::normalize($this->controller->here)) );
 
 		/* Make the full url for sending back here in if the user does get authorized. */
-		$params = $this->controller->params['url'];
-		unset( $params['url'] );
-		$foo = Router::url( null, true ) . Router::queryString( $params );
-		$this->controller->set( 'backto',  $foo );
+		$this->controller->set( 'backto',  $this->controller->hereFull() );
 
 		$this->_outputMessage('not_authorized');
+	}
+
+	function noAuthRetftok( $params )
+	{
+		$this->collectUserData( $params );
+
+		/* The url for displaying what was not authorized. */
+		$this->controller->set( 'url', h(Router::normalize($this->controller->here)) );
+
+		/* Make the full url for sending back here in if the user does get authorized. */
+		$this->controller->set( 'backto',  $this->controller->hereFull() );
+
+		$this->_outputMessage('noauth_retftok');
 	}
 
 	# We can override this so we can use a different layout.

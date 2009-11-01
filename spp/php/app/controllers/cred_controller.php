@@ -94,7 +94,8 @@ class CredController extends AppController
 	
 	function retftok()
 	{
-		$this->requireOwner();
+		if ( !$this->isOwner() )
+			$this->userError('noAuthRetftok');
 
 		$hash = $_REQUEST['h'];
 		$reqid = $_GET['reqid'];

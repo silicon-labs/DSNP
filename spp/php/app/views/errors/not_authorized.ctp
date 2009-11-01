@@ -37,8 +37,6 @@ You are not currently authorized to access <?php echo( $url ); ?>.</p>
 
 <?php } ?>
 
-
-
 </div>
 
 </div>

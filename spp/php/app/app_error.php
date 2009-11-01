@@ -37,7 +37,15 @@ class AppError extends ErrorHandler
 		else
 			$this->controller->set( 'cred', 'o' );
 
+		/* The url for displaying what was not authorized. */
 		$this->controller->set( 'url', h(Router::normalize($this->controller->here)) );
+
+		/* Make the full url for sending back here in if the user does get authorized. */
+		$params = $this->controller->params['url'];
+		unset( $params['url'] );
+		$foo = Router::url( null, true ) . Router::queryString( $params );
+		$this->controller->set( 'backto',  $foo );
+
 		$this->_outputMessage('not_authorized');
 	}
 

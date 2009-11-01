@@ -29,7 +29,8 @@ if ( isset( $dest ) )
 <input type="submit">
 
 <?php
-echo "you will be taken to $dest"
+if ( isset( $dest ) )
+	echo "<br>you will be taken to:<br> $dest"
 ?>
 </form>
 

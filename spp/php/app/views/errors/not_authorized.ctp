@@ -13,7 +13,7 @@ You are not currently authorized to access <?php echo( $url ); ?>.</p>
 <?php if ( strchr( $cred, 'o' ) ) { ?>
 
 	<p>If you are the owner of <?php echo $html->link( $USER_URI, $USER_URI );?> then please 
-	<?php echo $html->link('login', "/$USER_NAME/cred/login?d=" . urlencode($url) );?></p>
+	<?php echo $html->link('login', "/$USER_NAME/cred/login?d=" . urlencode($backto) );?></p>
 
 <?php } ?>
 

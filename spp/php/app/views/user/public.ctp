@@ -37,7 +37,7 @@
 
 <div id="user_actions">
 <h3>Become Friend</h3>
-<? echo $html->link( "become a friend of $USER_NAME", "/$USER_NAME/user/become" ); ?>
+<? echo $html->link( "become a friend of $USER_NAME", "/$USER_NAME/freq/submit" ); ?>
 </div>
 
 </div>

@@ -18,6 +18,8 @@ class CredController extends AppController
 
 	function login()
 	{
+		if ( isset( $_REQUEST['d'] ) )	
+			$this->set('dest', $_REQUEST['d'] );
 	}
 
 	function slogin()
@@ -37,17 +39,18 @@ class CredController extends AppController
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
-		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)", $res, $regs) ) {
-			include('lib/loginfailed.php');
-		}
-		else {
-			# Login successful.
-			$this->Session->write( 'auth', 'owner' );
-			$this->Session->write( 'hash', $regs[1] );
-			$this->Session->write( 'token', $regs[2] );
+		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)", $res, $regs) )
+			$this->userError( 'loginFailed' );
 
+		# Login successful.
+		$this->Session->write( 'auth', 'owner' );
+		$this->Session->write( 'hash', $regs[1] );
+		$this->Session->write( 'token', $regs[2] );
+
+		if ( isset( $_POST['d'] ) )
+			$this->redirect( urldecode($_POST['d']) );
+		else
 			$this->redirect( "/$this->USER_NAME/" );
-		}
 	}
 
 	function sflogin()

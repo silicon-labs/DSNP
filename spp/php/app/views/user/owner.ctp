@@ -45,11 +45,12 @@ if ( count( $friendRequests ) ) {
 	foreach ( $friendRequests as $row ) {
 		$from_id = $row['FriendRequest']['from_id'];
 		$reqid = $row['FriendRequest']['reqid'];
-		echo "<a href=\"$from_id\">$from_id</a>&nbsp;&nbsp;&nbsp;\n";
-		echo "<a href=\"answer?reqid=" . urlencode($reqid) . 
-				"&a=yes\">yes</a>&nbsp;&nbsp;\n";
-		echo "<a href=\"answer?reqid=" . urlencode($reqid) . 
-				"&a=no\">no</a><br>\n";
+		echo $html->link( $from_id, $from_id );
+		echo "&nbsp;&nbsp;&nbsp;\n";
+		echo $html->link( 'yes', "/$USER_NAME/freq/answer?reqid=" . urlencode($reqid) . "&a=yes" );
+		echo "&nbsp;&nbsp;\n";
+		echo $html->link( 'no', "/$USER_NAME/freq/answer?reqid=" . urlencode($reqid) . "&a=no" );
+		echo "<br>\n";
 	}
 	echo "</div>";
 }

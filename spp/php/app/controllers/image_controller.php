@@ -11,21 +11,17 @@ class ImageController extends AppController
 
 	function view( $file )
 	{
-		if ( !$this->isOwnerOrFriend() ) {
-			$this->userError("notAuthorized", array(
-					'url' => $this->params['url']['url'] ));
-		}
-		else {
-			if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
-				die("bad image");
+		$this->requireOwnerOrFriend();
 
-			/* Find the image in the database. */
+		if ( !ereg('^(img|thm|pub)-[0-9]*\.jpg$', $file ) )
+			die("bad image");
 
-			Configure::write( 'debug', 0 );
-			$path = "$this->CFG_PHOTO_DIR/$this->USER_NAME/$file";
-			$this->set( 'path', $path );
-			$this->render( 'view', 'image' );
-		}
+		/* Find the image in the database. */
+
+		Configure::write( 'debug', 0 );
+		$path = "$this->CFG_PHOTO_DIR/$this->USER_NAME/$file";
+		$this->set( 'path', $path );
+		$this->render( 'view', 'image' );
 	}
 }
 ?>

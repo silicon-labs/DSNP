@@ -86,14 +86,23 @@ class AppController extends Controller
 	function requireOwner()
 	{
 		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
-			$this->userError("error403");
-
+			$this->userError('notAuthorized', array( 'cred' => 'o' ));
 	}
 
 	function requireFriend()
 	{
 		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
-			$this->userError("error403");
+			$this->userError('notAuthorized', array( 'cred' => 'f' ));
+	}
+
+	function requireOwnerOrFriend()
+	{
+		if ( !$this->Session->valid() || ( 
+				$this->Session->read('auth') !== 'owner' &&
+				$this->Session->read('auth') !== 'friend' ) )
+		{
+			$this->userError('notAuthorized', array( 'cred' => 'of' ));
+		}
 	}
 
 	function isOwnerOrFriend()
@@ -101,6 +110,19 @@ class AppController extends Controller
 		return ( $this->Session->valid() && ( 
 				$this->Session->read('auth') === 'owner' ||
 				$this->Session->read('auth') === 'friend' ) );
+	}
+
+	function isOwner()
+	{
+		return $this->Session->valid() && 
+			$this->Session->read('auth') === 'owner';
+
+	}
+
+	function isFriend()
+	{
+		return $this->Session->valid() &&
+			$this->Session->read('auth') === 'friend';
 	}
 }
 

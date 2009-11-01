@@ -31,6 +31,12 @@ class AppError extends ErrorHandler
 	function notAuthorized( $params )
 	{
 		$this->collectUserData( $params );
+
+		if ( isset( $params['cred'] ) )
+			$this->controller->set( 'cred', $params['cred'] );
+		else
+			$this->controller->set( 'cred', 'o' );
+
 		$this->controller->set( 'url', h(Router::normalize($this->controller->here)) );
 		$this->_outputMessage('not_authorized');
 	}

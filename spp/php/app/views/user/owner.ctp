@@ -33,7 +33,7 @@ include( 'functions.php' );
 
 <div id="details">
 
-<a id="edit" href="edit">edit</a>
+<a id="edit" href="<?php echo $html->url( "/$USER_NAME/user/edit" );?>">edit</a>
 <h2><?php echo $USER_NAME;?></h2>
 
 </div>
@@ -132,7 +132,7 @@ if ( $count % 2 == 1 )
 <div id="activity">
 
 <div id="broadcast">
-<form method="post" action="broadcast">
+<form method="post" action="<?echo $html->url( "/$USER_NAME/user/broadcast" ); ?>">
 Broadcast a Message to all Friends
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 <input value="Submit Message" type="submit">

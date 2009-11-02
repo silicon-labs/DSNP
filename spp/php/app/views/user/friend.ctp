@@ -84,7 +84,7 @@ if ( $count % 2 == 1 )
 
 <div id="broadcast">
 
-<form method="post" action="board">
+<form method="post" action="<?php echo $html->url("/$USER_NAME/user/board");?>">
 
 Write on <?php print $USER_NAME;?>'s message board:
 <!--<input type="text" name="message" size="50">-->

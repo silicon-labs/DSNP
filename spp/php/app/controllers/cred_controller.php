@@ -89,6 +89,9 @@ class CredController extends AppController
 					
 				header( "Location: ${friend_id}cred/retftok?${arg_h}&${arg_reqid}" . $dest );
 			}
+			else {
+				header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
+			}
 		}
 	}
 	

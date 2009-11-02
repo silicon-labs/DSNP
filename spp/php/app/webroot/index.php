@@ -102,7 +102,7 @@ if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 if ( isset( $_GET['url'] ) ) {
 	$url = $_GET['url'];
 	if ( strlen( $url ) > 0 && preg_match( '/^([^\/]*)\//', $url ) == 0 ) {
-		header( "Location: ${CFG_PATH}$url/" );
+		header( "Location: " . Configure::read('CFG_PATH') . "$url/" );
 		exit;
 	}
 }

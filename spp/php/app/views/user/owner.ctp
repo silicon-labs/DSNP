@@ -94,7 +94,8 @@ foreach ( $friendClaims as $row ) {
 <h3>Photo Stream</h3>
 
 <div id="photo_upload">
-<form method="post" enctype="multipart/form-data" action="upload">
+<form method="post" enctype="multipart/form-data" 
+	action="<?php echo $html->url( "/$USER_NAME/image/upload" ); ?>">
 <input name="photo" type="file"/>
 <input type="submit" value="Upload"/>
 </form> 
@@ -112,8 +113,8 @@ foreach ( $images as $row ) {
 	else
 		echo "<td class=\"photo1\">";
 
-	echo "<a href=\"" . $USER_URI . "image/img-$seq_num.jpg\">";
-	echo "<img src=\"" . $USER_URI . "image/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
+	echo "<a href=\"${USER_URI}image/img-$seq_num.jpg\">";
+	echo "<img src=\"${USER_URI}image/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
 	echo "</td>";
 
 	if ( $count % 2 == 1 )

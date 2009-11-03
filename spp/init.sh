@@ -116,8 +116,12 @@ CREATE DATABASE spp_${NAME};
 GRANT ALL ON spp_${NAME}.* TO 'spp_${NAME}_owner'@'localhost';
 USE spp_${NAME};
 CREATE TABLE user ( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
 	user VARCHAR(20), 
-	email VARCHAR(50)
+	name VARCHAR(50),
+	email VARCHAR(50),
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE friend_request (

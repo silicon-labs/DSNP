@@ -139,7 +139,8 @@ CREATE TABLE sent_friend_request (
 
 CREATE TABLE friend_claim (
 	user VARCHAR(20), 
-	friend_id TEXT
+	friend_id TEXT,
+	name TEXT
 );
 
 CREATE TABLE received ( 

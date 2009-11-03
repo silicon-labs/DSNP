@@ -230,6 +230,35 @@ class UserController extends AppController
 		if ( $this->data['User']['id'] == $this->USER_ID )
 			$this->User->save( $this->data, true, array('name', 'email') );
 
+		/* User message */
+		$headers = 
+			"Content-Type: text/plain\r\n" .
+			"Type: name-change\r\n" .
+			"\r\n";
+		$message = $this->data['User']['name'];
+		$len = strlen( $headers ) + strlen( $message );
+
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"submit_broadcast $this->USER_NAME $len\r\n";
+
+		fwrite( $fp, $send );
+		fwrite( $fp, $headers, strlen($headers) );
+		fwrite( $fp, $message, strlen($message) );
+		fwrite( $fp, "\r\n", 2 );
+
+		$res = fgets($fp);
+
+		if ( ereg("^OK", $res, $regs) )
+			$this->redirect( "/$this->USER_NAME/" );
+		else
+			echo $res;
+
 		header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 	}
 }

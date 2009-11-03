@@ -86,25 +86,37 @@ case "direct_broadcast": {
 	$type = 'UKN';
 	if ( isset( $msg[0]['type'] ) )
 		$type = $msg[0]['type'];
-
-	$resource_id = 0;
-	if ( isset( $msg[0]['resource-id'] ) )
-		$resource_id = (int) $msg[0]['resource-id'];
 	
-	$query = sprintf(
-		"INSERT INTO received " .
-		"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) " .
-		"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
-		mysql_real_escape_string($for_user), 
-		mysql_real_escape_string($author_id), 
-		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string($type),
-		$resource_id, 
-		mysql_real_escape_string($msg[1])
-	);
+	if ( $type === 'name-change' ) {
+		$query = sprintf(
+			"UPDATE friend_claim SET name = '%s' WHERE user = '%s' AND friend_id = '%s' ",
+			mysql_real_escape_string($msg[1]),
+			mysql_real_escape_string($for_user), 
+			mysql_real_escape_string($author_id) 
+		);
 
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	}
+	else {
+		$resource_id = 0;
+		if ( isset( $msg[0]['resource-id'] ) )
+			$resource_id = (int) $msg[0]['resource-id'];
+		
+		$query = sprintf(
+			"INSERT INTO received " .
+			"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) " .
+			"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
+			mysql_real_escape_string($for_user), 
+			mysql_real_escape_string($author_id), 
+			$seq_num, 
+			mysql_real_escape_string($date . ' ' . $time),
+			mysql_real_escape_string($type),
+			$resource_id, 
+			mysql_real_escape_string($msg[1])
+		);
+
+		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	}
 	break;
 }
 case "remote_broadcast": {

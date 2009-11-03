@@ -72,10 +72,18 @@ if ( count( $sentFriendRequests ) > 0 ) {
 <?php
 
 foreach ( $friendClaims as $row ) {
+	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['friend_id'];
 
 	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
-		urlencode( $_SESSION['hash'] ) . "\">$dest_id</a> ";
+		urlencode( $_SESSION['hash'] ) . "\">";
+
+	if ( isset( $name ) )
+		echo $name;
+	else
+		echo $dest_id;
+
+	echo "</a>";
 
 	echo "<br>\n";
 }

@@ -56,6 +56,50 @@ function parse( $len )
 	return array( $headers, $msg );
 }
 
+function photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg )
+{
+	global $CFG_PHOTO_DIR;
+
+	/* Need content type. */
+	if ( !isset( $msg[0]['content-type'] ) )
+		return;
+
+	/* Need a resource id. */
+	if ( !isset( $msg[0]['resource-id'] ) )
+		return;
+
+	$content_type = $msg[0]['content-type'];
+	$resource_id = (int) $msg[0]['resource-id'];
+
+	print( "message is a photo, capturing\n" );
+
+	/* The message body is photo data. Write the photo to disk. */
+	$path = sprintf( "%s/%s/pub-%ld.jpg", $CFG_PHOTO_DIR, $for_user, $seq_num );
+
+	$length = strlen( $msg[1] );
+	$f = fopen( $path, "wb" );
+	fwrite( $f, $msg[1], $length );
+	fclose( $f );
+
+	$name = sprintf( "pub-%ld.jpg", $seq_num );
+
+	$query = sprintf(
+		"INSERT INTO received " .
+		"	( for_user, author_id, seq_num, time_published, " . 
+		"		time_received, type, resource_id, message ) " .
+		"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
+		mysql_real_escape_string($for_user), 
+		mysql_real_escape_string($author_id), 
+		$seq_num, 
+		mysql_real_escape_string($date . ' ' . $time),
+		mysql_real_escape_string('PHT'),
+		$resource_id, 
+		mysql_real_escape_string($name)
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+}
+
 switch ( $notification_type ) {
 case "direct_broadcast": {
 	# Collect the args.
@@ -69,54 +113,73 @@ case "direct_broadcast": {
 	# Read the message from stdin.
 	$msg = parse( $length );
 
-	if ( isset( $msg[0]['content-type'] ) && $msg[0]['content-type'] == 'image/jpg' ) {
-		print( "message is a photo, capturing\n" );
-
-		$name = sprintf( "pub-%ld.jpg", $seq_num );
-		$path = sprintf( "%s/%s/pub-%ld.jpg", $CFG_PHOTO_DIR, $for_user, $seq_num );
-
-		$f = fopen( $path, "wb" );
-		fwrite( $f, $msg[1], $length );
-		fclose( $f );
-
-		$msg[1] = $name;
-		$length = strlen( $msg[1] );
-	}
-
-	$type = 'UKN';
-	if ( isset( $msg[0]['type'] ) )
+	if ( isset( $msg[0]['type'] ) ) {
 		$type = $msg[0]['type'];
-	
-	if ( $type === 'name-change' ) {
-		$query = sprintf(
-			"UPDATE friend_claim SET name = '%s' WHERE user = '%s' AND friend_id = '%s' ",
-			mysql_real_escape_string($msg[1]),
-			mysql_real_escape_string($for_user), 
-			mysql_real_escape_string($author_id) 
-		);
+		print("type: $type\n" );
 
-		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	}
-	else {
-		$resource_id = 0;
-		if ( isset( $msg[0]['resource-id'] ) )
-			$resource_id = (int) $msg[0]['resource-id'];
-		
-		$query = sprintf(
-			"INSERT INTO received " .
-			"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) " .
-			"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
-			mysql_real_escape_string($for_user), 
-			mysql_real_escape_string($author_id), 
-			$seq_num, 
-			mysql_real_escape_string($date . ' ' . $time),
-			mysql_real_escape_string($type),
-			$resource_id, 
-			mysql_real_escape_string($msg[1])
-		);
+		switch ( $type ) {
+			case 'photo-upload':
+				photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg );
+				break;
+			case 'name-change':
+//				photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg );
+//				break;
+		}
 
-		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	}
+
+#		$type = $msg[0]['type'];
+#
+#	if ( isset( $msg[0]['type'] ) && $msg[0]['type'] == 'photo-upload' &&
+#			isset( $msg[0]['content-type'] ) && $msg[0]['content-type'] == 'image/jpg' )
+#	{
+#		print( "message is a photo, capturing\n" );
+#
+#		$name = sprintf( "pub-%ld.jpg", $seq_num );
+#		$path = sprintf( "%s/%s/pub-%ld.jpg", $CFG_PHOTO_DIR, $for_user, $seq_num );
+#
+#		$f = fopen( $path, "wb" );
+#		fwrite( $f, $msg[1], $length );
+#		fclose( $f );
+#
+#		$msg[1] = $name;
+#		$length = strlen( $msg[1] );
+#	}
+#
+#	$type = 'UKN';
+#	if ( isset( $msg[0]['type'] ) )
+#		$type = $msg[0]['type'];
+#	
+#	if ( $type === 'name-change' ) {
+#		$query = sprintf(
+#			"UPDATE friend_claim SET name = '%s' WHERE user = '%s' AND friend_id = '%s' ",
+#			mysql_real_escape_string($msg[1]),
+#			mysql_real_escape_string($for_user), 
+#			mysql_real_escape_string($author_id) 
+#		);
+#
+#		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+#	}
+#	else {
+#		$resource_id = 0;
+#		if ( isset( $msg[0]['resource-id'] ) )
+#			$resource_id = (int) $msg[0]['resource-id'];
+#		
+#		$query = sprintf(
+#			"INSERT INTO received " .
+#			"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) " .
+#			"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
+#			mysql_real_escape_string($for_user), 
+#			mysql_real_escape_string($author_id), 
+#			$seq_num, 
+#			mysql_real_escape_string($date . ' ' . $time),
+#			mysql_real_escape_string($type),
+#			$resource_id, 
+#			mysql_real_escape_string($msg[1])
+#		);
+#
+#		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+#	}
 	break;
 }
 case "remote_broadcast": {

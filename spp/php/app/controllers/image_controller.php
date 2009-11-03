@@ -92,7 +92,7 @@ class ImageController extends AppController
 		$headers = 
 			"Content-Type: image/jpg\r\n" .
 			"Resource-Id: $id\r\n" .
-			"Type: PHT\r\n" .
+			"Type: photo-upload\r\n" .
 			"\r\n";
 		$len = strlen( $headers ) + strlen( $data );
 

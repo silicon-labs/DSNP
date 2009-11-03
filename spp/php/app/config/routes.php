@@ -61,18 +61,6 @@ Router::connect('/:user/:controller/',
 	)
 ); 
 
-Router::connect('/:user/image/:file', 
-	array(
-		'controller' => 'image',
-		'action' => 'view'
-	),
-	array(
-		'user' => '[a-zA-Z.]+',
-		'file' => '[^\/]+',
-		'pass' => array( 'file' )
-	)
-); 
-
 Router::connect('/:user/:controller/:action/*', 
 	array(),
 	array(

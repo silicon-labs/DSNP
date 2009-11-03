@@ -55,13 +55,13 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
 
 		echo '<div class="msgphoto">';
 		if ( $resource_id > 0 ) {
-			echo "<a href=\"${author_id}image/img-$resource_id.jpg?h=" . 
+			echo "<a href=\"${author_id}image/view/img-$resource_id.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
 		}
 		else {
-			echo "<a href=\"image/$message\">";
+			echo "<a href=\"image/view/$message\">";
 		}
-		echo "<img src=\"image/$message\" alt=\"$message\"></a>\n";
+		echo "<img src=\"image/view/$message\" alt=\"$message\"></a>\n";
 		echo '</div>';
 	}
 	else if ( $type == 'MSG' ) {

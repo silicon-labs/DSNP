@@ -114,8 +114,8 @@ foreach ( $images as $row ) {
 	else
 		echo "<td class=\"photo1\">";
 
-	echo "<a href=\"${USER_URI}image/img-$seq_num.jpg\">";
-	echo "<img src=\"${USER_URI}image/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
+	echo "<a href=\"${USER_URI}image/view/img-$seq_num.jpg\">";
+	echo "<img src=\"${USER_URI}image/view/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
 	echo "</td>";
 
 	if ( $count % 2 == 1 )

@@ -20,13 +20,6 @@ include( 'functions.php' );
 
 ?>
 
-<html>
-<head>
-	<title><?php echo $USER_NAME;?> </title>
-	<link rel="stylesheet" type="text/css" href="<?php print $CFG_PATH;?>style.css"/>
-</head>
-
-<body>
 
 
 <div id="leftcol">
@@ -34,7 +27,7 @@ include( 'functions.php' );
 <div id="details">
 
 <a id="edit" href="<?php echo $html->url( "/$USER_NAME/user/edit" );?>">edit</a>
-<h2><?php echo $USER_NAME;?></h2>
+<h2><?php echo $USER_DISPLAY_SHORT;?></h2>
 
 </div>
 
@@ -150,7 +143,8 @@ foreach ( $activity as $row ) {
 	$message = $row[0]['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, $resource_id, $message, $time_published );
+	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null, $author_id, 
+			$subject_id, $type, $resource_id, $message, $time_published );
 }
 ?>
 

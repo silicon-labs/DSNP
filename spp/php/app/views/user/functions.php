@@ -17,10 +17,10 @@
  */
 
 
-function printName( $USER_NAME, $USER_URI, $identity, $possessive )
+function printName( $USER_NAME, $USER_URI, $BROWSER_ID, $identity, $possessive )
 {
-	if ( !$identity || !defined('BROWSER_ID') && $identity == $USER_URI || 
-			defined('BROWSER_ID') && BROWSER_ID == $identity )
+	if ( !$identity || !isset($BROWSER_ID) && $identity == $USER_URI || 
+			isset($BROWSER_ID) && $BROWSER_ID == $identity )
 	{
 		if ( $possessive )
 			echo "<font class=\"msgwho\"> your </font>";
@@ -42,13 +42,14 @@ function printName( $USER_NAME, $USER_URI, $identity, $possessive )
 	}
 }
 
-function printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, $resource_id, $message, $time_published )
+function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
+		$author_id, $subject_id, $type, $resource_id, $message, $time_published )
 {
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $author_id, false );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
 
@@ -66,7 +67,7 @@ function printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, $r
 	else if ( $type == 'MSG' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $author_id, false );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, false );
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
 
@@ -75,9 +76,9 @@ function printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, $r
 	else if ( $type == 'BRD' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $author_id, false );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		printName( $USER_NAME, $USER_URI, $subject_id, true );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $subject_id, true );
 		echo " board</font>";
 		echo '</div>';
 

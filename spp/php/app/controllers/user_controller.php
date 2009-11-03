@@ -10,9 +10,10 @@ class UserController extends AppController
 		$this->maybeActivateSession();
 	}
 
-	function indexUser()
+	function indexOwner()
 	{
 		$this->set( 'auth', 'owner' );
+		$this->privName();
 
 		# Load the user's sent friend requests
 		$this->loadModel('SentFriendRequest');
@@ -68,10 +69,10 @@ class UserController extends AppController
 	function indexFriend()
 	{
 		$this->set( 'auth', 'friend' );
+		$this->privName();
 
-		$identity = $this->Session->read('identity');
+		$identity = $this->Session->read('BROWSER_ID');
 		$this->set( 'BROWSER_ID', $identity );
-		define( 'BROWSER_ID', $identity );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -116,7 +117,7 @@ class UserController extends AppController
 		$this->set( 'auth', 'public' );
 		if ( $this->Session->valid() ) {
 			if ( $this->Session->read('auth') === 'owner' )
-				$this->indexUser();
+				$this->indexOwner();
 			else if ( $this->Session->read('auth') === 'friend' )
 				$this->indexFriend();
 			else
@@ -171,7 +172,7 @@ class UserController extends AppController
 	function board()
 	{
 		$this->requireFriend();
-		$BROWSER_ID = $_SESSION['identity'];
+		$BROWSER_ID = $this->Session->read('BROWSER_ID');
 
 		/* User message. */
 		$headers = 
@@ -217,19 +218,19 @@ class UserController extends AppController
 
 	function edit()
 	{
-
+		$this->requireOwner();
+		$this->data = $this->User->find('first', 
+				array( 'conditions' => array( 'user' => $this->USER_NAME )));
 	}
 
 	function sedit()
 	{
-		$name = $_POST['name'];
+		$this->requireOwner();
 
-		$query = sprintf(
-			"UPDATE user set name = '%s' WHERE user = '%s'",
-			mysql_real_escape_string($name),
-			mysql_real_escape_string($this->USER_NAME)
-		);
-		$activity = $this->User->query( $query );
+		if ( $this->data['User']['id'] == $this->USER_ID )
+			$this->User->save( $this->data, true, array('name', 'email') );
+
+		header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 	}
 }
 ?>

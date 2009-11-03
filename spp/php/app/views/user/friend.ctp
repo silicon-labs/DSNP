@@ -24,7 +24,7 @@ include('functions.php');
 
 <div id="details">
 
-<h2><?php print $USER_NAME;?></h2>
+<h2><?php print $USER_DISPLAY_SHORT;?></h2>
 
 </div>
 
@@ -107,7 +107,8 @@ foreach ( $activity as $row ) {
 
 	echo "<p>\n";
 	
-	printMessage( $USER_NAME, $USER_URI, $author_id, $subject_id, $type, 0, $message, $time_published );
+	printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
+			$author_id, $subject_id, $type, 0, $message, $time_published );
 }
 ?>
 </div>

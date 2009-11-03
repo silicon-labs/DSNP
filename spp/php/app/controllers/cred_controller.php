@@ -160,7 +160,7 @@ class CredController extends AppController
 			$this->Session->write( 'auth', 'friend' );
 			$this->Session->write( 'token', $ftoken );
 			$this->Session->write( 'hash', $regs[1] );
-			$this->Session->write( 'identity', $regs[3] );
+			$this->Session->write( 'BROWSER_ID', $regs[3] );
 
 			if ( isset( $_GET['d'] ) )
 				$this->redirect( $_GET['d'] );

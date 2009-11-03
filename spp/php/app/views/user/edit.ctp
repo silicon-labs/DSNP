@@ -10,19 +10,14 @@
 <div class="content">
 
 
-<form method="post" action="<?php echo $html->url( "/$USER_NAME/user/sedit" ); ?>">
+<?php echo $form->create( null, array( 'url' => "/$USER_NAME/user/sedit")); ?>
 
-<table>
+<?php echo $form->input('name'); ?>
+<?php echo $form->input('email'); ?>
 
-<tr>
-<td>Name:</td>
-<td><input name="name" type="text"></td>
-</tr>
+<?php echo $form->hidden( 'id' ); ?>
 
-</table>
-
-<input type="submit">
-</form>
+<?php echo $form->end('Update'); ?>
 
 </div>
 

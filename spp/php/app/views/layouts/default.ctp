@@ -46,14 +46,14 @@
 		</div>
 		<div id="header_middle">
 		<h1><?php
-			if ( isset( $USER_URI ) )
-				echo $html->link( $USER_URI, $USER_URI );
+			if ( isset( $USER_DISPLAY_LONG ) )
+				echo $html->link( $USER_DISPLAY_LONG, $USER_URI );
 		?></h1>
 		</div>
 		<div id="header_right">
 		<h1><?php 
 		if ( isset( $auth ) && $auth == 'friend' ) {
-			echo "<a href=\"" . BROWSER_ID . "\">" . BROWSER_ID . "</a>";
+			echo "<a href=\"" . $BROWSER_ID . "\">" . $BROWSER_ID . "</a>";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $auth ) && $auth == 'owner' ) {

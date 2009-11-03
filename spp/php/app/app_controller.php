@@ -19,9 +19,13 @@ class AppController extends Controller
 	var $CFG_PHOTO_DIR = null;
 	var $CFG_IM_CONVERT = null;
 
+	var $USER_ID = null;
 	var $USER_NAME = null;
 	var $USER_PATH = null;
 	var $USER_URI = null;
+	var $USER_DISPLAY_NAME = null;
+	var $USER_DISPLAY_SHORT = null;
+	var $USER_DISPLAY_LONG = null;
 
 	function hereFull()
 	{
@@ -55,9 +59,12 @@ class AppController extends Controller
 
 	function userError( $error, $params = array() )
 	{
+		$params['USER_ID'] = $this->USER_ID;
 		$params['USER_NAME'] = $this->USER_NAME;
 		$params['USER_PATH'] = $this->USER_PATH;
 		$params['USER_URI'] = $this->USER_URI;
+		$params['USER_DISPLAY_SHORT'] = $this->USER_DISPLAY_SHORT;
+		$params['USER_DISPLAY_LONG'] = $this->USER_DISPLAY_LONG;
 		$this->cakeError( $error, $params );
 	}
 
@@ -86,21 +93,45 @@ class AppController extends Controller
 		if ( $user == null )
 			$this->userError("userNotFound");
 
+		$this->USER_ID = $user['User']['id'];
+
+		if ( isset( $user['User']['name'] ) )
+			$this->USER_DISPLAY_NAME = $user['User']['name'];
+
+		$this->USER_DISPLAY_SHORT = $this->USER_NAME;
+		$this->USER_DISPLAY_LONG = $this->USER_URI;
+
+		$this->set( 'USER_ID', $this->USER_ID );
 		$this->set( 'USER_NAME', $this->USER_NAME );
 		$this->set( 'USER_PATH', $this->USER_PATH );
 		$this->set( 'USER_URI', $this->USER_URI );
+		$this->set( 'USER_DISPLAY_SHORT', $this->USER_DISPLAY_SHORT );
+		$this->set( 'USER_DISPLAY_LONG', $this->USER_DISPLAY_LONG );
+	}
+
+	function privName()
+	{
+		if ( isset( $this->USER_DISPLAY_NAME ) ) {
+			$this->USER_DISPLAY_SHORT = $this->USER_DISPLAY_NAME;
+			$this->USER_DISPLAY_LONG = $this->USER_DISPLAY_NAME;
+
+			$this->set( 'USER_DISPLAY_SHORT', $this->USER_DISPLAY_SHORT );
+			$this->set( 'USER_DISPLAY_LONG', $this->USER_DISPLAY_LONG );
+		}
 	}
 
 	function requireOwner()
 	{
 		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
 			$this->userError('notAuthorized', array( 'cred' => 'o' ));
+		$this->privName();
 	}
 
 	function requireFriend()
 	{
 		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
 			$this->userError('notAuthorized', array( 'cred' => 'f' ));
+		$this->privName();
 	}
 
 	function requireOwnerOrFriend()
@@ -111,6 +142,8 @@ class AppController extends Controller
 		{
 			$this->userError('notAuthorized', array( 'cred' => 'of' ));
 		}
+
+		$this->privName();
 	}
 
 	function isOwnerOrFriend()

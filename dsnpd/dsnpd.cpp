@@ -1789,7 +1789,7 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 		const char *author_id, long long seq_num, const char *date,
 		const char *msg, long mLen )
 {
-	String args( "direct_broadcast %s %s %lld %s %ld", 
+	String args( "user_message %s - %s %lld %s %ld", 
 			user, author_id, seq_num, date, mLen );
 	app_notification( args, msg, mLen );
 }
@@ -1797,7 +1797,7 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date, const char *msg, long mLen )
 {
-	String args( "remote_broadcast %s %s %s %lld %s %ld", 
+	String args( "user_message %s %s %s %lld %s %ld", 
 			user, subject_id, author_id, seq_num, date, mLen );
 	app_notification( args, msg, mLen );
 }

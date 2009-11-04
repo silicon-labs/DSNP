@@ -56,19 +56,14 @@ function parse( $len )
 	return array( $headers, $msg );
 }
 
-function photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg )
+function photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type )
 {
 	global $CFG_PHOTO_DIR;
-
-	/* Need content type. */
-	if ( !isset( $msg[0]['content-type'] ) )
-		return;
 
 	/* Need a resource id. */
 	if ( !isset( $msg[0]['resource-id'] ) )
 		return;
 
-	$content_type = $msg[0]['content-type'];
 	$resource_id = (int) $msg[0]['resource-id'];
 
 	print( "message is a photo, capturing\n" );
@@ -100,113 +95,47 @@ function photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg )
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
-switch ( $notification_type ) {
-case "direct_broadcast": {
-	# Collect the args.
-	$for_user = $argv[$b+0];
-	$author_id = $argv[$b+1];
-	$seq_num = $argv[$b+2];
-	$date = $argv[$b+3];
-	$time = $argv[$b+4];
-	$length = $argv[$b+5];
+function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type )
+{
+	if ( $content_type != 'text/plain' )
+		return;
 
-	# Read the message from stdin.
-	$msg = parse( $length );
+	$query = sprintf(
+		"UPDATE friend_claim SET name = '%s' WHERE user = '%s' AND friend_id = '%s' ",
+		mysql_real_escape_string($msg[1]),
+		mysql_real_escape_string($for_user), 
+		mysql_real_escape_string($author_id) 
+	);
 
-	if ( isset( $msg[0]['type'] ) ) {
-		$type = $msg[0]['type'];
-		print("type: $type\n" );
-
-		switch ( $type ) {
-			case 'photo-upload':
-				photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg );
-				break;
-			case 'name-change':
-//				photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg );
-//				break;
-		}
-
-	}
-
-#		$type = $msg[0]['type'];
-#
-#	if ( isset( $msg[0]['type'] ) && $msg[0]['type'] == 'photo-upload' &&
-#			isset( $msg[0]['content-type'] ) && $msg[0]['content-type'] == 'image/jpg' )
-#	{
-#		print( "message is a photo, capturing\n" );
-#
-#		$name = sprintf( "pub-%ld.jpg", $seq_num );
-#		$path = sprintf( "%s/%s/pub-%ld.jpg", $CFG_PHOTO_DIR, $for_user, $seq_num );
-#
-#		$f = fopen( $path, "wb" );
-#		fwrite( $f, $msg[1], $length );
-#		fclose( $f );
-#
-#		$msg[1] = $name;
-#		$length = strlen( $msg[1] );
-#	}
-#
-#	$type = 'UKN';
-#	if ( isset( $msg[0]['type'] ) )
-#		$type = $msg[0]['type'];
-#	
-#	if ( $type === 'name-change' ) {
-#		$query = sprintf(
-#			"UPDATE friend_claim SET name = '%s' WHERE user = '%s' AND friend_id = '%s' ",
-#			mysql_real_escape_string($msg[1]),
-#			mysql_real_escape_string($for_user), 
-#			mysql_real_escape_string($author_id) 
-#		);
-#
-#		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-#	}
-#	else {
-#		$resource_id = 0;
-#		if ( isset( $msg[0]['resource-id'] ) )
-#			$resource_id = (int) $msg[0]['resource-id'];
-#		
-#		$query = sprintf(
-#			"INSERT INTO received " .
-#			"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) " .
-#			"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
-#			mysql_real_escape_string($for_user), 
-#			mysql_real_escape_string($author_id), 
-#			$seq_num, 
-#			mysql_real_escape_string($date . ' ' . $time),
-#			mysql_real_escape_string($type),
-#			$resource_id, 
-#			mysql_real_escape_string($msg[1])
-#		);
-#
-#		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-#	}
-	break;
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
-case "remote_broadcast": {
-	# Collect the args.
-	$for_user = $argv[$b+0];
-	$subject_id = $argv[$b+1];
-	$author_id = $argv[$b+2];
-	$seq_num = $argv[$b+3];
-	$date = $argv[$b+4];
-	$time = $argv[$b+5];
-	$length = $argv[$b+6];
 
-	# Read the message from stdin.
-	$msg = parse( $length );
+function broadcast( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type )
+{
+	/* Need a resource id. */
+	if ( $content_type != 'text/plain' )
+		return;
 
-	printf( "notification %s of %s %s %s %s %s %s %s %s\n", 
-		$notification_type, $type, $for_user, $subject_id, $author_id, $seq_num,
-		$date, $time, $length );
+	$query = sprintf(
+		"INSERT INTO received " .
+		"	( for_user, author_id, seq_num, time_published, " . 
+		"		time_received, type, resource_id, message ) " .
+		"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
+		mysql_real_escape_string($for_user), 
+		mysql_real_escape_string($author_id), 
+		$seq_num, 
+		mysql_real_escape_string($date . ' ' . $time),
+		mysql_real_escape_string('MSG'),
+		0,
+		mysql_real_escape_string($msg[1])
+	);
 
-	$type = 'UKN';
-	if ( isset( $msg[0]['type'] ) )
-		$type = $msg[0]['type'];
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+}
 
-	$resource_id = 0;
-	if ( isset( $msg[0]['resource-id'] ) )
-		$resource_id = (int) $msg[0]['resource-id'];
 
+function boardPost( $for_user, $subject_id, $author_id, $seq_num, $date, $time, $msg, $content_type )
+{
 	$query = sprintf(
 		"INSERT INTO received " .
 		"	( for_user, subject_id, author_id, seq_num, time_published, time_received, ".
@@ -217,11 +146,54 @@ case "remote_broadcast": {
 		mysql_real_escape_string($author_id), 
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string($type),
+		mysql_real_escape_string('BRD'),
 		mysql_real_escape_string($msg[1])
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+}
+
+
+
+switch ( $notification_type ) {
+case "user_message": {
+	# Collect the args.
+	$for_user = $argv[$b+0];
+	$subject_id = $argv[$b+1];
+	$author_id = $argv[$b+2];
+	$seq_num = $argv[$b+3];
+	$date = $argv[$b+4];
+	$time = $argv[$b+5];
+	$length = $argv[$b+6];
+
+	if ( $subject_id === '-' )
+		$subject_id = null;
+
+	# Read the message from stdin.
+	$msg = parse( $length );
+
+	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
+		$type = $msg[0]['type'];
+		$content_type = $msg[0]['content-type'];
+		print("type: $type\n" );
+		print("content-type: $content_type\n" );
+
+		switch ( $type ) {
+			case 'photo-upload':
+				photoUpload( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type );
+				break;
+			case 'name-change':
+				nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type );
+				break;
+			case 'broadcast':
+				broadcast( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type );
+				break;
+			case 'board-post':
+				boardPost( $for_user, $subject_id, $author_id, $seq_num, $date, $time, 
+						$msg, $content_type );
+				break;
+		}
+	}
 	break;
 }
 
@@ -235,12 +207,11 @@ case "remote_publication": {
 	# Read the message from stdin.
 	$msg = parse( $length );
 
-	printf( "notification %s of %s %s %s %s %s\n", 
-		$notification_type, $type, $user, $subject_id, $author_id, $length );
-
 	$type = 'UKN';
 	if ( isset( $msg[0]['type'] ) )
 		$type = $msg[0]['type'];
+	if ( $type == 'board-post' )
+		$type = 'BRD';
 
 	$resource_id = 0;
 	if ( isset( $msg[0]['resource-id'] ) )

@@ -134,7 +134,7 @@ class UserController extends AppController
 		/* User message */
 		$headers = 
 			"Content-Type: text/plain\r\n" .
-			"Type: MSG\r\n" .
+			"Type: broadcast\r\n" .
 			"\r\n";
 		$message = $_POST['message'];
 		$len = strlen( $headers ) + strlen( $message );
@@ -177,7 +177,7 @@ class UserController extends AppController
 		/* User message. */
 		$headers = 
 			"Content-Type: text/plain\r\n" .
-			"Type: BRD\r\n" .
+			"Type: board-post\r\n" .
 			"\r\n";
 		$message = $_POST['message'];
 		$len = strlen( $headers ) + strlen( $message );

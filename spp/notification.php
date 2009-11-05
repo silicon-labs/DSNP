@@ -101,13 +101,20 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 		return;
 
 	$query = sprintf(
-		"UPDATE friend_claim SET name = '%s' WHERE user = '%s' AND friend_id = '%s' ",
-		mysql_real_escape_string($msg[1]),
-		mysql_real_escape_string($for_user), 
-		mysql_real_escape_string($author_id) 
-	);
-
+		"SELECT id from user WHERE user = '%s'",
+		mysql_real_escape_string($for_user) );
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( $row = mysql_fetch_assoc($result) ) {
+		$query = sprintf(
+			"UPDATE friend_claim SET name = '%s' " .
+			"WHERE user_id = %ld AND friend_id = '%s'",
+			mysql_real_escape_string($msg[1]),
+			mysql_real_escape_string($row['id']), 
+			mysql_real_escape_string($author_id) 
+		);
+
+		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	}
 }
 
 function broadcast( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type )
@@ -253,8 +260,9 @@ case "sent_friend_request_accepted": {
 	$identity = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user, friend_id ) " .
-		" VALUES ( '%s', '%s' ) ", $user, $identity );
+		"INSERT INTO friend_claim ( user_id, friend_id )  " .
+		"SELECT id, '%s' from user where user = '%s'",
+		$identity, $user );
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
@@ -290,8 +298,9 @@ case "friend_request_accepted": {
 	$identity = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user, friend_id ) " .
-		" VALUES ( '%s', '%s' ) ", $user, $identity );
+		"INSERT INTO friend_claim ( user_id, friend_id )  " .
+		"SELECT id, '%s' from user where user = '%s'",
+		$identity, $user );
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;

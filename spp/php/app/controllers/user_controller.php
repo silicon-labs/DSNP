@@ -30,7 +30,7 @@ class UserController extends AppController
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user' => $this->USER_NAME )));
+				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
@@ -44,17 +44,20 @@ class UserController extends AppController
 
 		# Load up activity.
 		$query = sprintf(
-			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
-			"FROM received " .
+			"SELECT author_id, friend_claim.name AS author_name, subject_id, " .
+			"	time_published, type, resource_id, message " .
+			"FROM received JOIN friend_claim ON author_id = friend_claim.friend_id " .
 			"WHERE for_user = '%s' " .
 			"UNION " .
-			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
-			"FROM published " . 
-			"WHERE user = '%s' " .
+			"SELECT author_id, friend_claim.name AS author_name, subject_id, " .
+			"	time_published, type, resource_id, message " .
+			"FROM published JOIN friend_claim ON author_id = friend_claim.friend_id " . 
+			"WHERE published.user = '%s' " .
 			"UNION " .
-			"SELECT author_id, subject_id, time_published, type, resource_id, message " .
-			"FROM remote_published " .
-			"WHERE user = '%s' " .
+			"SELECT author_id, friend_claim.name AS author_name, subject_id, time_published, " .
+			"	type, resource_id, message " .
+			"FROM remote_published JOIN friend_claim ON author_id = friend_claim.friend_id " .
+			"WHERE remote_published.user = '%s'" .
 			"ORDER BY time_published DESC",
 			mysql_real_escape_string($this->USER_NAME),
 			mysql_real_escape_string($this->USER_NAME),
@@ -77,7 +80,7 @@ class UserController extends AppController
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user' => $this->USER_NAME )));
+				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.

@@ -144,6 +144,7 @@ Broadcast a Message to all Friends
 <?
 foreach ( $activity as $row ) {
 	$author_id = $row[0]['author_id'];
+	$author_name = $row[0]['author_name'];
 	$subject_id = $row[0]['subject_id'];
 	$time_published = $row[0]['time_published'];
 	$type = $row[0]['type'];
@@ -151,8 +152,8 @@ foreach ( $activity as $row ) {
 	$message = $row[0]['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null, $author_id, 
-			$subject_id, $type, $resource_id, $message, $time_published );
+	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null, $author_id, $author_name,
+			$subject_id, $type, $resource_id, $message, $time_published, $name );
 }
 ?>
 

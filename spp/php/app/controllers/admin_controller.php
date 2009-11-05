@@ -22,11 +22,6 @@ class AdminController extends AppController
 
 	function snewuser()
 	{
-		global $CFG_URI;
-		global $CFG_COMM_KEY;
-		global $CFG_PORT;
-		global $CFG_PHOTO_DIR;
-
 		$user = $this->params['form']['user'];
 		$pass1 = $this->params['form']['pass1'];
 		$pass2 = $this->params['form']['pass2'];
@@ -34,13 +29,13 @@ class AdminController extends AppController
 		if ( $pass1 != $pass2 )
 			die("password mismatch");
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
 			"new_user $user $pass1 unused\r\n";
 		fwrite($fp, $send);
 
@@ -51,7 +46,7 @@ class AdminController extends AppController
 		$this->loadModel('User');
 		$this->User->save( array( 'user' => $user ));
 
-		$photoDirCmd =  "umask 0002; mkdir $CFG_PHOTO_DIR/$user";
+		$photoDirCmd =  "umask 0002; mkdir $this->CFG_PHOTO_DIR/$user";
 		system( $photoDirCmd );
 
 		$this->redirect( "/" );

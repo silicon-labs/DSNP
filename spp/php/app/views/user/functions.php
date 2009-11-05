@@ -17,7 +17,7 @@
  */
 
 
-function printName( $USER_NAME, $USER_URI, $BROWSER_ID, $identity, $possessive )
+function printName( $USER_NAME, $USER_URI, $BROWSER_ID, $identity, $name, $possessive )
 {
 	if ( !$identity || !isset($BROWSER_ID) && $identity == $USER_URI || 
 			isset($BROWSER_ID) && $BROWSER_ID == $identity )
@@ -36,20 +36,25 @@ function printName( $USER_NAME, $USER_URI, $BROWSER_ID, $identity, $possessive )
 	}
 	else {
 		echo "<a href=\"${identity}cred/sflogin?h=" . urlencode($_SESSION['hash']);
-		echo "\"> <font class=\"msgwho\">$identity</font></a>";
+		echo "\"> <font class=\"msgwho\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $identity;
+		echo "</font></a>";
 		if ( $possessive )
 			echo "<font class=\"msgwho\">'s</font>";
 	}
 }
 
 function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
-		$author_id, $subject_id, $type, $resource_id, $message, $time_published )
+		$author_id, $author_name, $subject_id, $type, $resource_id, $message, $time_published )
 {
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, false );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
 
@@ -67,7 +72,7 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
 	else if ( $type == 'MSG' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, false );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
 
@@ -76,9 +81,9 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
 	else if ( $type == 'BRD' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, false );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $subject_id, true );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $subject_id, null, true );
 		echo " board</font>";
 		echo '</div>';
 

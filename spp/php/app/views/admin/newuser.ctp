@@ -17,6 +17,16 @@
 
 ?>
 
+<div id="leftcol">
+
+<div id="details">
+<h2><?php print 'Administrator';?></h2>
+</div>
+
+</div>
+
+<div id="activity">
+
 <div class="content">
 
 <h1>Create User</h1>
@@ -43,5 +53,7 @@ if ( $CFG_USE_RECAPTCHA ) {
 
 <input type="submit">
 </form>
+
+</div>
 
 </div>

@@ -42,7 +42,7 @@
 		<h1><?php echo $html->link(__('DSNP User Agent One', true), 
 			'http://www.complang.org/dsnp/'); ?>
 			<a href="<?php echo $CFG_URI; ?>">(site)</a>
-			</h1>
+		</h1>
 		</div>
 		<div id="header_middle">
 		<h1><?php
@@ -73,13 +73,16 @@
 	</div>
 
 	<div id="footer">
-		<?php echo $html->link(
-				$html->image('cake.power.gif', array(
-					'alt'=> __("CakePHP: the rapid development php framework", true), 
-					'border'=>"0")),
-				'http://www.cakephp.org/',
-				array('target'=>'_blank'), null, false
-			);
+		<h1><?php echo $html->link(__('DSNP User Agent One', true), 
+			'http://www.complang.org/dsnp/'); ?>
+		</h1>
+		<?php #echo $html->link(
+//				$html->image('cake.power.gif', array(
+//					'alt'=> __("CakePHP: the rapid development php framework", true), 
+//					'border'=>"0")),
+//				'http://www.cakephp.org/',
+//				array('target'=>'_blank'), null, false
+//			);
 		?>
 	</div>
 	<?php echo $cakeDebug; ?>

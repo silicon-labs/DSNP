@@ -105,12 +105,12 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 #
 
 cat >> init.sql << EOF
-DROP USER 'dsnp_${NAME}_owner'@'localhost';
-CREATE USER 'dsnp_${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+DROP USER 'dsnp_${NAME}'@'localhost';
+CREATE USER 'dsnp_${NAME}'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
 DROP DATABASE dsnp_${NAME};
 CREATE DATABASE dsnp_${NAME};
-GRANT ALL ON dsnp_${NAME}.* TO 'dsnp_${NAME}_owner'@'localhost';
+GRANT ALL ON dsnp_${NAME}.* TO 'dsnp_${NAME}'@'localhost';
 USE dsnp_${NAME};
 CREATE TABLE user ( 
 	user VARCHAR(20), 
@@ -270,7 +270,7 @@ CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
-CFG_DB_USER = dsnp_${NAME}_owner
+CFG_DB_USER = dsnp_${NAME}
 CFG_DB_DATABASE = dsnp_${NAME}
 CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY

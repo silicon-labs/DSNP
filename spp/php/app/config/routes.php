@@ -40,6 +40,20 @@ Router::connect('/', array('controller' => 'pages', 'action' => 'display', 'home
  */
 Router::connect('/pages/*', array('controller' => 'pages', 'action' => 'display'));
 
+Router::connect('/admin/', 
+	array(
+		'controller' => 'admin',
+		'action' => 'index'
+	)
+); 
+
+Router::connect('/admin/:action/*', 
+	array(
+		'controller' => 'admin',
+		'action' => 'index'
+	)
+); 
+
 Router::connect('/:user/', 
 	array(
 		'controller' => 'user', 

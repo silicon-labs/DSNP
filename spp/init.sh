@@ -14,7 +14,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-PHP_CONF=php/app/webroot/config.php
+PHP_CONF=php/app/config/config.php
 
 #
 # Config for all sites
@@ -107,14 +107,15 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 # Init the database.
 #
 
-cat >> init.sql << EOF
-DROP USER 'spp_${NAME}_owner'@'localhost';
-CREATE USER 'spp_${NAME}_owner'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
-DROP DATABASE spp_${NAME};
-CREATE DATABASE spp_${NAME};
-GRANT ALL ON spp_${NAME}.* TO 'spp_${NAME}_owner'@'localhost';
-USE spp_${NAME};
+cat >> init.sql << EOF
+DROP USER 'dua_${NAME}'@'localhost';
+CREATE USER 'dua_${NAME}'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+
+DROP DATABASE dua_${NAME};
+CREATE DATABASE dua_${NAME};
+GRANT ALL ON dua_${NAME}.* TO 'dua_${NAME}'@'localhost';
+USE dua_${NAME};
 CREATE TABLE user ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user VARCHAR(20), 
@@ -138,9 +139,12 @@ CREATE TABLE sent_friend_request (
 );
 
 CREATE TABLE friend_claim (
-	user VARCHAR(20), 
+	id BIGINT NOT NULL AUTO_INCREMENT,
+	user_id BIGINT,
 	friend_id TEXT,
-	name TEXT
+	name TEXT,
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE received ( 
@@ -199,8 +203,8 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';
 	\$CFG_DB_HOST = 'localhost';
-	\$CFG_DB_USER = 'spp_${NAME}_owner';
-	\$CFG_DB_DATABASE = 'spp_${NAME}';
+	\$CFG_DB_USER = 'dua_${NAME}';
+	\$CFG_DB_DATABASE = 'dua_${NAME}';
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 	\$CFG_PORT = $CFG_PORT;
@@ -212,6 +216,12 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 }
 
 EOF
+
+(
+	set -x
+	mkdir -p data/$NAME
+	rm -Rf data/$NAME/*
+)
 
 done
 
@@ -227,11 +237,4 @@ rm init.sql
 cat >> $PHP_CONF << EOF
 ?>
 EOF
-
-(
-	set -x
-	mkdir data;
-	mkdir data/photos/
-	rm -Rf data/photos/*
-)
 

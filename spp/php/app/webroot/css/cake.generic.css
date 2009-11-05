@@ -147,6 +147,28 @@ a img {
 	text-decoration: underline;
 }
 
+#footer h1 {
+	/*text-align: center; */
+	padding: 10px 10px 10px 10px; 
+	background: #003d4c; 
+	color: #fff;
+}
+
+#footer h1 a {
+	padding: 10px 10px 10px 10px; 
+	background: #003d4c;
+	color: #fff; 
+	font-weight: normal;
+	text-decoration: none;
+}
+
+#footer h1 a:hover {
+	padding: 10px 10px 10px 10px; 
+	background: #003d4c;
+	color: #fff;
+	text-decoration: underline;
+}
+
 #page_body {
 	background: #fff;
 	clear: both;

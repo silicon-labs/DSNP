@@ -80,6 +80,14 @@ class ImageController extends AppController
 			'message' => "thm-$id.jpg"
 		));
 
+		$this->loadModel('Activity');
+		$this->Activity->save( array( 
+			'user' => $this->USER_NAME,
+			'published' => 'true',
+			'type' => "PHT",
+			'message' => "thm-$id.jpg"
+		));
+
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			exit(1);

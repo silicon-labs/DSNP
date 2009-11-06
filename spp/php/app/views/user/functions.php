@@ -27,7 +27,7 @@ function printName( $USER_NAME, $USER_URI, $BROWSER_ID, $identity, $name, $posse
 		else
 			echo "<font class=\"msgwho\"> you </font>";
 	}
-	else if ( defined('BROWSER_ID') && $identity == $USER_URI ) {
+	else if ( isset( $BROWSER_ID ) && $identity == $USER_URI ) {
 		echo "<font class=\"msgwho\">";
 		echo $USER_NAME;
 		if ( $possessive )
@@ -48,7 +48,8 @@ function printName( $USER_NAME, $USER_URI, $BROWSER_ID, $identity, $name, $posse
 }
 
 function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
-		$author_id, $author_name, $subject_id, $type, $resource_id, $message, $time_published )
+		$author_id, $author_name, $subject_id, $subject_name,
+		$type, $resource_id, $message, $time_published )
 {
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
@@ -83,7 +84,7 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
 		echo "<font class=\"msgtime\">$time_published</font><br>";
 		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $subject_id, null, true );
+		printName( $USER_NAME, $USER_URI, $BROWSER_ID, $subject_id, $subject_name, true );
 		echo " board</font>";
 		echo '</div>';
 

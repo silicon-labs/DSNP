@@ -2128,7 +2128,6 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	int sigRes;
 	String broadcast_key;
 	long long generation;
-	char *authorId;
 	char *full;
 	long soFar;
 	time_t curTime;
@@ -2170,15 +2169,12 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		return;
 	}
 
-	authorId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
-	sprintf( authorId, "%s%s/", c->CFG_URI, user );
-
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, subject_id );
 
 	/* Notifiy the frontend. */
-	String args( "remote_publication %s %s %s %ld", 
-			user, subject_id, authorId, mLen );
+	String args( "remote_publication %s %s %ld", 
+			user, subject_id, mLen );
 	app_notification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */

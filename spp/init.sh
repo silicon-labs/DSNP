@@ -116,7 +116,9 @@ DROP DATABASE dua_${NAME};
 CREATE DATABASE dua_${NAME};
 GRANT ALL ON dua_${NAME}.* TO 'dua_${NAME}'@'localhost';
 USE dua_${NAME};
-CREATE TABLE user ( 
+
+CREATE TABLE user
+( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user VARCHAR(20), 
 	name VARCHAR(50),
@@ -125,7 +127,8 @@ CREATE TABLE user (
 	PRIMARY KEY(id)
 );
 
-CREATE TABLE friend_request (
+CREATE TABLE friend_request
+(
 	for_user VARCHAR(20), 
 	from_id TEXT,
 	reqid VARCHAR(48),
@@ -133,12 +136,14 @@ CREATE TABLE friend_request (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE sent_friend_request (
+CREATE TABLE sent_friend_request
+(
 	from_user VARCHAR(20),
 	for_id TEXT
 );
 
-CREATE TABLE friend_claim (
+CREATE TABLE friend_claim
+(
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user_id BIGINT,
 	friend_id TEXT,
@@ -147,10 +152,11 @@ CREATE TABLE friend_claim (
 	PRIMARY KEY(id)
 );
 
-CREATE TABLE received ( 
+CREATE TABLE received
+( 
 	for_user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
+	author_id BIGINT,
+	subject_id BIGINT,
 	seq_num BIGINT,
 	time_published TIMESTAMP,
 	time_received TIMESTAMP,
@@ -159,10 +165,11 @@ CREATE TABLE received (
 	message BLOB
 );
 
-CREATE TABLE published (
+CREATE TABLE published
+(
 	user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
+	author_id BIGINT,
+	subject_id BIGINT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	type CHAR(4),
@@ -171,17 +178,37 @@ CREATE TABLE published (
 	PRIMARY KEY(user, seq_num)
 );
 
-CREATE TABLE remote_published (
+CREATE TABLE remote_published
+(
 	user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
+	author_id BIGINT,
+	subject_id BIGINT,
 	time_published TIMESTAMP,
 	type CHAR(4),
 	resource_id BIGINT,
 	message BLOB
 );
 
-CREATE TABLE image (
+CREATE TABLE activity
+( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	user VARCHAR(20),
+	author_id BIGINT,
+	subject_id BIGINT,
+	published BOOL,
+	seq_num BIGINT,
+	time_published TIMESTAMP,
+	time_received TIMESTAMP,
+	type CHAR(4),
+	resource_id BIGINT,
+	message BLOB,
+
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE image
+(
 	user VARCHAR(20),
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	rows INT,

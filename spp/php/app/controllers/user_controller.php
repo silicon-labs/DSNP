@@ -42,28 +42,11 @@ class UserController extends AppController
 		));
 		$this->set( 'images', $images );
 
-		# Load up activity.
-		$query = sprintf(
-			"SELECT author_id, friend_claim.name AS author_name, subject_id, " .
-			"	time_published, type, resource_id, message " .
-			"FROM received JOIN friend_claim ON author_id = friend_claim.friend_id " .
-			"WHERE for_user = '%s' " .
-			"UNION " .
-			"SELECT author_id, friend_claim.name AS author_name, subject_id, " .
-			"	time_published, type, resource_id, message " .
-			"FROM published JOIN friend_claim ON author_id = friend_claim.friend_id " . 
-			"WHERE published.user = '%s' " .
-			"UNION " .
-			"SELECT author_id, friend_claim.name AS author_name, subject_id, time_published, " .
-			"	type, resource_id, message " .
-			"FROM remote_published JOIN friend_claim ON author_id = friend_claim.friend_id " .
-			"WHERE remote_published.user = '%s'" .
-			"ORDER BY time_published DESC",
-			mysql_real_escape_string($this->USER_NAME),
-			mysql_real_escape_string($this->USER_NAME),
-			mysql_real_escape_string($this->USER_NAME)
-		);
-		$activity = $this->User->query( $query );
+		$this->loadModel('Activity');
+		$activity = $this->Activity->find( 'all', array( 
+				'conditions' => array( 'user' => $this->USER_NAME ),
+				'order' => 'time_published DESC'
+			));
 		$this->set( 'activity', $activity );
 
 		$this->render( 'owner' );
@@ -92,19 +75,14 @@ class UserController extends AppController
 		));
 		$this->set( 'images', $images );
 
-		$query = sprintf(
-			"SELECT author_id, subject_id, time_published, type, message " .
-			"FROM published " . 
-			"WHERE user = '%s' " .
-			"UNION " .
-			"SELECT author_id, subject_id, time_published, type, message " .
-			"FROM remote_published " .
-			"WHERE user = '%s' " .
-			"ORDER BY time_published DESC",
-			mysql_real_escape_string($this->USER_NAME),
-			mysql_real_escape_string($this->USER_NAME)
-		);
-		$activity = $this->User->query( $query );
+		$this->loadModel('Activity');
+		$activity = $this->Activity->find( 'all', array( 
+				'conditions' => array( 
+					'user' => $this->USER_NAME,
+					'published' => 'true'
+				),
+				'order' => 'time_published DESC'
+			));
 		$this->set( 'activity', $activity );
 
 		$this->render( 'friend' );
@@ -145,7 +123,15 @@ class UserController extends AppController
 		$this->loadModel('Published');
 		$this->Published->save( array( 
 			"user"  => $this->USER_NAME,
-			"author_id" => "$this->CFG_URI$this->USER_NAME/",
+			"author_id" => $this->USER_ID,
+			"type" => "MSG",
+			"message" => $message,
+		));
+
+		$this->loadModel('Activity');
+		$this->Activity->save( array( 
+			"user"  => $this->USER_NAME,
+			'published' => 'true',
 			"type" => "MSG",
 			"message" => $message,
 		));
@@ -193,6 +179,17 @@ class UserController extends AppController
 			'type' => 'BRD',
 			'message' => $message,
 		));
+
+//		FIXME: need to add this, but don't have full browser id yet should load
+//		this from the session.
+//		$this->loadModel('Activity');
+//		$this->Activity->save( array( 
+//			"user"  => $this->USER_NAME,
+//			'author_id' => $BROWSER_ID,
+//			'published' => 'true',
+//			"type" => "MSG",
+//			"message" => $message,
+//		));
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )

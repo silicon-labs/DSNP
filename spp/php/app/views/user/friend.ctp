@@ -99,16 +99,20 @@ Write on <?php print $USER_NAME;?>'s message board:
 <?
 
 foreach ( $activity as $row ) {
-	$author_id = $row[0]['author_id'];
-	$subject_id = $row[0]['subject_id'];
-	$time_published = $row[0]['time_published'];
-	$type = $row[0]['type'];
-	$message = $row[0]['message'];
+	$author_id = $row['AuthorFC']['friend_id'];
+	$author_name = $row['AuthorFC']['name'];
+	$subject_id = $row['SubjectFC']['friend_id'];
+	$subject_name = $row['SubjectFC']['name'];
+	$time_published = $row['Activity']['time_published'];
+	$type = $row['Activity']['type'];
+	$resource_id = $row['Activity']['resource_id'];
+	$message = $row['Activity']['message'];
 
 	echo "<p>\n";
 	
-	printMessage( $USER_NAME, $USER_URI, $BROWSER_ID,
-			$author_id, $subject_id, $type, 0, $message, $time_published );
+	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null,
+			$author_id, $author_name, $subject_id, $subject_name,
+			$type, 0, $message, $time_published );
 }
 ?>
 </div>

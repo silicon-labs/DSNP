@@ -133,6 +133,7 @@ if ( $count % 2 == 1 )
 <div id="activity">
 
 <div id="broadcast">
+
 <form method="post" action="<?echo $html->url( "/$USER_NAME/user/broadcast" ); ?>">
 Broadcast a Message to all Friends
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
@@ -143,17 +144,19 @@ Broadcast a Message to all Friends
 <div id="activity_stream">
 <?
 foreach ( $activity as $row ) {
-	$author_id = $row[0]['author_id'];
-	$author_name = $row[0]['author_name'];
-	$subject_id = $row[0]['subject_id'];
-	$time_published = $row[0]['time_published'];
-	$type = $row[0]['type'];
-	$resource_id = $row[0]['resource_id'];
-	$message = $row[0]['message'];
+	$author_id = $row['AuthorFC']['friend_id'];
+	$author_name = $row['AuthorFC']['name'];
+	$subject_id = $row['SubjectFC']['friend_id'];
+	$subject_name = $row['SubjectFC']['name'];
+	$time_published = $row['Activity']['time_published'];
+	$type = $row['Activity']['type'];
+	$resource_id = $row['Activity']['resource_id'];
+	$message = $row['Activity']['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null, $author_id, $author_name,
-			$subject_id, $type, $resource_id, $message, $time_published, $name );
+	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null, 
+			$author_id, $author_name, $subject_id, $subject_name,
+			$type, $resource_id, $message, $time_published, $name );
 }
 ?>
 

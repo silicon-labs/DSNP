@@ -35,14 +35,25 @@ include('functions.php');
 <?php
 
 foreach ( $friendClaims as $row ) {
+	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['friend_id'];
+
 	if ( $dest_id == $BROWSER_FC['friend_id'] ) {
-		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
+		echo "you: <a href=\"${dest_id}\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $dest_id;
+		echo "</a> <br>\n";
 	}
 	else {
 		echo "<a href=\"${dest_id}cred/sflogin?h=" . 
-			urlencode( $_SESSION['hash'] ) .
-			"\">$dest_id</a> <br>\n";
+			urlencode( $_SESSION['hash'] ) . "\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $dest_id;
+		echo "</a> <br>\n";
 	}
 }
 

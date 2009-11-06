@@ -182,11 +182,11 @@ class UserController extends AppController
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
-			"user"  => $this->USER_NAME,
+			'user'  => $this->USER_NAME,
 			'author_id' => $BROWSER_FC['id'],
 			'published' => 'true',
-			"type" => "MSG",
-			"message" => $message,
+			'type' => 'BRD',
+			'message' => $message,
 		));
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );

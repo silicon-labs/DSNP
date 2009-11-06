@@ -57,8 +57,8 @@ class UserController extends AppController
 		$this->set( 'auth', 'friend' );
 		$this->privName();
 
-		$identity = $this->Session->read('BROWSER_ID');
-		$this->set( 'BROWSER_ID', $identity );
+		$BROWSER_FC = $this->Session->read('BROWSER_FC');
+		$this->set( 'BROWSER_FC', $BROWSER_FC );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -117,7 +117,7 @@ class UserController extends AppController
 			"Content-Type: text/plain\r\n" .
 			"Type: broadcast\r\n" .
 			"\r\n";
-		$message = $_POST['message'];
+		$message = trim( $_POST['message'] );
 		$len = strlen( $headers ) + strlen( $message );
 
 		$this->loadModel('Published');
@@ -161,47 +161,46 @@ class UserController extends AppController
 	function board()
 	{
 		$this->requireFriend();
-		$BROWSER_ID = $this->Session->read('BROWSER_ID');
+		$BROWSER_FC = $this->Session->read('BROWSER_FC');
 
 		/* User message. */
 		$headers = 
 			"Content-Type: text/plain\r\n" .
 			"Type: board-post\r\n" .
 			"\r\n";
-		$message = $_POST['message'];
+		$message = trim( $_POST['message'] );
 		$len = strlen( $headers ) + strlen( $message );
 
 		$this->loadModel('Published');
 		$this->Published->save( array( 
 			'user' => $this->USER_NAME,
-			'author_id' => $BROWSER_ID,
+			'author_id' => $BROWSER_FC['friend_id'],
 			'subject_id' => $this->CFG_URI . $this->USER_NAME . "/",
 			'type' => 'BRD',
 			'message' => $message,
 		));
 
-//		FIXME: need to add this, but don't have full browser id yet should load
-//		this from the session.
-//		$this->loadModel('Activity');
-//		$this->Activity->save( array( 
-//			"user"  => $this->USER_NAME,
-//			'author_id' => $BROWSER_ID,
-//			'published' => 'true',
-//			"type" => "MSG",
-//			"message" => $message,
-//		));
+		$this->loadModel('Activity');
+		$this->Activity->save( array( 
+			"user"  => $this->USER_NAME,
+			'author_id' => $BROWSER_FC['id'],
+			'published' => 'true',
+			"type" => "MSG",
+			"message" => $message,
+		));
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			exit(1);
 
-		$token = $_SESSION['token'];
+		$identity = $BROWSER_FC['friend_id'];
 		$hash = $_SESSION['hash'];
+		$token = $_SESSION['token'];
 
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"submit_remote_broadcast $this->USER_NAME $BROWSER_ID $hash $token $len\r\n";
+			"submit_remote_broadcast $this->USER_NAME $identity $hash $token $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

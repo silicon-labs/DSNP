@@ -154,7 +154,7 @@ foreach ( $activity as $row ) {
 	$message = $row['Activity']['message'];
 
 	echo "<p>\n";
-	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null, 
+	printMessage( $USER_NAME, $USER_URI, null, 
 			$author_id, $author_name, $subject_id, $subject_name,
 			$type, $resource_id, $message, $time_published, $name );
 }

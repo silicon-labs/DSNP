@@ -52,8 +52,11 @@
 		</div>
 		<div id="header_right">
 		<h1><?php 
-		if ( isset( $auth ) && $auth == 'friend' ) {
-			echo "<a href=\"" . $BROWSER_ID . "\">" . $BROWSER_ID . "</a>";
+		if ( isset( $auth ) && $auth == 'friend' )
+		{
+			echo $html->link( isset( $BROWSER_FC['name'] ) ? $BROWSER_FC['name'] : 
+					$BROWSER_FC['friend_id'], $BROWSER_FC['friend_id'] );
+
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $auth ) && $auth == 'owner' ) {

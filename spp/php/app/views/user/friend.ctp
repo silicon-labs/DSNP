@@ -36,7 +36,7 @@ include('functions.php');
 
 foreach ( $friendClaims as $row ) {
 	$dest_id = $row['FriendClaim']['friend_id'];
-	if ( $dest_id == $BROWSER_ID ) {
+	if ( $dest_id == $BROWSER_FC['friend_id'] ) {
 		echo "you: <a href=\"${dest_id}\">$dest_id</a> <br>\n";
 	}
 	else {
@@ -110,7 +110,7 @@ foreach ( $activity as $row ) {
 
 	echo "<p>\n";
 	
-	printMessage( $USER_NAME, $USER_URI, isset($BROWSER_ID) ? $BROWSER_ID : null,
+	printMessage( $USER_NAME, $USER_URI, $BROWSER_FC,
 			$author_id, $author_name, $subject_id, $subject_name,
 			$type, 0, $message, $time_published );
 }

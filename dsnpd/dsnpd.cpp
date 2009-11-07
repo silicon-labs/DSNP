@@ -19,6 +19,7 @@
 #include "string.h"
 
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/wait.h>
+
 
 #define LOGIN_TOKEN_LASTS 86400
 
@@ -230,10 +233,6 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
 	RSA_free( rsa );
-	
-	String photoDirCmd( "umask 0002; mkdir %s/%s", c->CFG_PHOTO_DIR, user );
-	message("system: %s\n", photoDirCmd.data );
-	system( photoDirCmd );
 }
 
 void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
@@ -520,7 +519,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 		"( for_user, from_id, requested_relid, reqid, msg_sym ) "
 		"VALUES( %e, %e, %e, %e, %e )",
 		user, identity, requested_relid_str, reqid_str, encrypt.sym );
-	
+
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 
@@ -681,6 +680,9 @@ void relid_response( MYSQL *mysql, const char *user,
 		"( from_user, for_id, requested_relid, returned_relid ) "
 		"VALUES ( %e, %e, %e, %e );",
 		user, identity, requested_relid_str, response_relid_str );
+
+	String args( "sent_friend_request %s %s", user, identity );
+	app_notification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", response_reqid_str );
@@ -820,6 +822,10 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 		" ( for_user, from_id, reqid, requested_relid, returned_relid ) "
 		" VALUES ( %e, %e, %e, %e, %e ) ",
 		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
+	
+	String args( "friend_request %s %s %s %s %s",
+		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
+	app_notification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK\r\n" );
@@ -1107,6 +1113,9 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/* The friendship has been accepted. Store the claim. The fr_relid is the
 	 * one that we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, from_id, returned_id_salt, requested_relid, returned_relid );
+
+	String args( "friend_request_accepted %s %s", user, from_id );
+	app_notification( args, 0, 0 );
 
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
@@ -1530,39 +1539,17 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 }
 
 long send_broadcast( MYSQL *mysql, const char *user,
-		const char *type, long long resource_id, const char *msg, long mLen )
+		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
 
-	const char *insert = msg;
-	long insertLen = mLen;
-	String fileData;
-
-	/* If this is a photo we need to read in the file. */
-	if ( strcmp( type, "PHT" ) == 0 ) {
-		String fileName = stringStartEnd( msg, msg+mLen );
-		String path( "%s/%s/%s", c->CFG_PHOTO_DIR, user, fileName.data );
-		fileData.allocate( MAX_BRD_PHOTO_SIZE );
-
-		FILE *file = fopen( path, "rb" );
-		if ( file == 0 ) {
-			::message( "failed to open %s\n", fileName.data );
-			return -1;
-		}
-		long len = fread( fileData.data, 1, MAX_BRD_PHOTO_SIZE, file );
-		fclose( file );
-
-		msg = fileData.data;
-		mLen = len;
-	}
-
-	/* Insert the broadcast message into the published table. */
+	/* insert the broadcast message into the published table. */
 	exec_query( mysql,
-		"INSERT INTO published "
-		"( user, author_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, %e, %d )",
-		user, authorId.data, timeStr.data, type, insert, insertLen );
+		"INSERT INTO broadcasted "
+		"( user, author_id, time_published ) "
+		"VALUES ( %e, %e, %e )",
+		user, authorId.data, timeStr.data );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
@@ -1573,20 +1560,24 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Make the full message. */
 	String broadcastCmd(
-		"direct_broadcast %lld %s %s %lld %ld\r\n%s\r\n", 
-		seq_num, timeStr.data, type, resource_id, mLen, msg );
+		"direct_broadcast %lld %s %ld\r\n",
+		seq_num, timeStr.data, mLen );
+	char *full = new char[broadcastCmd.length + mLen + 2];
+	memcpy( full, broadcastCmd.data, broadcastCmd.length );
+	memcpy( full + broadcastCmd.length, msg, mLen );
+	memcpy( full + broadcastCmd.length + mLen, "\r\n", 2 );
 
-	long sendResult = queue_broadcast( mysql, user, broadcastCmd.data, broadcastCmd.length );
+	long sendResult = queue_broadcast( mysql, user, full, broadcastCmd.length + mLen + 2 );
 	if ( sendResult < 0 )
 		return -1;
 
 	return 0;
 }
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
-		long long resource_id, const char *msg, long mLen )
+long submit_broadcast( MYSQL *mysql, const char *user,
+		const char *msg, long mLen )
 {
-	int result = send_broadcast( mysql, user, type, resource_id, msg, mLen );
+	int result = send_broadcast( mysql, user, msg, mLen );
 
 	if ( result < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -1620,7 +1611,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 
 long submit_remote_broadcast( MYSQL *mysql, const char *to_user, 
 		const char *author_id, const char *author_hash, 
-		const char *token, const char *type, const char *msg, long mLen )
+		const char *token, const char *msg, long mLen )
 {
 	int res;
 	RSA *user_priv, *id_pub;
@@ -1660,10 +1651,10 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 
 	/* Insert the broadcast message into the published table. */
 	exec_query( mysql,
-		"INSERT INTO published "
-		"( user, author_id, subject_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, %e, %e, %d )",
-		to_user, author_id, subjectId.data, time_str, type, msg, mLen );
+		"INSERT INTO broadcasted "
+		"( user, author_id, subject_id, time_published, message ) "
+		"VALUES ( %e, %e, %e, %e, %d )",
+		to_user, author_id, subjectId.data, time_str, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -1680,8 +1671,8 @@ long submit_remote_broadcast( MYSQL *mysql, const char *to_user,
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
 	String remotePublishCmd(
-		"encrypt_remote_broadcast %s %lld %s %ld\r\n%s\r\n", 
-		token, seq_num, type, mLen, msg );
+		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
+		token, seq_num, mLen, msg );
 
 	res = send_message_now( mysql, false, to_user, author_id, putRelid.data,
 			remotePublishCmd.data, &result_message );
@@ -1785,112 +1776,30 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	 * Now do the forwarding.
 	 */
 
-	if ( site1 != 0 || site2 != 0 ) {
-		/* We have forwarded to at least one other site.  */
-		DbQuery logForward( mysql,
-			"INSERT INTO unack_forward ( relid, children, generation, seq_num ) "
-			"VALUES ( %e, %l, %L, %L )",
-			relid, ( site1 != 0 ? 1 : 0 ) + ( site2 != 0 ? 1 : 0 ), generation, seq_num );
-		BIO_printf( bioOut, "OK\n" );
-	}
-
 	if ( site1 != 0 )
 		queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
 
 	if ( site2 != 0 )
 		queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
 	
-	if ( site1 == 0 && site2 == 0 ) {
-		/* Don't need to wait for any responses. */
-		BIO_printf( bioOut, "LEAF_ACK %s %lld %lld\r\n", relid_ret, generation, seq_num );
-	}
+	BIO_printf( bioOut, "OK\r\n" );
 }
 
-int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation, long long seq_num )
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
+		const char *author_id, long long seq_num, const char *date,
+		const char *msg, long mLen )
 {
-	message( "successful leaf ack: %s %lld %lld\r\n", relid, generation, seq_num );
-	DbQuery update( mysql,
-		"UPDATE unack_forward SET children = children - 1 "
-		"WHERE relid = %e AND generation = %L AND seq_num = %L",
-		relid, generation, seq_num );
-	
-	DbQuery check( mysql,
-		"SELECT children FROM unack_forward "
-		"WHERE relid = %e AND generation = %L AND seq_num = %L AND children = 0",
-		relid, generation, seq_num );
-	
-	if ( check.rows() > 0 ) {
-		DbQuery clean( mysql,
-			"DELETE FROM unack_forward "
-			"WHERE relid = %e AND generation = %L AND seq_num = %L AND children = 0",
-			relid, generation, seq_num );
-
-		/* Find the recipient. */
-		DbQuery recipient( mysql, 
-			"SELECT friend_claim.user, friend_claim.friend_id, "
-			"	get_tree.relid_ret, "
-			"	get_tree.site_ret, "
-			"	get_tree.broadcast_key "
-			"FROM friend_claim JOIN get_tree "
-			"ON friend_claim.user = get_tree.user AND "
-			"	friend_claim.friend_id = get_tree.friend_id "
-			"WHERE friend_claim.get_relid = %e AND get_tree.generation <= %L "
-			"ORDER BY get_tree.generation DESC LIMIT 1",
-			relid, generation );
-
-		if ( recipient.rows() == 0 )
-			return -1;
-
-		MYSQL_ROW row = recipient.fetchRow();
-		const char *user = row[0];
-		const char *friend_id = row[1];
-		const char *relid_ret = row[2];
-		const char *site_ret = row[3];
-		//const char *broadcast_key = row[4];
-
-		if ( relid_ret != 0 && site_ret != 0 ) {
-			message("%s is returning mesage to %s %s on behalf of %s\n", user, site_ret, relid_ret, friend_id );
-			send_acknowledgement_net( mysql, site_ret, relid_ret, generation, seq_num );
-		}
-	}
-
-	return 0;
+	String args( "user_message %s - %s %lld %s %ld", 
+			user, author_id, seq_num, date, mLen );
+	app_notification( args, msg, mLen );
 }
 
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
-		long long seq_num, const char *date, const char *type, long long resource_id, const char *msg, long length )
+void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+		long long seq_num, const char *date, const char *msg, long mLen )
 {
-	if ( strcmp( type, "PHT" ) == 0 ) {
-		char *name = new char[64];
-		sprintf( name, "pub-%lld.jpg", seq_num );
-
-		char *path = new char[strlen(c->CFG_PHOTO_DIR) + strlen(user) + 64];
-		sprintf( path, "%s/%s/pub-%lld.jpg", c->CFG_PHOTO_DIR, user, seq_num );
-
-		FILE *f = fopen( path, "wb" );
-		fwrite( msg, 1, length, f );
-		fclose( f );
-
-		msg = name;
-		length = strlen( msg );
-	}
-
-	exec_query( mysql, 
-		"INSERT INTO received "
-		"	( for_user, author_id, seq_num, time_published, time_received, type, resource_id, message ) "
-		"VALUES ( %e, %e, %L, %e, now(), %e, %L, %d )",
-		user, author_id, seq_num, date, type, resource_id, msg, length );
-}
-
-void remote_inner( MYSQL *mysql, const char *user, const char *friend_id, const char *author_id,
-		long long seq_num, const char *date, const char *type, const char *msg, long mLen )
-{
-	::message("storing remote innter\n");
-	exec_query( mysql, 
-		"INSERT INTO received "
-		"	( for_user, author_id, subject_id, seq_num, time_published, time_received, type, message ) "
-		"VALUES ( %e, %e, %e, %L, %e, now(), %e, %d )",
-		user, author_id, friend_id, seq_num, date, type, msg, mLen );
+	String args( "user_message %s %s %s %lld %s %ld", 
+			user, subject_id, author_id, seq_num, date, mLen );
+	app_notification( args, msg, mLen );
 }
 
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
@@ -2210,7 +2119,7 @@ free_result:
 
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *subject_id, const char *token, long long seq_num,
-		const char *type, const char *msg )
+		const char *msg )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -2219,7 +2128,6 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	int sigRes;
 	String broadcast_key;
 	long long generation;
-	char *authorId;
 	char *full;
 	long soFar;
 	time_t curTime;
@@ -2261,26 +2169,20 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		return;
 	}
 
-	authorId = new char[strlen(c->CFG_URI) + strlen(user) + 2];
-	sprintf( authorId, "%s%s/", c->CFG_URI, user );
-
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, subject_id );
 
-	exec_query( mysql,
-		"INSERT INTO remote_published "
-		"( user, author_id, subject_id, time_published, type, message ) "
-		"VALUES ( %e, %e, %e, now(), %e, %d )",
-		user, authorId, subject_id, type, msg, mLen );
+	/* Notifiy the frontend. */
+	String args( "remote_publication %s %s %ld", 
+			user, subject_id, mLen );
+	app_notification( args, msg, mLen );
 
-	::message( "encrypt_remote_broadcast type: %s\n", type );
-	
 	/* Find current generation and youngest broadcast key */
 	current_put_bk( mysql, user, generation, broadcast_key );
 
 	/* Make the full message. */
 	full = new char[128+mLen];
-	soFar = sprintf( full, "remote_inner %lld %s %s %ld\r\n", seq_num, time_str, type, mLen );
+	soFar = sprintf( full, "remote_inner %lld %s %ld\r\n", seq_num, time_str, mLen );
 	memcpy( full + soFar, msg, mLen );
 	full[soFar+mLen] = 0;
 
@@ -2353,6 +2255,9 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, for_user, from_id, id_salt, returned_relid, requested_relid );
 
+	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
+	app_notification( args, 0, 0 );
+
 	/* Clear the sent_freind_request. */
 	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", for_user );
 
@@ -2394,4 +2299,84 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	::message("registered: finished\n");
 
 	return 0;
+}
+
+int maxArgs( const char *src )
+{
+	/* Assume at least one. */
+	int n = 1;
+	for ( ; *src != 0; src++ ) {
+		if ( *src == ' ' )
+			n++;
+	}
+	return n;
+}
+
+void parseArgs( char **argv, long &dst, const char *args )
+{
+	const char *last = args;
+	for ( const char *src = args; ; src++ ) {
+		if ( *src == ' ' || *src == 0 ) {
+			argv[dst] = new char[src-last+1];
+			memcpy( argv[dst], last, src-last );
+			argv[dst][src-last] = 0;
+
+			dst++;
+			last = src + 1;
+		}
+
+		if ( *src == 0 )
+			break;
+	}
+}
+
+char *const*make_notif_argv( const char *args )
+{
+	int n = maxArgs(c->CFG_NOTIFICATION) + 2 + maxArgs(args) + 1;
+	char **argv = new char*[n];
+	long dst = 0;
+	parseArgs( argv, dst, c->CFG_NOTIFICATION );
+	argv[dst++] = strdup(c->CFG_HOST);
+	argv[dst++] = strdup(c->CFG_PATH);
+	parseArgs( argv, dst, args );
+	argv[dst++] = 0;
+
+	return argv;
+}
+
+void app_notification( const char *args, const char *data, long length )
+{
+	message( "notification callout with args %s\n", args );
+
+	int fds[2];	
+	int res = pipe( fds );
+	if ( res < 0 ) {
+		error("pipe creation failed\n");
+		return;
+	}
+
+	pid_t pid = fork();
+	if ( pid < 0 ) {
+		error("error forking for app notification\n");
+	}
+	else if ( pid == 0 ) {
+		close( fds[1] );
+		FILE *log = fopen("/tmp/notification.log", "at");
+		if ( log == 0 )
+			fatal ( "could not open notification log file\n");
+
+		dup2( fds[0], 0 );
+		dup2( fileno(log), 1 );
+		dup2( fileno(log), 2 );
+		execvp( "php", make_notif_argv( args ) );
+		exit(0);
+	}
+	
+	close( fds[0] );
+
+	FILE *p = fdopen( fds[1], "wb" );
+	if ( length > 0 ) 
+		fwrite( data, 1, length, p );
+	fclose( p );
+	wait( 0 );
 }

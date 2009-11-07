@@ -118,7 +118,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, long long seq_num, const char *type, const char *msg );
+		const char *identity, const char *token, long long seq_num, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
@@ -127,20 +127,20 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
 
-long submit_broadcast( MYSQL *mysql, const char *user, const char *type,
-		long long resource_id, const char *user_message, long mLen );
+long submit_broadcast( MYSQL *mysql, const char *user,
+		const char *user_message, long mLen );
 long submit_remote_broadcast( MYSQL *mysql, const char *user, 
-		const char *identity, const char *hash, const char *token, const char *type,
+		const char *identity, const char *hash, const char *token,
 		const char *user_message, long mLen );
 
 int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *msg, long mLen );
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *authorId, 
-		long long seqNum, const char *date, const char *type, long long resource_id, const char *msg, long length );
+void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
+		long long seqNum, const char *date, const char *msg, long length );
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
 		const char *hash, long long generation, const char *msg, long length );
-void remote_inner( MYSQL *mysql, const char *user, const char *author_id, const char *friend_id,
-		long long seq_num, const char *date, const char *type, const char *msg, long mLen );
+void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+		long long seq_num, const char *date, const char *msg, long mLen );
 int remote_broadcast_parser( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *author_id, const char *msg, long mLen );
 
@@ -162,7 +162,7 @@ struct Config
 	char *CFG_TLS_CRT;
 	char *CFG_TLS_KEY;
 	char *CFG_TLS_CA_CERTS;
-	char *CFG_PHOTO_DIR;
+	char *CFG_NOTIFICATION;
 
 	char *name;
 	Config *next;
@@ -273,8 +273,9 @@ long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_
 
 int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
-int broadcast_forward_ack( MYSQL *mysql, const char *relid, long long generation, long long seq_num );
 long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
 		long long to_generation, long long to_seq_num );
+
+void app_notification( const char *args, const char *data, long length );
 
 #endif

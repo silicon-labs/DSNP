@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2007-2009, Adrian Thurston <thurston@complang.org>
+# Copyright (c) 2007, 2008, Adrian Thurston <thurston@complang.org>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-DSNPD_CONF=dsnpd/dsnpd.conf
+PHP_CONF=php/app/config/config.php
 
 #
 # Config for all sites
@@ -25,6 +25,9 @@ CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 
 # Port for the server.
 CFG_PORT=7085
+
+# Start the config file.
+{ echo '<?php'; echo; } >> $PHP_CONF
 
 cat << EOF
 Please choose a password to protect the new database users with. Every site you
@@ -104,56 +107,28 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 # Init the database.
 #
 
+
 cat >> init.sql << EOF
-DROP USER 'dsnp_${NAME}'@'localhost';
-CREATE USER 'dsnp_${NAME}'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+DROP USER 'dua_${NAME}'@'localhost';
+CREATE USER 'dua_${NAME}'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
-DROP DATABASE dsnp_${NAME};
-CREATE DATABASE dsnp_${NAME};
-GRANT ALL ON dsnp_${NAME}.* TO 'dsnp_${NAME}'@'localhost';
-USE dsnp_${NAME};
-CREATE TABLE user ( 
+DROP DATABASE dua_${NAME};
+CREATE DATABASE dua_${NAME};
+GRANT ALL ON dua_${NAME}.* TO 'dua_${NAME}'@'localhost';
+USE dua_${NAME};
+
+CREATE TABLE user
+( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
 	user VARCHAR(20), 
-	pass_salt CHAR(24),
-	pass VARCHAR(40), 
-
+	name VARCHAR(50),
 	email VARCHAR(50),
-	id_salt CHAR(24),
-	put_generation BIGINT,
 
-	rsa_n TEXT,
-	rsa_e TEXT,
-	rsa_d TEXT,
-	rsa_p TEXT,
-	rsa_q TEXT,
-	rsa_dmp1 TEXT,
-	rsa_dmq1 TEXT,
-	rsa_iqmp TEXT
+	PRIMARY KEY(id)
 );
 
-CREATE TABLE public_key (
-	identity TEXT,
-	rsa_n TEXT,
-	rsa_e TEXT
-);
-
-CREATE TABLE relid_request (
-	for_user VARCHAR(20),
-	from_id TEXT,
-	requested_relid VARCHAR(48),
-	reqid VARCHAR(48),
-	msg_sym TEXT
-);
-
-CREATE TABLE relid_response (
-	from_id TEXT,
-	requested_relid VARCHAR(48),
-	returned_relid VARCHAR(48),
-	reqid VARCHAR(48),
-	msg_sym TEXT
-);
-
-CREATE TABLE friend_request (
+CREATE TABLE friend_request
+(
 	for_user VARCHAR(20), 
 	from_id TEXT,
 	reqid VARCHAR(48),
@@ -161,76 +136,40 @@ CREATE TABLE friend_request (
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE sent_friend_request (
+CREATE TABLE sent_friend_request
+(
 	from_user VARCHAR(20),
-	for_id TEXT,
-	requested_relid VARCHAR(48),
-	returned_relid VARCHAR(48)
+	for_id TEXT
 );
 
-CREATE TABLE put_broadcast_key (
-	user VARCHAR(20), 
-	generation BIGINT,
-	broadcast_key VARCHAR(48)
+CREATE TABLE friend_claim
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+	user_id BIGINT,
+	identity TEXT,
+	name TEXT,
+
+	PRIMARY KEY(id)
 );
 
-CREATE TABLE friend_claim (
-	user VARCHAR(20), 
-	friend_id TEXT,
-	friend_salt VARCHAR(48),
-	friend_hash VARCHAR(48),
-	put_relid VARCHAR(48),
-	get_relid VARCHAR(48)
+CREATE TABLE received
+( 
+	for_user VARCHAR(20),
+	author_id BIGINT,
+	subject_id BIGINT,
+	seq_num BIGINT,
+	time_published TIMESTAMP,
+	time_received TIMESTAMP,
+	type CHAR(4),
+	resource_id BIGINT,
+	message BLOB
 );
 
-CREATE TABLE put_tree (
+CREATE TABLE published
+(
 	user VARCHAR(20),
-	friend_id TEXT,
-	generation BIGINT,
-	root BOOL,
-	forward1 TEXT,
-	forward2 TEXT
-);
-
-CREATE TABLE get_tree (
-	user VARCHAR(20),
-	friend_id TEXT,
-	generation BIGINT,
-	broadcast_key VARCHAR(48),
-	site1 TEXT,
-	site2 TEXT,
-	site_ret TEXT,
-	relid1 VARCHAR(48),
-	relid2 VARCHAR(48),
-	relid_ret VARCHAR(48)
-);
-
-CREATE TABLE ftoken_request (
-	user VARCHAR(20), 
-	from_id TEXT,
-	token VARCHAR(48),
-	reqid VARCHAR(48),
-	msg_sym TEXT
-);
-
-CREATE TABLE broadcast_queue (
-	to_site TEXT,
-	relid VARCHAR(48),
-	generation BIGINT,
-	message TEXT
-);
-
-CREATE TABLE message_queue (
-	from_user VARCHAR(20),
-	to_id TEXT,
-	relid VARCHAR(48),
-	message TEXT
-);
-
-CREATE TABLE broadcasted (
-	user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
+	author_id BIGINT,
+	subject_id BIGINT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	type CHAR(4),
@@ -239,48 +178,78 @@ CREATE TABLE broadcasted (
 	PRIMARY KEY(user, seq_num)
 );
 
-CREATE TABLE login_token (
+CREATE TABLE remote_published
+(
 	user VARCHAR(20),
-	login_token VARCHAR(48),
-	expires TIMESTAMP
+	author_id BIGINT,
+	subject_id BIGINT,
+	time_published TIMESTAMP,
+	type CHAR(4),
+	resource_id BIGINT,
+	message BLOB
 );
 
-CREATE TABLE flogin_token (
+CREATE TABLE activity
+( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20),
-	identity TEXT,
-	login_token VARCHAR(48),
-	expires TIMESTAMP
+	author_id BIGINT,
+	subject_id BIGINT,
+	published BOOL,
+	seq_num BIGINT,
+	time_published TIMESTAMP,
+	time_received TIMESTAMP,
+	type CHAR(4),
+	resource_id BIGINT,
+	message BLOB,
+
+	PRIMARY KEY(id)
 );
 
-CREATE TABLE remote_flogin_token (
+CREATE TABLE image
+(
 	user VARCHAR(20),
-	identity TEXT,
-	login_token VARCHAR(48)
+	seq_num BIGINT NOT NULL AUTO_INCREMENT,
+	rows INT,
+	cols INT,
+	mime_type VARCHAR(32),
+
+	PRIMARY KEY(user, seq_num)
 );
 
 EOF
 
 #
-# Add the site to the dsnpd config file.
+# Add the site to the PHP config file.
 #
 
-cat >> $DSNPD_CONF << EOF
-===== $NAME =====
-CFG_URI = $CFG_URI
-CFG_HOST = $CFG_HOST
-CFG_PATH = $CFG_PATH
-CFG_DB_HOST = localhost
-CFG_DB_USER = dsnp_${NAME}
-CFG_DB_DATABASE = dsnp_${NAME}
-CFG_ADMIN_PASS = $CFG_ADMIN_PASS
-CFG_COMM_KEY = $CFG_COMM_KEY
-CFG_PORT = $CFG_PORT
-CFG_TLS_CA_CERTS = SET_THIS
-CFG_TLS_CRT = SET_THIS
-CFG_TLS_KEY = SET_THIS
-CFG_NOTIFICATION = SET_THIS
+cat >> $PHP_CONF << EOF
+if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
+	\$CFG_URI = '$CFG_URI';
+	\$CFG_HOST = '$CFG_HOST';
+	\$CFG_PATH = '$CFG_PATH';
+	\$CFG_DB_HOST = 'localhost';
+	\$CFG_DB_USER = 'dua_${NAME}';
+	\$CFG_DB_DATABASE = 'dua_${NAME}';
+	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
+	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
+	\$CFG_PORT = $CFG_PORT;
+	\$CFG_USE_RECAPTCHA = SET_THIS;
+	\$CFG_RC_PUBLIC_KEY = SET_THIS;
+	\$CFG_RC_PRIVATE_KEY = SET_THIS;
+	\$CFG_PHOTO_DIR = SET_THIS;
+	\$CFG_IM_CONVERT = SET_THIS;
+	\$CFG_SITE_NAME = SET_THIS;
+}
 
 EOF
+
+(
+	set -x
+	mkdir -p data/$NAME
+	rm -Rf data/$NAME/*
+)
 
 done
 
@@ -291,3 +260,9 @@ echo
 
 mysql -f -h localhost -u root -p < init.sql
 rm init.sql
+
+# Finish the PHP config file.
+cat >> $PHP_CONF << EOF
+?>
+EOF
+

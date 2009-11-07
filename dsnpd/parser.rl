@@ -45,7 +45,6 @@ bool gblKeySubmitted = false;
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
 	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
-	type = [a-zA-Z]+          >{mark=p;} %{type.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -85,13 +84,6 @@ bool gblKeySubmitted = false;
 		%{
 			seq_str.set(mark, p);
 			seq_num = strtoll( seq_str, 0, 10 );
-		};
-
-	resource_id = [0-9]+
-		>{mark=p;}
-		%{
-			resource_id_str.set(mark, p);
-			resource_id = strtoll( resource_id_str, 0, 10 );
 		};
 
 	EOL = '\r'? '\n';
@@ -245,18 +237,18 @@ bool gblKeySubmitted = false;
 		#
 		# Broadcasting
 		#
-		'submit_broadcast'i ' ' user ' ' type ' ' resource_id ' ' length 
+		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
-				submit_broadcast( mysql, user, type, resource_id, message_buffer.data, length );
+				submit_broadcast( mysql, user, message_buffer.data, length );
 			} |
 
 		#
 		# Remote broadcasting
 		#
-		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' ' type ' ' length
+		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
 			M_EOL @check_key @{
 				submit_remote_broadcast( mysql, user, identity, hash, 
-						token, type, message_buffer.data, length );
+						token, message_buffer.data, length );
 			} |
 
 		#
@@ -270,14 +262,7 @@ bool gblKeySubmitted = false;
 		'broadcast'i ' ' relid ' ' generation ' ' length
 			M_EOL @check_ssl @{
 				broadcast( mysql, relid, generation, message_buffer.data );
-			} |
-
-		'acknowledgement'i ' ' relid ' ' generation ' ' seq_num
-			EOL @{ 
-				broadcast_forward_ack( mysql, relid, generation, seq_num );
-				BIO_printf( bioOut, "OK\r\n");
 			}
-
 	)*;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -293,10 +278,10 @@ int server_parse_loop()
 	const char *mark;
 	String user, pass, email, identity; 
 	String length_str, reqid;
-	String hash, key, relid, token, type;
-	String gen_str, seq_str, resource_id_str;
+	String hash, key, relid, token;
+	String gen_str, seq_str;
 	long length;
-	long long generation, resource_id, seq_num;
+	long long generation;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
@@ -407,11 +392,11 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid EOL @{
 			forward_to( mysql, user, friend_id, number, generation, identity, relid );
 		} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' type ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @{ msg = p+1; p += length; } 
 			EOL @{
 				/* Rest of the input is the msssage. */
-				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, type, msg );
+				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, msg );
 			}
 	)*;
 }%%
@@ -424,7 +409,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	long cs;
 	const char *mark;
 	String identity, number_str, key, relid, gen_str;
-	String token, seq_str, type, length_str;
+	String token, seq_str, length_str;
 	long length, number;
 	long long seq_num, generation;
 
@@ -465,7 +450,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, type, resource_id, msg, length );
+		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, msg, length );
 		fbreak;
 	}
 
@@ -482,7 +467,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	}
 
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' type ' ' resource_id ' ' length EOL @direct_broadcast |
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' length EOL @direct_broadcast |
 		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length EOL @remote_broadcast;
 }%%
 
@@ -493,10 +478,10 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 {
 	long cs;
 	const char *mark;
-	String date, length_str, hash, type;
-	String seq_str, gen_str, resource_id_str;
+	String date, length_str, hash;
+	String seq_str, gen_str;
 	long length;
-	long long generation, seq_num, resource_id;
+	long long generation, seq_num;
 
 	//message("parsing broadcast string: %s\n", msg );
 
@@ -535,23 +520,23 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 
 		/* Rest of the input is the msssage. */
 		const char *msg = p + 1;
-		remote_inner( mysql, user, friend_id, author_id, seq_num, date, type, msg, length );
+		remote_inner( mysql, user, subject_id, author_id, seq_num, date, msg, length );
 		fbreak;
 	}
 
 	main :=
-		'remote_inner'i ' ' seq_num ' ' date ' ' type ' ' length EOL @remote_inner;
+		'remote_inner'i ' ' seq_num ' ' date ' ' length EOL @remote_inner;
 
 }%%
 
 %% write data;
 
 int remote_broadcast_parser( MYSQL *mysql, const char *user,
-		const char *friend_id, const char *author_id, const char *msg, long mLen )
+		const char *subject_id, const char *author_id, const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;
-	String date, length_str, type, seq_str;
+	String date, length_str, seq_str;
 	long long seq_num;
 	long length;
 
@@ -682,6 +667,8 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	int result = tlsConnect.connect( host, site );
 	if ( result < 0 ) 
 		return result;
+
+	message( "fetching public key for %s from host %s site %s\n", user, host, site );
 
 	BIO_printf( tlsConnect.sbio, "public_key %s\r\n", user );
 	BIO_flush( tlsConnect.sbio );
@@ -977,11 +964,10 @@ long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid
 {
 	static char buf[8192];
 	long cs;
-	const char *p, *pe, *mark;
+	const char *p, *pe;
 	bool OK = false;
 	long pres;
 	String relid, gen_str, seq_str;
-	long long generation, seq_num;
 
 	/* Need to parse the identity. */
 	Identity site( to_site );
@@ -1016,10 +1002,6 @@ long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid
 
 		main := 
 			'OK' EOL @{ OK = true; } |
-			'LEAF_ACK ' relid ' ' generation ' ' seq_num EOL @{ 
-				OK = true; 
-				broadcast_forward_ack( mysql, relid, generation, seq_num );
-			} |
 			'ERROR' EOL;
 	}%%
 

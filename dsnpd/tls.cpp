@@ -166,8 +166,10 @@ int TlsConnect::connect( const char *host, const char *site )
 	static char buf[8192];
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 )
-		return 0;
+	if ( socketFd < 0 ) {
+		message( "failed to connect to %s\n", host );
+		return -1;
+	}
 
 	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
 	BIO *buffer = BIO_new( BIO_f_buffer() );

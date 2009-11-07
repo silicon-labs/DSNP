@@ -21,11 +21,7 @@ class AppController extends Controller
 
 	var $USER_ID = null;
 	var $USER_NAME = null;
-	var $USER_PATH = null;
 	var $USER_URI = null;
-	var $USER_DISPLAY_NAME = null;
-	var $USER_DISPLAY_SHORT = null;
-	var $USER_DISPLAY_LONG = null;
 
 	function hereFull()
 	{
@@ -61,10 +57,8 @@ class AppController extends Controller
 	{
 		$params['USER_ID'] = $this->USER_ID;
 		$params['USER_NAME'] = $this->USER_NAME;
-		$params['USER_PATH'] = $this->USER_PATH;
 		$params['USER_URI'] = $this->USER_URI;
-		$params['USER_DISPLAY_SHORT'] = $this->USER_DISPLAY_SHORT;
-		$params['USER_DISPLAY_LONG'] = $this->USER_DISPLAY_LONG;
+		$params['USER'] = $this->USER;
 		$this->cakeError( $error, $params );
 	}
 
@@ -83,40 +77,32 @@ class AppController extends Controller
 
 	function checkUser()
 	{
-		$this->USER_NAME = $this->params['user'];
-		$this->USER_PATH = $this->CFG_PATH . $this->USER_NAME . '/';
-		$this->USER_URI =  $this->CFG_URI . $this->USER_NAME . '/';
-
 		$user = $this->User->find( 'first', array('conditions' => 
-				array('user' => $this->USER_NAME)));
+				array('user' => $this->params['user'])));
 
 		if ( $user == null )
 			$this->userError("userNotFound");
 
+		$this->USER_NAME = $this->params['user'];
+		$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";
 		$this->USER_ID = $user['User']['id'];
+		$this->USER = $user['User'];
 
-		if ( isset( $user['User']['name'] ) )
-			$this->USER_DISPLAY_NAME = $user['User']['name'];
-
-		$this->USER_DISPLAY_SHORT = $this->USER_NAME;
-		$this->USER_DISPLAY_LONG = $this->USER_URI;
+		$this->USER['display_short'] = $this->USER['user'];
+		$this->USER['display_long'] = $this->USER['identity'];
 
 		$this->set( 'USER_ID', $this->USER_ID );
 		$this->set( 'USER_NAME', $this->USER_NAME );
-		$this->set( 'USER_PATH', $this->USER_PATH );
 		$this->set( 'USER_URI', $this->USER_URI );
-		$this->set( 'USER_DISPLAY_SHORT', $this->USER_DISPLAY_SHORT );
-		$this->set( 'USER_DISPLAY_LONG', $this->USER_DISPLAY_LONG );
+		$this->set( 'USER', $this->USER );
 	}
 
 	function privName()
 	{
-		if ( isset( $this->USER_DISPLAY_NAME ) ) {
-			$this->USER_DISPLAY_SHORT = $this->USER_DISPLAY_NAME;
-			$this->USER_DISPLAY_LONG = $this->USER_DISPLAY_NAME;
-
-			$this->set( 'USER_DISPLAY_SHORT', $this->USER_DISPLAY_SHORT );
-			$this->set( 'USER_DISPLAY_LONG', $this->USER_DISPLAY_LONG );
+		if ( isset( $this->USER['name'] ) ) {
+			$this->USER['display_short'] = $this->USER['name'];
+			$this->USER['display_long'] = $this->USER['name'];
+			$this->set( 'USER', $this->USER );
 		}
 	}
 

@@ -27,7 +27,7 @@ include( 'functions.php' );
 <div id="details">
 
 <a id="edit" href="<?php echo $html->url( "/$USER_NAME/user/edit" );?>">edit</a>
-<h2><?php echo $USER_DISPLAY_SHORT;?></h2>
+<h2><?php echo $USER['display_short'];?></h2>
 
 </div>
 
@@ -131,6 +131,10 @@ if ( $count % 2 == 1 )
 </div>
 
 <div id="activity">
+
+<?
+#echo '<div>'; print_r( $activity ); echo '</div>';
+?>
 
 <div id="broadcast">
 

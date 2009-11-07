@@ -63,7 +63,7 @@ class CredController extends AppController
 		/* Maybe we are already logged in as this friend. */
 		if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && 
 				isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
-			header( "Location: $this->USER_PATH" );
+			header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 		}
 		else {
 			/* Not logged in as the hashed user. */

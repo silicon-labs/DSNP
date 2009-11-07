@@ -49,8 +49,8 @@
 		</div>
 		<div id="header_middle">
 		<h1><?php
-			if ( isset( $USER_DISPLAY_LONG ) )
-				echo $html->link( $USER_DISPLAY_LONG, $USER_URI );
+			if ( isset( $USER['display_long'] ) )
+				echo $html->link( $USER['display_long'], $USER['identity'] );
 		?></h1>
 		</div>
 		<div id="header_right">
@@ -63,7 +63,7 @@
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $auth ) && $auth == 'owner' ) {
-			echo $html->link( $USER_URI, $USER_URI );
+			echo $html->link( $USER['name'], $USER['identity'] );
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $USER_NAME ) ) {
@@ -75,6 +75,9 @@
 
 	<div id="page_body">
 		<?php $session->flash(); ?>
+		<?php 
+			#echo "<pre>"; print_r( $USER ); echo "</pre>";
+		?>
 		<?php echo $content_for_layout; ?>
 	</div>
 

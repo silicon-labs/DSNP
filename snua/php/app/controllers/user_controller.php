@@ -44,7 +44,9 @@ class UserController extends AppController
 
 		$this->loadModel('Activity');
 		$activity = $this->Activity->find( 'all', array( 
-				'conditions' => array( 'user' => $this->USER_NAME ),
+				'conditions' => array( 
+					'Activity.user_id' => $this->USER_ID
+				),
 				'order' => 'time_published DESC'
 			));
 		$this->set( 'activity', $activity );
@@ -78,7 +80,7 @@ class UserController extends AppController
 		$this->loadModel('Activity');
 		$activity = $this->Activity->find( 'all', array( 
 				'conditions' => array( 
-					'user' => $this->USER_NAME,
+					'Activity.user_id' => $this->USER_ID,
 					'published' => 'true'
 				),
 				'order' => 'time_published DESC'

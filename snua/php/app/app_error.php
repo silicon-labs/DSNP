@@ -19,10 +19,8 @@ class AppError extends ErrorHandler
 		if ( isset( $params['USER_NAME'] ) ) {
 			$this->controller->set( 'USER_ID', $params['USER_ID'] );
 			$this->controller->set( 'USER_NAME', $params['USER_NAME'] );
-			$this->controller->set( 'USER_PATH', $params['USER_PATH'] );
 			$this->controller->set( 'USER_URI', $params['USER_URI'] );
-			$this->controller->set( 'USER_DISPLAY_SHORT', $params['USER_DISPLAY_SHORT'] );
-			$this->controller->set( 'USER_DISPLAY_LONG', $params['USER_DISPLAY_LONG'] );
+			$this->controller->set( 'USER', $params['USER'] );
 		}
 	}
 	

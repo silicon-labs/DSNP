@@ -24,7 +24,7 @@ include('functions.php');
 
 <div id="details">
 
-<h2><?php print $USER_DISPLAY_SHORT;?></h2>
+<h2><?php print $USER['display_short'];?></h2>
 
 </div>
 

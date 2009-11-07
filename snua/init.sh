@@ -107,7 +107,6 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 # Init the database.
 #
 
-
 cat >> init.sql << EOF
 DROP USER 'dua_${NAME}'@'localhost';
 CREATE USER 'dua_${NAME}'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
@@ -121,6 +120,7 @@ CREATE TABLE user
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user VARCHAR(20), 
+	identity TEXT,
 	name VARCHAR(50),
 	email VARCHAR(50),
 
@@ -193,7 +193,7 @@ CREATE TABLE activity
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20),
+	user_id BIGINT,
 	author_id BIGINT,
 	subject_id BIGINT,
 	published BOOL,

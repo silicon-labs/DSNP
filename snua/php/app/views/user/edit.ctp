@@ -1,7 +1,7 @@
 
 <div id="leftcol">
 <div class="content">
-<h2><?php echo $USER_DISPLAY_SHORT;?></h2>
+<h2><?php echo $USER['display_short'];?></h2>
 </div>
 </div>
 

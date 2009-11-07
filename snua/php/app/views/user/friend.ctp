@@ -93,10 +93,6 @@ if ( $count % 2 == 1 )
 </div>
 <div id="activity">
 
-<pre>
-<? print_r( $activity ); ?>
-</pre>
-
 <div id="broadcast">
 
 <form method="post" action="<?php echo $html->url("/$USER_NAME/user/board");?>">

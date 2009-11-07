@@ -121,7 +121,7 @@ foreach ( $activity as $row ) {
 
 	echo "<p>\n";
 	
-	printMessage( $USER_NAME, $USER_URI, $BROWSER_FC,
+	printMessage( $USER, $BROWSER_FC,
 			$author_id, $author_name, $subject_id, $subject_name,
 			$type, 0, $message, $time_published );
 }

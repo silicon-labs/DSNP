@@ -16,18 +16,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-function printName( $USER_NAME, $USER_URI, $BROWSER_FC, $identity, $name, $possessive )
+function printName( $USER, $BROWSER, $identity, $name, $possessive )
 {
-	if ( !isset($identity) && isset($BROWSER_FC) ) {
+	if ( !isset($identity) && isset($BROWSER) ) {
 		echo "<font class=\"msgwho\">";
-		echo $USER_NAME;
+		echo $USER['display_short'];
 		if ( $possessive )
 			echo "'s";
 		echo "</font>";
 	}
 	else if ( !isset($identity) || 
-			!isset($BROWSER_FC) && $identity == $USER_URI || 
-			isset($BROWSER_FC) && $BROWSER_FC['identity'] == $identity )
+			!isset($BROWSER) && $identity == $USER['identity'] || 
+			isset($BROWSER) && $identity == $BROWSER['identity'] )
 	{
 		if ( $possessive )
 			echo "<font class=\"msgwho\"> your </font>";
@@ -47,7 +47,7 @@ function printName( $USER_NAME, $USER_URI, $BROWSER_FC, $identity, $name, $posse
 	}
 }
 
-function printMessage( $USER_NAME, $USER_URI, $BROWSER_FC,
+function printMessage( $USER, $BROWSER,
 		$author_id, $author_name, $subject_id, $subject_name,
 		$type, $resource_id, $message, $time_published )
 {
@@ -55,7 +55,7 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_FC,
 	if ( $type == 'PHT' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $BROWSER_FC, $author_id, $author_name, false );
+		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
 
@@ -73,7 +73,7 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_FC,
 	else if ( $type == 'MSG' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $BROWSER_FC, $author_id, $author_name, false );
+		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
 
@@ -82,9 +82,9 @@ function printMessage( $USER_NAME, $USER_URI, $BROWSER_FC,
 	else if ( $type == 'BRD' ) {
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">$time_published</font><br>";
-		printName( $USER_NAME, $USER_URI, $BROWSER_FC, $author_id, $author_name, false );
+		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		printName( $USER_NAME, $USER_URI, $BROWSER_FC, $subject_id, $subject_name, true );
+		printName( $USER, $BROWSER, $subject_id, $subject_name, true );
 		echo " board</font>";
 		echo '</div>';
 

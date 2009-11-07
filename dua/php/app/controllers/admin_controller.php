@@ -22,9 +22,9 @@ class AdminController extends AppController
 
 	function snewuser()
 	{
-		$user = $this->params['form']['user'];
-		$pass1 = $this->params['form']['pass1'];
-		$pass2 = $this->params['form']['pass2'];
+		$user = $this->data['user'];
+		$pass1 = $this->data['pass1'];
+		$pass2 = $this->data['pass2'];
 
 		if ( $pass1 != $pass2 )
 			die("password mismatch");

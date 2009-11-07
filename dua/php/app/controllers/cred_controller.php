@@ -26,7 +26,7 @@ class CredController extends AppController
 	{
 		$this->activateSession();
 
-		$pass = $_POST['pass'];
+		$pass = $this->data['User']['pass'];
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )

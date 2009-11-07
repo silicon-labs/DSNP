@@ -11,28 +11,22 @@
 <div class="content">
 <h3>Login</h3>
 
-<form method="post" action="slogin">
-<table>
-<tbody>
-<tr><td>Login:</td> <td>
-	<input type="text" name="user" value="<?php echo $USER_NAME; ?>">
-</td></tr>
-<tr><td>Pass:</td> <td><input type="password" name="pass"></td></tr>
 
-<?php
-if ( isset( $dest ) )
-	echo "<input type=\"hidden\" name=\"d\" value=\"" . urlencode($dest) . "\">";
+
+<?php 
+echo $form->create( null, array( 'url' => "/$USER_NAME/cred/slogin"));
+
+echo $form->input('user');
+echo $form->input('pass', array( 'type' => 'password'));
+
+echo $form->end('Login');
+
 ?>
-
-</tbody>
-</table>
-<input type="submit">
 
 <?php
 if ( isset( $dest ) )
 	echo "<br>you will be taken to:<br> $dest"
 ?>
-</form>
 
 </div>
 

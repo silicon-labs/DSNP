@@ -31,28 +31,34 @@
 
 <h1>Create User</h1>
 
-<form method="post" action="snewuser">
-<table>
-<tr>
-<td>Desired User:</td>   <td> <input type="text"     name="user"></td></tr>
-<td>Password:</td>       <td> <input type="password" name="pass1"></td></tr>
-<td>Again:</td>          <td> <input type="password" name="pass2"></td></tr>
-</table>
+<?php 
 
+echo $form->create( null, array( 'url' => "/admin/snewuser"));
+
+echo $form->input('user');
+echo $form->input('pass1', array(
+	'label'=> 'password',
+	'type' => 'password'
+));
+echo $form->input('pass2', array(
+	'label'=> 'again',
+	'type' => 'password'
+));
+
+echo $form->end('Create User');
+
+?>
 <p>
 <?php
 
-global $CFG_USE_RECAPTCHA;
-
-if ( $CFG_USE_RECAPTCHA ) {
-	require_once('../recaptcha-php-1.10/recaptchalib.php');
-	echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
-}
+#global $CFG_USE_RECAPTCHA;
+#
+#if ( $CFG_USE_RECAPTCHA ) {
+#	require_once('../recaptcha-php-1.10/recaptchalib.php');
+#	echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
+#}
 ?>
 <p>
-
-<input type="submit">
-</form>
 
 </div>
 

@@ -70,7 +70,7 @@ class AppController extends Controller
 
 	function activateSession()
 	{
-		$this->Session->activate( "/spp/$this->USER_NAME/" );
+		$this->Session->activate( Router::url( "/$this->USER_NAME/f" ) );
 	}
 
 	function maybeActivateSession()

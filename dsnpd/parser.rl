@@ -668,6 +668,8 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	if ( result < 0 ) 
 		return result;
 
+	message( "fetching public key for %s from host %s site %s\n", user, host, site );
+
 	BIO_printf( tlsConnect.sbio, "public_key %s\r\n", user );
 	BIO_flush( tlsConnect.sbio );
 

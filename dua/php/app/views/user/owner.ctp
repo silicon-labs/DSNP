@@ -73,7 +73,7 @@ if ( count( $sentFriendRequests ) > 0 ) {
 
 foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
-	$dest_id = $row['FriendClaim']['friend_id'];
+	$dest_id = $row['FriendClaim']['identity'];
 
 	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
 		urlencode( $_SESSION['hash'] ) . "\">";
@@ -144,9 +144,9 @@ Broadcast a Message to all Friends
 <div id="activity_stream">
 <?
 foreach ( $activity as $row ) {
-	$author_id = $row['AuthorFC']['friend_id'];
+	$author_id = $row['AuthorFC']['identity'];
 	$author_name = $row['AuthorFC']['name'];
-	$subject_id = $row['SubjectFC']['friend_id'];
+	$subject_id = $row['SubjectFC']['identity'];
 	$subject_name = $row['SubjectFC']['name'];
 	$time_published = $row['Activity']['time_published'];
 	$type = $row['Activity']['type'];

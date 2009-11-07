@@ -27,22 +27,25 @@
 <head>
 	<?php echo $html->charset(); ?>
 	<title>
-		<?php __('DSNP User Agent One:'); ?>
-		<?php echo $USER_NAME; ?>
+		<?php 
+			echo __('DSNP User Agent One');
+			if ( isset( $USER_NAME ) )
+				echo ": $USER_NAME";
+		?>
 	</title>
 	<?php
 		echo $html->meta('icon');
-		echo $html->css('cake.generic');
+		echo $html->css('dua');
 		echo $scripts_for_layout;
 	?>
 </head>
 <body>
 	<div id="header">
 		<div id="header_left">
-		<h1><?php echo $html->link(__('DSNP User Agent One', true), 
-			'http://www.complang.org/dsnp/'); ?>
-			<a href="<?php echo $CFG_URI; ?>">(site)</a>
-		</h1>
+		<h1><?php 
+			echo $html->link( Configure::read('CFG_SITE_NAME'), 
+					Configure::read('CFG_URI') );
+		?></h1>
 		</div>
 		<div id="header_middle">
 		<h1><?php
@@ -55,7 +58,7 @@
 		if ( isset( $auth ) && $auth == 'friend' )
 		{
 			echo $html->link( isset( $BROWSER_FC['name'] ) ? $BROWSER_FC['name'] : 
-					$BROWSER_FC['friend_id'], $BROWSER_FC['friend_id'] );
+					$BROWSER_FC['identity'], $BROWSER_FC['identity'] );
 
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
@@ -76,7 +79,7 @@
 	</div>
 
 	<div id="footer">
-		<h1><?php echo $html->link(__('DSNP User Agent One', true), 
+		<h1><?php echo $html->link(__('Social Network User Agent (SNUA)', true), 
 			'http://www.complang.org/dsnp/'); ?>
 		</h1>
 		<?php #echo $html->link(

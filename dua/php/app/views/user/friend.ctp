@@ -36,9 +36,9 @@ include('functions.php');
 
 foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
-	$dest_id = $row['FriendClaim']['friend_id'];
+	$dest_id = $row['FriendClaim']['identity'];
 
-	if ( $dest_id == $BROWSER_FC['friend_id'] ) {
+	if ( $dest_id == $BROWSER_FC['identity'] ) {
 		echo "you: <a href=\"${dest_id}\">";
 		if ( isset( $name ) )
 			echo $name;
@@ -93,6 +93,10 @@ if ( $count % 2 == 1 )
 </div>
 <div id="activity">
 
+<pre>
+<? print_r( $activity ); ?>
+</pre>
+
 <div id="broadcast">
 
 <form method="post" action="<?php echo $html->url("/$USER_NAME/user/board");?>">
@@ -110,9 +114,9 @@ Write on <?php print $USER_NAME;?>'s message board:
 <?
 
 foreach ( $activity as $row ) {
-	$author_id = $row['AuthorFC']['friend_id'];
+	$author_id = $row['AuthorFC']['identity'];
 	$author_name = $row['AuthorFC']['name'];
-	$subject_id = $row['SubjectFC']['friend_id'];
+	$subject_id = $row['SubjectFC']['identity'];
 	$subject_name = $row['SubjectFC']['name'];
 	$time_published = $row['Activity']['time_published'];
 	$type = $row['Activity']['type'];

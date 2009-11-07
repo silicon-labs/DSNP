@@ -16,7 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 function printName( $USER_NAME, $USER_URI, $BROWSER_FC, $identity, $name, $possessive )
 {
 	if ( !isset($identity) && isset($BROWSER_FC) ) {
@@ -28,7 +27,7 @@ function printName( $USER_NAME, $USER_URI, $BROWSER_FC, $identity, $name, $posse
 	}
 	else if ( !isset($identity) || 
 			!isset($BROWSER_FC) && $identity == $USER_URI || 
-			isset($BROWSER_FC) && $BROWSER_FC['friend_id'] == $identity )
+			isset($BROWSER_FC) && $BROWSER_FC['identity'] == $identity )
 	{
 		if ( $possessive )
 			echo "<font class=\"msgwho\"> your </font>";

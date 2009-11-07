@@ -66,5 +66,6 @@ Configure::write( 'CFG_RC_PUBLIC_KEY', $CFG_RC_PUBLIC_KEY );
 Configure::write( 'CFG_RC_PRIVATE_KEY', $CFG_RC_PRIVATE_KEY );
 Configure::write( 'CFG_PHOTO_DIR', $CFG_PHOTO_DIR );
 Configure::write( 'CFG_IM_CONVERT', $CFG_IM_CONVERT );
+Configure::write( 'CFG_SITE_NAME', $CFG_SITE_NAME );
 
 ?>

@@ -146,7 +146,7 @@ CREATE TABLE friend_claim
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user_id BIGINT,
-	friend_id TEXT,
+	identity TEXT,
 	name TEXT,
 
 	PRIMARY KEY(id)
@@ -240,6 +240,7 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_RC_PRIVATE_KEY = SET_THIS;
 	\$CFG_PHOTO_DIR = SET_THIS;
 	\$CFG_IM_CONVERT = SET_THIS;
+	\$CFG_SITE_NAME = SET_THIS;
 }
 
 EOF

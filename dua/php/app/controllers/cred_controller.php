@@ -166,7 +166,7 @@ class CredController extends AppController
 			$BROWSER_FC = $this->FriendClaim->find('first', array(
 				'conditions' => array (
 					'user_id' => $this->USER_ID,
-					'friend_id' => $regs[3]
+					'identity' => $regs[3]
 				)
 			));
 

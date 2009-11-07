@@ -124,7 +124,7 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 	if ( $row = mysql_fetch_assoc($result) ) {
 		$query = sprintf(
 			"UPDATE friend_claim SET name = '%s' " .
-			"WHERE user_id = %ld AND friend_id = '%s'",
+			"WHERE user_id = %ld AND identity = '%s'",
 			mysql_real_escape_string($msg[1]),
 			mysql_real_escape_string($row['id']), 
 			mysql_real_escape_string($author_id) 
@@ -139,7 +139,7 @@ function findFriendClaimId( $user, $identity )
 	$query = sprintf(
 		"SELECT friend_claim.id FROM friend_claim " .
 		"JOIN user ON user.id = friend_claim.user_id " .
-		"WHERE user.user = '%s' AND friend_claim.friend_id = '%s'",
+		"WHERE user.user = '%s' AND friend_claim.identity = '%s'",
 		mysql_real_escape_string($user),
 		mysql_real_escape_string($identity)
 	);
@@ -349,7 +349,7 @@ case "sent_friend_request_accepted": {
 	$identity = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, friend_id )  " .
+		"INSERT INTO friend_claim ( user_id, identity )  " .
 		"SELECT id, '%s' from user where user = '%s'",
 		$identity, $user );
 
@@ -387,7 +387,7 @@ case "friend_request_accepted": {
 	$identity = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, friend_id )  " .
+		"INSERT INTO friend_claim ( user_id, identity )  " .
 		"SELECT id, '%s' from user where user = '%s'",
 		$identity, $user );
 

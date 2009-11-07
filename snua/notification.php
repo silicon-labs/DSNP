@@ -65,6 +65,7 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 		return;
 
 	$resource_id = (int) $msg[0]['resource-id'];
+	$user_id = findUserId( $for_user );
 	$author_id = findFriendClaimId( $for_user, $author );
 
 	print( "message is a photo, capturing\n" );
@@ -97,10 +98,10 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user, author_id, seq_num, time_published, " . 
+		"	( user_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, resource_id, message ) " .
 		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', %ld, '%s' )",
-		mysql_real_escape_string($for_user), 
+		$user_id,
 		$author_id, 
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
@@ -150,12 +151,26 @@ function findFriendClaimId( $user, $identity )
 	return -1;
 }
 
+function findUserId( $user )
+{
+	$query = sprintf(
+		"SELECT id FROM user WHERE user.user = '%s'",
+		mysql_real_escape_string($user)
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( $row = mysql_fetch_assoc($result) )
+		return (int) $row['id'];
+	return -1;
+}
+
 function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	/* Need a resource id. */
 	if ( $content_type != 'text/plain' )
 		return;
 
+	$user_id = findUserId( $for_user );
 	$author_id = findFriendClaimId( $for_user, $author );
 
 	$query = sprintf(
@@ -177,10 +192,10 @@ function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_t
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user, author_id, seq_num, time_published, " . 
+		"	( user_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, resource_id, message ) " .
 		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', %ld, '%s' )",
-		mysql_real_escape_string($for_user), 
+		$user_id,
 		$author_id,
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
@@ -195,6 +210,7 @@ function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_t
 
 function boardPost( $for_user, $subject, $author, $seq_num, $date, $time, $msg, $content_type )
 {
+	$user_id = findUserId( $for_user );
 	$subject_id = findFriendClaimId( $for_user, $subject );
 	$author_id = findFriendClaimId( $for_user, $author );
 
@@ -218,10 +234,10 @@ function boardPost( $for_user, $subject, $author, $seq_num, $date, $time, $msg, 
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user, subject_id, author_id, seq_num, time_published, time_received, ".
+		"	( user_id, subject_id, author_id, seq_num, time_published, time_received, ".
 		"		type, message ) " .
 		"VALUES ( '%s', %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
-		mysql_real_escape_string($for_user), 
+		$user_id,
 		$subject_id, 
 		$author_id, 
 		$seq_num, 
@@ -235,6 +251,7 @@ function boardPost( $for_user, $subject, $author, $seq_num, $date, $time, $msg, 
 
 function remoteBoardPost( $user, $subject, $msg, $content_type )
 {
+	$user_id = findUserId( $user );
 	$subject_id = findFriendClaimId( $user, $subject );
 
 	$query = sprintf(
@@ -251,9 +268,9 @@ function remoteBoardPost( $user, $subject, $msg, $content_type )
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user, subject_id, published, time_published, type, message ) " .
+		"	( user_id, subject_id, published, time_published, type, message ) " .
 		"VALUES ( '%s', %ld, true, now(), '%s', '%s' )",
-		mysql_real_escape_string($user), 
+		$user_id,
 		$subject_id, 
 		mysql_real_escape_string('BRD'),
 		mysql_real_escape_string($msg[1])

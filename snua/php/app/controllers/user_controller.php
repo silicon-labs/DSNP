@@ -132,7 +132,7 @@ class UserController extends AppController
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
-			"user"  => $this->USER_NAME,
+			"user_id"  => $this->USER_ID,
 			'published' => 'true',
 			"type" => "MSG",
 			"message" => $message,
@@ -176,7 +176,7 @@ class UserController extends AppController
 		$this->loadModel('Published');
 		$this->Published->save( array( 
 			'user' => $this->USER_NAME,
-			'author_id' => $BROWSER_FC['friend_id'],
+			'author_id' => $BROWSER_FC['identity'],
 			'subject_id' => $this->CFG_URI . $this->USER_NAME . "/",
 			'type' => 'BRD',
 			'message' => $message,
@@ -184,7 +184,7 @@ class UserController extends AppController
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
-			'user'  => $this->USER_NAME,
+			'user_id'  => $this->USER_ID,
 			'author_id' => $BROWSER_FC['id'],
 			'published' => 'true',
 			'type' => 'BRD',
@@ -195,7 +195,7 @@ class UserController extends AppController
 		if ( !$fp )
 			exit(1);
 
-		$identity = $BROWSER_FC['friend_id'];
+		$identity = $BROWSER_FC['identity'];
 		$hash = $_SESSION['hash'];
 		$token = $_SESSION['token'];
 

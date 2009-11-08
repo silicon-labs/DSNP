@@ -213,16 +213,16 @@ class UserController extends AppController
 
 		if ( !ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) )
 			die( $res );
-		$nonce = $regs[1];
+		$reqid = $regs[1];
 
-		$this->redirect( "${identity}user/flush?nonce=$nonce&backto=" . 
+		$this->redirect( "${identity}user/flush?reqid=$reqid&backto=" . 
 			urlencode( $this->USER['identity'] )  );
 	}
 
 	function flush()
 	{
 		$this->requireOwner();
-		$nonce = $_REQUEST['nonce'];
+		$reqid = $_REQUEST['reqid'];
 		$backto = $_REQUEST['backto'];
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
@@ -232,21 +232,22 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"remote_broadcast_response $this->USER_NAME $nonce\r\n";
+			"remote_broadcast_response $this->USER_NAME $reqid\r\n";
 
 		fwrite( $fp, $send );
 		$res = fgets($fp);
 
-		if ( !ereg("^OK", $res, $regs) )
+		if ( !ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) )
 			die( 'kak' );
+		$reqid = $regs[1];
 
-		$this->redirect( "${backto}user/finish?nonce=$nonce" );
+		$this->redirect( "${backto}user/finish?reqid=$reqid" );
 	}
 
 	function finish()
 	{
 		$this->requireFriend();
-		$nonce = $_REQUEST['nonce'];
+		$reqid = $_REQUEST['reqid'];
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
@@ -255,7 +256,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"remote_broadcast_final $this->USER_NAME $nonce\r\n";
+			"remote_broadcast_final $this->USER_NAME $reqid\r\n";
 
 		fwrite( $fp, $send );
 		$res = fgets($fp);

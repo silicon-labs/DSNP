@@ -263,6 +263,7 @@ CREATE TABLE pending_remote_broadcast (
 	identity TEXT,
 	hash TEXT,
 	reqid VARCHAR(48),
+	reqid_final VARCHAR(48),
 	seq_num BIGINT,
 	message BLOB,
 	generation BIGINT,

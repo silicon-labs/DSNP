@@ -1610,7 +1610,6 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 	char time_str[64];
 	long long seq_num;
 	char *result_message;
-	char *reqid_str;
 
 	/* Get the current time. */
 	curTime = time(NULL);
@@ -1658,13 +1657,9 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
-	u_char reqid[TOKEN_SIZE];
-	RAND_bytes( reqid, TOKEN_SIZE );
-	reqid_str = bin_to_base64( reqid, TOKEN_SIZE );
-
 	String remotePublishCmd(
-		"encrypt_remote_broadcast %s %s %lld %ld\r\n%s\r\n", 
-		token, reqid_str, seq_num, mLen, msg );
+		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
+		token, seq_num, mLen, msg );
 
 	res = send_message_now( mysql, false, to_user, author_id, putRelid.data,
 			remotePublishCmd.data, &result_message );
@@ -1674,56 +1669,60 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 		return -1;
 	}
 
+	//returned_reqid_parser( mysql, to_user, result_message );
+
 	exec_query( mysql,
 		"INSERT INTO pending_remote_broadcast "
 		"( user, identity, hash, reqid, seq_num, message ) "
 		"VALUES ( %e, %e, %e, %e, %L, %d )",
-		to_user, author_id, author_hash, reqid_str, seq_num, msg, mLen );
+		to_user, author_id, author_hash, result_message, seq_num, msg, mLen );
 
 	message("send_message_now returned: %s\n", result_message );
-	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
+	BIO_printf( bioOut, "OK %s\r\n", result_message );
 	return 0;
 }
 
 void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqid )
 {
 	DbQuery recipient( mysql, 
-		"SELECT user, identity, generation, sym "
+		"SELECT identity, generation, sym "
 		"FROM remote_broadcast_request "
 		"WHERE user = %e AND reqid = %e",
 		user, reqid );
 	
-	if ( recipient.rows() == 1 ) {
-		MYSQL_ROW row = recipient.fetchRow();
-		const char *user = row[0];
-		const char *identity = row[1];
-		const char *generation = row[2];
-		const char *sym = row[3];
-		message( "flushing remote with reqid: %s\n", reqid );
-
-		/* Find the relid from subject to author. */
-		DbQuery putRelidQuery( mysql,
-				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-				user, identity );
-		if ( putRelidQuery.rows() != 1 ) {
-			message("find of put_relid from subject to author failed\n");
-			return;
-		}
-
-		char *put_relid = putRelidQuery.fetchRow()[0];
-		char *result = 0;
-
-		String returnCmd( "return_remote_broadcast %s %s %s\r\n", reqid, generation, sym );
-		send_message_now( mysql, false, user, identity, put_relid, returnCmd.data, &result );
-
-		/* Clear the pending remote broadcast. */
-		DbQuery clear( mysql, 
-			"DELETE FROM remote_broadcast_request "
-			"WHERE user = %e AND reqid = %e",
-			user, reqid );
+	if ( recipient.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
 	}
 
-	BIO_printf( bioOut, "OK\r\n" );
+	MYSQL_ROW row = recipient.fetchRow();
+	const char *identity = row[0];
+	const char *generation = row[1];
+	const char *sym = row[2];
+	message( "flushing remote with reqid: %s\n", reqid );
+
+	/* Find the relid from subject to author. */
+	DbQuery putRelidQuery( mysql,
+			"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+			user, identity );
+	if ( putRelidQuery.rows() != 1 ) {
+		message("find of put_relid from subject to author failed\n");
+		return;
+	}
+
+	char *put_relid = putRelidQuery.fetchRow()[0];
+	char *result = 0;
+
+	String returnCmd( "return_remote_broadcast %s %s %s\r\n", reqid, generation, sym );
+	send_message_now( mysql, false, user, identity, put_relid, returnCmd.data, &result );
+
+	/* Clear the pending remote broadcast. */
+	DbQuery clear( mysql, 
+		"DELETE FROM remote_broadcast_request "
+		"WHERE user = %e AND reqid = %e",
+		user, reqid );
+
+	BIO_printf( bioOut, "OK %s\r\n", result );
 }
 
 void return_remote_broadcast( MYSQL *mysql, const char *user,
@@ -1731,13 +1730,17 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 {
 	message("return_remote_broadcast\n");
 
+	u_char reqid_final[REQID_SIZE];
+	RAND_bytes( reqid_final, REQID_SIZE );
+	const char *reqid_final_str = bin_to_base64( reqid_final, REQID_SIZE );
+
 	DbQuery recipient( mysql, 
 		"UPDATE pending_remote_broadcast "
-		"SET generation = %L, sym = %e "
+		"SET generation = %L, sym = %e, reqid_final = %e"
 		"WHERE user = %e AND identity = %e AND reqid = %e ",
-		generation, sym, user, friend_id, reqid );
+		generation, sym, reqid_final_str, user, friend_id, reqid );
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioOut, "REQID %s\r\n", reqid_final_str );
 }
 
 void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
@@ -1745,7 +1748,7 @@ void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 	DbQuery recipient( mysql, 
 		"SELECT user, identity, hash, seq_num, message, length(message), generation, sym "
 		"FROM pending_remote_broadcast "
-		"WHERE user = %e AND reqid = %e",
+		"WHERE user = %e AND reqid_final = %e",
 		user, reqid );
 	
 	if ( recipient.rows() == 1 ) {
@@ -1770,7 +1773,7 @@ void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 		/* Clear the pending remote broadcast. */
 		DbQuery clear( mysql, 
 			"DELETE FROM pending_remote_broadcast "
-			"WHERE user = %e AND reqid = %e",
+			"WHERE user = %e AND reqid_final = %e",
 			user, reqid );
 	}
 
@@ -2210,7 +2213,7 @@ free_result:
 }
 
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *subject_id, const char *token, const char *reqid,
+		const char *subject_id, const char *token,
 		long long seq_num, const char *msg )
 {
 	MYSQL_RES *result;
@@ -2228,8 +2231,8 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 
 	long mLen = strlen(msg);
 
-	message( "entering encrypt_remote_broadcast( %s, %s, %s, %s, %lld, %s)\n", 
-		user, subject_id, token, reqid, seq_num, msg );
+	message( "entering encrypt_remote_broadcast( %s, %s, %s, %lld, %s)\n", 
+		user, subject_id, token, seq_num, msg );
 
 	exec_query( mysql,
 		"SELECT user FROM remote_flogin_token "
@@ -2288,13 +2291,17 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 
 	message( "encrypt_remote_broadcast enc: %s\n", encrypt.sym );
 
+	u_char reqid[REQID_SIZE];
+	RAND_bytes( reqid, REQID_SIZE );
+	const char *reqid_str = bin_to_base64( reqid, REQID_SIZE );
+
 	exec_query( mysql,
 		"INSERT INTO remote_broadcast_request "
 		"	( user, identity, reqid, generation, sym ) "
 		"VALUES ( %e, %e, %e, %L, %e )",
-		user, subject_id, reqid, generation, encrypt.sym );
+		user, subject_id, reqid_str, generation, encrypt.sym );
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
 }
 
 char *decrypt_result( MYSQL *mysql, const char *from_user, 

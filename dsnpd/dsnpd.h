@@ -118,7 +118,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, const char *reqid,
+		const char *identity, const char *token,
 		long long seq_num, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
@@ -281,5 +281,4 @@ void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqi
 void remote_broadcast_final( MYSQL *mysql, const char *user, const char *nonce );
 void return_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *nonce, long long generation, const char *sym );
-
 #endif

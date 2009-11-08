@@ -404,11 +404,11 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 			EOL @{
 				forward_to( mysql, user, friend_id, number, generation, identity, relid );
 		} |
-		'encrypt_remote_broadcast'i ' ' token ' ' reqid ' ' seq_num ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @{ msg = p+1; p += length; } 
 			EOL @{
 				/* Rest of the input is the msssage. */
-				encrypt_remote_broadcast( mysql, user, friend_id, token, reqid, seq_num, msg );
+				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, msg );
 			} |
 		'return_remote_broadcast'i ' ' reqid ' ' generation ' ' sym
 			EOL @{
@@ -1013,7 +1013,7 @@ long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
 	bool OK = false;
 	long pres;
 	const char *mark;
-	String length_str;
+	String length_str, token;
 	long length;
 
 	/* Initialize the result. */
@@ -1065,9 +1065,19 @@ long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
 			OK = true;
 		}
 
+		action token {
+			::message("got back a reqid\n");
+			char *user_message = new char[token.length+1];
+			memcpy( user_message, token.data, token.length );
+			user_message[token.length] = 0;
+			*result_message = user_message;
+			OK = true;
+		}
+
 		main := 
 			'OK' EOL @{ OK = true; } |
 			'RESULT' ' ' length EOL @result |
+			'REQID' ' ' token EOL @token |
 			'ERROR' EOL;
 	}%%
 
@@ -1154,5 +1164,3 @@ long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to
 	
 	return 0;
 }
-
-

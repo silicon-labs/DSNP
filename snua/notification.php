@@ -290,8 +290,8 @@ case "user_message": {
 	$time = $argv[$b+5];
 	$length = $argv[$b+6];
 
-	if ( $subject_id === '-' )
-		$subject_id = null;
+	if ( $subject === '-' )
+		$subject = null;
 
 	# Read the message from stdin.
 	$msg = parse( $length );

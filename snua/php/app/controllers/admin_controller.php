@@ -44,7 +44,10 @@ class AdminController extends AppController
 			die( "FAILURE *** New user creation failed with: <br> $res" );
    	
 		$this->loadModel('User');
-		$this->User->save( array( 'user' => $user ));
+		$this->User->save( array( 
+				'user' => $user,
+				'identity' => $this->CFG_URI . $user . '/'
+		));
 
 		$photoDirCmd =  "umask 0002; mkdir $this->CFG_PHOTO_DIR/$user";
 		system( $photoDirCmd );

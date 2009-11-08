@@ -28,7 +28,7 @@
 	<?php echo $html->charset(); ?>
 	<title>
 		<?php 
-			echo __('DSNP User Agent One');
+			echo Configure::read('CFG_SITE_NAME');
 			if ( isset( $USER_NAME ) )
 				echo ": $USER_NAME";
 		?>

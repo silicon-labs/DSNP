@@ -21,7 +21,7 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 <div class="content">
 
-<h2>Secure Personal Publishing</h2>
+<h2>Social Networking User Agent</h2>
 
 <p>
 <a href="admin/newuser">create new user</a>

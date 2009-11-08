@@ -258,6 +258,25 @@ CREATE TABLE remote_flogin_token (
 	login_token VARCHAR(48)
 );
 
+CREATE TABLE pending_remote_broadcast (
+	user VARCHAR(20),
+	identity TEXT,
+	hash TEXT,
+	reqid VARCHAR(48),
+	seq_num BIGINT,
+	message BLOB,
+	generation BIGINT,
+	sym TEXT
+);
+
+CREATE TABLE remote_broadcast_request (
+	user VARCHAR(20),
+	identity TEXT,
+	reqid VARCHAR(48),
+	generation BIGINT,
+	sym TEXT
+);
+
 EOF
 
 #

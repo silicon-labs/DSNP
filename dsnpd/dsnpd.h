@@ -118,7 +118,8 @@ long queue_message( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *identity, const char *token, long long seq_num, const char *msg );
+		const char *identity, const char *token, const char *reqid,
+		long long seq_num, const char *msg );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
@@ -129,7 +130,7 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 
 long submit_broadcast( MYSQL *mysql, const char *user,
 		const char *user_message, long mLen );
-long submit_remote_broadcast( MYSQL *mysql, const char *user, 
+long remote_broadcast_request( MYSQL *mysql, const char *user, 
 		const char *identity, const char *hash, const char *token,
 		const char *user_message, long mLen );
 
@@ -246,6 +247,8 @@ struct DbQuery
 		{ return mysql_num_rows( result ); }
 	long affectedRows()
 		{ return mysql_affected_rows( mysql ); }
+	
+	void free();
 
 	MYSQL *mysql;
 	MYSQL_RES *result;
@@ -264,10 +267,6 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 		const char *from_id, const char *requested_relid, 
 		const char *returned_relid, const char *returned_id_salt );
 
-long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, long long seq_num,
-		const char *origMsg, long origMsgLen, const char *msg );
-
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
 			long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
 
@@ -277,5 +276,10 @@ long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to
 		long long to_generation, long long to_seq_num );
 
 void app_notification( const char *args, const char *data, long length );
+
+void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqid );
+void remote_broadcast_final( MYSQL *mysql, const char *user, const char *nonce );
+void return_remote_broadcast( MYSQL *mysql, const char *user, 
+		const char *friend_id, const char *nonce, long long generation, const char *sym );
 
 #endif

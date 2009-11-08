@@ -252,8 +252,10 @@ int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg )
 	/* Signature length is in the first two bytes. */
 	uint16_t *pSigLen = (uint16_t*)decrypted;
 	sigLen = ntohs( *pSigLen );
-	if ( sigLen >= msgLen )
+	if ( sigLen >= msgLen ) {
+		sprintf( err, "sigLen is greater than msgLen" );
 		return -1;
+	}
 
 	signature = decrypted + 2;
 	data = signature + sigLen;

@@ -202,7 +202,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"submit_remote_broadcast $this->USER_NAME $identity $hash $token $len\r\n";
+			"remote_broadcast_request $this->USER_NAME $identity $hash $token $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
@@ -211,10 +211,59 @@ class UserController extends AppController
 
 		$res = fgets($fp);
 
-		if ( ereg("^OK", $res, $regs) )
-			$this->redirect( "/$this->USER_NAME/" );
-		else
-			echo $res;
+		if ( !ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) )
+			die( $res );
+		$nonce = $regs[1];
+
+		$this->redirect( "${identity}user/flush?nonce=$nonce&backto=" . 
+			urlencode( $this->USER['identity'] )  );
+	}
+
+	function flush()
+	{
+		$this->requireOwner();
+		$nonce = $_REQUEST['nonce'];
+		$backto = $_REQUEST['backto'];
+
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"remote_broadcast_response $this->USER_NAME $nonce\r\n";
+
+		fwrite( $fp, $send );
+		$res = fgets($fp);
+
+		if ( !ereg("^OK", $res, $regs) )
+			die( 'kak' );
+
+		$this->redirect( "${backto}user/finish?nonce=$nonce" );
+	}
+
+	function finish()
+	{
+		$this->requireFriend();
+		$nonce = $_REQUEST['nonce'];
+
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"remote_broadcast_final $this->USER_NAME $nonce\r\n";
+
+		fwrite( $fp, $send );
+		$res = fgets($fp);
+
+		if ( !ereg("^OK", $res, $regs) )
+			die( 'kak' );
+
+		$this->redirect( "/$this->USER_NAME/" );
 	}
 
 	function edit()

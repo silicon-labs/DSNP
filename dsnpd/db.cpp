@@ -204,6 +204,11 @@ DbQuery::DbQuery( MYSQL *mysql, const char *fmt, ... )
 
 DbQuery::~DbQuery()
 {
+	free();
+}
+
+void DbQuery::free()
+{
 	if ( result != 0 )
 		mysql_free_result( result );
 }

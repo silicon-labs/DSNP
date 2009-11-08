@@ -245,10 +245,20 @@ bool gblKeySubmitted = false;
 		#
 		# Remote broadcasting
 		#
-		'submit_remote_broadcast'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
+		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
 			M_EOL @check_key @{
-				submit_remote_broadcast( mysql, user, identity, hash, 
+				remote_broadcast_request( mysql, user, identity, hash, 
 						token, message_buffer.data, length );
+			} |
+
+		'remote_broadcast_response'i ' ' user ' ' reqid
+			EOL @check_key @{
+				remote_broadcast_response( mysql, user, reqid );
+			} |
+
+		'remote_broadcast_final'i ' ' user ' ' reqid
+			EOL @check_key @{
+				remote_broadcast_final( mysql, user, reqid );
 			} |
 
 		#
@@ -278,7 +288,7 @@ int server_parse_loop()
 	const char *mark;
 	String user, pass, email, identity; 
 	String length_str, reqid;
-	String hash, key, relid, token;
+	String hash, key, relid, token, sym;
 	String gen_str, seq_str;
 	long length;
 	long long generation;
@@ -386,17 +396,23 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' generation ' ' key EOL @{
-			broadcast_key( mysql, to_relid, user, friend_id, generation, key );
+		'broadcast_key'i ' ' generation ' ' key 
+			EOL @{
+				broadcast_key( mysql, to_relid, user, friend_id, generation, key );
+			} |
+		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
+			EOL @{
+				forward_to( mysql, user, friend_id, number, generation, identity, relid );
 		} |
-		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid EOL @{
-			forward_to( mysql, user, friend_id, number, generation, identity, relid );
-		} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' reqid ' ' seq_num ' ' length 
 			EOL @{ msg = p+1; p += length; } 
 			EOL @{
 				/* Rest of the input is the msssage. */
-				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, msg );
+				encrypt_remote_broadcast( mysql, user, friend_id, token, reqid, seq_num, msg );
+			} |
+		'return_remote_broadcast'i ' ' reqid ' ' generation ' ' sym
+			EOL @{
+				return_remote_broadcast( mysql, user, friend_id, reqid, generation, sym );
 			}
 	)*;
 }%%
@@ -409,7 +425,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	long cs;
 	const char *mark;
 	String identity, number_str, key, relid, gen_str;
-	String token, seq_str, length_str;
+	String sym, token, reqid, seq_str, length_str;
 	long length, number;
 	long long seq_num, generation;
 
@@ -540,7 +556,7 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 	long long seq_num;
 	long length;
 
-	message("parsing remote_broadcast string: %s\n", msg );
+	message("parsing remote_broadcast string: %.*s\n", (int)mLen, msg );
 
 	%% write init;
 
@@ -583,49 +599,6 @@ int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *use
 	long cs;
 	const char *mark;
 	String token;
-
-	%% write init;
-
-	const char *p = msg;
-	const char *pe = msg + strlen( msg );
-
-	%% write exec;
-
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
-
-	return 0;
-}
-
-/*
- * encrypted_broadcast_parser
- */
-
-%%{
-	machine encrypted_broadcast_parser;
-
-	include common;
-
-	main :=
-		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
-			encrypted_broadcast( mysql, to_user, author_id, author_hash, 
-					seq_num, origMsg, origMsgLen, generation, sym );
-		};
-}%%
-
-%% write data;
-
-long encrypted_broadcast_parser( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, long long seq_num, const char *origMsg, long origMsgLen, const char *msg )
-{
-	long cs;
-	const char *mark;
-	String gen_str, sym;
-	long long generation;
 
 	%% write init;
 

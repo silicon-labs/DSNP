@@ -1603,25 +1603,13 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 	int res;
 	RSA *user_priv, *id_pub;
 	Encrypt encrypt;
-	time_t curTime;
-	struct tm curTM, *tmRes;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	char time_str[64];
 	long long seq_num;
 	char *result_message;
 
 	/* Get the current time. */
-	curTime = time(NULL);
-
-	/* Convert to struct tm. */
-	tmRes = localtime_r( &curTime, &curTM );
-	if ( tmRes == 0 )
-		return -1;
-
-	/* Format for the message. */
-	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 ) 
-		return -1;
+	String timeStr = timeNow();
 
 	/* Find the relid from subject to author. */
 	DbQuery putRelidQuery( mysql,
@@ -1641,7 +1629,7 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 		"INSERT INTO broadcasted "
 		"( user, author_id, subject_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
-		to_user, author_id, subjectId.data, time_str, msg, mLen );
+		to_user, author_id, subjectId.data, timeStr.data, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -2216,52 +2204,30 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *subject_id, const char *token,
 		long long seq_num, const char *msg )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	Encrypt encrypt;
 	RSA *user_priv, *id_pub;
 	int sigRes;
 	String broadcast_key;
 	long long generation;
-	char *full;
-	long soFar;
-	time_t curTime;
-	struct tm curTM, *tmRes;
-	char time_str[64];
 
 	long mLen = strlen(msg);
 
 	message( "entering encrypt_remote_broadcast( %s, %s, %s, %lld, %s)\n", 
 		user, subject_id, token, seq_num, msg );
 
-	exec_query( mysql,
+	DbQuery flogin( mysql,
 		"SELECT user FROM remote_flogin_token "
 		"WHERE user = %e AND identity = %e AND login_token = %e",
 		user, subject_id, token );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
+	if ( flogin.rows() == 0 ) {
 		message("failed to find user from provided login token\n");
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
 
 	/* Get the current time. */
-	curTime = time(NULL);
-
-	/* Convert to struct tm. */
-	tmRes = localtime_r( &curTime, &curTM );
-	if ( tmRes == 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
-
-	/* Format for the message. */
-	if ( strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &curTM )  == 0 )  {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
+	String timeStr = timeNow();
 
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, subject_id );
@@ -2276,14 +2242,11 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	message("current put_bk: %lld %s\n", generation, broadcast_key.data );
 
 	/* Make the full message. */
-	full = new char[128+mLen];
-	soFar = sprintf( full, "remote_inner %lld %s %ld\r\n", seq_num, time_str, mLen );
-	memcpy( full + soFar, msg, mLen );
-	full[soFar+mLen] = 0;
-	message("full remote inner: %.*s\n", (int) (soFar+mLen), full);
+	String command( "remote_inner %lld %s %ld\r\n", seq_num, timeStr.data, mLen );
+	String full = addMessageData( command, msg, mLen );
 
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)full, soFar+mLen );
+	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)full.data, full.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;

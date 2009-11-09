@@ -108,13 +108,13 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 #
 
 cat >> init.sql << EOF
-DROP USER 'dua_${NAME}'@'localhost';
-CREATE USER 'dua_${NAME}'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
+DROP USER '${NAME}_ua'@'localhost';
+CREATE USER '${NAME}_ua'@'localhost' IDENTIFIED BY '$CFG_ADMIN_PASS';
 
-DROP DATABASE dua_${NAME};
-CREATE DATABASE dua_${NAME};
-GRANT ALL ON dua_${NAME}.* TO 'dua_${NAME}'@'localhost';
-USE dua_${NAME};
+DROP DATABASE ${NAME}_ua;
+CREATE DATABASE ${NAME}_ua;
+GRANT ALL ON ${NAME}_ua.* TO '${NAME}_ua'@'localhost';
+USE ${NAME}_ua;
 
 CREATE TABLE user
 ( 
@@ -230,8 +230,8 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';
 	\$CFG_DB_HOST = 'localhost';
-	\$CFG_DB_USER = 'dua_${NAME}';
-	\$CFG_DB_DATABASE = 'dua_${NAME}';
+	\$CFG_DB_USER = '${NAME}_ua';
+	\$CFG_DB_DATABASE = '${NAME}_ua';
 	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
 	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
 	\$CFG_PORT = $CFG_PORT;

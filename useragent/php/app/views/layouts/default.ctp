@@ -35,7 +35,7 @@
 	</title>
 	<?php
 		echo $html->meta('icon');
-		echo $html->css('dua');
+		echo $html->css('duao');
 		echo $scripts_for_layout;
 	?>
 </head>
@@ -82,7 +82,7 @@
 	</div>
 
 	<div id="footer">
-		<h1><?php echo $html->link(__('Social Network User Agent (SNUA)', true), 
+		<h1><?php echo $html->link(__('DSNP User-Agent One', true), 
 			'http://www.complang.org/dsnp/'); ?>
 		</h1>
 		<?php #echo $html->link(

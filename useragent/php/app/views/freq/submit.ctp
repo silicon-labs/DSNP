@@ -34,8 +34,20 @@
 <h2>Become Friend</h2>
 
 <form method="post" action="sbecome">
-Please submit your identity (case-sensitive). <br><br>
-For example, <code>https://www.complang.org/spp/first/sarah/</code><br><br>
+Please submit your identity. <br><br>
+
+Identities are normally of the form <code>https://www.example.com/path/user/</code>. Some notes:<br><br>
+
+1. They are case-sensitive.<br>
+2. The <code>https://</code> at the beginning is required.<br>
+3. The exact hostname must be used.<br>
+4. There may be no path in your identity.<br>
+5. The trailing <code>/</code> at the end is required.<br><br>
+
+<big>The <b>easiest</b> way to do this is to <b>copy</b> your identity from the address bar of
+your browser after logging in and then <b>paste</b> it here.</big><br><br>
+
+Here is an example: <code>https://www.iduri.ca/thurston/</code><br><br>
 <input type="text" size=70 name="identity">
 
 <p>

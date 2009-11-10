@@ -36,13 +36,14 @@
 <form method="post" action="sbecome">
 Please submit your identity. <br><br>
 
-Identities are normally of the form <code>https://www.example.com/path/user/</code>. Some notes:<br><br>
+Identities are normally of the form: <code>https://www.example.com/path/user/</code><br><br>
 
-1. They are case-sensitive.<br>
-2. The <code>https://</code> at the beginning is required.<br>
-3. The exact hostname must be used.<br>
-4. There may be no path in your identity.<br>
-5. The trailing <code>/</code> at the end is required.<br><br>
+Note:<br>
+&nbsp;1. They are case-sensitive.<br>
+&nbsp;2. The <code>https://</code> at the beginning is required.<br>
+&nbsp;3. The exact hostname must be used.<br>
+&nbsp;4. There may be no path in your identity.<br>
+&nbsp;5. The trailing <code>/</code> at the end is required.<br><br>
 
 <big>The <b>easiest</b> way to do this is to <b>copy</b> your identity from the address bar of
 your browser after logging in and then <b>paste</b> it here.</big><br><br>

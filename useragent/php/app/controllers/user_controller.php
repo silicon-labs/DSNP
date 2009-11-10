@@ -278,8 +278,14 @@ class UserController extends AppController
 	{
 		$this->requireOwner();
 
-		if ( $this->data['User']['id'] == $this->USER_ID )
+		if ( $this->data['User']['id'] == $this->USER_ID ) {
+			if ( preg_match( '/^[ \t\n]*$/', $this->data['User']['name'] ) )
+				$this->data['User']['name'] = null;
+			if ( preg_match( '/^[ \t\n]*$/', $this->data['User']['email'] ) )
+				$this->data['User']['email'] = null;
+				
 			$this->User->save( $this->data, true, array('name', 'email') );
+		}
 
 		/* User message */
 		$headers = 

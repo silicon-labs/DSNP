@@ -16,7 +16,7 @@
 <?php 
 echo $form->create( null, array( 'url' => "/$USER_NAME/cred/slogin"));
 
-echo $form->input('user');
+echo $form->input('user', array( 'value' => $USER_NAME));
 echo $form->input('pass', array( 'type' => 'password'));
 
 echo $form->end('Login');

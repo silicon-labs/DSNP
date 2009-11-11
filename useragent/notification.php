@@ -4,7 +4,7 @@ printf( "NOTIFICATION ARRIVED:\n" );
 print_r( $argv );
 
 # Move to the php directory. */
-$dir = str_replace( "notification.php", "php", $argv[0] );
+$dir = str_replace( 'notification.php', '', $argv[0] );
 chdir( $dir );
 
 $config = $argv[1];
@@ -13,7 +13,7 @@ $type = $argv[2];
 # Simlate the server environment so that the right installation can be selected.
 $_SERVER['HTTP_HOST'] = $argv[1];
 $_SERVER['REQUEST_URI'] = $argv[2];
-include("app/config/config.php");
+include('app/config/config.php');
 
 $notification_type = $argv[3];
 $b = 4;

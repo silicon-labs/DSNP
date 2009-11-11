@@ -82,9 +82,10 @@ class ImageController extends AppController
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
-			'user' => $this->USER_NAME,
+			'user_id' => $this->USER_ID,
 			'published' => 'true',
-			'type' => "PHT",
+			'type' => 'PHT',
+			#'resource_id' => $id,
 			'message' => "thm-$id.jpg"
 		));
 

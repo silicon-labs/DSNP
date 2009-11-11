@@ -160,7 +160,7 @@ foreach ( $activity as $row ) {
 	echo "<p>\n";
 	printMessage( $USER, null, 
 			$author_id, $author_name, $subject_id, $subject_name,
-			$type, $resource_id, $message, $time_published, $name );
+			$type, $resource_id, $message, $time_published );
 }
 ?>
 

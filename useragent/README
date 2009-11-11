@@ -1,3 +1,7 @@
+This is a CakePHP application. Unapack (or link to) the 'cake' subdirectory
+from cake 1.2.5.
+
+$ tar -xz --transform='s/cake_1.2.5\///' -f ~/cake_1.2.5.tar.gz cake_1.2.5/cake
 
 DEPENDENCIES
 ============
@@ -37,3 +41,6 @@ Set up xinetd (a sample config file is given in sppd/) and make sure it
 receives sppd.conf as the first argument. The port for the spp service in
 /etc/services should be the same as the port specified in the PHP and sppd
 config files.
+
+
+

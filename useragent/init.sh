@@ -247,8 +247,8 @@ EOF
 
 (
 	set -x
-	mkdir -p data/$NAME
-	rm -Rf data/$NAME/*
+	mkdir -p php/app/data
+	rm -Rf php/app/data/*
 )
 
 done

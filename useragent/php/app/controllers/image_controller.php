@@ -29,7 +29,7 @@ class ImageController extends AppController
 		/* Find the image in the database. */
 
 		Configure::write( 'debug', 0 );
-		$path = "$this->CFG_PHOTO_DIR/$this->USER_NAME/$file";
+		$path = DATA_DIR . "/$this->USER_NAME/$file";
 		$this->set( 'path', $path );
 		$this->render( 'view', 'image' );
 	}
@@ -57,12 +57,12 @@ class ImageController extends AppController
 
 		$result = $this->User->query( "SELECT last_insert_id() as id" );
 		$id = $result[0][0]['id'];
-		$path = $this->CFG_PHOTO_DIR . "/" . $this->USER_NAME . "/img-$id.jpg";
+		$path = DATA_DIR . "/$this->USER_NAME/img-$id.jpg";
 
 		if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
 			die( "bad image file" );
 
-		$thumb = $this->CFG_PHOTO_DIR . "/" . $this->USER_NAME . "/thm-$id.jpg";
+		$thumb = DATA_DIR . "/$this->USER_NAME/thm-$id.jpg";
 
 		system($this->CFG_IM_CONVERT . " " .
 			"-define jpeg:preserve-settings " .

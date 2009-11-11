@@ -68,4 +68,7 @@ Configure::write( 'CFG_PHOTO_DIR', $CFG_PHOTO_DIR );
 Configure::write( 'CFG_IM_CONVERT', $CFG_IM_CONVERT );
 Configure::write( 'CFG_SITE_NAME', $CFG_SITE_NAME );
 
+/* Location of the data files. */
+define( 'DATA_DIR',  ROOT . DS . APP_DIR . DS . 'data' );
+
 ?>

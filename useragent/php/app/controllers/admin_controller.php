@@ -49,7 +49,7 @@ class AdminController extends AppController
 				'identity' => $this->CFG_URI . $user . '/'
 		));
 
-		$photoDirCmd =  "umask 0002; mkdir $this->CFG_PHOTO_DIR/$user";
+		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";
 		system( $photoDirCmd );
 
 		$this->redirect( "/" );

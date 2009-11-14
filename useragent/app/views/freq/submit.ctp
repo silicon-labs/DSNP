@@ -34,12 +34,12 @@
 <h2>Become Friend</h2>
 
 <form method="post" action="sbecome">
-Please submit your identity. <br><br>
+Please submit your identity. Make sure you are logged in to your identity first.<br><br>
 
 Identities are normally of the form: <code>https://www.example.com/path/user/</code><br><br>
 
 Note:<br>
-&nbsp;1. They are case-sensitive.<br>
+&nbsp;1. Identities are case-sensitive.<br>
 &nbsp;2. The <code>https://</code> at the beginning is required.<br>
 &nbsp;3. The exact hostname must be used.<br>
 &nbsp;4. There may be no path in your identity.<br>
@@ -49,6 +49,9 @@ Note:<br>
 your browser after logging in and then <b>paste</b> it here.</big><br><br>
 
 Here is an example: <code>https://www.iduri.ca/thurston/</code><br><br>
+
+One last reminder: you need to be logged in to your identity.<br><br>
+
 <input type="text" size=70 name="identity">
 
 <p>

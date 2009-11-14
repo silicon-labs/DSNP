@@ -23,7 +23,7 @@
 #include <sys/stat.h>
 
 #define FATAL_EXIT_CODE 1
-#define LOG_FILE "/tmp/sppd.log"
+#define LOG_FILE LOGDIR "/dsnpd.log"
 FILE *logFile;
 
 void openLogFile()
@@ -51,7 +51,7 @@ void error( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "ERROR %s: ", timeStr );
+		fprintf( logFile, "<%5d> ERR %s: ", pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
@@ -70,7 +70,7 @@ void warning( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "WARNING %s: ", timeStr );
+		fprintf( logFile, "<%5d> WRN %s: ", pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
@@ -89,7 +89,7 @@ void message( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "msg %s: ", timeStr );
+		fprintf( logFile, "<%5d> msg %s: ", pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
@@ -108,7 +108,7 @@ void fatal( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "FATAL %s: ", timeStr );
+		fprintf( logFile, "<%5d> FTL %s: ", pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}

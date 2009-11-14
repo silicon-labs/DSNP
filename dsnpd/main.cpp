@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "dsnpd.h"
+
 #include <openssl/rand.h>
 #include <openssl/bio.h>
 #include <string.h>
@@ -23,8 +25,9 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "dsnpd.h"
 
 BIO *bioIn = 0;
 BIO *bioOut = 0;
@@ -47,6 +50,7 @@ const char *configFile = 0;
 const char *siteName = 0;
 bool runQueue = false;
 bool test = false;
+pid_t pid = 0;
 
 int check_args( int argc, char **argv )
 {
@@ -69,10 +73,8 @@ int check_args( int argc, char **argv )
 
 	if ( optind < argc )
 		configFile = argv[optind];
-	else {
-		fprintf( stderr, "expected config file argument\n" );
-		exit(1);
-	}
+	else
+		configFile = SYSCONFDIR "/dsnpd.conf";
 
 	return 0;
 }
@@ -107,6 +109,15 @@ int main( int argc, char **argv )
 		exit(1);
 	}
 
+	pid = getpid();
+	setupSignals();
+
+	read_rcfile( configFile );
+
+	RAND_load_file("/dev/urandom", 1024);
+
+	openLogFile();
+
 	/* Set up the input BIO to wrap stdin. */
 	BIO *bioFdIn = BIO_new_fd( fileno(stdin), BIO_NOCLOSE );
 	bioIn = BIO_new( BIO_f_buffer() );
@@ -116,14 +127,6 @@ int main( int argc, char **argv )
 	BIO *bioFdOut = BIO_new_fd( fileno(stdout), BIO_NOCLOSE );
 	bioOut = BIO_new( BIO_f_buffer() );
 	BIO_push( bioOut, bioFdOut );
-
-	setupSignals();
-
-	read_rcfile( configFile );
-
-	RAND_load_file("/dev/urandom", 1024);
-
-	openLogFile();
 
 	if ( runQueue )
 		run_queue( siteName );

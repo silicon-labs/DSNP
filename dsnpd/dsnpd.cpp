@@ -865,8 +865,8 @@ long run_broadcast_queue_db( MYSQL *mysql )
 	exec_query( mysql, "UNLOCK TABLES;");
 
 	rows = mysql_num_rows( select_res );
-	bool *sent = new bool[rows];
-	memset( sent, 0, sizeof(bool)*rows );
+	bool *put_back = new bool[rows];
+	memset( put_back, 0, sizeof(bool)*rows );
 	bool unsent = false;
 
 	for ( int i = 0; i < rows; i++ ) {
@@ -881,7 +881,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 				generation, msg, strlen(msg) );
 		if ( send_res < 0 ) {
 			message( "ERROR trouble sending message: %ld\n", send_res );
-			sent[i] = false;
+			put_back[i] = true;
 			unsent = true;
 		}
 	}
@@ -894,7 +894,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 		for ( int i = 0; i < rows; i++ ) {
 			row = mysql_fetch_row( select_res );
 
-			if ( !sent[i] ) {
+			if ( put_back[i] ) {
 				char *to_site = row[0];
 				char *relid = row[1];
 				char *generation = row[2];
@@ -916,7 +916,7 @@ long run_broadcast_queue_db( MYSQL *mysql )
 		exec_query( mysql, "UNLOCK TABLES;");
 	}
 
-	delete[] sent;
+	delete[] put_back;
 
 	/* Done. */
 	mysql_free_result( select_res );
@@ -948,8 +948,8 @@ long run_message_queue_db( MYSQL *mysql )
 	exec_query( mysql, "UNLOCK TABLES;");
 
 	rows = mysql_num_rows( select_res );
-	bool *sent = new bool[rows];
-	memset( sent, 0, sizeof(bool)*rows );
+	bool *put_back = new bool[rows];
+	memset( put_back, 0, sizeof(bool)*rows );
 	bool unsent = false;
 
 	for ( int i = 0; i < rows; i++ ) {
@@ -964,7 +964,7 @@ long run_message_queue_db( MYSQL *mysql )
 				message, strlen(message), 0 );
 		if ( send_res < 0 ) {
 			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
-			sent[i] = false;
+			put_back[i] = true;
 			unsent = true;
 		}
 	}
@@ -982,7 +982,7 @@ long run_message_queue_db( MYSQL *mysql )
 			char *relid = row[2];
 			char *message = row[3];
 
-			if ( !sent[i] ) {
+			if ( put_back[i] ) {
 				BIO_printf( bioOut, "Putting back to the queue: %s %s %s %s\n", 
 						row[0], row[1], row[2], row[3] );
 
@@ -997,7 +997,7 @@ long run_message_queue_db( MYSQL *mysql )
 		exec_query( mysql, "UNLOCK TABLES;");
 	}
 
-	delete[] sent;
+	delete[] put_back;
 
 	/* Done. */
 	mysql_free_result( select_res );

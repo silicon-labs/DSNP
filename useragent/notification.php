@@ -24,6 +24,11 @@ $conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die
 mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
+function user_name_from_id( $identity )
+{
+	return preg_replace( '/https:\/\/.*\/([^\/]*)\//', '$1', $identity );
+}
+
 function parse( $len )
 {
 	$headers = array();
@@ -361,14 +366,20 @@ case "sent_friend_request": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
+
 case "sent_friend_request_accepted": {
 	$user = $argv[$b+0];
 	$identity = $argv[$b+1];
 
+	$fr_user = user_name_from_id( $identity );
+
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, identity )  " .
-		"SELECT id, '%s' from user where user = '%s'",
-		$identity, $user );
+		"INSERT INTO friend_claim ( user_id, identity, name )  " .
+		"SELECT id, '%s', '%s' from user where user = '%s' LIMIT 1",
+		mysql_real_escape_string($identity), 
+		mysql_real_escape_string($fr_user), 
+		mysql_real_escape_string($user)
+	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
@@ -382,6 +393,25 @@ case "sent_friend_request_accepted": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
+
+case "friend_request_accepted": {
+	$user = $argv[$b+0];
+	$identity = $argv[$b+1];
+
+	$fr_user = user_name_from_id( $identity );
+
+	$query = sprintf(
+		"INSERT INTO friend_claim ( user_id, identity, name )  " .
+		"SELECT id, '%s', '%s' from user where user = '%s' LIMIT 1",
+		mysql_real_escape_string($identity),
+		mysql_real_escape_string($fr_user),
+		mysql_real_escape_string($user)
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	break;
+}
+
 case "friend_request": {
 	# Collect the args.
 	$for_user = $argv[$b+0];
@@ -399,16 +429,5 @@ case "friend_request": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	break;
 }
-case "friend_request_accepted": {
-	$user = $argv[$b+0];
-	$identity = $argv[$b+1];
-
-	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, identity )  " .
-		"SELECT id, '%s' from user where user = '%s'",
-		$identity, $user );
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	break;
-}}
+}
 ?>

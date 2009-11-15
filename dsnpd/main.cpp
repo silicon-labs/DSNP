@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
 BIO *bioIn = 0;
 BIO *bioOut = 0;
 

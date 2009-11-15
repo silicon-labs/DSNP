@@ -13,9 +13,14 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+prefix = @prefix@
+
 all:
 
 install: 
 	install -d $(DESTDIR)$(prefix)/share/dsnp
-	install init.sql $(DESTDIR)$(prefix)/share/dsnp
+	install postinst-db.sh $(DESTDIR)$(prefix)/share/dsnp
+	install drop-db.sh $(DESTDIR)$(prefix)/share/dsnp
+	install -m '644' common.sh $(DESTDIR)$(prefix)/share/dsnp
+	install -m '644' init.sql $(DESTDIR)$(prefix)/share/dsnp
 

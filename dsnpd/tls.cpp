@@ -11,31 +11,31 @@ void printError( int e )
 {
 	switch ( e ) {
 		case SSL_ERROR_NONE:
-			message("SSL_ERROR_NONE\n");
+			error("ssl error: SSL_ERROR_NONE\n");
 			break;
 		case SSL_ERROR_ZERO_RETURN:
-			message("SSL_ERROR_ZERO_RETURN\n");
+			error("ssl error: SSL_ERROR_ZERO_RETURN\n");
 			break;
 		case SSL_ERROR_WANT_READ:
-			message("SSL_ERROR_WANT_READ\n");
+			error("ssl error: SSL_ERROR_WANT_READ\n");
 			break;
 		case SSL_ERROR_WANT_WRITE:
-			message("SSL_ERROR_WANT_WRITE\n");
+			error("ssl error: SSL_ERROR_WANT_WRITE\n");
 			break;
 		case SSL_ERROR_WANT_CONNECT:
-			message("SSL_ERROR_WANT_CONNECT\n");
+			error("ssl error: SSL_ERROR_WANT_CONNECT\n");
 			break;
 		case SSL_ERROR_WANT_ACCEPT:
-			message("SSL_ERROR_WANT_ACCEPT\n");
+			error("ssl error: SSL_ERROR_WANT_ACCEPT\n");
 			break;
 		case SSL_ERROR_WANT_X509_LOOKUP:
-			message("SSL_ERROR_WANT_X509_LOOKUP\n");
+			error("ssl error: SSL_ERROR_WANT_X509_LOOKUP\n");
 			break;
 		case SSL_ERROR_SYSCALL:
-			message("SSL_ERROR_SYSCALL\n");
+			error("ssl error: SSL_ERROR_SYSCALL\n");
 			break;
 		case SSL_ERROR_SSL:
-			message("SSL_ERROR_SSL\n");
+			error("ssl error: SSL_ERROR_SSL\n");
 			break;
 	}
 }
@@ -73,7 +73,6 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	int connResult = SSL_connect( ssl );
 	if ( connResult <= 0 )
 		fatal( "SSL_connect failed\n" );
-	message( "connected\n");
 
 	/* Check the verification result. */
 	long verifyResult = SSL_get_verify_result(ssl);
@@ -89,11 +88,8 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	char peer_CN[256];
 	X509_NAME_get_text_by_NID( X509_get_subject_name(peer), NID_commonName, peer_CN, 256);
 
-	message("peer CN is: %s\n", peer_CN );
 	if ( strcasecmp( peer_CN, host ) != 0 )
 		fatal("common name doesn't match host name\n");
-
-	message( "client connected\n");
 
 	/* Create a BIO for the ssl wrapper. */
 	BIO *sbio = BIO_new( BIO_f_ssl() );
@@ -149,8 +145,6 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio )
 		fatal( "SSL_accept failed: %s\n",  ERR_error_string( ERR_get_error( ), 0 ) );
 	}
 
-	message( "server connected\n");
-
 	/* Create a BIO for the ssl wrapper. */
     BIO *sbio = BIO_new(BIO_f_ssl());
 	BIO_set_ssl( sbio, ssl, BIO_NOCLOSE );
@@ -167,7 +161,7 @@ int TlsConnect::connect( const char *host, const char *site )
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 ) {
-		message( "failed to connect to %s\n", host );
+		error( "failed to connect to %s\n", host );
 		return -1;
 	}
 
@@ -184,7 +178,6 @@ int TlsConnect::connect( const char *host, const char *site )
 
 	/* Read the result. */
 	BIO_gets( buffer, buf, 8192 );
-	message("return is %s", buf );
 
 	/* Verify the result here. */
 

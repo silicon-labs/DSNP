@@ -1896,8 +1896,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	Encrypt encrypt;
 	int decryptRes;
 
-	message( "remote_broadcast\n");
-	message( "generation: %lld\n", generation );
+	message( "remote_broadcast, generation: %lld\n", generation );
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	exec_query( mysql, 
@@ -1917,10 +1916,6 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		author_id = row[0];
 		broadcast_key = row[1];
 
-		message( "second level message: %s\n", msg );
-		message( "second level broadcast_key: %s\n", broadcast_key );
-		message( "second level author_id: %s\n", author_id );
-
 		/* Do the decryption. */
 		id_pub = fetch_public_key( mysql, author_id );
 		encrypt.load( id_pub, 0 );
@@ -1932,7 +1927,8 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 			return;
 		}
 
-		message( "second level decLen: %d\n", encrypt.decLen );
+		message( "second level broadcast_key: %s  author_id: %s  decLen: %d\n", 
+				broadcast_key, author_id, encrypt.decLen );
 
 		remote_broadcast_parser( mysql, user, friend_id, author_id,
 				(char*)encrypt.decrypted, encrypt.decLen );
@@ -2429,8 +2425,12 @@ void app_notification( const char *args, const char *data, long length )
 	else if ( pid == 0 ) {
 		close( fds[1] );
 		FILE *log = fopen(NOTIF_LOG_FILE, "at");
-		if ( log == 0 )
-			fatal( "could not open notification log file\n" );
+		if ( log == 0 ) {
+			error( "could not open notification log file, using /dev/null\n" );
+			log = fopen("/dev/null", "wt");
+			if ( log == 0 )
+				fatal( "could not open /dev/null\n" );
+		}
 
 		dup2( fds[0], 0 );
 		dup2( fileno(log), 1 );

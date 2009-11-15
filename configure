@@ -2380,7 +2380,7 @@ $as_echo "no" >&6; }
 fi
 
 
-ac_config_files="$ac_config_files Makefile dsnpd/Makefile"
+ac_config_files="$ac_config_files Makefile dsnpd/Makefile db/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2978,6 +2978,7 @@ do
     "dsnpd/config.h") CONFIG_HEADERS="$CONFIG_HEADERS dsnpd/config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "dsnpd/Makefile") CONFIG_FILES="$CONFIG_FILES dsnpd/Makefile" ;;
+    "db/Makefile") CONFIG_FILES="$CONFIG_FILES db/Makefile" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 $as_echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

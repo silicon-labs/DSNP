@@ -112,6 +112,7 @@ DROP DATABASE ${NAME}_dsnp;
 CREATE DATABASE ${NAME}_dsnp;
 GRANT ALL ON ${NAME}_dsnp.* TO '${NAME}_dsnp'@'localhost';
 USE ${NAME}_dsnp;
+
 CREATE TABLE user ( 
 	user VARCHAR(20), 
 	pass_salt CHAR(24),

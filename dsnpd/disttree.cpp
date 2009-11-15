@@ -108,14 +108,22 @@ void print_node( FriendNode *node, int level )
 
 struct GetTreeWork
 {
-	GetTreeWork( const char *identity, bool isRoot, const char *parent, const char *left, const char *right )
-		: identity(identity), isRoot(isRoot), parent(parent), left(left), right(right) {}
+	GetTreeWork( const char *identity, bool isRoot, const char *parent, 
+			const char *left, const char *right, long long generation, const char *bk )
+	:
+		identity(identity), isRoot(isRoot), 
+		parent(parent), left(left), right(right),
+		generation(generation), broadcast_key(bk)
+	{}
 
 	const char *identity;
 	bool isRoot;
 	const char *parent;
 	const char *left;
 	const char *right;
+
+	long long generation;
+	const char *broadcast_key;
 };
 
 typedef list<GetTreeWork*> WorkList;
@@ -123,20 +131,21 @@ typedef list<GetTreeWork*> WorkList;
 void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 		const char *broadcast_key, WorkList &workList )
 {
+	long long active_generation = -1;
 	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
 		GetTreeWork *w = *i;
-		printf("%s %s %s\n", w->identity, w->left, w->right );
+		//printf("%s %s %s\n", w->identity, w->left, w->right );
 
 		DbQuery localInsert( mysql,
 			"INSERT INTO put_tree "
 			"( user, friend_id, generation, root, forward1, forward2 )"
 			"VALUES ( %e, %e, %L, %l, %e, %e )",
-			user, w->identity, generation,
+			user, w->identity, w->generation,
 			w->isRoot, w->left, w->right );
 
 		String bk( 
 			"broadcast_key %lld %s\r\n", 
-			generation, broadcast_key );
+			w->generation, w->broadcast_key );
 		String parent, left, right;
 		parent.set("");
 		left.set("");
@@ -151,7 +160,7 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 
 			parent.format( 
 				"forward_to 0 %lld %s %s\r\n", 
-				generation, parentId.site, relid.fetchRow()[0] );
+				w->generation, parentId.site, relid.fetchRow()[0] );
 		}
 
 		if ( w->left != 0 ) {
@@ -163,7 +172,7 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 
 			left.format( 
 				"forward_to 1 %lld %s %s\r\n", 
-				generation, leftId.site, relid.fetchRow()[0] );
+				w->generation, leftId.site, relid.fetchRow()[0] );
 		}
 
 		if ( w->right != 0 ) {
@@ -175,46 +184,39 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 
 			right.format( 
 				"forward_to 2 %lld %s %s\r\n", 
-				generation, rightId.site, relid.fetchRow()[0] );
+				w->generation, rightId.site, relid.fetchRow()[0] );
 		}
 
 		String msg( "%s%s%s%s", bk.data, parent.data, left.data, right.data );
 		queue_message( mysql, user, w->identity, msg.data );
+
+		active_generation = w->generation;
 	}
 
-	DbQuery updateGen( mysql,
-		"UPDATE user SET put_generation = %L WHERE user = %e",
-		generation, user );
+	if ( active_generation >= 0 ) {
+		DbQuery updateGen( mysql,
+			"UPDATE user SET put_generation = %L WHERE user = %e",
+			active_generation, user );
+	}
 }
 
-
-int forward_tree_insert( MYSQL *mysql, const char *user,
-		const char *identity, const char *relid )
+void insert_into_tree( WorkList &workList, NodeList &roots, const char *user,
+		const char *identity, const char *relid, long long generation,
+		const char *broadcast_key )
 {
-	/* Need the current broadcast key. */
-	long long generation;
-	String broadcast_key;
-	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
-	if ( bkres < 0 ) {
-		printf("failed to get current_put_bk\n");
-		return -1;
-	}
-
-	generation += 1;
-	WorkList workList;
-
-	NodeList roots;
-	load_tree( mysql, user, generation, roots );
+	FriendNode *newNode = new FriendNode( identity, generation );
 
 	if ( roots.size() == 0 ) {
 		/* Set this friend claim to be the root of the put tree. */
-		GetTreeWork *work = new GetTreeWork( identity, 1, 0, 0, 0 );
+		GetTreeWork *work = new GetTreeWork( identity, 1, 0, 0, 0,
+				generation, broadcast_key );
 		workList.push_back( work );
+		roots.push_back( newNode );
+		newNode->isRoot = true;
 	}
 	else {
 		NodeList queue = roots;
 
-		FriendNode *newNode = new FriendNode( identity, generation );
 
 		while ( queue.size() > 0 ) {
 			FriendNode *front = queue.front();
@@ -228,12 +230,14 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 					front->isRoot ? 1 : 0,
 					front->parent != 0 ? front->parent->identity.c_str() : 0,
 					identity, 
-					front->right != 0 ? front->right->identity.c_str() : 0 );
+					front->right != 0 ? front->right->identity.c_str() : 0,
+					generation, broadcast_key );
 				workList.push_back( work );
 
 				/* Need an entry for the node being inserted into the tree. It is not a
 				 * root node. */
-				work = new GetTreeWork( identity, 0, front->identity.c_str(), 0, 0 );
+				work = new GetTreeWork( identity, 0, front->identity.c_str(), 
+						0, 0, generation, broadcast_key );
 				workList.push_back( work );
 				break;
 			}
@@ -248,12 +252,14 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 					front->isRoot ? 1 : 0,
 					front->parent != 0 ? front->parent->identity.c_str() : 0,
 					front->left != 0 ? front->left->identity.c_str() : 0,
-					identity );
+					identity,
+					generation, broadcast_key );
 				workList.push_back( work );
 
 				/* Need an entry for the node being inserted into the tree. It is not a
 				 * root node. */
-				work = new GetTreeWork( identity, 0, front->identity.c_str(), 0, 0 );
+				work = new GetTreeWork( identity, 0, front->identity.c_str(),
+						0, 0, generation, broadcast_key );
 				workList.push_back( work );
 				break;
 			}
@@ -261,11 +267,57 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 			queue.pop_front();
 		}
 	}
+}
+
+int forward_tree_insert( MYSQL *mysql, const char *user,
+		const char *identity, const char *relid )
+{
+	/* Need the current broadcast key. */
+	long long generation;
+	String broadcast_key;
+	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bkres < 0 ) {
+		error("failed to get current_put_bk\n");
+		return -1;
+	}
+
+	generation += 1;
+	WorkList workList;
+	NodeList roots;
+
+	load_tree( mysql, user, generation, roots );
+
+	insert_into_tree( workList, roots, user, identity, relid, generation, broadcast_key );
 
 	exec_worklist( mysql, user, generation, broadcast_key, workList );
 	return 0;
 }
 
+int forward_tree_reset( MYSQL *mysql, const char *user )
+{
+	/* Need the current broadcast key. */
+	long long generation;
+	String broadcast_key;
+	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bkres < 0 ) {
+		error("failed to get current_put_bk\n");
+		return -1;
+	}
+
+	WorkList workList;
+	NodeList roots;
+
+	DbQuery query( mysql, "SELECT friend_id, put_relid FROM friend_claim WHERE user = %e", user );
+	for ( int i = 0; i < query.rows(); i++ ) {
+		generation += 1;
+		MYSQL_ROW row = query.fetchRow();
+		insert_into_tree( workList, roots, user, row[0], row[1], generation, broadcast_key );
+	}
+
+	exec_worklist( mysql, user, generation, broadcast_key, workList );
+
+	return 0;
+}
 
 void swap( MYSQL *mysql, const char *user, NodeList &roots, 
 		FriendNode *n1, FriendNode *n2 )
@@ -275,7 +327,7 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 	String broadcast_key;
 	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
 	if ( bkres < 0 ) {
-		printf("failed to get current_put_bk\n");
+		error("failed to get current_put_bk\n");
 		return;
 	}
 
@@ -294,7 +346,8 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 				n1->parent->isRoot ? 1 : 0, 
 				0,
 				n2->identity.c_str(), 
-				n1->parent->right != 0 ? n1->parent->right->identity.c_str() : 0 );
+				n1->parent->right != 0 ? n1->parent->right->identity.c_str() : 0,
+				generation, broadcast_key );
 
 			workList.push_back( work );
 		}
@@ -304,7 +357,8 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 				n1->parent->isRoot ? 1 : 0, 
 				0,
 				n1->parent->left != 0 ? n1->parent->left->identity.c_str() : 0,
-				n2->identity.c_str() );
+				n2->identity.c_str(),
+				generation, broadcast_key );
 
 			workList.push_back( work );
 		}
@@ -315,7 +369,8 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 		n1->parent == 0 ? 1 : 0, 
 		0,
 		n1->left != 0 ? n1->left->identity.c_str() : 0,
-		n1->right != 0 ? n1->right->identity.c_str() : 0 );
+		n1->right != 0 ? n1->right->identity.c_str() : 0,
+		generation, broadcast_key );
 
 	workList.push_back( work1 );
 
@@ -330,7 +385,8 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 				n2->parent->isRoot ? 1 : 0, 
 				0,
 				n1->identity.c_str(), 
-				n2->parent->right != 0 ? n2->parent->right->identity.c_str() : 0 );
+				n2->parent->right != 0 ? n2->parent->right->identity.c_str() : 0,
+				generation, broadcast_key );
 
 			workList.push_back( work );
 		}
@@ -340,7 +396,8 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 				n2->parent->isRoot ? 1 : 0, 
 				0,
 				n2->parent->left != 0 ? n2->parent->left->identity.c_str() : 0,
-				n1->identity.c_str() );
+				n1->identity.c_str(),
+				generation, broadcast_key );
 
 			workList.push_back( work );
 		}
@@ -351,7 +408,8 @@ void swap( MYSQL *mysql, const char *user, NodeList &roots,
 		n2->parent == 0 ? 1 : 0, 
 		0,
 		n2->left != 0 ? n2->left->identity.c_str() : 0,
-		n2->right != 0 ? n2->right->identity.c_str() : 0 );
+		n2->right != 0 ? n2->right->identity.c_str() : 0,
+		generation, broadcast_key );
 
 	workList.push_back( work2 );
 

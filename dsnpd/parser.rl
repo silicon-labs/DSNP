@@ -272,6 +272,10 @@ bool gblKeySubmitted = false;
 		'broadcast'i ' ' relid ' ' generation ' ' length
 			M_EOL @check_ssl @{
 				broadcast( mysql, relid, generation, message_buffer.data );
+			} |
+
+		'ftr'i ' ' user EOL @check_key @ {
+				forward_tree_reset( mysql, user );
 			}
 	)*;
 

@@ -39,8 +39,12 @@ class CredController extends AppController
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
-		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)", $res, $regs) )
-			$this->userError( 'loginFailed' );
+		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)", $res, $regs) ) {
+			$this->userError('generic', array(
+				'message' => 'Login failed.',
+				'details' => 'Please press the back button to try again.'
+			));
+		}
 
 		# Login successful.
 		$this->Session->write( 'auth', 'owner' );

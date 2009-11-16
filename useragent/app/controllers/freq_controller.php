@@ -24,16 +24,12 @@ class FreqController extends AppController
 	{
 		$identity = $_POST['identity'];
 
-		//require_once('../recaptcha-php-1.10/recaptchalib.php');
-		//$resp = recaptcha_check_answer ($CFG_RC_PRIVATE_KEY,
-		//              $_SERVER["REMOTE_ADDR"],
-		//              $_POST["recaptcha_challenge_field"],
-		//              $_POST["recaptcha_response_field"]);
-		//
-		//if (!$resp->is_valid) {
-		//      die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
-		//                      "(reCAPTCHA said: " . $resp->error . ")");
-		//}
+		if ( $identity === $this->USER_URI ) {
+			$this->userError('generic', array(
+				'message' => 'The identity submitted belongs to this user.',
+				'details' => 'It is not possible to friend request oneself.'
+			));
+		}
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
@@ -54,13 +50,19 @@ class FreqController extends AppController
 			header("Location: ${identity}freq/retrelid?${arg_identity}&${arg_reqid}" );
 		}
 		else if ( ereg("^ERROR ([0-9]+)", $res, $regs) ) {
-			die( "!!! There was an error:<br>" .
-			$ERROR[$regs[1]] . "<br>" .
-			"Check that the URI you submitted is correct.");
+			$this->userError('generic', array(
+				'message' => 'The DSNP server responded with an error.',
+				'details' => 'The server responded with error code ' . $regs[1] . '. ' .
+					'Check that the URI you submitted is correct. ' .
+					'If the problem persists contact the system administrator.'
+			));
 		}
 		else {
-			die( "!!! The local SPP server did not respond. How rude.<br>" . 
-				"Check that the URI you submitted is correct.");
+			$this->userError('generic', array(
+				'message' => 'The DSNP server did not responsd.',
+				'details' => 'Check that the URI you submitted is correct. ' .
+					'If the problem persists contact the system administrator.'
+			));
 		}
 	}
 

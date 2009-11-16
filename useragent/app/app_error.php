@@ -60,6 +60,14 @@ class AppError extends ErrorHandler
 		$this->_outputMessage('noauth_retftok');
 	}
 
+	function generic( $params )
+	{
+		$this->collectUserData( $params );
+		$this->controller->set( 'message', $params['message'] );
+		$this->controller->set( 'details', $params['details'] );
+		$this->_outputMessage('generic');
+	}
+
 	# We can override this so we can use a different layout.
 	# function _outputMessage($template)
 	# {

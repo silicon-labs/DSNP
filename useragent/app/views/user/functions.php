@@ -54,7 +54,7 @@ function printMessage( $USER, $BROWSER,
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
 		echo '<div class="msgabout">';
-		echo "<font class=\"msgtime\">$time_published</font><br>";
+		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
@@ -72,7 +72,7 @@ function printMessage( $USER, $BROWSER,
 	}
 	else if ( $type == 'MSG' ) {
 		echo '<div class="msgabout">';
-		echo "<font class=\"msgtime\">$time_published</font><br>";
+		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
@@ -81,7 +81,7 @@ function printMessage( $USER, $BROWSER,
 	}
 	else if ( $type == 'BRD' ) {
 		echo '<div class="msgabout">';
-		echo "<font class=\"msgtime\">$time_published</font><br>";
+		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
 		printName( $USER, $BROWSER, $subject_id, $subject_name, true );

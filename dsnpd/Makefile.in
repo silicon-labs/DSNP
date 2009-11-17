@@ -13,17 +13,17 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-INCS += -I../aapl -I/usr/include/mysql
+INCS += -I/opt/openssl/include -I../aapl -I/usr/include/mysql
 DEFS +=
 
 CXXFLAGS += -g -Wall
-LDFLAGS += -L/usr/lib/mysql
+LDFLAGS += -L/opt/openssl/lib/ -L/usr/lib/mysql
 
 CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp disttree.cpp \
 	log.cpp db.cpp dsnpd.cpp tls.cpp base64.cpp test.cpp
 GEN_SRCS = parser.cpp rcfile.cpp base64.cpp
 
-LIBS = -lssl -lmysqlclient
+LIBS = -lssl -lcrypto -ldl -lmysqlclient
 
 #*************************************
 

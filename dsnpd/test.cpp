@@ -135,6 +135,15 @@ void test_base64()
 	printf( "%s\n", enc );
 }
 
+void test_base64_2()
+{
+	u_char token[TOKEN_SIZE];
+	memset( token, 0, TOKEN_SIZE );
+	RAND_bytes( token, TOKEN_SIZE );
+	char *token_str = bin_to_base64( token, TOKEN_SIZE );
+	printf( "%s\n", token_str );
+}
+
 void test_current_put_bk()
 {
 	set_config_by_name( "spp" );
@@ -169,7 +178,7 @@ void tree1( MYSQL *mysql )
 		"https://localhost/spp/sarah/" );
 }
 
-void run_test()
+void tree_load()
 {
 	set_config_by_name( "spp" );
 	MYSQL *mysql, *connect_res;
@@ -182,3 +191,7 @@ void run_test()
 	tree1( mysql );
 }
 
+void run_test()
+{
+	test_base64_2();
+}

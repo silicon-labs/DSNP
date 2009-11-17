@@ -521,8 +521,8 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
 
-	free( requested_relid_str );
-	free( reqid_str );
+	delete[] requested_relid_str;
+	delete[] reqid_str;
 }
 
 void fetch_requested_relid( MYSQL *mysql, const char *reqid )
@@ -685,9 +685,9 @@ void relid_response( MYSQL *mysql, const char *user,
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s\r\n", response_reqid_str );
 
-	free( requested_relid_str );
-	free( response_relid_str );
-	free( response_reqid_str );
+	delete[] requested_relid_str;
+	delete[] response_relid_str;
+	delete[] response_reqid_str;
 }
 
 void fetch_response_relid( MYSQL *mysql, const char *reqid )
@@ -828,8 +828,8 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK\r\n" );
 
-	free( requested_relid_str );
-	free( returned_relid_str );
+	delete[] requested_relid_str;
+	delete[] returned_relid_str;
 }
 
 long delete_friend_request( MYSQL *mysql, const char *user, const char *user_reqid )
@@ -2105,7 +2105,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	MYSQL_RES *result;
 	MYSQL_ROW row;
 	Encrypt encrypt;
-	u_char token[RELID_SIZE];
+	u_char token[TOKEN_SIZE];
 	u_char pass_salt[SALT_SIZE];
 	char *token_str;
 	char *pass_hashed, *salt_str, *pass_str, *id_salt_str;

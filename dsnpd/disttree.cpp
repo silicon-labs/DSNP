@@ -65,11 +65,11 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 
 		/* Skip if we would be downgrading the generation. */
 		if ( generation < node->generation ) {
-			printf("skipping old generation for %s %s\n", user, ident );
+			debug("skipping old generation for %s %s\n", user, ident );
 			continue;
 		}
 		node->generation = generation;
-		printf("loading %s %s\n", user, ident );
+		debug("loading %s %s\n", user, ident );
 
 		if ( isRoot ) {
 			node->isRoot = true;
@@ -97,9 +97,9 @@ void print_node( FriendNode *node, int level )
 {
 	if ( node != 0 ) {
 		for ( int i = 0; i < level; i++ )
-			printf( "    " );
+			debug( "    " );
 
-		printf( "%s\n", node->identity.c_str() );
+		debug( "%s\n", node->identity.c_str() );
 
 		print_node( node->left, level+1 );
 		print_node( node->right, level+1 );
@@ -134,7 +134,7 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 	long long active_generation = -1;
 	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
 		GetTreeWork *w = *i;
-		//printf("%s %s %s\n", w->identity, w->left, w->right );
+		debug("%s %s %s\n", w->identity, w->left, w->right );
 
 		DbQuery localInsert( mysql,
 			"INSERT INTO put_tree "
@@ -422,7 +422,7 @@ int forward_tree_swap( MYSQL *mysql, const char *user,
 	NodeList roots;
 	DbQuery queryGen( mysql, "SELECT put_generation FROM user WHERE user = %e", user );
 	long long generation = strtoll( queryGen.fetchRow()[0], 0, 10 );
-	printf("loading generation: %lld\n", generation );
+	debug("loading generation: %lld\n", generation );
 	load_tree( mysql, user, generation, roots );
 
 	FriendNode *n1, *n2;
@@ -445,7 +445,7 @@ int forward_tree_swap( MYSQL *mysql, const char *user,
 		queue.pop_front();
 	}
 
-	printf( "n1: %p n2: %p p1: %p p2: %p\n", n1, n2, n1->parent, n2->parent );
+	debug( "n1: %p n2: %p p1: %p p2: %p\n", n1, n2, n1->parent, n2->parent );
 	swap( mysql, user, roots, n1, n2 );
 
 	return 0;

@@ -274,7 +274,7 @@ bool gblKeySubmitted = false;
 				broadcast( mysql, relid, generation, message_buffer.data );
 			} |
 
-		'ftr'i ' ' user EOL @check_key @ {
+		'forward_tree_reset'i ' ' user EOL @check_key @ {
 				forward_tree_reset( mysql, user );
 			}
 	)*;

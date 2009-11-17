@@ -205,10 +205,11 @@ void login( MYSQL *mysql, const char *user, const char *pass );
 
 MYSQL *db_connect();
 
+void fatal( const char *fmt, ... );
 void error( const char *fmt, ... );
 void warning( const char *fmt, ... );
 void message( const char *fmt, ... );
-void fatal( const char *fmt, ... );
+void debug( const char *fmt, ... );
 void openLogFile();
 
 #define ERROR_FRIEND_CLAIM_EXISTS       1

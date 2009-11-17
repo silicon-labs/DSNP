@@ -39,6 +39,26 @@ void openLogFile()
 	}
 }
 
+void fatal( const char *fmt, ... )
+{
+	va_list args;
+	struct tm localTm;
+	char timeStr[64];
+
+	time_t t = time(0);
+	localtime_r( &t, &localTm );
+	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &localTm );
+
+	if ( logFile != 0 ) {
+		va_start( args, fmt );
+		fprintf( logFile, "<%5d> FTL %s: ", pid, timeStr );
+		vfprintf( logFile, fmt, args );
+		va_end( args );
+	}
+	fflush( logFile );
+	exit(1);
+}
+
 void error( const char *fmt, ... )
 {
 	va_list args;
@@ -96,23 +116,8 @@ void message( const char *fmt, ... )
 	fflush( logFile );
 }
 
-void fatal( const char *fmt, ... )
+void debug( const char *fmt, ... )
 {
-	va_list args;
-	struct tm localTm;
-	char timeStr[64];
-
-	time_t t = time(0);
-	localtime_r( &t, &localTm );
-	strftime( timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &localTm );
-
-	if ( logFile != 0 ) {
-		va_start( args, fmt );
-		fprintf( logFile, "<%5d> FTL %s: ", pid, timeStr );
-		vfprintf( logFile, fmt, args );
-		va_end( args );
-	}
-	fflush( logFile );
-	exit(1);
+	/* FIXME: implement. */
 }
 

@@ -140,7 +140,7 @@ BIGNUM *base64_to_bn( const char *base64 )
 	return bn;
 }
 
-char *pass_hash( const u_char *pass_salt, const char *pass )
+AllocString pass_hash( const u_char *pass_salt, const char *pass )
 {
 	unsigned char pass_hash[SHA_DIGEST_LENGTH];
 	u_char *pass_comb = new u_char[SALT_SIZE + strlen(pass)];
@@ -565,7 +565,7 @@ long store_relid_response( MYSQL *mysql, const char *identity, const char *fr_re
 	return result;
 }
 
-char *make_id_hash( const char *salt, const char *identity )
+AllocString make_id_hash( const char *salt, const char *identity )
 {
 	/* Make a hash for the identity. */
 	long len = strlen(salt) + strlen(identity) + 1;
@@ -2102,58 +2102,51 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 
 void login( MYSQL *mysql, const char *user, const char *pass )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	Encrypt encrypt;
-	u_char token[TOKEN_SIZE];
-	u_char pass_salt[SALT_SIZE];
-	char *token_str;
-	char *pass_hashed, *salt_str, *pass_str, *id_salt_str;
-	long lasts = LOGIN_TOKEN_LASTS;
-	char *identity, *id_hash_str;
+	const long lasts = LOGIN_TOKEN_LASTS;
 
-	exec_query( mysql, 
+	DbQuery login( mysql, 
 		"SELECT user, pass_salt, pass, id_salt FROM user WHERE user = %e", user );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
+	if ( login.rows() == 0 ) {
+		message( "login of %s failed, user not found\n", user );
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
+		return;
 	}
 
-	salt_str = row[1];
-	pass_str = row[2];
-	id_salt_str = row[3];
+	MYSQL_ROW row = login.fetchRow();
+	char *salt_str = row[1];
+	char *pass_str = row[2];
+	char *id_salt_str = row[3];
 
+	/* Hash the password using the sale found in the DB. */
+	u_char pass_salt[SALT_SIZE];
 	base64_to_bin( pass_salt, 0, salt_str );
-	message("pass_salt_str: %s\n", bin2hex( pass_salt, SALT_SIZE ) );
-	message("pass: %s\n", pass );
+	String pass_hashed = pass_hash( pass_salt, pass );
 
-	/* Hash the password. */
-	pass_hashed = pass_hash( pass_salt, pass );
-
+	/* Check the login. */
 	if ( strcmp( pass_hashed, pass_str ) != 0 ) {
-		message("pass hashes do not match %s %s\n", pass_hashed, pass_str );
+		message("login of %s failed, pass hashes do not match\n", user );
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
+		return;
 	}
 
+	/* Login successful. Make a token. */
+	u_char token[TOKEN_SIZE];
 	RAND_bytes( token, TOKEN_SIZE );
-	token_str = bin_to_base64( token, TOKEN_SIZE );
+	String token_str = bin_to_base64( token, TOKEN_SIZE );
 
-	exec_query( mysql, 
+	/* Record the token. */
+	DbQuery loginToken( mysql, 
 		"INSERT INTO login_token ( user, login_token, expires ) "
-		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", user, token_str, lasts );
+		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", 
+		user, token_str.data, lasts );
 
-	identity = new char[strlen(c->CFG_URI) + strlen(user) + 2];
-	sprintf( identity, "%s%s/", c->CFG_URI, user );
-	id_hash_str = make_id_hash( id_salt_str, identity );
+	String identity( "%s%s/", c->CFG_URI, user );
+	String id_hash_str = make_id_hash( id_salt_str, identity );
 
-	BIO_printf( bioOut, "OK %s %s %ld\r\n", id_hash_str, token_str, lasts );
+	BIO_printf( bioOut, "OK %s %s %ld\r\n", id_hash_str.data, token_str.data, lasts );
 
-free_result:
-	mysql_free_result( result );
+	message("login of %s successful\n", user );
 }
 
 void submit_ftoken( MYSQL *mysql, const char *token )

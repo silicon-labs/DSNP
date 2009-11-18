@@ -299,6 +299,8 @@ int server_parse_loop()
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 
+	message( "parse loop begin\n" );
+
 	MYSQL *mysql = 0;
 	bool ssl = false;
 
@@ -310,18 +312,16 @@ int server_parse_loop()
 
 		/* Just break when client closes the connection. */
 		if ( result <= 0 ) {
-			message("parse_loop: exiting %d\n", result );
+			message("parse loop end\n" );
 			break;
 		}
 
 		/* Did we get a full line? */
 		long lineLen = strlen( buf );
 		if ( buf[lineLen-1] != '\n' ) {
-			error( "line too long\n" );
+			error( "line too long, exiting\n" );
 			return ERR_LINE_TOO_LONG;
 		}
-
-		message("parse_loop: parsing a line: %s", buf );
 
 		const char *p = buf, *pe = buf + lineLen;
 		%% write exec;
@@ -329,10 +329,11 @@ int server_parse_loop()
 		BIO_flush( bioOut );
 
 		if ( cs == parser_error ) {
-			error( "parse error: %s", buf );
+			error( "parse error, exiting\n" );
 			return ERR_PARSE_ERROR;
 		}
 		else if ( cs < %%{ write first_final; }%% ) {
+			error( "incomplete line, exiting\n" );
 			return ERR_UNEXPECTED_END;
 		}
 	}

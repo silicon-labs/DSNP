@@ -22,6 +22,6 @@ dnl Check for definition of MAKE.
 AC_PROG_MAKE_SET
 
 dnl write output files
-AC_OUTPUT(Makefile dsnpd/Makefile db/Makefile )
+AC_OUTPUT( Makefile dsnpd/Makefile db/Makefile useragent/Makefile )
 
 echo "configuration of dsnpd complete"

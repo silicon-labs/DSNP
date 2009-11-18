@@ -46,6 +46,8 @@ if (!defined('ROOT')) {
 	define('ROOT', dirname(dirname(dirname(__FILE__))));
 }
 
+define('PREFIX', dirname(dirname(dirname(ROOT))));
+
 /**
  * The actual directory name for the "app".
  *
@@ -77,6 +79,11 @@ if (!defined('WWW_ROOT')) {
 	define('WWW_ROOT', dirname(__FILE__) . DS);
 }
 
+/* Location of the data files. */
+define( 'TMP', PREFIX . '/var/lib/dsnp/tmp/' );
+define( 'DATA_DIR', PREFIX . '/var/lib/dsnp/data' );
+
+
 if (!defined('CORE_PATH')) {
 	if (function_exists('ini_set') && ini_set('include_path', 
 			CAKE_CORE_INCLUDE_PATH . PATH_SEPARATOR . ROOT . DS . APP_DIR . 
@@ -90,6 +97,14 @@ if (!defined('CORE_PATH')) {
 	}
 }
 
+/* This choose the site to configure for. */
+include( PREFIX . '/etc/config.php' );
+
+define( 'CFG_DB_HOST', $CFG_DB_HOST );
+define( 'CFG_DB_USER', $CFG_DB_USER );
+define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
+define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
+
 if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 	trigger_error("CakePHP core could not be found.  " . 
 		"Check the value of CAKE_CORE_INCLUDE_PATH in APP/webroot/index.php.  " .
@@ -97,6 +112,9 @@ if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 		DS . "cake core directory and your " . DS . 
 		"vendors root directory.", E_USER_ERROR);
 }
+
+/* Loads configuration params from sites into the Configure class. */
+include( ROOT . DS . APP_DIR . '/config/sites.php' );
 
 /* If there is a user, but no slash following it, then add one. */
 if ( isset( $_GET['url'] ) ) {

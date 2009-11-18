@@ -6,3 +6,5 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
 </IfModule>
+
+php_flag upload_max_filesize 3271557120

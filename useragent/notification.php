@@ -13,7 +13,7 @@ $type = $argv[2];
 # Simlate the server environment so that the right installation can be selected.
 $_SERVER['HTTP_HOST'] = $argv[1];
 $_SERVER['REQUEST_URI'] = $argv[2];
-include('app/config/config.php');
+include(dirname(dirname(dirname(dirname(__FILE__)))) . '/etc/config.php');
 
 $notification_type = $argv[3];
 $b = 4;

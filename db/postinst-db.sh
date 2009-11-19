@@ -65,9 +65,11 @@ fi
 # Check for the version table.
 if ! mysql_cmd ${site_name}_dsnp -e "show tables;" | grep -q version; then
 	echo "+ adding version table"
-	mysql_cmd ${site_name}_dsnp -e "CREATE TABLE version ( version VARCHAR(32) )"
-	mysql_cmd ${site_name}_dsnp -e "INSERT INTO version ( version ) VALUES ( 'db-0.1' )"
+	mysql_cmd ${site_name}_dsnp -e "CREATE TABLE version ( version INT )"
+	mysql_cmd ${site_name}_dsnp -e "INSERT INTO version ( version ) VALUES ( 1 )"
 fi
 
-rm $OUTPUT
+# Rely on the the version number from now on. 
+db_ver=`mysql_cmd ${site_name}_dsnp -e "SELECT version FROM version"`
 
+rm $OUTPUT

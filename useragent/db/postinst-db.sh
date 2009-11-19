@@ -59,7 +59,14 @@ fi
 if ! mysql_cmd ${site_name}_ua -e "show tables;" | grep -q user; then
 	# Init the database.
 	echo "+ INITIALIAING DATABASE ${site_name}_ua"
-	mysql_cmd ${site_name}_ua < init.sql
+	mysql_cmd ${site_name}_ua < $runfrom/init.sql
+fi
+
+# Check for the version table.
+if ! mysql_cmd ${site_name}_ua -e "show tables;" | grep -q version; then
+	echo "+ adding version table"
+	mysql_cmd ${site_name}_ua -e "CREATE TABLE version ( version VARCHAR(32) )"
+	mysql_cmd ${site_name}_ua -e "INSERT INTO version ( version ) VALUES ( 'db-0.1' )"
 fi
 
 rm $OUTPUT

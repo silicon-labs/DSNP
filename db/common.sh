@@ -32,7 +32,6 @@ Please enter the password for the root user.
 EOF
 
 while true; do
-
 	read -s -p 'mysql root@localhost pass: ' MYSQL_ROOT_PASS; echo;
 
 	# Check the password that was just entered.
@@ -43,8 +42,6 @@ while true; do
 	fi
 
 	echo "mysql root password is good"
-	echo
-
 	break
 done
 

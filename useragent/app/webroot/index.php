@@ -80,9 +80,16 @@ if (!defined('WWW_ROOT')) {
 }
 
 /* Location of the data files. */
-define( 'TMP', PREFIX . '/var/lib/dsnp/tmp/' );
-define( 'DATA_DIR', PREFIX . '/var/lib/dsnp/data' );
+/* This choose the site to configure for. */
+include( PREFIX . '/etc/config.php' );
 
+define( 'CFG_DB_HOST', $CFG_DB_HOST );
+define( 'CFG_DB_USER', $CFG_DB_USER );
+define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
+define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
+
+define( 'TMP', PREFIX . '/var/lib/dsnp/' . $CFG_NAME . '/tmp/' );
+define( 'DATA_DIR', PREFIX . '/var/lib/dsnp/' . $CFG_NAME . '/data' );
 
 if (!defined('CORE_PATH')) {
 	if (function_exists('ini_set') && ini_set('include_path', 
@@ -96,14 +103,6 @@ if (!defined('CORE_PATH')) {
 		define('CORE_PATH', CAKE_CORE_INCLUDE_PATH . DS);
 	}
 }
-
-/* This choose the site to configure for. */
-include( PREFIX . '/etc/config.php' );
-
-define( 'CFG_DB_HOST', $CFG_DB_HOST );
-define( 'CFG_DB_USER', $CFG_DB_USER );
-define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
-define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
 
 if (!include(CORE_PATH . 'cake' . DS . 'bootstrap.php')) {
 	trigger_error("CakePHP core could not be found.  " . 

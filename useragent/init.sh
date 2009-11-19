@@ -226,6 +226,7 @@ EOF
 
 cat >> $PHP_CONF << EOF
 if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
+	\$CFG_NAME = '$NAME';
 	\$CFG_URI = '$CFG_URI';
 	\$CFG_HOST = '$CFG_HOST';
 	\$CFG_PATH = '$CFG_PATH';

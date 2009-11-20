@@ -46,7 +46,8 @@ class AdminController extends AppController
 		$this->loadModel('User');
 		$this->User->save( array( 
 				'user' => $user,
-				'identity' => $this->CFG_URI . $user . '/'
+				'identity' => $this->CFG_URI . $user . '/',
+				'type' => 0
 		));
 
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";

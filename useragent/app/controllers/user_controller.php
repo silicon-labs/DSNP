@@ -39,7 +39,8 @@ class UserController extends AppController
 		$images = $this->Image->find('all', array(
 			'conditions' => 
 				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' )
+			'order' => array( 'Image.seq_num DESC' ),
+			'limit' => 30
 		));
 		$this->set( 'images', $images );
 
@@ -48,7 +49,8 @@ class UserController extends AppController
 				'conditions' => array( 
 					'Activity.user_id' => $this->USER_ID
 				),
-				'order' => 'time_published DESC'
+				'order' => 'time_published DESC',
+				'limit' => 30
 			));
 		$this->set( 'activity', $activity );
 
@@ -74,7 +76,8 @@ class UserController extends AppController
 		$images = $this->Image->find('all', array( 
 			'conditions' => 
 				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' )
+			'order' => array( 'Image.seq_num DESC' ),
+			'limit' => 30
 		));
 		$this->set( 'images', $images );
 
@@ -84,7 +87,8 @@ class UserController extends AppController
 					'Activity.user_id' => $this->USER_ID,
 					'published' => 'true'
 				),
-				'order' => 'time_published DESC'
+				'order' => 'time_published DESC',
+				'limit' => 30
 			));
 		$this->set( 'activity', $activity );
 
@@ -125,7 +129,8 @@ class UserController extends AppController
 		$images = $this->Image->find('all', array(
 			'conditions' => 
 				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' )
+			'order' => array( 'Image.seq_num DESC' ),
+			'limit' => 30
 		));
 		$this->set( 'images', $images );
 
@@ -134,7 +139,8 @@ class UserController extends AppController
 				'conditions' => array( 
 					'Activity.user_id' => $this->USER_ID
 				),
-				'order' => 'time_published DESC'
+				'order' => 'time_published DESC',
+				'limit' => 30
 			));
 		$this->set( 'activity', $activity );
 
@@ -160,7 +166,8 @@ class UserController extends AppController
 		$images = $this->Image->find('all', array( 
 			'conditions' => 
 				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' )
+			'order' => array( 'Image.seq_num DESC' ),
+			'limit' => 30
 		));
 		$this->set( 'images', $images );
 
@@ -170,7 +177,8 @@ class UserController extends AppController
 					'Activity.user_id' => $this->USER_ID,
 					'published' => 'true'
 				),
-				'order' => 'time_published DESC'
+				'order' => 'time_published DESC',
+				'limit' => 30
 			));
 		$this->set( 'activity', $activity );
 

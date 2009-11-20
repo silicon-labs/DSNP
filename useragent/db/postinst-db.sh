@@ -74,6 +74,7 @@ db_ver=`mysql_cmd ${site_name}_ua -e "SELECT version from version"`
 
 i=$((db_ver+1))
 while [ -f $runfrom/upgrade-$i.sql ]; do
+	echo "+ upgrading to db version $i"
 	mysql_cmd ${site_name}_ua < $runfrom/upgrade-$i.sql
 	mysql_cmd ${site_name}_ua -e "UPDATE version SET version = $i"
 	i=$((i+1))

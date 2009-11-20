@@ -9,17 +9,14 @@
 
 <div class="content">
 
-
-<?php echo $form->create( null, array( 'url' => "/$USER_NAME/user/sedit")); ?>
-
-<?php echo $form->input('name'); ?>
-<?php echo $form->input('email'); ?>
-
-<?php echo $form->hidden( 'id' ); ?>
-
-<?php echo $form->end('Update'); ?>
+<?php 
+echo $form->create( null, array( 'url' => "/$USER_NAME/user/sedit"));
+echo $form->input('name');
+echo $form->input('email');
+echo $form->hidden( 'id' );
+echo $form->end('Update');
+?>
 
 </div>
-
 
 </div>

@@ -20,6 +20,8 @@ include( 'functions.php' );
 
 ?>
 
+
+
 <div id="leftcol">
 
 <div id="details">
@@ -89,43 +91,8 @@ foreach ( $friendClaims as $row ) {
 </div>
 
 <div class="content">
-
-<h3>Photo Stream</h3>
-
-<div id="photo_upload">
-<form method="post" enctype="multipart/form-data" 
-	action="<?php echo $html->url( "/$USER_NAME/image/upload" ); ?>">
-<input name="photo" type="file"/>
-<input type="submit" value="Upload"/>
-</form> 
 </div>
 
-<table class="photos">
-<?php
-$count = 0;
-foreach ( $images as $row ) {
-	$seq_num = $row['Image']['seq_num'];
-	if ( $count % 2 == 0 ) {
-		echo "<tr div class=\"photorow\">";
-		echo "<td class=\"photo0\">";
-	}
-	else
-		echo "<td class=\"photo1\">";
-
-	echo "<a href=\"${USER_URI}image/view/img-$seq_num.jpg\">";
-	echo "<img src=\"${USER_URI}image/view/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
-	echo "</td>";
-
-	if ( $count % 2 == 1 )
-		echo "</tr>";
-	$count += 1;
-}
-
-if ( $count % 2 == 1 )
-	echo "</tr>";
-?>
-</table>
-</div>
 </div>
 
 <div id="activity">
@@ -144,23 +111,27 @@ Broadcast a Message to all Friends
 </div>
 
 <div class="content">
-<?
-foreach ( $activity as $row ) {
-	$author_id = $row['AuthorFC']['identity'];
-	$author_name = $row['AuthorFC']['name'];
-	$subject_id = $row['SubjectFC']['identity'];
-	$subject_name = $row['SubjectFC']['name'];
-	$time_published = $row['Activity']['time_published'];
-	$type = $row['Activity']['type'];
-	$resource_id = $row['Activity']['resource_id'];
-	$message = $row['Activity']['message'];
 
-	echo "<p>\n";
-	printMessage( $USER, null, 
-			$author_id, $author_name, $subject_id, $subject_name,
-			$type, $resource_id, $message, $time_published );
+<h3>Wish Lists</h3>
+
+<?php
+echo "<pre>";
+print_r ($USER );
+echo " </pre>";
+
+foreach ( $friendClaims as $row ) {
+	$name = $row['FriendClaim']['name'];
+	$dest_id = $row['FriendClaim']['identity'];
+	$id = $row['FriendClaim']['id'];
+
+	echo $html->link( $name, "/$USER_NAME/wish/edit/$id" );
+
+	echo "</a>";
+
+	echo "<br>\n";
 }
 ?>
+</div>
 
 </div>
 

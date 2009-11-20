@@ -92,22 +92,129 @@ class UserController extends AppController
 
 	function indexPublic()
 	{
+		$this->set( 'auth', 'public' );
 		$this->render( 'public' );
+	}
+
+	function ssOwner()
+	{
+		$this->set( 'auth', 'owner' );
+		$this->privName();
+
+		# Load the user's sent friend requests
+		$this->loadModel('SentFriendRequest');
+		$sentFriendRequests = $this->SentFriendRequest->find('all', 
+				array( 'conditions' => array( 'from_user' => $this->USER_NAME )));
+		$this->set( 'sentFriendRequests', $sentFriendRequests );
+
+		# Load the user's friend requests. 
+		$this->loadModel('FriendRequest');
+		$friendRequests = $this->FriendRequest->find( 'all',
+				array( 'conditions' => array( 'for_user' => $this->USER_NAME )));
+		$this->set( 'friendRequests', $friendRequests );
+
+		# Load the friend list.
+		$this->loadModel( 'FriendClaim' );
+		$friendClaims = $this->FriendClaim->find('all', 
+				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
+		$this->set( 'friendClaims', $friendClaims );
+
+		# Load the user's images.
+		$this->loadModel('Image');
+		$images = $this->Image->find('all', array(
+			'conditions' => 
+				array( 'user' => $this->USER_NAME ),
+			'order' => array( 'Image.seq_num DESC' )
+		));
+		$this->set( 'images', $images );
+
+		$this->loadModel('Activity');
+		$activity = $this->Activity->find( 'all', array( 
+				'conditions' => array( 
+					'Activity.user_id' => $this->USER_ID
+				),
+				'order' => 'time_published DESC'
+			));
+		$this->set( 'activity', $activity );
+
+		$this->render( 'ss_owner' );
+	}
+
+	function ssFriend()
+	{
+		$this->set( 'auth', 'friend' );
+		$this->privName();
+
+		$BROWSER_FC = $this->Session->read('BROWSER_FC');
+		$this->set( 'BROWSER_FC', $BROWSER_FC );
+
+		# Load the friend list.
+		$this->loadModel( 'FriendClaim' );
+		$friendClaims = $this->FriendClaim->find('all', 
+				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
+		$this->set( 'friendClaims', $friendClaims );
+
+		# Load the user's images.
+		$this->loadModel('Image');
+		$images = $this->Image->find('all', array( 
+			'conditions' => 
+				array( 'user' => $this->USER_NAME ),
+			'order' => array( 'Image.seq_num DESC' )
+		));
+		$this->set( 'images', $images );
+
+		$this->loadModel('Activity');
+		$activity = $this->Activity->find( 'all', array( 
+				'conditions' => array( 
+					'Activity.user_id' => $this->USER_ID,
+					'published' => 'true'
+				),
+				'order' => 'time_published DESC'
+			));
+		$this->set( 'activity', $activity );
+
+		$this->render( 'ss_friend' );
+	}
+
+	function ssPublic()
+	{
+		$this->set( 'auth', 'public' );
+		$this->render( 'ss_public' );
 	}
 
 	function index()
 	{
-		$this->set( 'auth', 'public' );
-		if ( $this->Session->valid() ) {
-			if ( $this->Session->read('auth') === 'owner' )
-				$this->indexOwner();
-			else if ( $this->Session->read('auth') === 'friend' )
-				$this->indexFriend();
-			else
-				$this->indexPublic();
+		switch ( $this->USER['type'] ) {
+
+			case 0: {
+				/* Regular user. */
+				if ( $this->Session->valid() ) {
+					if ( $this->Session->read('auth') === 'owner' )
+						$this->indexOwner();
+					else if ( $this->Session->read('auth') === 'friend' )
+						$this->indexFriend();
+					else
+						$this->indexPublic();
+				}
+				else
+					$this->indexPublic();
+				break;
+			}
+
+			case 1: {
+				if ( $this->Session->valid() ) {
+					if ( $this->Session->read('auth') === 'owner' )
+						$this->ssOwner();
+					else if ( $this->Session->read('auth') === 'friend' )
+						$this->ssFriend();
+					else
+						$this->ssPublic();
+				}
+				else
+					$this->ssPublic();
+				break;
+			}
 		}
-		else
-			$this->indexPublic();
 	}
 
 	function broadcast()

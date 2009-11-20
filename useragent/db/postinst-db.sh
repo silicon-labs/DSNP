@@ -66,10 +66,17 @@ fi
 if ! mysql_cmd ${site_name}_ua -e "show tables;" | grep -q version; then
 	echo "+ adding version table"
 	mysql_cmd ${site_name}_ua -e "CREATE TABLE version ( version INT )"
-	mysql_cmd ${site_name}_ua -e "INSERT INTO version ( version ) VALUES ( 1 )"
+	mysql_cmd ${site_name}_ua -e "INSERT INTO version ( version ) VALUES ( 0 )"
 fi
 
 # Rely on the the version number from now on. 
 db_ver=`mysql_cmd ${site_name}_ua -e "SELECT version from version"`
+
+i=$((db_ver+1))
+while [ -f $runfrom/upgrade-$i.sql ]; do
+	mysql_cmd ${site_name}_ua < $runfrom/upgrade-$i.sql
+	mysql_cmd ${site_name}_ua -e "UPDATE version SET version = $i"
+	i=$((i+1))
+done
 
 rm $OUTPUT

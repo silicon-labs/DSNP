@@ -47,7 +47,7 @@ class CredController extends AppController
 		}
 
 		# Login successful.
-		$this->Session->write( 'auth', 'owner' );
+		$this->Session->write( 'ROLE', 'owner' );
 		$this->Session->write( 'hash', $regs[1] );
 		$this->Session->write( 'token', $regs[2] );
 
@@ -65,7 +65,7 @@ class CredController extends AppController
 			die('no hash given');
 
 		/* Maybe we are already logged in as this friend. */
-		if ( isset( $_SESSION['auth'] ) && $_SESSION['auth'] == 'friend' && 
+		if ( isset( $_SESSION['ROLE'] ) && $_SESSION['ROLE'] == 'friend' && 
 				isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
 			header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 		}
@@ -161,7 +161,7 @@ class CredController extends AppController
 		# If there is a result then the login is successful. 
 		if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 			# Login successful.
-			$this->Session->write( 'auth', 'friend' );
+			$this->Session->write( 'ROLE', 'friend' );
 			$this->Session->write( 'token', $ftoken );
 			$this->Session->write( 'hash', $regs[1] );
 

@@ -7,6 +7,7 @@ class WishController extends AppController
 	{
 		$this->checkUser();
 		$this->maybeActivateSession();
+		$this->checkRole();
 	}
 
 	function view( $fc_id )
@@ -53,6 +54,7 @@ class WishController extends AppController
 	function sedit()
 	{
 		$BROWSER = $this->Session->read('BROWSER');
+		$fc_id = $this->data['Wish']['friend_claim_id'];
 		if ( $fc_id != $BROWSER['id'] ) {
 			$this->userError('generic', array(
 				'message' => 'not authorized',

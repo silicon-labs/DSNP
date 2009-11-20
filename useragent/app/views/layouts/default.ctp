@@ -55,18 +55,20 @@
 		</div>
 		<div id="header_right">
 		<h1><?php 
-		if ( isset( $auth ) && $auth == 'friend' )
+		if ( isset( $ROLE ) && $ROLE == 'friend' )
 		{
 			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
 					$BROWSER['identity'], $BROWSER['identity'] );
 
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
-		else if ( isset( $auth ) && $auth == 'owner' ) {
+		else if ( isset( $ROLE ) && $ROLE == 'owner' )
+		{
 			echo $html->link( $USER['name'], $USER['identity'] );
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
-		else if ( isset( $USER_NAME ) ) {
+		else if ( isset( $USER_NAME ) )
+		{
 			echo $html->link( 'login', "/$USER_NAME/cred/login" );
 		}
 		?></h1>

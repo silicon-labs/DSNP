@@ -8,11 +8,12 @@ class UserController extends AppController
 	{
 		$this->checkUser();
 		$this->maybeActivateSession();
+		$this->checkRole();
 	}
 
 	function indexOwner()
 	{
-		$this->set( 'auth', 'owner' );
+		$this->set( 'ROLE', 'owner' );
 		$this->privName();
 
 		# Load the user's sent friend requests
@@ -56,7 +57,7 @@ class UserController extends AppController
 
 	function indexFriend()
 	{
-		$this->set( 'auth', 'friend' );
+		$this->set( 'ROLE', 'friend' );
 		$this->privName();
 
 		$BROWSER = $this->Session->read('BROWSER');
@@ -92,13 +93,13 @@ class UserController extends AppController
 
 	function indexPublic()
 	{
-		$this->set( 'auth', 'public' );
+		$this->set( 'ROLE', 'public' );
 		$this->render( 'public' );
 	}
 
 	function ssOwner()
 	{
-		$this->set( 'auth', 'owner' );
+		$this->set( 'ROLE', 'owner' );
 		$this->privName();
 
 		# Load the user's sent friend requests
@@ -142,7 +143,7 @@ class UserController extends AppController
 
 	function ssFriend()
 	{
-		$this->set( 'auth', 'friend' );
+		$this->set( 'ROLE', 'friend' );
 		$this->privName();
 
 		$BROWSER = $this->Session->read('BROWSER');
@@ -178,7 +179,7 @@ class UserController extends AppController
 
 	function ssPublic()
 	{
-		$this->set( 'auth', 'public' );
+		$this->set( 'ROLE', 'public' );
 		$this->render( 'ss_public' );
 	}
 
@@ -189,9 +190,9 @@ class UserController extends AppController
 			case 0: {
 				/* Regular user. */
 				if ( $this->Session->valid() ) {
-					if ( $this->Session->read('auth') === 'owner' )
+					if ( $this->Session->read('ROLE') === 'owner' )
 						$this->indexOwner();
-					else if ( $this->Session->read('auth') === 'friend' )
+					else if ( $this->Session->read('ROLE') === 'friend' )
 						$this->indexFriend();
 					else
 						$this->indexPublic();
@@ -203,9 +204,9 @@ class UserController extends AppController
 
 			case 1: {
 				if ( $this->Session->valid() ) {
-					if ( $this->Session->read('auth') === 'owner' )
+					if ( $this->Session->read('ROLE') === 'owner' )
 						$this->ssOwner();
-					else if ( $this->Session->read('auth') === 'friend' )
+					else if ( $this->Session->read('ROLE') === 'friend' )
 						$this->ssFriend();
 					else
 						$this->ssPublic();

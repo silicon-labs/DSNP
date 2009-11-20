@@ -13,7 +13,7 @@
 
 <?php
 $id = $this->data['FriendClaim']['id'];
-echo $form->create( null, array( 'url' => "/$USER_NAME/wish/sedit/$id"));
+echo $form->create( null, array( 'url' => "/$USER_NAME/wish/sedit"));
 echo $form->textarea('list', array('rows' => 20));
 echo $form->hidden('friend_claim_id');
 echo $form->end('Update');

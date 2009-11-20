@@ -22,6 +22,7 @@ class AppController extends Controller
 	var $USER_ID = null;
 	var $USER_NAME = null;
 	var $USER_URI = null;
+	var $ROLE = null;
 
 	function hereFull()
 	{
@@ -97,6 +98,20 @@ class AppController extends Controller
 		$this->set( 'USER', $this->USER );
 	}
 
+	function checkRole()
+	{
+		$this->ROLE = 'public';
+		$auth = $this->Session->read('ROLE');
+		if ( $this->Session->valid() && isset($auth) )
+			$this->ROLE = $auth;
+
+		if ( $this->ROLE === 'friend' ) {
+			$BROWSER = $this->Session->read('BROWSER');
+			$this->set( 'BROWSER', $BROWSER );
+		}
+		$this->set('ROLE', $this->ROLE );
+	}
+
 	function privName()
 	{
 		if ( isset( $this->USER['name'] ) ) {
@@ -108,14 +123,14 @@ class AppController extends Controller
 
 	function requireOwner()
 	{
-		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'owner' )
+		if ( !$this->Session->valid() || $this->Session->read('ROLE') !== 'owner' )
 			$this->userError('notAuthorized', array( 'cred' => 'o' ));
 		$this->privName();
 	}
 
 	function requireFriend()
 	{
-		if ( !$this->Session->valid() || $this->Session->read('auth') !== 'friend' )
+		if ( !$this->Session->valid() || $this->Session->read('ROLE') !== 'friend' )
 			$this->userError('notAuthorized', array( 'cred' => 'f' ));
 		$this->privName();
 	}
@@ -123,8 +138,8 @@ class AppController extends Controller
 	function requireOwnerOrFriend()
 	{
 		if ( !$this->Session->valid() || ( 
-				$this->Session->read('auth') !== 'owner' &&
-				$this->Session->read('auth') !== 'friend' ) )
+				$this->Session->read('ROLE') !== 'owner' &&
+				$this->Session->read('ROLE') !== 'friend' ) )
 		{
 			$this->userError('notAuthorized', array( 'cred' => 'of' ));
 		}
@@ -135,21 +150,21 @@ class AppController extends Controller
 	function isOwnerOrFriend()
 	{
 		return ( $this->Session->valid() && ( 
-				$this->Session->read('auth') === 'owner' ||
-				$this->Session->read('auth') === 'friend' ) );
+				$this->Session->read('ROLE') === 'owner' ||
+				$this->Session->read('ROLE') === 'friend' ) );
 	}
 
 	function isOwner()
 	{
 		return $this->Session->valid() && 
-			$this->Session->read('auth') === 'owner';
+			$this->Session->read('ROLE') === 'owner';
 
 	}
 
 	function isFriend()
 	{
 		return $this->Session->valid() &&
-			$this->Session->read('auth') === 'friend';
+			$this->Session->read('ROLE') === 'friend';
 	}
 }
 

@@ -57,8 +57,8 @@
 		<h1><?php 
 		if ( isset( $auth ) && $auth == 'friend' )
 		{
-			echo $html->link( isset( $BROWSER_FC['name'] ) ? $BROWSER_FC['name'] : 
-					$BROWSER_FC['identity'], $BROWSER_FC['identity'] );
+			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
+					$BROWSER['identity'], $BROWSER['identity'] );
 
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}

@@ -38,7 +38,7 @@ foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['identity'];
 
-	if ( $dest_id == $BROWSER_FC['identity'] ) {
+	if ( $dest_id == $BROWSER['identity'] ) {
 		echo "you: <a href=\"${dest_id}\">";
 		if ( isset( $name ) )
 			echo $name;
@@ -72,7 +72,7 @@ foreach ( $friendClaims as $row ) {
 <?php
 
 #echo "<pre>";
-#print_r( $BROWSER_FC );
+#print_r( $BROWSER );
 #echo " </pre>";
 
 foreach ( $friendClaims as $row ) {

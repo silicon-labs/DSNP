@@ -59,8 +59,8 @@ class UserController extends AppController
 		$this->set( 'auth', 'friend' );
 		$this->privName();
 
-		$BROWSER_FC = $this->Session->read('BROWSER_FC');
-		$this->set( 'BROWSER_FC', $BROWSER_FC );
+		$BROWSER = $this->Session->read('BROWSER');
+		$this->set( 'BROWSER', $BROWSER );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -145,8 +145,8 @@ class UserController extends AppController
 		$this->set( 'auth', 'friend' );
 		$this->privName();
 
-		$BROWSER_FC = $this->Session->read('BROWSER_FC');
-		$this->set( 'BROWSER_FC', $BROWSER_FC );
+		$BROWSER = $this->Session->read('BROWSER');
+		$this->set( 'BROWSER', $BROWSER );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -270,7 +270,7 @@ class UserController extends AppController
 	function board()
 	{
 		$this->requireFriend();
-		$BROWSER_FC = $this->Session->read('BROWSER_FC');
+		$BROWSER = $this->Session->read('BROWSER');
 
 		/* User message. */
 		$headers = 
@@ -283,7 +283,7 @@ class UserController extends AppController
 		$this->loadModel('Published');
 		$this->Published->save( array( 
 			'user' => $this->USER_NAME,
-			'author_id' => $BROWSER_FC['identity'],
+			'author_id' => $BROWSER['identity'],
 			'subject_id' => $this->CFG_URI . $this->USER_NAME . "/",
 			'type' => 'BRD',
 			'message' => $message,
@@ -292,7 +292,7 @@ class UserController extends AppController
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
 			'user_id'  => $this->USER_ID,
-			'author_id' => $BROWSER_FC['id'],
+			'author_id' => $BROWSER['id'],
 			'published' => 'true',
 			'type' => 'BRD',
 			'message' => $message,
@@ -302,7 +302,7 @@ class UserController extends AppController
 		if ( !$fp )
 			exit(1);
 
-		$identity = $BROWSER_FC['identity'];
+		$identity = $BROWSER['identity'];
 		$hash = $_SESSION['hash'];
 		$token = $_SESSION['token'];
 

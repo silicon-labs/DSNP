@@ -23,7 +23,7 @@ else
 
 <?php
 $id = $this->data['FriendClaim']['id'];
-if ( $id == $BROWSER_FC['id'] )
+if ( $id == $BROWSER['id'] )
 	echo $html->link( 'edit', "/$USER_NAME/wish/edit/$id" );
 ?>
 

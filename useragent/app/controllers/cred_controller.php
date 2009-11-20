@@ -167,14 +167,14 @@ class CredController extends AppController
 
 			/* Find the friend claim data and store in the session. */
 			$this->loadModel('FriendClaim');
-			$BROWSER_FC = $this->FriendClaim->find('first', array(
+			$BROWSER = $this->FriendClaim->find('first', array(
 				'conditions' => array (
 					'user_id' => $this->USER_ID,
 					'identity' => $regs[3]
 				)
 			));
 
-			$this->Session->write( 'BROWSER_FC', $BROWSER_FC['FriendClaim'] );
+			$this->Session->write( 'BROWSER', $BROWSER['FriendClaim'] );
 
 			if ( isset( $_GET['d'] ) )
 				$this->redirect( $_GET['d'] );

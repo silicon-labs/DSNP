@@ -11,8 +11,8 @@ class WishController extends AppController
 
 	function view( $fc_id )
 	{
-		$BROWSER_FC = $this->Session->read('BROWSER_FC');
-		$this->set( 'BROWSER_FC', $BROWSER_FC );
+		$BROWSER = $this->Session->read('BROWSER');
+		$this->set( 'BROWSER', $BROWSER );
 
 		$this->data = $this->Wish->find( 'first', array( 
 				'conditions' => array( 'FriendClaim.id' => $fc_id )));
@@ -28,10 +28,10 @@ class WishController extends AppController
 	{
 		# Make sure that the wish list requested correspons to the signed in
 		# friend.
-		$BROWSER_FC = $this->Session->read('BROWSER_FC');
-		$this->set( 'BROWSER_FC', $BROWSER_FC );
+		$BROWSER = $this->Session->read('BROWSER');
+		$this->set( 'BROWSER', $BROWSER );
 
-		if ( $fc_id != $BROWSER_FC['id'] ) {
+		if ( $fc_id != $BROWSER['id'] ) {
 			$this->userError('generic', array(
 				'message' => 'not authorized',
 				'details' => 'you are not authorized to edit this list'
@@ -52,8 +52,8 @@ class WishController extends AppController
 
 	function sedit()
 	{
-		$BROWSER_FC = $this->Session->read('BROWSER_FC');
-		if ( $fc_id != $BROWSER_FC['id'] ) {
+		$BROWSER = $this->Session->read('BROWSER');
+		if ( $fc_id != $BROWSER['id'] ) {
 			$this->userError('generic', array(
 				'message' => 'not authorized',
 				'details' => 'you are not authorized to edit this list'

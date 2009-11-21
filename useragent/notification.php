@@ -284,6 +284,47 @@ function remoteBoardPost( $user, $subject, $msg, $content_type )
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
+function sendRealName( $user, $to_ident )
+{
+	global $CFG_URI;
+	global $CFG_PORT;
+	global $CFG_COMM_KEY;
+
+	$query = sprintf(
+		"SELECT name from user WHERE user = '%s'",
+		mysql_real_escape_string($user) );
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( $row = mysql_fetch_assoc($result) ) {
+		$name = $row['name'];
+
+		/* User message */
+		$headers = 
+			"Content-Type: text/plain\r\n" .
+			"Type: name-change\r\n" .
+			"\r\n";
+		$message = $name;
+		$len = strlen( $headers ) + strlen( $message );
+
+		$fp = fsockopen( 'localhost', $CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $CFG_URI\r\n" . 
+			"comm_key $CFG_COMM_KEY\r\n" .
+			"submit_broadcast $user $len\r\n";
+
+		fwrite( $fp, $send );
+		fwrite( $fp, $headers, strlen($headers) );
+		fwrite( $fp, $message, strlen($message) );
+		fwrite( $fp, "\r\n", 2 );
+
+		$res = fgets($fp);
+		echo "send real name result: $res";
+	}
+}
+
 switch ( $notification_type ) {
 case "user_message": {
 	# Collect the args.
@@ -367,6 +408,24 @@ case "sent_friend_request": {
 	break;
 }
 
+case "friend_request": {
+	# Collect the args.
+	$for_user = $argv[$b+0];
+	$from_id = $argv[$b+1];
+	$user_reqid = $argv[$b+2];
+	$requested_relid = $argv[$b+3];
+	$returned_relid = $argv[$b+4];
+
+	$query = sprintf(
+		"INSERT INTO friend_request " .
+		" ( for_user, from_id, reqid, requested_relid, returned_relid ) " .
+		" VALUES ( '%s', '%s', '%s', '%s', '%s' ) ",
+		$for_user, $from_id, $user_reqid, $requested_relid, $returned_relid);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	break;
+}
+
 case "sent_friend_request_accepted": {
 	$user = $argv[$b+0];
 	$identity = $argv[$b+1];
@@ -391,6 +450,8 @@ case "sent_friend_request_accepted": {
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+	sendRealName( $user, $identity );
 	break;
 }
 
@@ -409,25 +470,17 @@ case "friend_request_accepted": {
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+	sendRealName( $user, $identity );
 	break;
 }
 
-case "friend_request": {
-	# Collect the args.
-	$for_user = $argv[$b+0];
-	$from_id = $argv[$b+1];
-	$user_reqid = $argv[$b+2];
-	$requested_relid = $argv[$b+3];
-	$returned_relid = $argv[$b+4];
-
-	$query = sprintf(
-		"INSERT INTO friend_request " .
-		" ( for_user, from_id, reqid, requested_relid, returned_relid ) " .
-		" VALUES ( '%s', '%s', '%s', '%s', '%s' ) ",
-		$for_user, $from_id, $user_reqid, $requested_relid, $returned_relid);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+case "send_real_name": {
+	$user = $argv[$b+0];
+	$identity = $argv[$b+1];
+	sendRealName( $user, $identity );
 	break;
 }
+	
 }
 ?>

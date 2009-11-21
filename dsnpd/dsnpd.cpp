@@ -1108,9 +1108,6 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	 * one that we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, user, from_id, returned_id_salt, requested_relid, returned_relid );
 
-	String args( "friend_request_accepted %s %s", user, from_id );
-	app_notification( args, 0, 0 );
-
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
@@ -1120,6 +1117,9 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	delete_friend_request( mysql, user, user_reqid );
 
 	forward_tree_insert( mysql, user, from_id, requested_relid );
+
+	String args( "friend_request_accepted %s %s", user, from_id );
+	app_notification( args, 0, 0 );
 
 	BIO_printf( bioOut, "OK\r\n" );
 }
@@ -2312,9 +2312,6 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	store_friend_claim( mysql, for_user, from_id, id_salt, returned_relid, requested_relid );
 
-	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
-	app_notification( args, 0, 0 );
-
 	/* Clear the sent_freind_request. */
 	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", for_user );
 
@@ -2354,6 +2351,9 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	BIO_printf( bioOut, "OK\r\n" );
 
 	::message("registered: finished\n");
+
+	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
+	app_notification( args, 0, 0 );
 
 	return 0;
 }

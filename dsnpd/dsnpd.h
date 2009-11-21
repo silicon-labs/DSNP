@@ -224,6 +224,7 @@ void openLogFile();
 #define ERROR_NOT_A_FRIEND             11
 #define ERROR_NO_FTOKEN                12
 #define ERROR_DB_ERROR                 13
+#define ERROR_FRIEND_OURSELVES         14
 
 extern BIO *bioIn;
 extern BIO *bioOut;

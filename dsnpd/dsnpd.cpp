@@ -475,6 +475,13 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	char *requested_relid_str, *reqid_str;
 	Encrypt encrypt;
 
+	/* Check to make sure this isn't ourselves. */
+	String ourId( "%s%s/", c->CFG_URI, user );
+	if ( strcasecmp( ourId.data, identity ) == 0 ) {
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_OURSELVES );
+		return;
+	}
+
 	/* Check for the existence of a friend claim. */
 	if ( friend_claim_exists( mysql, user, identity ) ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_CLAIM_EXISTS );

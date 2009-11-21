@@ -24,6 +24,29 @@
 #include <string>
 #include <list>
 
+struct GetTreeWork
+{
+	GetTreeWork( const char *identity, bool isRoot, const char *parent, 
+			const char *left, const char *right, long long generation, const char *bk )
+	:
+		identity(identity), isRoot(isRoot), 
+		parent(parent), left(left), right(right),
+		generation(generation), broadcast_key(bk)
+	{}
+
+	const char *identity;
+	bool isRoot;
+	const char *parent;
+	const char *left;
+	const char *right;
+
+	long long generation;
+	const char *broadcast_key;
+};
+
+typedef list<GetTreeWork*> WorkList;
+
+
 FriendNode *find_node( NodeMap &nodeMap, char *identity, long long generation )
 {
 	NodeMap::iterator i = nodeMap.find( identity );
@@ -36,8 +59,10 @@ FriendNode *find_node( NodeMap &nodeMap, char *identity, long long generation )
 	}
 }
 
-void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &roots )
+void load_tree( MYSQL *mysql, const char *user, long long treeGen, NodeList &roots )
 {
+	message("loading tree for user %s generation %lld\n", user, treeGen );
+
 	NodeMap nodeMap;
 
 	exec_query( mysql,
@@ -45,7 +70,7 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 		"FROM put_tree "
 		"WHERE user = %e AND generation <= %L "
 		"ORDER BY generation DESC",
-		user, generation );
+		user, treeGen );
 	
 	MYSQL_RES *result = mysql_use_result( mysql );
 	
@@ -56,20 +81,20 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 			break;
 
 		char *ident = row[0];
-		long long generation = strtoll( row[1], 0, 10 );
+		long long nodeGen = strtoll( row[1], 0, 10 );
 		int isRoot = atoi(row[2]);
 		char *leftIdent = row[3];
 		char *rightIdent = row[4];
 
-		FriendNode *node = find_node( nodeMap, ident, generation );
+		FriendNode *node = find_node( nodeMap, ident, nodeGen );
 
 		/* Skip if we would be downgrading the generation. */
-		if ( generation < node->generation ) {
-			debug("skipping old generation for %s %s\n", user, ident );
+		if ( nodeGen < node->generation ) {
+			message("skipping old generation for %s %s\n", user, ident );
 			continue;
 		}
-		node->generation = generation;
-		debug("loading %s %s\n", user, ident );
+		node->generation = nodeGen;
+		message("loading %s %s\n", user, ident );
 
 		if ( isRoot ) {
 			node->isRoot = true;
@@ -106,28 +131,6 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
-struct GetTreeWork
-{
-	GetTreeWork( const char *identity, bool isRoot, const char *parent, 
-			const char *left, const char *right, long long generation, const char *bk )
-	:
-		identity(identity), isRoot(isRoot), 
-		parent(parent), left(left), right(right),
-		generation(generation), broadcast_key(bk)
-	{}
-
-	const char *identity;
-	bool isRoot;
-	const char *parent;
-	const char *left;
-	const char *right;
-
-	long long generation;
-	const char *broadcast_key;
-};
-
-typedef list<GetTreeWork*> WorkList;
-
 void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 		const char *broadcast_key, WorkList &workList )
 {
@@ -158,9 +161,15 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
 				user, w->parent );
 
-			parent.format( 
-				"forward_to 0 %lld %s %s\r\n", 
-				w->generation, parentId.site, relid.fetchRow()[0] );
+			if ( relid.rows() == 0 ) {
+				error( "could not find friend claim for parent "
+						"put_tree node %s %s", user, w->parent );
+			}
+			else {
+				parent.format( 
+					"forward_to 0 %lld %s %s\r\n", 
+					w->generation, parentId.site, relid.fetchRow()[0] );
+			}
 		}
 
 		if ( w->left != 0 ) {
@@ -170,9 +179,15 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
 				user, w->left );
 
-			left.format( 
-				"forward_to 1 %lld %s %s\r\n", 
-				w->generation, leftId.site, relid.fetchRow()[0] );
+			if ( relid.rows() == 0 ) {
+				error( "could not find friend claim for left "
+						"put_tree node %s %s", user, w->left );
+			}
+			else {
+				left.format( 
+					"forward_to 1 %lld %s %s\r\n", 
+					w->generation, leftId.site, relid.fetchRow()[0] );
+			}
 		}
 
 		if ( w->right != 0 ) {
@@ -182,9 +197,15 @@ void exec_worklist( MYSQL *mysql, const char *user, long long generation,
 				"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
 				user, w->right );
 
-			right.format( 
-				"forward_to 2 %lld %s %s\r\n", 
-				w->generation, rightId.site, relid.fetchRow()[0] );
+			if ( relid.rows() == 0 ) {
+				error( "could not find friend claim for right "
+						"put_tree node %s %s", user, w->right );
+			}
+			else {
+				right.format( 
+					"forward_to 2 %lld %s %s\r\n", 
+					w->generation, rightId.site, relid.fetchRow()[0] );
+			}
 		}
 
 		String msg( "%s%s%s%s", bk.data, parent.data, left.data, right.data );
@@ -216,7 +237,6 @@ void insert_into_tree( WorkList &workList, NodeList &roots, const char *user,
 	}
 	else {
 		NodeList queue = roots;
-
 
 		while ( queue.size() > 0 ) {
 			FriendNode *front = queue.front();
@@ -295,6 +315,8 @@ int forward_tree_insert( MYSQL *mysql, const char *user,
 
 int forward_tree_reset( MYSQL *mysql, const char *user )
 {
+	message("resetting forwared tree for user %s\n", user );
+
 	/* Need the current broadcast key. */
 	long long generation;
 	String broadcast_key;
@@ -316,6 +338,25 @@ int forward_tree_reset( MYSQL *mysql, const char *user )
 
 	exec_worklist( mysql, user, generation, broadcast_key, workList );
 
+	return 0;
+}
+
+int check_tree( MYSQL *mysql, const char *user )
+{
+	/* Need the current broadcast key. */
+	long long generation;
+	String broadcast_key;
+	int bkres = current_put_bk( mysql, user, generation, broadcast_key );
+	if ( bkres < 0 ) {
+		error("failed to get current_put_bk\n");
+		return -1;
+	}
+
+	WorkList workList;
+	NodeList roots;
+
+	load_tree( mysql, user, generation+1, roots );
+	insert_into_tree( workList, roots, user, "https://werk/asdfi", "dsflkj", generation+1, broadcast_key );
 	return 0;
 }
 

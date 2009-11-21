@@ -102,7 +102,6 @@ long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_ide
 		long long generation, const char *session_key );
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, int childNum, 
 		long long generation, const char *forwardToSite, const char *relid );
-int forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
 
 void receive_message( MYSQL *mysql, const char *relid, const char *message );
@@ -238,6 +237,8 @@ AllocString bin_to_base64( const u_char *data, long len );
 AllocString bn_to_base64( const BIGNUM *n );
 
 int forward_tree_reset( MYSQL *mysql, const char *user );
+int forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
+int check_tree( MYSQL *mysql, const char *user );
 
 extern pid_t pid;
 

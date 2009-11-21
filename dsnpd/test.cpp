@@ -161,6 +161,7 @@ void test_current_put_bk()
 	printf( "%lld %s\n", generation, broadcastKey.data );
 }
 
+
 void update( MYSQL *mysql )
 {
 	DbQuery update( mysql,
@@ -169,13 +170,6 @@ void update( MYSQL *mysql )
 		"WHERE user = 'foo' AND friend_id = 'bar' AND generation = 66" );
 
 	printf( "affected rows: %ld\n", update.affectedRows() );
-}
-
-void tree1( MYSQL *mysql )
-{
-	forward_tree_swap( mysql, "age",
-		"https://localhost/spp/pat/",
-		"https://localhost/spp/sarah/" );
 }
 
 void tree_load()
@@ -188,10 +182,25 @@ void tree_load()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
-	tree1( mysql );
+	forward_tree_swap( mysql, "age",
+		"https://localhost/spp/pat/",
+		"https://localhost/spp/sarah/" );
+}
+
+void check_tree()
+{
+	set_config_by_name( "yoho" );
+	MYSQL *mysql, *connect_res;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+	
+	check_tree( mysql, "age" );
 }
 
 void run_test()
 {
-	test_base64_2();
+	check_tree();
 }

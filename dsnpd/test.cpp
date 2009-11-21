@@ -156,7 +156,7 @@ void test_current_put_bk()
 
 	long long generation;
 	String broadcastKey;
-	current_put_bk( mysql, "age", generation, broadcastKey );
+	currentPutBk( mysql, "age", generation, broadcastKey );
 
 	printf( "%lld %s\n", generation, broadcastKey.data );
 }
@@ -187,7 +187,7 @@ void tree_load()
 		"https://localhost/spp/sarah/" );
 }
 
-void check_tree()
+void checkTree()
 {
 	set_config_by_name( "yoho" );
 	MYSQL *mysql, *connect_res;
@@ -197,10 +197,10 @@ void check_tree()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	
-	check_tree( mysql, "age" );
+	checkTree( mysql, "age" );
 }
 
 void run_test()
 {
-	check_tree();
+	checkTree();
 }

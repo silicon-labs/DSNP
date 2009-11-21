@@ -17,6 +17,7 @@
 #include "dsnpd.h"
 #include "encrypt.h"
 #include "string.h"
+#include "disttree.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -150,7 +151,7 @@ AllocString pass_hash( const u_char *pass_salt, const char *pass )
 	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
 }
 
-int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk )
+int currentPutBk( MYSQL *mysql, const char *user, long long &generation, String &bk )
 {
 	DbQuery query( mysql, 
 		"SELECT user.put_generation, broadcast_key "
@@ -1036,7 +1037,7 @@ int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *iden
 	String broadcast_key;
 
 	/* Get the latest put session key. */
-	current_put_bk( mysql, user, generation, broadcast_key );
+	currentPutBk( mysql, user, generation, broadcast_key );
 	int send_res = send_broadcast_key( mysql, user, identity, generation, broadcast_key );
 	if ( send_res < 0 )
 		error( "sending failed %d\n", send_res );
@@ -1485,7 +1486,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	String broadcast_key;
 
 	/* Get the latest put session key. */
-	current_put_bk( mysql, user, generation, broadcast_key );
+	currentPutBk( mysql, user, generation, broadcast_key );
 	message("queue_broadcast: using %lld %s\n", generation, broadcast_key.data );
 
 	/* Find root friend. */
@@ -2229,7 +2230,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	app_notification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */
-	current_put_bk( mysql, user, generation, broadcast_key );
+	currentPutBk( mysql, user, generation, broadcast_key );
 	message("current put_bk: %lld %s\n", generation, broadcast_key.data );
 
 	/* Make the full message. */

@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <openssl/bio.h>
 #include "dsnpd.h"
+#include "disttree.h"
 #include "string.h"
 
 #define MAX_MSG_LEN 16384
@@ -275,7 +276,8 @@ bool gblKeySubmitted = false;
 			} |
 
 		'forward_tree_reset'i ' ' user EOL @check_key @ {
-				forward_tree_reset( mysql, user );
+				forwardTreeReset( mysql, user );
+				BIO_printf( bioOut, "OK\r\n" );
 			}
 	)*;
 
@@ -319,7 +321,7 @@ int server_parse_loop()
 		/* Did we get a full line? */
 		long lineLen = strlen( buf );
 		if ( buf[lineLen-1] != '\n' ) {
-			error( "line too long, exiting\n" );
+			error( "incomplete line, exiting\n" );
 			return ERR_LINE_TOO_LONG;
 		}
 

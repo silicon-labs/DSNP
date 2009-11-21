@@ -72,4 +72,13 @@ fi
 # Rely on the the version number from now on. 
 db_ver=`mysql_cmd ${site_name}_dsnp -e "SELECT version FROM version"`
 
+i=$((db_ver+1))
+while [ -f $runfrom/upgrade-$i.sql ]; do
+	echo "+ upgrading to db version $i"
+	mysql_cmd ${site_name}_dsnp < $runfrom/upgrade-$i.sql
+	mysql_cmd ${site_name}_dsnp -e "UPDATE version SET version = $i"
+	i=$((i+1))
+done
+
+
 rm $OUTPUT

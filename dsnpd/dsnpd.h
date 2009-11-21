@@ -236,10 +236,6 @@ long base64_to_bin( unsigned char *out, long len, const char *src );
 AllocString bin_to_base64( const u_char *data, long len );
 AllocString bn_to_base64( const BIGNUM *n );
 
-int forward_tree_reset( MYSQL *mysql, const char *user );
-int forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
-int check_tree( MYSQL *mysql, const char *user );
-
 extern pid_t pid;
 
 struct DbQuery
@@ -276,7 +272,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
 			long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
 
-int current_put_bk( MYSQL *mysql, const char *user, long long &generation, String &bk );
+int currentPutBk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
 long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
 		long long to_generation, long long to_seq_num );

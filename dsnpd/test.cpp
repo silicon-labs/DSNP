@@ -200,7 +200,20 @@ void checkTree()
 	checkTree( mysql, "age" );
 }
 
+void friendProof()
+{
+	set_config_by_name( "yoho" );
+	MYSQL *mysql, *connect_res;
+
+	/* Open the database connection. */
+	mysql = mysql_init(0);
+	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
+			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+
+	obtainFriendProof( mysql, "age", "https://yoho/ua/pat/" );
+}
+
 void run_test()
 {
-	checkTree();
+	friendProof();
 }

@@ -275,7 +275,15 @@ bool gblKeySubmitted = false;
 				broadcast( mysql, relid, generation, message_buffer.data );
 			} |
 
-		'forward_tree_reset'i ' ' user EOL @check_key @ {
+		#
+		# Testing
+		#
+
+		'obtain_friend_proof'i ' ' user ' ' identity EOL @check_key @{
+				obtainFriendProof( mysql, user, identity );
+			} |
+
+		'forward_tree_reset'i ' ' user EOL @check_key @{
 				forwardTreeReset( mysql, user );
 				BIO_printf( bioOut, "OK\r\n" );
 			}
@@ -420,6 +428,10 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		'return_remote_broadcast'i ' ' reqid ' ' generation ' ' sym
 			EOL @{
 				return_remote_broadcast( mysql, user, friend_id, reqid, generation, sym );
+			} |
+		'friend_proof_request'i
+			EOL @{
+				friendProofRequest( mysql, user, friend_id );
 			}
 	)*;
 }%%
@@ -547,8 +559,13 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 		fbreak;
 	}
 
+	action friend_proof {
+		friend_proof( mysql, user, subject_id, author_id, seq_num, date );
+	}
+
 	main :=
-		'remote_inner'i ' ' seq_num ' ' date ' ' length EOL @remote_inner;
+		'remote_inner'i ' ' seq_num ' ' date ' ' length EOL @remote_inner |
+		'friend_proof'i ' ' date EOL @friend_proof;
 
 }%%
 
@@ -1171,3 +1188,45 @@ long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to
 	
 	return 0;
 }
+/*
+ * encrypted_broadcast_parser
+  */
+
+%%{
+	machine encrypted_broadcast_parser;
+
+	include common;
+
+	main :=
+		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
+		};
+}%%
+
+%% write data;
+
+
+long EncryptedBroadcastParser::parse( const char *msg )
+{
+	long cs;
+	const char *mark;
+	String gen_str;
+
+	%% write init;
+
+	const char *p = msg;
+	const char *pe = msg + strlen( msg );
+
+	%% write exec;
+
+	if ( cs < %%{ write first_final; }%% ) {
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else
+			return ERR_UNEXPECTED_END;
+	}
+
+	return 0;
+}
+
+
+

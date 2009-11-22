@@ -429,6 +429,27 @@ query_fail:
 	return rsa;
 }
 
+long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
+		const char *to_identity, const char *put_relid,
+		const char *msg, char **result_msg )
+{
+	RSA *id_pub, *user_priv;
+	Encrypt encrypt;
+	int encrypt_res;
+
+	id_pub = fetch_public_key( mysql, to_identity );
+	user_priv = load_key( mysql, from_user );
+
+	encrypt.load( id_pub, user_priv );
+
+	/* Include the null in the message. */
+	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
+
+	message( "send_message_now sending to: %s\n", to_identity );
+	return send_message_net( mysql, prefriend, from_user, to_identity, put_relid, encrypt.sym,
+			strlen(encrypt.sym), result_msg );
+}
+
 bool friend_claim_exists( MYSQL *mysql, const char *user, const char *identity )
 {
 	MYSQL_RES *select_res;
@@ -1093,7 +1114,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	/* Notify the requester. */
 	sprintf( buf, "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	int nfa = send_message_now( mysql, true, user, from_id, requested_relid, buf, &result_message );
+	int nfa = sendMessageNow( mysql, true, user, from_id, requested_relid, buf, &result_message );
 
 	if ( nfa < 0 ) {
 		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );
@@ -1118,7 +1139,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/* Notify the requester. */
 	sprintf( buf, "registered %s %s\r\n", requested_relid, returned_relid );
 	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	send_message_now( mysql, true, user, from_id, requested_relid, buf, 0 );
+	sendMessageNow( mysql, true, user, from_id, requested_relid, buf, 0 );
 
 	/* Remove the user friend request. */
 	delete_friend_request( mysql, user, user_reqid );
@@ -1588,7 +1609,7 @@ close:
 
 long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
 		const char *author_hash, long long generation,
-		long long seq_num, const char *msg, long mLen, const char *encMessage )
+		long long seq_num, const char *encMessage )
 {
 	long encMessageLen = strlen(encMessage);
 	message("enc message len: %ld\n", encMessageLen);
@@ -1659,7 +1680,7 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
 		token, seq_num, mLen, msg );
 
-	res = send_message_now( mysql, false, to_user, author_id, putRelid.data,
+	res = sendMessageNow( mysql, false, to_user, author_id, putRelid.data,
 			remotePublishCmd.data, &result_message );
 	if ( res < 0 ) {
 		message("encrypt_remote_broadcast message failed\n");
@@ -1712,7 +1733,7 @@ void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqi
 	char *result = 0;
 
 	String returnCmd( "return_remote_broadcast %s %s %s\r\n", reqid, generation, sym );
-	send_message_now( mysql, false, user, identity, put_relid, returnCmd.data, &result );
+	sendMessageNow( mysql, false, user, identity, put_relid, returnCmd.data, &result );
 
 	/* Clear the pending remote broadcast. */
 	DbQuery clear( mysql, 
@@ -1765,8 +1786,7 @@ void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 		message( "mlen: %s\n", mLen );
 
 		encrypted_broadcast( mysql, user, identity, hash, 
-					strtoll(seq_num, 0, 10), msg, strtol(mLen, 0, 10), 
-					strtoll(generation, 0, 10), sym );
+					strtoll(seq_num, 0, 10), strtoll(generation, 0, 10), sym );
 
 		/* Clear the pending remote broadcast. */
 		DbQuery clear( mysql, 
@@ -1778,24 +1798,17 @@ void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, long long seq_num, const char *msg, long mLen,
-		long long resultGen, const char *resultEnc )
+		const char *author_hash, long long seq_num,
+		long long generation, const char *encMsg )
 {
-	message("result enc: %s\n", resultEnc );
-	message("result gen: %lld\n", resultGen );
-	message("seq_num:: %lld\n", seq_num );
-	message("mlen:: %ld\n", mLen );
-
 	long res = send_remote_broadcast( mysql, to_user, author_id, 
-			author_hash, resultGen, seq_num, msg, mLen, resultEnc );
+			author_hash, generation, seq_num, encMsg );
 	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
 	}
 	
-	message("remote broadcast okay\n");
 	BIO_printf( bioOut, "OK\r\n" );
 	return 0;
 }
@@ -1941,27 +1954,6 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		remote_broadcast_parser( mysql, user, friend_id, author_id,
 				(char*)encrypt.decrypted, encrypt.decLen );
 	}
-}
-
-long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
-		const char *to_identity, const char *put_relid,
-		const char *msg, char **result_msg )
-{
-	RSA *id_pub, *user_priv;
-	Encrypt encrypt;
-	int encrypt_res;
-
-	id_pub = fetch_public_key( mysql, to_identity );
-	user_priv = load_key( mysql, from_user );
-
-	encrypt.load( id_pub, user_priv );
-
-	/* Include the null in the message. */
-	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
-
-	message( "send_message_now sending to: %s\n", to_identity );
-	return send_message_net( mysql, prefriend, from_user, to_identity, put_relid, encrypt.sym,
-			strlen(encrypt.sym), result_msg );
 }
 
 long queue_message( MYSQL *mysql, const char *from_user,
@@ -2266,6 +2258,56 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
 }
 
+void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id )
+{
+	Encrypt encrypt;
+	int sigRes;
+	String broadcast_key;
+	long long generation;
+
+	message( "received friend proof request\n" );
+
+	DbQuery friendClaim( mysql,
+		"SELECT user FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e",
+		user, friend_id );
+
+	if ( friendClaim.rows() == 0 ) {
+		message("friend_proof_request for non user-friend pair\n");
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
+	}
+
+	RSA *user_priv = load_key( mysql, user );
+	RSA *id_pub = fetch_public_key( mysql, friend_id );
+
+	/* Find current generation and youngest broadcast key */
+	currentPutBk( mysql, user, generation, broadcast_key );
+	message("current put_bk: %lld %s\n", generation, broadcast_key.data );
+
+	/* Get the current time. */
+	String timeStr = timeNow();
+	String command( "friend_proof %s\r\n", timeStr.data );
+
+	/* Find current generation and youngest broadcast key */
+	currentPutBk( mysql, user, generation, broadcast_key );
+
+	encrypt.load( id_pub, user_priv );
+	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)command.data, command.length );
+	if ( sigRes < 0 ) {
+			BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+			return;
+	}
+
+	message( "friend_proof_request enc: %s\n", encrypt.sym );
+	String resultCmd( "encrypted_broadcast %lld %s\r\n", generation, encrypt.sym );
+
+	encrypt.signEncrypt( (u_char*)resultCmd.data, resultCmd.length+1 );
+
+	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
+	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
+}
+
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message )
 {
@@ -2340,6 +2382,41 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 
 	return 0;
+}
+
+int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
+{
+	message("obtaining friend proof\n");
+
+	DbQuery friendClaim( mysql, 
+		"SELECT friend_hash, put_relid FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e",
+		user, friendId );
+
+	if ( friendClaim.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return -1;
+	}
+	MYSQL_ROW row = friendClaim.fetchRow();
+	const char *friendHash = row[0];
+	const char *putRelid = row[1];
+
+	char *result = 0;
+	sendMessageNow( mysql, false, user, friendId, putRelid, "friend_proof_request\r\n", &result );
+
+	message( "send_message_now returned: %s\n", result );
+	EncryptedBroadcastParser ebp;
+	if ( ebp.parse( result ) == 0 )
+		message( "ebp: %lld %s\n", ebp.generation, ebp.sym.data );
+	
+	return encrypted_broadcast( mysql, user, friendId, friendHash, 20, ebp.generation, ebp.sym.data );
+}
+
+void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+		long long seq_num, const char *date )
+{
+	message("%s received friend proof subject_id %s author_id %s date %s\n",
+		user, subject_id, author_id, date );
 }
 
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,

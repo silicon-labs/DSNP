@@ -141,6 +141,8 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 		const char *hash, long long generation, const char *msg, long length );
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date, const char *msg, long mLen );
+void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+		long long seq_num, const char *date );
 int remote_broadcast_parser( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *author_id, const char *msg, long mLen );
 
@@ -271,7 +273,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 		const char *returned_relid, const char *returned_id_salt );
 
 long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
-			long long seq_num, const char *msg, long mLen, long long resultGen, const char *resultEnc );
+			long long seq_num, long long generation, const char *encMsg );
 
 int currentPutBk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
@@ -284,4 +286,16 @@ void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqi
 void remote_broadcast_final( MYSQL *mysql, const char *user, const char *nonce );
 void return_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *nonce, long long generation, const char *sym );
+
+void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
+int obtainFriendProof( MYSQL *mysql, const char *user, const char *friend_id );
+
+struct EncryptedBroadcastParser
+{
+	String sym;
+	long long generation;
+
+	long parse( const char *msg );
+};
+
 #endif

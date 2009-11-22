@@ -484,8 +484,8 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 		}
 
 		/* Rest of the input is the msssage. */
-		const char *msg = p + 1;
-		direct_broadcast( mysql, relid, user, friend_id, seq_num, date, msg, length );
+		embeddedMsg = p + 1;
+		type = Direct;
 		fbreak;
 	}
 
@@ -496,8 +496,8 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 		}
 
 		/* Rest of the input is the msssage. */
-		const char *msg = p + 1;
-		remote_broadcast( mysql, relid, user, friend_id, hash, generation, msg, length );
+		embeddedMsg = p + 1;
+		type = Remote;
 		fbreak;
 	}
 
@@ -508,17 +508,12 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 
 %% write data;
 
-int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
-		const char *user, const char *friend_id, const char *msg, long mLen )
+int BroadcastParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;
-	String date, length_str, hash;
+	String length_str;
 	String seq_str, gen_str;
-	long length;
-	long long generation, seq_num;
-
-	//message("parsing broadcast string: %s\n", msg );
 
 	%% write init;
 
@@ -534,7 +529,6 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 			return ERR_UNEXPECTED_END;
 	}
 
-	ret_seq_num = seq_num;
 	return 0;
 }
 
@@ -554,13 +548,13 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 		}
 
 		/* Rest of the input is the msssage. */
-		const char *msg = p + 1;
-		remote_inner( mysql, user, subject_id, author_id, seq_num, date, msg, length );
+		embeddedMsg = p + 1;
+		type = RemoteInner;
 		fbreak;
 	}
 
 	action friend_proof {
-		friend_proof( mysql, user, subject_id, author_id, seq_num, date );
+		type = FriendProof;
 	}
 
 	main :=
@@ -571,14 +565,11 @@ int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
 
 %% write data;
 
-int remote_broadcast_parser( MYSQL *mysql, const char *user,
-		const char *subject_id, const char *author_id, const char *msg, long mLen )
+int RemoteBroadcastParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;
-	String date, length_str, seq_str;
-	long long seq_num;
-	long length;
+	String length_str, seq_str;
 
 	message("parsing remote_broadcast string: %.*s\n", (int)mLen, msg );
 
@@ -586,6 +577,45 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 
 	const char *p = msg;
 	const char *pe = msg + mLen;
+
+	%% write exec;
+
+	if ( cs < %%{ write first_final; }%% ) {
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else
+			return ERR_UNEXPECTED_END;
+	}
+
+	return 0;
+}
+
+/*
+ * encrypted_broadcast_parser
+ */
+
+%%{
+	machine encrypted_broadcast_parser;
+
+	include common;
+
+	main :=
+		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
+		};
+}%%
+
+%% write data;
+
+long EncryptedBroadcastParser::parse( const char *msg )
+{
+	long cs;
+	const char *mark;
+	String gen_str;
+
+	%% write init;
+
+	const char *p = msg;
+	const char *pe = msg + strlen( msg );
 
 	%% write exec;
 
@@ -1120,112 +1150,3 @@ long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
 	
 	return 0;
 }
-
-/*
- * send_acknowledgement_net
- */
-
-%%{
-	machine send_acknowledgement_net;
-	write data;
-}%%
-
-long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
-		long long to_generation, long long to_seq_num )
-{
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	long pres;
-
-	/* Need to parse the identity. */
-	Identity site( to_site );
-	pres = site.parse();
-
-	if ( pres < 0 )
-		return pres;
-
-	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( site.host, to_site );
-	if ( result < 0 ) 
-		return result;
-
-	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, 
-		"acknowledgement %s %lld %lld\r\n", 
-		to_relid, to_generation, to_seq_num );
-	BIO_flush( tlsConnect.sbio );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
-	/* Parser for response. */
-	%%{
-		include common;
-
-		main := 
-			'OK' EOL @{ OK = true; } |
-			'ERROR' EOL;
-	}%%
-
-	p = buf;
-	pe = buf + strlen(buf);
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( !OK )
-		return ERR_SERVER_ERROR;
-	
-	return 0;
-}
-/*
- * encrypted_broadcast_parser
-  */
-
-%%{
-	machine encrypted_broadcast_parser;
-
-	include common;
-
-	main :=
-		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
-		};
-}%%
-
-%% write data;
-
-long EncryptedBroadcastParser::parse( const char *msg )
-{
-	long cs;
-	const char *mark;
-	String gen_str;
-
-	%% write init;
-
-	const char *p = msg;
-	const char *pe = msg + strlen( msg );
-
-	%% write exec;
-
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
-
-	return 0;
-}
-
-
-

@@ -133,14 +133,8 @@ long remote_broadcast_request( MYSQL *mysql, const char *user,
 		const char *identity, const char *hash, const char *token,
 		const char *user_message, long mLen );
 
-int broadcast_parser( long long &ret_seq_num, MYSQL *mysql, const char *relid,
-		const char *user, const char *friend_id, const char *msg, long mLen );
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *author_id, 
-		long long seqNum, const char *date, const char *msg, long length );
-void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
-		const char *hash, long long generation, const char *msg, long length );
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
-		long long seq_num, const char *date, const char *msg, long mLen );
+               long long seq_num, const char *date, const char *msg, long mLen );
 void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date );
 int remote_broadcast_parser( MYSQL *mysql, const char *user, 
@@ -272,13 +266,9 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 		const char *from_id, const char *requested_relid, 
 		const char *returned_relid, const char *returned_id_salt );
 
-long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id, const char *author_hash, 
-			long long seq_num, long long generation, const char *encMsg );
-
 int currentPutBk( MYSQL *mysql, const char *user, long long &generation, String &bk );
+
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
-long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to_relid,
-		long long to_generation, long long to_seq_num );
 
 void app_notification( const char *args, const char *data, long length );
 
@@ -297,5 +287,41 @@ struct EncryptedBroadcastParser
 
 	long parse( const char *msg );
 };
+
+struct RemoteBroadcastParser
+{
+	enum Type
+	{
+		RemoteInner,
+		FriendProof
+	};
+
+	Type type;
+	long long seq_num;
+	long length;
+	String date;
+	const char *embeddedMsg;
+
+	int parse( const char *msg, long mLen );
+};
+
+struct BroadcastParser
+{
+	enum Type
+	{
+		Direct,
+		Remote
+	};
+
+	Type type;
+	String date, hash;
+	long long generation, seq_num;
+	long length;
+	const char *embeddedMsg;
+
+	int parse( const char *msg, long mLen );
+};
+
+RSA *fetch_public_key( MYSQL *mysql, const char *identity );
 
 #endif

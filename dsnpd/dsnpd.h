@@ -323,5 +323,9 @@ struct BroadcastParser
 };
 
 RSA *fetch_public_key( MYSQL *mysql, const char *identity );
+RSA *load_key( MYSQL *mysql, const char *user );
+long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
+		const char *to_identity, const char *put_relid,
+		const char *msg, char **result_msg );
 
 #endif

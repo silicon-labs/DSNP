@@ -418,7 +418,7 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
 			EOL @{
 				forward_to( mysql, user, friend_id, number, generation, identity, relid );
-		} |
+			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @{ msg = p+1; p += length; } 
 			EOL @{
@@ -1203,7 +1203,6 @@ long send_acknowledgement_net( MYSQL *mysql, const char *to_site, const char *to
 }%%
 
 %% write data;
-
 
 long EncryptedBroadcastParser::parse( const char *msg )
 {

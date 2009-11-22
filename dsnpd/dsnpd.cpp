@@ -1692,9 +1692,9 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 
 	exec_query( mysql,
 		"INSERT INTO pending_remote_broadcast "
-		"( user, identity, hash, reqid, seq_num, message ) "
-		"VALUES ( %e, %e, %e, %e, %L, %d )",
-		to_user, author_id, author_hash, result_message, seq_num, msg, mLen );
+		"( user, identity, hash, reqid, seq_num ) "
+		"VALUES ( %e, %e, %e, %e, %L )",
+		to_user, author_id, author_hash, result_message, seq_num );
 
 	message("send_message_now returned: %s\n", result_message );
 	BIO_printf( bioOut, "OK %s\r\n", result_message );
@@ -1765,7 +1765,7 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 {
 	DbQuery recipient( mysql, 
-		"SELECT user, identity, hash, seq_num, message, length(message), generation, sym "
+		"SELECT user, identity, hash, seq_num, generation, sym "
 		"FROM pending_remote_broadcast "
 		"WHERE user = %e AND reqid_final = %e",
 		user, reqid );
@@ -1776,17 +1776,15 @@ void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 		const char *identity = row[1];
 		const char *hash = row[2];
 		const char *seq_num = row[3];
-		const char *msg = row[4];
-		const char *mLen = row[5];
-		const char *generation = row[6];
-		const char *sym = row[7];
+		const char *generation = row[4];
+		const char *sym = row[5];
 
-		message("remote_broadcast_final: %s %s %s %s %s %s %s\n", 
-			user, identity, hash, seq_num, msg, generation, sym );
-		message( "mlen: %s\n", mLen );
-
-		encrypted_broadcast( mysql, user, identity, hash, 
-					strtoll(seq_num, 0, 10), strtoll(generation, 0, 10), sym );
+		long res = send_remote_broadcast( mysql, user, identity, 
+				hash, strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
+		if ( res < 0 ) {
+			BIO_printf( bioOut, "ERROR\r\n" );
+			return;
+		}
 
 		/* Clear the pending remote broadcast. */
 		DbQuery clear( mysql, 
@@ -1797,22 +1795,6 @@ void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
 
 	BIO_printf( bioOut, "OK\r\n" );
 }
-
-long encrypted_broadcast( MYSQL *mysql, const char *to_user, const char *author_id,
-		const char *author_hash, long long seq_num,
-		long long generation, const char *encMsg )
-{
-	long res = send_remote_broadcast( mysql, to_user, author_id, 
-			author_hash, generation, seq_num, encMsg );
-	if ( res < 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return -1;
-	}
-	
-	BIO_printf( bioOut, "OK\r\n" );
-	return 0;
-}
-
 
 void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
@@ -2408,8 +2390,14 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 	EncryptedBroadcastParser ebp;
 	if ( ebp.parse( result ) == 0 )
 		message( "ebp: %lld %s\n", ebp.generation, ebp.sym.data );
+
+	long res = send_remote_broadcast( mysql, user, friendId, friendHash, ebp.generation, 20, ebp.sym.data );
+	if ( res < 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return -1;
+	}
 	
-	return encrypted_broadcast( mysql, user, friendId, friendHash, 20, ebp.generation, ebp.sym.data );
+	return 0;
 }
 
 void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,

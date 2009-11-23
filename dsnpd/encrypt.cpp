@@ -15,7 +15,7 @@
  */
 
 #include "encrypt.h"
-#include "dsnpd.h"
+#include "dsnp.h"
 
 #include <openssl/rand.h>
 #include <openssl/objects.h>

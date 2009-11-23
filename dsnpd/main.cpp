@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "dsnpd.h"
+#include "dsnp.h"
 
 #include <openssl/rand.h>
 #include <openssl/bio.h>

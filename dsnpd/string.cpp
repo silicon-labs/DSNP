@@ -1,5 +1,5 @@
 #include "string.h"
-#include "dsnpd.h"
+#include "dsnp.h"
 
 #include <stdlib.h>
 #include <string.h>

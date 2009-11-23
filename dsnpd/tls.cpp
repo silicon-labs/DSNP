@@ -3,7 +3,7 @@
 #include <openssl/bio.h>
 
 #include <iostream>
-#include "dsnpd.h"
+#include "dsnp.h"
 
 SSL_CTX *ctx = 0;
 

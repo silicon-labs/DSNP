@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <openssl/bio.h>
-#include "dsnpd.h"
+#include "dsnp.h"
 #include "disttree.h"
 #include "string.h"
 
@@ -259,7 +259,7 @@ bool gblKeySubmitted = false;
 
 		'remote_broadcast_final'i ' ' user ' ' reqid
 			EOL @check_key @{
-				remote_broadcast_final( mysql, user, reqid );
+				remoteBroadcastFinal( mysql, user, reqid );
 			} |
 
 		#

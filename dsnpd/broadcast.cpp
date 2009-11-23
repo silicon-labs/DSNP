@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "dsnpd.h"
+#include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
 #include "disttree.h"
@@ -43,6 +43,10 @@ void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const
 {
 	message("%s received friend proof subject_id %s author_id %s date %s\n",
 		user, subject_id, author_id, date );
+
+	String args( "friend_proof %s %s %s %lld %s", 
+			user, subject_id, author_id, seq_num, date );
+	app_notification( args, 0, 0 );
 }
 
 void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
@@ -453,7 +457,7 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_final_str );
 }
 
-void remote_broadcast_final( MYSQL *mysql, const char *user, const char *reqid )
+void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 {
 	DbQuery recipient( mysql, 
 		"SELECT user, identity, hash, seq_num, generation, sym "
@@ -511,6 +515,12 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 	EncryptedBroadcastParser ebp;
 	if ( ebp.parse( result ) == 0 )
 		message( "ebp: %lld %s\n", ebp.generation, ebp.sym.data );
+	
+	DbQuery update( mysql,
+		"UPDATE friend_claim "
+		"SET friend_proof = %e "
+		"WHERE user = %e AND friend_id = %e",
+		result, user, friendId );
 
 	long res = send_remote_broadcast( mysql, user, friendId, friendHash, ebp.generation, 20, ebp.sym.data );
 	if ( res < 0 ) {

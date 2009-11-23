@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "dsnpd.h"
+#include "dsnp.h"
 
 Config *c = 0, *config_first = 0, *config_last = 0;
 

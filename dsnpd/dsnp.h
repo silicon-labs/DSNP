@@ -273,7 +273,7 @@ int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const ch
 void app_notification( const char *args, const char *data, long length );
 
 void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqid );
-void remote_broadcast_final( MYSQL *mysql, const char *user, const char *nonce );
+void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
 void return_remote_broadcast( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *nonce, long long generation, const char *sym );
 

@@ -61,6 +61,35 @@ function parse( $len )
 	return array( $headers, $msg );
 }
 
+function findFriendClaimId( $user, $identity )
+{
+	$query = sprintf(
+		"SELECT friend_claim.id FROM friend_claim " .
+		"JOIN user ON user.id = friend_claim.user_id " .
+		"WHERE user.user = '%s' AND friend_claim.identity = '%s'",
+		mysql_real_escape_string($user),
+		mysql_real_escape_string($identity)
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( $row = mysql_fetch_assoc($result) )
+		return (int) $row['id'];
+	return -1;
+}
+
+function findUserId( $user )
+{
+	$query = sprintf(
+		"SELECT id FROM user WHERE user.user = '%s'",
+		mysql_real_escape_string($user)
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( $row = mysql_fetch_assoc($result) )
+		return (int) $row['id'];
+	return -1;
+}
+
 function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	global $CFG_PHOTO_DIR;
@@ -138,35 +167,6 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 
 		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	}
-}
-
-function findFriendClaimId( $user, $identity )
-{
-	$query = sprintf(
-		"SELECT friend_claim.id FROM friend_claim " .
-		"JOIN user ON user.id = friend_claim.user_id " .
-		"WHERE user.user = '%s' AND friend_claim.identity = '%s'",
-		mysql_real_escape_string($user),
-		mysql_real_escape_string($identity)
-	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) )
-		return (int) $row['id'];
-	return -1;
-}
-
-function findUserId( $user )
-{
-	$query = sprintf(
-		"SELECT id FROM user WHERE user.user = '%s'",
-		mysql_real_escape_string($user)
-	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) )
-		return (int) $row['id'];
-	return -1;
 }
 
 function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_type )
@@ -325,6 +325,32 @@ function sendRealName( $user, $to_ident )
 	}
 }
 
+function friendProof( $user, $subject, $author, $seq_num, $date, $time )
+{
+	$user_id = findUserId( $user );
+	$subject_id = findFriendClaimId( $user, $subject );
+	$author_id = findFriendClaimId( $user, $author );
+
+	$query = sprintf(
+		"INSERT INTO friend_link " .
+		"	( fc1_id, fc2_id ) " .
+		"VALUES ( %ld, %ld ) ",
+		$subject_id, 
+		$author_id
+	);
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+
+	$query = sprintf(
+		"INSERT INTO friend_link " .
+		"	( fc1_id, fc2_id ) " .
+		"VALUES ( %ld, %ld ) ",
+		$author_id,
+		$subject_id 
+	);
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+}
+
 switch ( $notification_type ) {
 case "user_message": {
 	# Collect the args.
@@ -388,6 +414,19 @@ case "remote_publication": {
 				break;
 		}
 	}
+	break;
+}
+
+case "friend_proof": {
+	# Collect the args.
+	$user = $argv[$b+0];
+	$subject = $argv[$b+1];
+	$author = $argv[$b+2];
+	$seq_num = $argv[$b+3];
+	$date = $argv[$b+4];
+	$time = $argv[$b+5];
+
+	friendProof( $user, $subject, $author, $seq_num, $date, $time );
 	break;
 }
 

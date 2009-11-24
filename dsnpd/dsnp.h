@@ -327,5 +327,7 @@ RSA *load_key( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );
+int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
+		const char *hash, long long generation, const char *sym );
 
 #endif

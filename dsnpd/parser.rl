@@ -435,7 +435,7 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 			} |
 		'friend_proof'i ' ' hash ' ' generation ' ' sym
 			EOL @{
-				message( "received direct friend proof\n" );
+				friendProof( mysql, user, friend_id, hash, generation, sym );
 			}
 	)*;
 }%%

@@ -49,7 +49,7 @@ void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const
 	app_notification( args, 0, 0 );
 }
 
-void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const char *friend_id, 
+void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id, 
 		const char *hash, long long generation, const char *msg, long mLen )
 {
 	MYSQL_RES *result;
@@ -59,7 +59,7 @@ void remote_broadcast( MYSQL *mysql, const char *relid, const char *user, const 
 	Encrypt encrypt;
 	int decryptRes;
 
-	message( "remote_broadcast, generation: %lld\n", generation );
+	message( "remote_broadcast: user %s hash %s generation %lld\n", user, hash, generation );
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	exec_query( mysql, 
@@ -176,7 +176,7 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 						bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
-				remote_broadcast( mysql, relid, user, friend_id, bp.hash, 
+				remote_broadcast( mysql, user, friend_id, bp.hash, 
 						bp.generation, bp.embeddedMsg, bp.length );
 				break;
 		}
@@ -486,6 +486,14 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
+int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
+		const char *hash, long long generation, const char *sym )
+{
+	message("calling remote broadcast from friend_proof\n");
+	remote_broadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
+	return 0;
+}
+
 int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 {
 	message("obtaining friend proof\n");
@@ -528,7 +536,7 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		"FROM friend_claim "
 		"WHERE user = %e",
 		user );
-
+	
 	for ( int r = 0; r < allProofs.rows(); r++ ) {
 		MYSQL_ROW row = allProofs.fetchRow();
 		if ( row[1] != 0 && row[2] != 0 ) {

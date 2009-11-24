@@ -1149,6 +1149,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	String args( "friend_request_accepted %s %s", user, from_id );
 	app_notification( args, 0, 0 );
 
+	//obtainFriendProof( mysql, user, from_id );
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
@@ -1956,6 +1957,7 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
 	app_notification( args, 0, 0 );
 
+	//obtainFriendProof( mysql, for_user, from_id );
 	return 0;
 }
 

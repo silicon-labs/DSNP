@@ -165,15 +165,10 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	decrypted[encrypt.decLen] = 0;
 	decLen = encrypt.decLen;
 
-	message("dispatching broadcast_parser\n");
-//	parseRes = broadcast_parser( seq_num, mysql, relid, user, friend_id, decrypted, decLen );
-//	if ( parseRes < 0 )
-//		message("broadcast_parser failed\n");
-
 	BroadcastParser bp;
 	parseRes = bp.parse( decrypted, decLen );
 	if ( parseRes < 0 )
-		message("broadcast_parser failed\n");
+		error("broadcast_parser failed\n");
 	else {
 		switch ( bp.type ) {
 			case BroadcastParser::Direct:
@@ -518,14 +513,29 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 	
 	DbQuery update( mysql,
 		"UPDATE friend_claim "
-		"SET friend_proof = %e "
+		"SET fp_generation = %L, friend_proof = %e "
 		"WHERE user = %e AND friend_id = %e",
-		result, user, friendId );
+		ebp.generation, ebp.sym.data, user, friendId );
 
 	long res = send_remote_broadcast( mysql, user, friendId, friendHash, ebp.generation, 20, ebp.sym.data );
 	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
+	}
+
+	DbQuery allProofs( mysql,
+		"SELECT friend_hash, fp_generation, friend_proof "
+		"FROM friend_claim "
+		"WHERE user = %e",
+		user );
+
+	for ( int r = 0; r < allProofs.rows(); r++ ) {
+		MYSQL_ROW row = allProofs.fetchRow();
+		if ( row[1] != 0 && row[2] != 0 ) {
+			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
+			message("trying to send %s\n", msg.data );
+			queue_message( mysql, user, friendId, msg.data );
+		}
 	}
 
 	BIO_printf( bioOut, "OK\r\n" );

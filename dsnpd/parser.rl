@@ -432,6 +432,10 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		'friend_proof_request'i
 			EOL @{
 				friendProofRequest( mysql, user, friend_id );
+			} |
+		'friend_proof'i ' ' hash ' ' generation ' ' sym
+			EOL @{
+				message( "received direct friend proof\n" );
 			}
 	)*;
 }%%
@@ -444,7 +448,7 @@ int message_parser( MYSQL *mysql, const char *to_relid,
 	long cs;
 	const char *mark;
 	String identity, number_str, key, relid, gen_str;
-	String sym, token, reqid, seq_str, length_str;
+	String sym, token, reqid, seq_str, length_str, hash;
 	long length, number;
 	long long seq_num, generation;
 

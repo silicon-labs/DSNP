@@ -338,7 +338,8 @@ function friendProof( $user, $subject, $author, $seq_num, $date, $time )
 		$subject_id, 
 		$author_id
 	);
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	/* Allow this queyr to fail due to duplicates. */
+	mysql_query($query);
 
 	$query = sprintf(
 		"INSERT INTO friend_link " .
@@ -348,7 +349,8 @@ function friendProof( $user, $subject, $author, $seq_num, $date, $time )
 		$subject_id 
 	);
 
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	/* Allow this query to fail due to duplicates. */
+	mysql_query($query);
 }
 
 switch ( $notification_type ) {
@@ -490,7 +492,7 @@ case "sent_friend_request_accepted": {
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-	sendRealName( $user, $identity );
+	//sendRealName( $user, $identity );
 	break;
 }
 
@@ -510,7 +512,7 @@ case "friend_request_accepted": {
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
-	sendRealName( $user, $identity );
+	//sendRealName( $user, $identity );
 	break;
 }
 

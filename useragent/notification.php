@@ -474,8 +474,8 @@ case "sent_friend_request_accepted": {
 	$fr_user = user_name_from_id( $identity );
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, identity, name )  " .
-		"SELECT id, '%s', '%s' from user where user = '%s' LIMIT 1",
+		"INSERT INTO friend_claim ( user_id, identity, name, state )  " .
+		"SELECT id, '%s', '%s', 0 from user where user = '%s' LIMIT 1",
 		mysql_real_escape_string($identity), 
 		mysql_real_escape_string($fr_user), 
 		mysql_real_escape_string($user)
@@ -503,8 +503,8 @@ case "friend_request_accepted": {
 	$fr_user = user_name_from_id( $identity );
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, identity, name )  " .
-		"SELECT id, '%s', '%s' from user where user = '%s' LIMIT 1",
+		"INSERT INTO friend_claim ( user_id, identity, name, state )  " .
+		"SELECT id, '%s', '%s', 0 from user where user = '%s' LIMIT 1",
 		mysql_real_escape_string($identity),
 		mysql_real_escape_string($fr_user),
 		mysql_real_escape_string($user)

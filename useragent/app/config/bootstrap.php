@@ -43,4 +43,6 @@
  *
  */
 
+Configure::write('activity_size', 30);
+
 ?>

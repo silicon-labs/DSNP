@@ -145,7 +145,12 @@ Broadcast a Message to all Friends
 
 <div class="content">
 <?
-foreach ( $activity as $row ) {
+
+$activity_size = Configure::read('activity_size');
+$limit = $start + $activity_size < count( $activity ) ? $start + $activity_size : count( $activity );
+for ( $i = $start; $i < $limit; $i++ ) {
+	$row = $activity[$i];
+
 	$author_id = $row['AuthorFC']['identity'];
 	$author_name = $row['AuthorFC']['name'];
 	$subject_id = $row['SubjectFC']['identity'];
@@ -160,6 +165,12 @@ foreach ( $activity as $row ) {
 			$author_id, $author_name, $subject_id, $subject_name,
 			$type, $resource_id, $message, $time_published );
 }
+
+if ( $start > 0 ) 
+	echo $html->link( 'prev', "/$USER_NAME/user/index?start=" . ( $start - $activity_size ) ) . "&nbsp;&nbsp;";
+
+if ( count( $activity ) == $start + $activity_size )
+	echo $html->link( 'next', "/$USER_NAME/user/index?start=" . ( $start + $activity_size ) );
 ?>
 
 </div>

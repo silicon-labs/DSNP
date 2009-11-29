@@ -16,6 +16,11 @@ class UserController extends AppController
 		$this->set( 'ROLE', 'owner' );
 		$this->privName();
 
+		if ( isset( $_GET['start'] ) )
+			$start = $_GET['start'];
+		else
+			$start = 0;
+
 		# Load the user's sent friend requests
 		$this->loadModel('SentFriendRequest');
 		$sentFriendRequests = $this->SentFriendRequest->find('all', 
@@ -50,8 +55,9 @@ class UserController extends AppController
 					'Activity.user_id' => $this->USER_ID
 				),
 				'order' => 'time_published DESC',
-				'limit' => 30
+				'limit' => $start + Configure::read('activity_size')
 			));
+		$this->set( 'start', $start );
 		$this->set( 'activity', $activity );
 
 		$this->render( 'owner' );
@@ -61,6 +67,11 @@ class UserController extends AppController
 	{
 		$this->set( 'ROLE', 'friend' );
 		$this->privName();
+
+		if ( isset( $_GET['start'] ) )
+			$start = $_GET['start'];
+		else
+			$start = 0;
 
 		$BROWSER = $this->Session->read('BROWSER');
 		$this->set( 'BROWSER', $BROWSER );
@@ -88,8 +99,9 @@ class UserController extends AppController
 					'published' => 'true'
 				),
 				'order' => 'time_published DESC',
-				'limit' => 30
+				'limit' => $start + Configure::read('activity_size')
 			));
+		$this->set( 'start', $start );
 		$this->set( 'activity', $activity );
 
 		$this->render( 'friend' );

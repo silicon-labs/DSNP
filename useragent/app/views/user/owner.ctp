@@ -151,19 +151,12 @@ $limit = $start + $activity_size < count( $activity ) ? $start + $activity_size 
 for ( $i = $start; $i < $limit; $i++ ) {
 	$row = $activity[$i];
 
-	$author_id = $row['AuthorFC']['identity'];
-	$author_name = $row['AuthorFC']['name'];
-	$subject_id = $row['SubjectFC']['identity'];
-	$subject_name = $row['SubjectFC']['name'];
-	$time_published = $row['Activity']['time_published'];
-	$type = $row['Activity']['type'];
-	$resource_id = $row['Activity']['resource_id'];
-	$message = $row['Activity']['message'];
+	$author = $row['AuthorFC'];
+	$subject = $row['SubjectFC'];
+	$item = $row['Activity'];
 
 	echo "<p>\n";
-	printMessage( $html, $USER, null, 
-			$author_id, $author_name, $subject_id, $subject_name,
-			$type, $resource_id, $message, $time_published );
+	printMessage( $html, $USER, null, $author, $subject, $item );
 }
 
 if ( $start > 0 ) 
@@ -176,4 +169,3 @@ if ( count( $activity ) == $start + $activity_size )
 </div>
 
 </div>
-

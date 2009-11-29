@@ -85,8 +85,8 @@ class ImageController extends AppController
 			'user_id' => $this->USER_ID,
 			'published' => 'true',
 			'type' => 'PHT',
-			#'resource_id' => $id,
-			'message' => "thm-$id.jpg"
+			'message' => "thm-$id.jpg",
+			'local_resid' => $id
 		));
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );

@@ -98,7 +98,8 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 	if ( !isset( $msg[0]['resource-id'] ) )
 		return;
 
-	$resource_id = (int) $msg[0]['resource-id'];
+	$local_resid = $seq_num;
+	$remote_resid = (int) $msg[0]['resource-id'];
 	$user_id = findUserId( $for_user );
 	$author_id = findFriendClaimId( $for_user, $author );
 
@@ -124,7 +125,7 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string('PHT'),
-		$resource_id, 
+		$remote_resid, 
 		mysql_real_escape_string($name)
 	);
 
@@ -133,14 +134,15 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 	$query = sprintf(
 		"INSERT INTO activity " .
 		"	( user_id, author_id, seq_num, time_published, " . 
-		"		time_received, type, resource_id, message ) " .
-		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', %ld, '%s' )",
+		"		time_received, type, local_resid, remote_resid, message ) " .
+		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', %ld, %ld, '%s' )",
 		$user_id,
 		$author_id, 
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string('PHT'),
-		$resource_id, 
+		$local_resid, 
+		$remote_resid, 
 		mysql_real_escape_string($name)
 	);
 
@@ -181,15 +183,14 @@ function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_t
 	$query = sprintf(
 		"INSERT INTO received " .
 		"	( for_user, author_id, subject_id, seq_num, time_published, " . 
-		"		time_received, type, resource_id, message ) " .
-		"VALUES ( '%s', %ld, %ld, %ld, '%s', now(), '%s', %ld, '%s' )",
+		"		time_received, type, message ) " .
+		"VALUES ( '%s', %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
 		mysql_real_escape_string($for_user), 
 		$author_id,
 		$author_id,
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string('MSG'),
-		0,
 		mysql_real_escape_string($msg[1])
 	);
 
@@ -198,14 +199,13 @@ function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_t
 	$query = sprintf(
 		"INSERT INTO activity " .
 		"	( user_id, author_id, seq_num, time_published, " . 
-		"		time_received, type, resource_id, message ) " .
-		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', %ld, '%s' )",
+		"		time_received, type, message ) " .
+		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', '%s' )",
 		$user_id,
 		$author_id,
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
 		mysql_real_escape_string('MSG'),
-		0,
 		mysql_real_escape_string($msg[1])
 	);
 

@@ -47,11 +47,21 @@ function printName( $USER, $BROWSER, $identity, $name, $possessive )
 	}
 }
 
-function printMessage( $html, $USER, $BROWSER,
-		$author_id, $author_name, $subject_id, $subject_name,
-		$type, $resource_id, $message, $time_published )
+function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 {
 	$USER_NAME = $USER['user'];
+
+	$author_id = $author['identity'];
+	$author_name = $author['name'];
+
+	$subject_id = $subject['identity'];
+	$subject_name = $subject['name'];
+
+	$time_published = $item['time_published'];
+	$type = $item['type'];
+	$local_resid = $item['local_resid'];
+	$remote_resid = $item['remote_resid'];
+	$message = $item['message'];
 
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
@@ -62,14 +72,17 @@ function printMessage( $html, $USER, $BROWSER,
 		echo '</div>';
 
 		echo '<div class="msgphoto">';
-		if ( $resource_id > 0 ) {
-			echo "<a href=\"${author_id}image/view/img-$resource_id.jpg?h=" . 
+		if ( isset( $remote_resid ) ) {
+			echo "<a href=\"${author_id}image/view/img-$remote_resid.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
+			echo "<img src=\"" . $html->url( "/$USER_NAME/image/view/pub-$local_resid.jpg" ) . 
+				"\" alt=\"$message\"></a>\n";
 		}
 		else {
-			echo "<a href=\"" . $html->url( "/$USER_NAME/image/view/$message/" ) . "\">";
+			echo "<a href=\"" . $html->url( "/$USER_NAME/image/view/img-$local_resid.jpg" ) . "\">";
+			echo "<img src=\"" . $html->url( "/$USER_NAME/image/view/thm-$local_resid.jpg" ) . 
+					"\" alt=\"$message\"></a>\n";
 		}
-		echo "<img src=\"" . $html->url( "/$USER_NAME/image/view/$message/" ) . "\" alt=\"$message\"></a>\n";
 		echo '</div>';
 	}
 	else if ( $type == 'MSG' ) {

@@ -161,7 +161,7 @@ for ( $i = $start; $i < $limit; $i++ ) {
 	$message = $row['Activity']['message'];
 
 	echo "<p>\n";
-	printMessage( $USER, null, 
+	printMessage( $html, $USER, null, 
 			$author_id, $author_name, $subject_id, $subject_name,
 			$type, $resource_id, $message, $time_published );
 }

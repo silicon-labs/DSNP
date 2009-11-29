@@ -47,10 +47,12 @@ function printName( $USER, $BROWSER, $identity, $name, $possessive )
 	}
 }
 
-function printMessage( $USER, $BROWSER,
+function printMessage( $html, $USER, $BROWSER,
 		$author_id, $author_name, $subject_id, $subject_name,
 		$type, $resource_id, $message, $time_published )
 {
+	$USER_NAME = $USER['user'];
+
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
 		echo '<div class="msgabout">';
@@ -65,9 +67,9 @@ function printMessage( $USER, $BROWSER,
 				urlencode($_SESSION['hash']) . "\">";
 		}
 		else {
-			echo "<a href=\"image/view/$message\">";
+			echo "<a href=\"" . $html->url( "/$USER_NAME/image/view/$message/" ) . "\">";
 		}
-		echo "<img src=\"image/view/$message\" alt=\"$message\"></a>\n";
+		echo "<img src=\"" . $html->url( "/$USER_NAME/image/view/$message/" ) . "\" alt=\"$message\"></a>\n";
 		echo '</div>';
 	}
 	else if ( $type == 'MSG' ) {

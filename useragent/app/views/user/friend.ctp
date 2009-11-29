@@ -125,7 +125,7 @@ for ( $i = $start; $i < $limit; $i++ ) {
 
 	echo "<p>\n";
 	
-	printMessage( $USER, $BROWSER,
+	printMessage( $html, $USER, $BROWSER,
 			$author_id, $author_name, $subject_id, $subject_name,
 			$type, 0, $message, $time_published );
 }

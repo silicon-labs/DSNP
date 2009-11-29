@@ -131,10 +131,10 @@ for ( $i = $start; $i < $limit; $i++ ) {
 }
 
 if ( $start > 0 ) 
-	echo $html->link( 'prev', "/$USER_NAME/user/index?start=" . ( $start - $activity_size ) ) . "&nbsp;&nbsp;";
+	echo $html->link( 'newer', "/$USER_NAME/user/index?start=" . ( $start - $activity_size ) ) . "&nbsp;&nbsp;";
 
 if ( count( $activity ) == $start + $activity_size )
-	echo $html->link( 'next', "/$USER_NAME/user/index?start=" . ( $start + $activity_size ) );
+	echo $html->link( 'older', "/$USER_NAME/user/index?start=" . ( $start + $activity_size ) );
 ?>
 </div>
 

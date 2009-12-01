@@ -79,7 +79,26 @@ class UserController extends AppController
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
+				array( 
+					'fields' => array(
+						'FriendClaim.*',
+						'FriendLink.*'
+					),
+					'conditions' => array( 'user_id' => $this->USER_ID ),
+					'joins' => array (
+						array( 
+							'table' => 'friend_link',
+							'alias' => 'FriendLink',
+							'type' => 'left outer',
+							'foreignKey' => false,
+							'conditions'=> array(
+								'FriendClaim.id = FriendLink.fc1_id', 
+								'FriendLink.fc2_id' => $BROWSER['id']
+							) 
+						)
+					)
+				)
+			);
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.

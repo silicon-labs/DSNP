@@ -37,17 +37,18 @@ include('functions.php');
 foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['identity'];
+	$fc1_id = $row['FriendLink']['fc1_id'];
 
 	if ( $dest_id == $BROWSER['identity'] ) {
-		echo "you: <a href=\"${dest_id}\">";
+		echo "+ <a href=\"${dest_id}\">";
 		if ( isset( $name ) )
 			echo $name;
 		else
 			echo $dest_id;
 		echo "</a> <br>\n";
 	}
-	else {
-		echo "<a href=\"${dest_id}cred/sflogin?h=" . 
+	else if ( isset( $fc1_id ) ) {
+		echo "* <a href=\"${dest_id}cred/sflogin?h=" . 
 			urlencode( $_SESSION['hash'] ) . "\">";
 		if ( isset( $name ) )
 			echo $name;
@@ -55,7 +56,17 @@ foreach ( $friendClaims as $row ) {
 			echo $dest_id;
 		echo "</a> <br>\n";
 	}
+	else {
+		echo "- <a href=\"${dest_id}\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $dest_id;
+		echo "</a> <br>\n";
+
+	}
 }
+
 
 ?>
 
@@ -108,6 +119,9 @@ Write on <?php print $USER_NAME;?>'s message board:
 <div id="activity_stream">
 
 <?
+
+echo "<pre>"; print_r( $friendClaims ); echo "</pre>";
+
 
 $activity_size = Configure::read('activity_size');
 $limit = $start + $activity_size < count( $activity ) ? $start + $activity_size : count( $activity );

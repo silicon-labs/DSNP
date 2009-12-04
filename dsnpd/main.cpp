@@ -98,6 +98,15 @@ void setupSignals()
 	signal( SIGTERM, &dieHandler );
 }
 
+int server_main()
+{
+	server_parse_loop();
+	run_broadcast_queue_db();
+	run_message_queue_db();
+	return 0;
+}
+
+
 int run_test();
 
 int main( int argc, char **argv )
@@ -132,5 +141,5 @@ int main( int argc, char **argv )
 	else if ( test )
 		run_test();
 	else 
-		server_parse_loop();
+		server_main();
 }

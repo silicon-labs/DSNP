@@ -871,193 +871,6 @@ long delete_friend_request( MYSQL *mysql, const char *user, const char *user_req
 	return 0;
 }
 
-long run_broadcast_queue_db( MYSQL *mysql )
-{
-	int result = 0;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-	long rows;
-
-	/* Table lock. */
-	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
-
-	/* Extract all messages. */
-	exec_query( mysql, 
-		"SELECT to_site, relid, generation, message "
-		"FROM broadcast_queue" );
-
-	/* Get the result. */
-	select_res = mysql_store_result( mysql );
-
-	/* Now clear the table. */
-	exec_query( mysql, "DELETE FROM broadcast_queue");
-
-	/* Free the table lock before we process the select results. */
-	exec_query( mysql, "UNLOCK TABLES;");
-
-	rows = mysql_num_rows( select_res );
-	bool *put_back = new bool[rows];
-	memset( put_back, 0, sizeof(bool)*rows );
-	bool unsent = false;
-
-	for ( int i = 0; i < rows; i++ ) {
-		row = mysql_fetch_row( select_res );
-
-		char *to_site = row[0];
-		char *relid = row[1];
-		long long generation = strtoll( row[2], 0, 10 );
-		char *msg = row[3];
-
-		long send_res = send_broadcast_net( mysql, to_site, relid,
-				generation, msg, strlen(msg) );
-		if ( send_res < 0 ) {
-			message( "ERROR trouble sending message: %ld\n", send_res );
-			put_back[i] = true;
-			unsent = true;
-		}
-	}
-
-	if ( unsent ) {
-		/* Table lock. */
-		exec_query( mysql, "LOCK TABLES broadcast_queue WRITE;");
-
-		mysql_data_seek( select_res, 0 );
-		for ( int i = 0; i < rows; i++ ) {
-			row = mysql_fetch_row( select_res );
-
-			if ( put_back[i] ) {
-				char *to_site = row[0];
-				char *relid = row[1];
-				char *generation = row[2];
-				char *msg = row[3];
-
-				message( "putting back to the queue: %s %s %s\n", 
-						to_site, relid, generation );
-
-				/* Queue the message. */
-				exec_query( mysql,
-					"INSERT INTO broadcast_queue "
-					"( to_site, relid, generation, message ) "
-					"VALUES ( %e, %e, %e, %e ) ",
-					to_site, relid, generation, msg );
-			}
-		}
-
-		/* Free the table lock before we process the select results. */
-		exec_query( mysql, "UNLOCK TABLES;");
-	}
-
-	delete[] put_back;
-
-	/* Done. */
-	mysql_free_result( select_res );
-
-	return result;
-}
-
-long run_message_queue_db( MYSQL *mysql )
-{
-	int result = 0;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-	long rows;
-
-	/* Table lock. */
-	exec_query( mysql, "LOCK TABLES message_queue WRITE");
-
-	/* Extract all messages. */
-	exec_query( mysql,
-		"SELECT from_user, to_id, relid, message FROM message_queue" );
-
-	/* Get the result. */
-	select_res = mysql_store_result( mysql );
-
-	/* Now clear the table. */
-	exec_query( mysql, "DELETE FROM message_queue");
-
-	/* Free the table lock before we process the select results. */
-	exec_query( mysql, "UNLOCK TABLES;");
-
-	rows = mysql_num_rows( select_res );
-	bool *put_back = new bool[rows];
-	memset( put_back, 0, sizeof(bool)*rows );
-	bool unsent = false;
-
-	for ( int i = 0; i < rows; i++ ) {
-		row = mysql_fetch_row( select_res );
-
-		char *from_user = row[0];
-		char *to_id = row[1];
-		char *relid = row[2];
-		char *message = row[3];
-
-		long send_res = send_message_net( mysql, false, from_user, to_id, relid, 
-				message, strlen(message), 0 );
-		if ( send_res < 0 ) {
-			BIO_printf( bioOut, "ERROR trouble sending message: %ld\n", send_res );
-			put_back[i] = true;
-			unsent = true;
-		}
-	}
-
-	if ( unsent ) {
-		/* Table lock. */
-		exec_query( mysql, "LOCK TABLES message_queue WRITE;");
-
-		mysql_data_seek( select_res, 0 );
-		for ( int i = 0; i < rows; i++ ) {
-			row = mysql_fetch_row( select_res );
-
-			char *from_user = row[0];
-			char *to_id = row[1];
-			char *relid = row[2];
-			char *message = row[3];
-
-			if ( put_back[i] ) {
-				BIO_printf( bioOut, "Putting back to the queue: %s %s %s %s\n", 
-						row[0], row[1], row[2], row[3] );
-
-				exec_query( mysql,
-					"INSERT INTO message_queue "
-					"( from_user, to_id, relid, message ) "
-					"VALUES ( %e, %e, %e, %e ) ",
-					from_user, to_id, relid, message );
-			}
-		}
-		/* Free the table lock before we process the select results. */
-		exec_query( mysql, "UNLOCK TABLES;");
-	}
-
-	delete[] put_back;
-
-	/* Done. */
-	mysql_free_result( select_res );
-
-	return result;
-}
-
-
-void run_queue( const char *siteName )
-{
-	MYSQL *mysql, *connect_res;
-
-	set_config_by_name( siteName );
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-	if ( connect_res == 0 ) {
-		BIO_printf( bioOut, "ERROR failed to connect to the database\r\n");
-		goto close;
-	}
-
-	run_broadcast_queue_db( mysql );
-	run_message_queue_db( mysql );
-
-close:
-	mysql_close( mysql );
-}
 
 int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *identity )
 {
@@ -1473,37 +1286,23 @@ void forward_to( MYSQL *mysql, const char *user, const char *friend_id,
 long queue_message_db( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *relid, const char *message )
 {
-	/* Table lock. */
-	exec_query( mysql, "LOCK TABLES message_queue WRITE");
-
 	exec_query( mysql,
 		"INSERT INTO message_queue "
-		"( from_user, to_id, relid, message ) "
-		"VALUES ( %e, %e, %e, %e ) ",
+		"( from_user, to_id, relid, message, send_after ) "
+		"VALUES ( %e, %e, %e, %e, NOW() ) ",
 		from_user, to_identity, relid, message );
 
-	/* UNLOCK reset. */
-	exec_query( mysql, "UNLOCK TABLES");
-	
 	return 0;
 }
 
 long queue_broadcast_db( MYSQL *mysql, const char *to_site,
 		const char *relid, long long generation, const char *msg )
 {
-	message("queue_broadcast_db\n");
-
-	/* Table lock. */
-	exec_query( mysql, "LOCK TABLES broadcast_queue WRITE");
-
 	exec_query( mysql,
 		"INSERT INTO broadcast_queue "
-		"( to_site, relid, generation, message ) "
-		"VALUES ( %e, %e, %L, %e ) ",
+		"( to_site, relid, generation, message, send_after ) "
+		"VALUES ( %e, %e, %L, %e, NOW() ) ",
 		to_site, relid, generation, msg );
-
-	/* UNLOCK reset. */
-	exec_query( mysql, "UNLOCK TABLES");
 
 	return 0;
 }

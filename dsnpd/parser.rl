@@ -308,6 +308,7 @@ int server_parse_loop()
 	long long generation;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
+	int retVal = 0;
 
 	message( "parse loop begin\n" );
 
@@ -330,7 +331,7 @@ int server_parse_loop()
 		long lineLen = strlen( buf );
 		if ( buf[lineLen-1] != '\n' ) {
 			error( "incomplete line, exiting\n" );
-			return ERR_LINE_TOO_LONG;
+			retVal = ERR_LINE_TOO_LONG;
 		}
 
 		const char *p = buf, *pe = buf + lineLen;
@@ -340,20 +341,20 @@ int server_parse_loop()
 
 		if ( cs == parser_error ) {
 			error( "parse error, exiting\n" );
-			return ERR_PARSE_ERROR;
+			retVal = ERR_PARSE_ERROR;
+			break;
 		}
 		else if ( cs < %%{ write first_final; }%% ) {
 			error( "incomplete line, exiting\n" );
-			return ERR_UNEXPECTED_END;
+			retVal = ERR_UNEXPECTED_END;
+			break;
 		}
 	}
 
-	if ( mysql != 0 ) {
-		run_broadcast_queue_db( mysql );
-		run_message_queue_db( mysql );
-	}
+	if ( mysql != 0 )
+		mysql_close( 0 );
 
-	return 0;
+	return retVal;
 }
 
 /*

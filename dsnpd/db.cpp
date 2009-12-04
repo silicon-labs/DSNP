@@ -172,7 +172,7 @@ int exec_query_va( MYSQL *mysql, const char *fmt, va_list vls )
 	long query_res = mysql_query( mysql, query );
 
 	if ( query_res != 0 ) {
-		error( "mysql_query failed: %s\r\nerror message: %s\n", query, mysql_error( mysql ) );
+		error( "mysql_query failed: %s\r\n      error message: %s\n", query, mysql_error( mysql ) );
 		exit(1);
 	}
 

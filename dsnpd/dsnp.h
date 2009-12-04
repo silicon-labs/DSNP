@@ -58,8 +58,8 @@ struct Identity
 };
 
 void run_queue( const char *siteName );
-long run_broadcast_queue_db( MYSQL *mysql );
-long run_message_queue_db( MYSQL *mysql );
+long run_broadcast_queue_db();
+long run_message_queue_db();
 int server_parse_loop();
 int rcfile_parse( const char *data, long length );
 

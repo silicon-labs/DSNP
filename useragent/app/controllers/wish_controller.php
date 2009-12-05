@@ -2,6 +2,7 @@
 class WishController extends AppController
 {
 	var $name = 'Wish';
+	var $helpers = array("html", "text");
 
 	function beforeFilter()
 	{

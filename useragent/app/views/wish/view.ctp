@@ -11,15 +11,19 @@
 <div class="content">
 <h3>Wish List for <?echo $this->data['FriendClaim']['name']; ?></h3>
 
-<pre>
+<div style="width: 80%;">
+<p>
 <?php 
-if ( isset( $this->data['Wish'] ) )
-	echo htmlspecialchars($this->data['Wish']['list']);
+if ( isset( $this->data['Wish'] ) ) {
+	$list = htmlspecialchars($this->data['Wish']['list']);
+	$list = preg_replace( '/\r?\n/', '<br>', $list );
+	$list = $text->autoLinkUrls( $list );
+	echo $list;
+}
 else
 	echo "<em>This user has not yet given a wishlist</em>";
 ?>
-
-</pre>
+</div>
 
 <?php
 $id = $this->data['FriendClaim']['id'];

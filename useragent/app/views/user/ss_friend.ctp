@@ -87,6 +87,8 @@ foreach ( $friendClaims as $row ) {
 //echo "<pre>"; print_r( $givesTo ); echo "</pre>";
 ?>
 
+<br>
+
 <font size=4>
 Hello <?php print $BROWSER['name'];?>, you are buying a gift for ... &nbsp;&nbsp;
 
@@ -132,7 +134,8 @@ function show()
 }
 </script>                   
 
-<input type="button" onClick="init(elId,500);show();" name="show" value="show" width="10%">
+<br>
+<input type="button" onClick="init(elId,256);show();" name="show" value="show" style="width:10%;">
 
 </div>
 </div>

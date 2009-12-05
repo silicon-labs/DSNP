@@ -213,6 +213,17 @@ class UserController extends AppController
 			));
 		$this->set( 'activity', $activity );
 
+		$this->loadModel('SecretSanta');
+		$givesTo = $this->SecretSanta->find('first', array( 
+			'conditions' => 
+				array( 'friend_id' => $BROWSER['id'] )
+		));
+		$givesTo = $this->FriendClaim->find('first', array( 
+			'conditions' => 
+				array( 'id' => $givesTo['SecretSanta']['gives_to_id'] )
+		));
+		$this->set( 'givesTo', $givesTo );
+
 		$this->render( 'ss_friend' );
 	}
 

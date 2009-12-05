@@ -83,7 +83,56 @@ foreach ( $friendClaims as $row ) {
 	echo $html->link( $name, "/$USER_NAME/wish/view/$id" );
 	echo "<br>\n";
 }
-?>
-</div>
 
+//echo "<pre>"; print_r( $givesTo ); echo "</pre>";
+?>
+
+<font size=4>
+Hello <?php print $BROWSER['name'];?>, you are buying a gift for ... &nbsp;&nbsp;
+
+<span id="gift" style="color: #ffffff">
+<?php print $givesTo['FriendClaim']['name'];?>
+</span>
+</font>
+
+<script type="text/javascript">
+function fade( elId )
+{
+	var el = document.getElementById(elId);
+	el.rgb += el.direction;
+	if ( el.direction > 0 && el.rgb > el.up_thresh ) {
+		//el.rgb = el.up_thresh;
+		//el.direction = el.direction * -1;
+		clearInterval( interval_id );
+		//document.location = "/secret_santa/";
+	}
+	else if ( el.direction < 0 && el.rgb < el.down_thresh ) {
+		el.rgb = el.down_thresh;
+		el.direction = el.direction * -1;
+	}
+
+	var newColour = "rgb("+el.rgb+','+el.rgb+','+el.rgb+")";
+	el.style.color = newColour;
+}
+
+function init( elId, val )
+{
+	var el = document.getElementById(elId);
+	el.rgb = val;
+	el.direction = -10;
+	el.up_thresh = 500;
+	el.down_thresh = -100;                                 
+}                                                              
+                                                               
+var elId = "gift";                                         
+var interval_id;
+function show()
+{
+	interval_id = setInterval("fade('" + elId + "')", 70);     
+}
+</script>                   
+
+<input type="button" onClick="init(elId,500);show();" name="show" value="show" width="10%">
+
+</div>
 </div>

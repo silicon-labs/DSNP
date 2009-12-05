@@ -491,6 +491,7 @@ int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
 {
 	message("calling remote broadcast from friend_proof\n");
 	remote_broadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
+	BIO_printf( bioOut, "OK\r\n" );
 	return 0;
 }
 

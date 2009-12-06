@@ -71,6 +71,7 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
 
+		echo '<div class="msgbody">';
 		echo '<div class="msgphoto">';
 		if ( isset( $remote_resid ) ) {
 			echo "<a href=\"${author_id}image/view/img-$remote_resid.jpg?h=" . 
@@ -84,6 +85,7 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 					"\" alt=\"$message\"></a>\n";
 		}
 		echo '</div>';
+		echo '</div>';
 	}
 	else if ( $type == 'MSG' ) {
 		echo '<div class="msgabout">';
@@ -92,7 +94,9 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
 
+		echo '<div class="msgbody">';
 		echo htmlspecialchars($message);
+		echo '</div>';
 	}
 	else if ( $type == 'BRD' ) {
 		echo '<div class="msgabout">';
@@ -103,7 +107,9 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo " board</font>";
 		echo '</div>';
 
+		echo '<div class="msgbody">';
 		echo htmlspecialchars($message);
+		echo '</div>';
 	}
 	echo '</div>';
 }

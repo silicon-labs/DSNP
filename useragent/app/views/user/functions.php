@@ -65,10 +65,12 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 
 	echo '<div class="msgdisp">';
 	if ( $type == 'PHT' ) {
+		echo '<div class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
+		echo '</div>';
 		echo '</div>';
 
 		echo '<div class="msgbody">';
@@ -88,10 +90,12 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo '</div>';
 	}
 	else if ( $type == 'MSG' ) {
+		echo '<div class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> posted </font>";
+		echo '</div>';
 		echo '</div>';
 
 		echo '<div class="msgbody">';
@@ -99,12 +103,14 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo '</div>';
 	}
 	else if ( $type == 'BRD' ) {
+		echo '<div class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
 		printName( $USER, $BROWSER, $subject_id, $subject_name, true );
 		echo " board</font>";
+		echo '</div>';
 		echo '</div>';
 
 		echo '<div class="msgbody">';

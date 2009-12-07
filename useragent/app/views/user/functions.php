@@ -47,9 +47,8 @@ function printName( $USER, $BROWSER, $identity, $name, $possessive )
 	}
 }
 
-function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
+function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
 {
-	global $text;
 	$USER_NAME = $USER['user'];
 
 	$author_id = $author['identity'];

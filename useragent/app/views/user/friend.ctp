@@ -144,7 +144,7 @@ for ( $i = $start; $i < $limit; $i++ ) {
 	$item = $row['Activity'];
 
 	echo "<p>\n";
-	printMessage( $html, $USER, $BROWSER, $author, $subject, $item );
+	printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item );
 }
 
 if ( $start > 0 ) 

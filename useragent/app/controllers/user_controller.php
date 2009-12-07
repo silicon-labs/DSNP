@@ -3,6 +3,7 @@
 class UserController extends AppController
 {
 	var $name = 'User';
+	var $helpers = array("html", "text");
 
 	function beforeFilter()
 	{

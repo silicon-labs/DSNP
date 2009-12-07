@@ -99,7 +99,9 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo '</div>';
 
 		echo '<div class="msgbody">';
-		echo htmlspecialchars($message);
+		$message = htmlspecialchars($message);
+		$message = $text->autoLinkUrls($message);
+		echo $message;
 		echo '</div>';
 	}
 	else if ( $type == 'BRD' ) {
@@ -114,7 +116,9 @@ function printMessage( $html, $USER, $BROWSER, $author, $subject, $item )
 		echo '</div>';
 
 		echo '<div class="msgbody">';
-		echo htmlspecialchars($message);
+		$message = htmlspecialchars($message);
+		$message = $text->autoLinkUrls($message);
+		echo $message;
 		echo '</div>';
 	}
 	echo '</div>';

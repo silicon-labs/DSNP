@@ -1,42 +1,66 @@
-/* SVN FILE: $Id$ */
-/**
- *
- * PHP versions 4 and 5
- *
- * CakePHP(tm) :  Rapid Development Framework (http://www.cakephp.org)
- * Copyright 2005-2008, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
- *
- * Licensed under The MIT License
- * Redistributions of files must retain the above copyright notice.
- *
- * @filesource
- * @copyright     Copyright 2005-2008, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
- * @link          http://www.cakefoundation.org/projects/info/cakephp CakePHP(tm) Project
- * @package       cake
- * @subpackage    cake.app.webroot.css
- * @since         CakePHP(tm)
- * @version       $Revision$
- * @modifiedby    $LastChangedBy$
- * @lastmodified  $Date$
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
- */
-
 * {
 	margin: 0;
 	padding: 0;
 }
 
 
-/* General Style Info */
 body {
-	background: #003d4c;
-	color: #fff;
-	font-family:'lucida grande',verdana,helvetica,arial,sans-serif;
-	font-size:90%;
+/*	color: #fff; */
+	font-family: 'lucida grande',verdana,helvetica,arial,sans-serif;
+	font-size: 90%;
 	margin: 0;
 }
 
-#header { }
+/* 
+ * Header
+ */
+
+#header {
+	background: #003d4c;
+	overflow: auto;
+}
+
+#header_left {
+	float: left;
+	width: 30%;
+	text-align: left;
+}
+
+#header_middle {
+	text-align: center;
+	float: left;
+	width: 40%;
+}
+
+#header_right {
+	float: left;
+	width: 30%;
+	text-align: right;
+}
+
+div.header_content {
+	padding: 8px 8px 8px 8px;
+}
+
+
+#header h1 {
+	color: #fff;
+}
+
+#header h1 a {
+	color: #fff;
+	font-weight: normal;
+	text-decoration: none;
+}
+
+#header h1 a:hover {
+	color: #fff;
+	text-decoration: underline;
+}
+
+/* 
+ * Page Body.
+ */
 
 #page_body {
 	background: #fff;
@@ -56,21 +80,160 @@ body {
 	overflow: auto;
 }
 
+div.content {
+	padding: 15px 15px 15px 15px;
+}
+
+#details {
+	padding: 15px 15px 15px 15px;
+	background: #eef;
+}
+
+#edit {
+	float: right;
+	font-size: small;
+}
+
+/*
+ * Photo Stream.
+ */
+
+#photo_upload {
+	padding: 10px 0px 10px 0px;
+}
+
+table.photos {
+	margin-bottom: 10px;
+	width: 90%;
+	padding: 4px;
+	text-align: center;
+	vertical-align: top;
+}
+table.photos tr td {
+	text-align: center;
+	margin-bottom: 10px;
+	width: 100%;
+	padding: 4px;
+}
+
+div.photorow {
+	overflow: auto;
+}
+
+div.photo0 {
+	padding: 5px 5px 5px 5px;
+	float: left;
+}
+div.photo1 {
+	padding: 5px 5px 5px 5px;
+	float: right;
+}
+
+/* 
+ * Activity Stream
+ */
+
+div.msgdisp {
+	border-top: solid;
+	border-width: 2px;
+	border-color: #000;
+	padding: 5px 2px 5px 2px;
+	overflow: auto;
+}
+
+div.msgleft {
+	float: left;
+	width: 30%;
+}
+
+div.msgabout {
+	border-right: solid;
+	border-width: 1px;
+	margin-right: 20px;
+	padding-right: 5px;
+	margin-bottom: 20px;
+	background-color: #eef;
+}
+
+font.msgwho {
+	/*color: red;*/
+}
+
+font.msgtime {
+	padding: 2px 2px 2px 2px;
+	font-size: 80%;
+	color: #933;
+}
+
+div.msgbody {
+	margin-left: 30%;
+}
+
+div.msgphoto {
+	float: right;
+}
+
+
+/* 
+ * Footer
+ */
+
 #footer {
+	border-top: solid;
+	border-width: 1px;
+	border-color: #205d4c;
 	clear: both;
+	margin: 5px;
 	padding: 6px 10px;
 	text-align: right;
 }
 
+#footer_left {
+	float: left;
+	width: 30%;
+	text-align: left;
+}
+
+#footer_middle {
+	text-align: center;
+	float: left;
+	width: 40%;
+}
+
+#footer_right {
+	float: left;
+	width: 30%;
+	text-align: right;
+}
+
+div.footer_content {
+	padding: 8px 8px 8px 8px;
+}
+
+#footer h1 {
+	font-size: small;
+	font-weight: bold;
+}
+
+#footer h1 a {
+	font-weight: bold;
+	text-decoration: none;
+}
+
+#footer h1 a:hover {
+	text-decoration: underline;
+}
+
+/* From Cake . */
 
 h1, h2, h3, h4 {
 	font-weight: normal;
 }
 
 h1 {
-	background: #fff;
+/*	background: #fff; */
 	color: #003d4c;
-	font-size: 100%;
+	font-size: 100%; 
 	/*margin: 0.1em 0; */
 }
 
@@ -115,211 +278,10 @@ a:hover {
 }
 
 a img {
-	border:none;
+	border: none;
 }
 
 
-
-/*ul, li {
-	margin: 0 12px;
-}*/
-
-/* Layout */
-#container {
-	text-align: left;
-}
-
-
-#header_left {
-	text-align: left;
-	background: #f00;
-	float: left;
-	width: 33%;
-}
-
-#header_middle {
-	text-align: center;
-	background: #f00;
-	float: left;
-	width: 34%;
-}
-
-#header_right {
-	text-align: right;
-	background: #f00;
-	float: left;
-	width: 33%;
-}
-
-#header h1 {
-	/*text-align: center; */
-	padding: 10px 10px 10px 10px; 
-	background: #003d4c; 
-	color: #fff;
-}
-
-#header h1 a {
-	padding: 10px 10px 10px 10px; 
-	background: #003d4c;
-	color: #fff; 
-	font-weight: normal;
-	text-decoration: none;
-}
-
-#header h1 a:hover {
-	padding: 10px 10px 10px 10px; 
-	background: #003d4c;
-	color: #fff;
-	text-decoration: underline;
-}
-
-#footer h1 {
-	/*text-align: center; */
-	padding: 10px 10px 10px 10px; 
-	background: #003d4c; 
-	color: #fff;
-}
-
-#footer h1 a {
-	padding: 10px 10px 10px 10px; 
-	background: #003d4c;
-	color: #fff; 
-	font-weight: normal;
-	text-decoration: none;
-}
-
-#footer h1 a:hover {
-	padding: 10px 10px 10px 10px; 
-	background: #003d4c;
-	color: #fff;
-	text-decoration: underline;
-}
-
-
-div.content {
-	padding: 15px 15px 15px 15px;
-}
-
-#details {
-	padding: 15px 15px 15px 15px;
-	background: #eef;
-}
-
-#edit {
-	float: right;
-	font-size: small;
-}
-
-#user_actions {
-	padding: 15px 15px 15px 15px;
-}
-
-#friend_requests {
-	padding: 15px 15px 15px 15px;
-}
-
-#sent_friend_requests {
-	padding: 15px 15px 15px 15px;
-}
-
-
-#friend_list {
-	padding: 15px 15px 15px 15px;
-}
-
-#photo_stream {
-	padding: 15px 15px 15px 15px;
-}
-
-#broadcast {
-	padding: 15px 15px 15px 15px;
-	/*background: #f00;*/
-}
-
-#upload {
-	padding: 15px 15px 15px 15px;
-	/*background: #0f0;*/
-}
-
-#activity_stream {
-	padding: 15px 15px 15px 15px;
-	/*background: #00f;*/
-	width: 600px;
-}
-
-div.photorow {
-	overflow: auto;
-}
-
-div.photo0 {
-	padding: 5px 5px 5px 5px;
-	float: left;
-}
-div.photo1 {
-	padding: 5px 5px 5px 5px;
-	float: right;
-}
-
-div.msgdisp {
-	border-top: solid;
-	border-width: 2px;
-	border-color: #000;
-	padding: 5px 2px 5px 2px;
-	overflow: auto;
-}
-
-div.msgleft {
-	float: left;
-	width: 30%;
-	overflow: auto;
-}
-
-div.msgabout {
-	border-right: solid;
-	border-width: 1px;
-	margin-right: 20px;
-	padding-right: 5px;
-	margin-bottom: 20px;
-	background-color: #eef;
-}
-
-font.msgwho {
-	/*color: red;*/
-}
-
-font.msgtime {
-	padding: 2px 2px 2px 2px;
-	font-size: 80%;
-	color: #933;
-}
-
-div.msgbody {
-	margin-left: 30%;
-	overflow: auto;
-}
-
-div.msgphoto {
-	float: right;
-}
-
-
-#photo_upload {
-	padding: 10px 0px 10px 0px;
-}
-
-table.photos {
-	margin-bottom: 10px;
-	width: 90%;
-	padding: 4px;
-	text-align: center;
-	vertical-align: top;
-}
-table.photos tr td {
-	text-align: center;
-	margin-bottom: 10px;
-	width: 100%;
-	padding: 4px;
-}
 
 .cake-sql-log table {
 	background: #f4f4f4;

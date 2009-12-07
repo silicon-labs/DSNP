@@ -28,7 +28,7 @@ include('functions.php');
 
 </div>
 
-<div id="friend_list">
+<div class="content">
 
 <h3>Friend List</h3>
 

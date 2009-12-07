@@ -33,7 +33,7 @@ include( 'functions.php' );
 
 <?php
 if ( count( $friendRequests ) ) {
-	echo '<div id="friend_requests">';
+	echo '<div class="content">';
 	echo "<h3>Friend Requests</h3>";
 	foreach ( $friendRequests as $row ) {
 		$from_id = $row['FriendRequest']['from_id'];
@@ -52,7 +52,7 @@ if ( count( $friendRequests ) ) {
 <?php
 
 if ( count( $sentFriendRequests ) > 0 ) {
-	echo '<div id="sent_friend_requests">';
+	echo '<div class="content">';
 	echo "<h3>Sent Friend Requests</h3>";
 	foreach ( $sentFriendRequests as $row ) {
 		$for_id = $row['SentFriendRequest']['for_id'];
@@ -66,7 +66,7 @@ if ( count( $sentFriendRequests ) > 0 ) {
 }
 ?>
 
-<div id="friend_list">
+<div class="content">
 <h3>Friend List</h3>
 
 <?php

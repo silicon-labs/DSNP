@@ -28,7 +28,7 @@ include('functions.php');
 
 </div>
 
-<div id="friend_list">
+<div class="content">
 
 <h3>Friend List</h3>
 
@@ -83,7 +83,8 @@ foreach ( $friendClaims as $row ) {
 ?>
 
 </div>
-<div id="photo_stream">
+
+<div class="content">
 
 <h3>Photo Stream</h3>
 
@@ -114,9 +115,10 @@ if ( $count % 2 == 1 )
 </table>
 </div>
 </div>
+
 <div id="activity">
 
-<div id="broadcast">
+<div class="content">
 
 <form method="post" action="<?php echo $html->url("/$USER_NAME/user/board");?>">
 
@@ -128,8 +130,8 @@ Write on <?php print $USER_NAME;?>'s message board:
 
 </form>
 </div>
-<div id="activity_stream">
 
+<div class="content">
 <?
 
 $activity_size = Configure::read('activity_size');

@@ -41,61 +41,69 @@
 </head>
 <body>
 	<div id="header">
-		<div id="header_left">
-		<h1><?php 
+		<div id="header_left"><div class="header_content">
+		<h1>
+		<?php 
 			echo $html->link( Configure::read('CFG_SITE_NAME'), 
 					Configure::read('CFG_URI') );
-		?></h1>
-		</div>
-		<div id="header_middle">
-		<h1><?php
+		?>
+		</h1>
+		</div></div>
+
+		<div id="header_middle"><div class="header_content">
+		<h1>
+		<?php
 			if ( isset( $USER['display_long'] ) )
 				echo $html->link( $USER['display_long'], $USER['identity'] );
-		?></h1>
-		</div>
-		<div id="header_right">
-		<h1><?php 
+		?>
+		</h1>
+		</div></div>
+
+		<div id="header_right"><div class="header_content">
+		<h1>
+		<?php 
 		if ( isset( $ROLE ) && $ROLE == 'friend' )
 		{
 			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
 					$BROWSER['identity'], $BROWSER['identity'] );
-
+			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $ROLE ) && $ROLE == 'owner' )
 		{
 			echo $html->link( $USER['name'], $USER['identity'] );
+			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $USER_NAME ) )
 		{
 			echo $html->link( 'login', "/$USER_NAME/cred/login" );
 		}
-		?></h1>
-		</div>
+		?>
+		</h1>
+		</div></div>
+
 	</div>
 
 	<div id="page_body">
 		<?php $session->flash(); ?>
-		<?php 
-			#echo "<pre>"; print_r( $USER ); echo "</pre>";
-		?>
 		<?php echo $content_for_layout; ?>
 	</div>
 
 	<div id="footer">
-		<h1><?php echo $html->link(__('DSNP User-Agent One', true), 
+		<div id="footer_left"><div class="footer_content">
+		</div></div>
+
+		<div id="footer_middle"><div class="footer_content">
+		<h1>
+		<?php echo $html->link(__('DSNP User-Agent One', true), 
 			'http://www.complang.org/dsnp/'); ?>
 		</h1>
-		<?php #echo $html->link(
-//				$html->image('cake.power.gif', array(
-//					'alt'=> __("CakePHP: the rapid development php framework", true), 
-//					'border'=>"0")),
-//				'http://www.cakephp.org/',
-//				array('target'=>'_blank'), null, false
-//			);
-		?>
+		</div></div>
+
+		<div id="footer_right"><div class="footer_content">
+		</div></div>
+
 	</div>
-	<?php echo $cakeDebug; ?>
 </body>
 </html>

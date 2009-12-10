@@ -71,7 +71,7 @@ void error( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "%-5d %s error: ", pid, timeStr );
+		fprintf( logFile, "%-5d %s ERROR: ", pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}

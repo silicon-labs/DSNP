@@ -90,31 +90,31 @@ JOIN friend_claim_orig ON get_tree.user = friend_claim_orig.user AND
 
 ALTER TABLE put_tree RENAME put_tree_orig;
 
-CREATE TABLE put_tree
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	friend_claim_id BIGINT,
-
-	generation BIGINT,
-	root BOOL,
-	forward1 TEXT,
-	forward2 TEXT,
-
-	PRIMARY KEY(id)
-);
-
-INSERT INTO put_tree
-(
-	friend_claim_id,
-	generation,
-	root,
-	forward1,
-	forward2
-)
-SELECT friend_claim.id AS friend_claim_id, generation, root, forward1, forward2
-FROM put_tree_orig
-JOIN friend_claim ON put_tree_orig.user = friend_claim.user AND put_tree_orig.friend_id = friend_claim.friend_id;
+--CREATE TABLE put_tree
+--(
+--	id BIGINT NOT NULL AUTO_INCREMENT,
+--
+--	friend_claim_id BIGINT,
+--
+--	generation BIGINT,
+--	root BOOL,
+--	forward1 TEXT,
+--	forward2 TEXT,
+--
+--	PRIMARY KEY(id)
+--);
+--
+--INSERT INTO put_tree
+--(
+--	friend_claim_id,
+--	generation,
+--	root,
+--	forward1,
+--	forward2
+--)
+--SELECT friend_claim.id AS friend_claim_id, generation, root, forward1, forward2
+--FROM put_tree_orig
+--JOIN friend_claim ON put_tree_orig.user = friend_claim.user AND put_tree_orig.friend_id = friend_claim.friend_id;
 
 
 ALTER TABLE get_tree RENAME get_tree_orig;

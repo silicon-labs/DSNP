@@ -70,7 +70,7 @@ bool send_broadcast_message()
 				generation, msg, strlen(msg) );
 
 		if ( send_res < 0 ) {
-			message( "ERROR trouble sending message: %ld\n", send_res );
+			error( "trouble sending message: %ld\n", send_res );
 
 			MYSQL *mysql = db_connect();
 
@@ -126,7 +126,7 @@ bool send_message()
 				msg, strlen(msg), 0 );
 
 		if ( send_res < 0 ) {
-			message( "ERROR trouble sending message: %ld\n", send_res );
+			error( "trouble sending message: %ld\n", send_res );
 
 			MYSQL *mysql = db_connect();
 

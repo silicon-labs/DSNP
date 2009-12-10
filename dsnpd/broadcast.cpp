@@ -545,8 +545,8 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 	DbQuery allProofs( mysql,
 		"SELECT friend_hash, generation, friend_proof "
 		"FROM friend_claim "
-		"WHERE user = %e "
-		"JOIN get_broadcast_key ON id = get_broadcast_key.friend_claim_id ",
+		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
+		"WHERE user = %e ",
 		user );
 	
 	for ( int r = 0; r < allProofs.rows(); r++ ) {

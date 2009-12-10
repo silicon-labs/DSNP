@@ -52,37 +52,33 @@ void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const
 void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id, 
 		const char *hash, long long generation, const char *msg, long mLen )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	char *broadcast_key, *author_id;
-	RSA *id_pub;
-	Encrypt encrypt;
-	int decryptRes;
-
 	message( "remote_broadcast: user %s hash %s generation %lld\n", user, hash, generation );
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
-	exec_query( mysql, 
-		"SELECT friend_claim.friend_id, get_tree.broadcast_key "
+	DbQuery recipient( mysql, 
+		"SELECT friend_claim.id, "
+		"	friend_claim.friend_id, "
+		"	get_broadcast_key.broadcast_key "
 		"FROM friend_claim "
-		"JOIN get_tree "
-		"ON friend_claim.user = get_tree.user AND "
-		"	friend_claim.friend_id = get_tree.friend_id "
+		"JOIN get_broadcast_key "
+		"ON friend_claim.id = get_broadcast_key.friend_claim_id "
 		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND "
-		"	get_tree.generation <= %L "
-		"ORDER BY get_tree.generation DESC LIMIT 1",
+		"	get_broadcast_key.generation <= %L "
+		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
 		user, hash, generation );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row ) {
-		author_id = row[0];
-		broadcast_key = row[1];
+	if ( recipient.rows() > 0 ) {
+		MYSQL_ROW row = recipient.fetchRow();
+		//long long friend_claim_id = strtoll(row[0], 0, 10);
+		const char *author_id = row[1];
+		const char *broadcast_key = row[2];
+
+		message( "remote_broadcast: have recipient\n");
 
 		/* Do the decryption. */
-		id_pub = fetch_public_key( mysql, author_id );
-		encrypt.load( id_pub, 0 );
-		decryptRes = encrypt.bkDecryptVerify( broadcast_key, msg );
+		RSA *id_pub = fetch_public_key( mysql, author_id );
+		Encrypt encrypt( id_pub, 0 );
+		int decryptRes = encrypt.bkDecryptVerify( broadcast_key, msg );
 
 		if ( decryptRes < 0 ) {
 			message("second level bkDecryptVerify failed with %s\n", encrypt.err);
@@ -107,51 +103,40 @@ void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id,
 	}
 }
 
-
-void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
+void receive_broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
-	char *user, *friend_id, *broadcast_key;
-	char *relid_ret;
-	char *site1, *relid1;
-	char *site2, *relid2;
-	RSA *id_pub;
-	Encrypt encrypt;
-	int decryptRes, parseRes, decLen;
-	char *decrypted;
+	message("received broadcast with relid %s generation %lld\n", relid, generation );
 
 	/* Find the recipient. */
 	DbQuery recipient( mysql, 
-		"SELECT friend_claim.user, friend_claim.friend_id, "
-		"	get_tree.relid_ret, "
-		"	get_tree.site1, get_tree.relid1, "
-		"	get_tree.site2, get_tree.relid2, "
-		"	get_tree.broadcast_key "
-		"FROM friend_claim JOIN get_tree "
-		"ON friend_claim.user = get_tree.user AND "
-		"	friend_claim.friend_id = get_tree.friend_id "
-		"WHERE friend_claim.get_relid = %e AND get_tree.generation <= %L "
-		"ORDER BY get_tree.generation DESC LIMIT 1",
+		"SELECT friend_claim.id, "
+		"	friend_claim.user, "
+		"	friend_claim.friend_id, "
+		"	get_broadcast_key.broadcast_key "
+		"FROM friend_claim "
+		"JOIN get_broadcast_key "
+		"ON friend_claim.id = get_broadcast_key.friend_claim_id "
+		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L "
+		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
 		relid, generation );
-	
+
 	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR bad recipient\r\n");
 		return;
 	}
 
 	MYSQL_ROW row = recipient.fetchRow();
-	user = row[0];
-	friend_id = row[1];
-	relid_ret = row[2];
-	site1 = row[3];
-	relid1 = row[4];
-	site2 = row[5];
-	relid2 = row[6];
-	broadcast_key = row[7];
+	unsigned long long friend_claim_id = strtoull(row[0], 0, 10);
+	const char *user = row[1];
+	const char *friend_id = row[2];
+	const char *broadcast_key = row[3];
+
+	message("received broadcast, have broadcast key\n");
 
 	/* Do the decryption. */
-	id_pub = fetch_public_key( mysql, friend_id );
-	encrypt.load( id_pub, 0 );
-	decryptRes = encrypt.bkDecryptVerify( broadcast_key, encrypted );
+	RSA *id_pub = fetch_public_key( mysql, friend_id );
+	Encrypt encrypt( id_pub, 0 );
+	int decryptRes = encrypt.bkDecryptVerify( broadcast_key, encrypted );
 
 	if ( decryptRes < 0 ) {
 		message("bkDecryptVerify failed\n");
@@ -160,13 +145,15 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	}
 
 	/* Take a copy of the decrypted message. */
-	decrypted = new char[encrypt.decLen+1];
+	char *decrypted = new char[encrypt.decLen+1];
 	memcpy( decrypted, encrypt.decrypted, encrypt.decLen );
 	decrypted[encrypt.decLen] = 0;
-	decLen = encrypt.decLen;
+	int decLen = encrypt.decLen;
+
+	message("decrypted broadcast with relid %s generation %lld\n", relid, generation );
 
 	BroadcastParser bp;
-	parseRes = bp.parse( decrypted, decLen );
+	int parseRes = bp.parse( decrypted, decLen );
 	if ( parseRes < 0 )
 		error("broadcast_parser failed\n");
 	else {
@@ -186,11 +173,31 @@ void broadcast( MYSQL *mysql, const char *relid, long long generation, const cha
 	 * Now do the forwarding.
 	 */
 
-	if ( site1 != 0 )
-		queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
+	DbQuery forward( mysql, 
+		"SELECT relid_ret, "
+		"	site1, relid1, "
+		"	site2, relid2 "
+		"FROM get_tree "
+		"WHERE friend_claim_id = %L AND generation <= %L "
+		"ORDER BY get_tree.generation DESC LIMIT 1",
+		friend_claim_id, generation );
 
-	if ( site2 != 0 )
-		queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
+	if ( forward.rows() > 0 ) {
+		row = forward.fetchRow();
+		//const char *relid_ret = row[0];
+		const char *site1 = row[1];
+		const char *relid1 = row[2];
+		const char *site2 = row[3];
+		const char *relid2 = row[4];
+
+		message("received broadcast, have get tree\n");
+
+		if ( site1 != 0 )
+			queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
+
+		if ( site2 != 0 )
+			queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
+	}
 	
 	BIO_printf( bioOut, "OK\r\n" );
 }
@@ -500,7 +507,7 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 	message("obtaining friend proof\n");
 
 	DbQuery friendClaim( mysql, 
-		"SELECT friend_hash, put_relid FROM friend_claim "
+		"SELECT id, friend_hash, put_relid FROM friend_claim "
 		"WHERE user = %e AND friend_id = %e",
 		user, friendId );
 
@@ -509,8 +516,9 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		return -1;
 	}
 	MYSQL_ROW row = friendClaim.fetchRow();
-	const char *friendHash = row[0];
-	const char *putRelid = row[1];
+	long long friendClaimId = strtoll(row[0], 0, 10);
+	const char *friendHash = row[1];
+	const char *putRelid = row[2];
 
 	char *result = 0;
 	sendMessageNow( mysql, false, user, friendId, putRelid, "friend_proof_request\r\n", &result );
@@ -521,10 +529,10 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		message( "ebp: %lld %s\n", ebp.generation, ebp.sym.data );
 	
 	DbQuery update( mysql,
-		"UPDATE friend_claim "
-		"SET fp_generation = %L, friend_proof = %e "
-		"WHERE user = %e AND friend_id = %e",
-		ebp.generation, ebp.sym.data, user, friendId );
+		"UPDATE get_broadcast_key "
+		"SET friend_proof = %e "
+		"WHERE friend_claim_id = %L and generation = %L",
+		ebp.sym.data, friendClaimId, ebp.generation );
 
 	long res = send_remote_broadcast( mysql, user, friendId, friendHash, ebp.generation, 20, ebp.sym.data );
 	if ( res < 0 ) {
@@ -532,10 +540,13 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		return -1;
 	}
 
+	/* FIXME: need to finish friend_proof. */
+
 	DbQuery allProofs( mysql,
-		"SELECT friend_hash, fp_generation, friend_proof "
+		"SELECT friend_hash, generation, friend_proof "
 		"FROM friend_claim "
-		"WHERE user = %e",
+		"WHERE user = %e "
+		"JOIN get_broadcast_key ON id = get_broadcast_key.friend_claim_id ",
 		user );
 	
 	for ( int r = 0; r < allProofs.rows(); r++ ) {

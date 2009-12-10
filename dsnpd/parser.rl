@@ -272,7 +272,7 @@ bool gblKeySubmitted = false;
 
 		'broadcast'i ' ' relid ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				broadcast( mysql, relid, generation, message_buffer.data );
+				receive_broadcast( mysql, relid, generation, message_buffer.data );
 			} |
 
 		#
@@ -414,11 +414,11 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 	main := (
 		'broadcast_key'i ' ' generation ' ' key 
 			EOL @{
-				broadcast_key( mysql, to_relid, user, friend_id, generation, key );
+				broadcastKey( mysql, to_relid, friend_claim_id, user, friend_id, generation, key );
 			} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
 			EOL @{
-				forward_to( mysql, user, friend_id, number, generation, identity, relid );
+				forwardTo( mysql, friend_claim_id, user, friend_id, number, generation, identity, relid );
 			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @{ msg = p+1; p += length; } 
@@ -444,7 +444,7 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 %% write data;
 
 int message_parser( MYSQL *mysql, const char *to_relid,
-		const char *user, const char *friend_id, const char *msg )
+		long long friend_claim_id, const char *user, const char *friend_id, const char *msg )
 {
 	long cs;
 	const char *mark;

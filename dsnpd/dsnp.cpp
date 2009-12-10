@@ -1220,63 +1220,81 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	free( flogin_token_str );
 }
 
-void add_get_tree( MYSQL *mysql, const char *user, const char *friend_id, long long generation )
+void addBroadcastKey( MYSQL *mysql, long long friend_claim_id, long long generation )
 {
 	DbQuery check( mysql,
-		"SELECT user FROM get_tree "
-		"WHERE user = %e AND friend_id = %e AND generation = %L",
-		user, friend_id, generation );
+		"SELECT friend_claim_id FROM get_broadcast_key "
+		"WHERE friend_claim_id = %L AND generation = %L",
+		friend_claim_id, generation );
 	
 	if ( check.rows() == 0 ) {
 		/* Insert an entry for this relationship. */
-		exec_query( mysql, 
-			"INSERT INTO get_tree "
-			"( user, friend_id, generation )"
-			"VALUES ( %e, %e, %L )", user, friend_id, generation );
+		DbQuery( mysql, 
+			"INSERT INTO get_broadcast_key "
+			"( friend_claim_id, generation )"
+			"VALUES ( %L, %L )", 
+			friend_claim_id, generation );
 	}
 }
 
-void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
+void broadcastKey( MYSQL *mysql, const char *relid, long long friend_claim_id, const char *user,
 		const char *friend_id, long long generation, const char *bk )
 {
-	add_get_tree( mysql, user, friend_id, generation );
+	addBroadcastKey( mysql, friend_claim_id, generation );
 
 	/* Make the query. */
-	exec_query( mysql, 
-			"UPDATE get_tree "
+	DbQuery( mysql, 
+			"UPDATE get_broadcast_key "
 			"SET broadcast_key = %e "
-			"WHERE user = %e AND friend_id = %e AND generation = %L",
-			bk, user, friend_id, generation );
+			"WHERE friend_claim_id = %L AND generation = %L",
+			bk, friend_claim_id, generation );
 	
 	BIO_printf( bioOut, "OK\n" );
 }
 
-void forward_to( MYSQL *mysql, const char *user, const char *friend_id,
+void addGetTree( MYSQL *mysql, long long friend_claim_id, long long generation )
+{
+	DbQuery check( mysql,
+		"SELECT friend_claim_id FROM get_tree "
+		"WHERE friend_claim_id = %L AND generation = %L",
+		friend_claim_id, generation );
+	
+	if ( check.rows() == 0 ) {
+		/* Insert an entry for this relationship. */
+		DbQuery( mysql, 
+			"INSERT INTO get_tree "
+			"( friend_claim_id, generation )"
+			"VALUES ( %L, %L )", 
+			friend_claim_id, generation );
+	}
+}
+
+void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const char *friend_id,
 		int child_num, long long generation, const char *to_site, const char *relid )
 {
-	add_get_tree( mysql, user, friend_id, generation );
+	addGetTree( mysql, friend_claim_id, generation );
 
 	switch ( child_num ) {
 	case 0:
 		exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET site_ret = %e, relid_ret = %e "
-			"WHERE user = %e AND friend_id = %e AND generation = %L",
-			to_site, relid, user, friend_id, generation );
+			"WHERE friend_claim_id = %L AND generation = %L",
+			to_site, relid, friend_claim_id, generation );
 		break;
 	case 1:
 		exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET site1 = %e, relid1 = %e "
-			"WHERE user = %e AND friend_id = %e AND generation = %L",
-			to_site, relid, user, friend_id, generation );
+			"WHERE friend_claim_id = %L AND generation = %L",
+			to_site, relid, friend_claim_id, generation );
 		break;
 	case 2:
 		exec_query( mysql, 
 			"UPDATE get_tree "
 			"SET site2 = %e, relid2 = %e "
-			"WHERE user = %e AND friend_id = %e AND generation = %L",
-			to_site, relid, user, friend_id, generation );
+			"WHERE friend_claim_id = %L AND generation = %L",
+			to_site, relid, friend_claim_id, generation );
 		break;
 	}
 
@@ -1418,10 +1436,9 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 	RSA *id_pub, *user_priv;
 	Encrypt encrypt;
 	int decrypt_res;
-	const char *user, *friend_id;
 
 	exec_query( mysql, 
-		"SELECT user, friend_id FROM friend_claim "
+		"SELECT id, user, friend_id FROM friend_claim "
 		"WHERE get_relid = %e",
 		relid );
 
@@ -1431,8 +1448,9 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
 		return;
 	}
-	user = row[0];
-	friend_id = row[1];
+	long long id = strtoll(row[0], 0, 10);
+	const char *user = row[1];
+	const char *friend_id = row[2];
 
 	user_priv = load_key( mysql, user );
 	id_pub = fetch_public_key( mysql, friend_id );
@@ -1445,7 +1463,7 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 		return;
 	}
 
-	int parseResult = message_parser( mysql, relid, user, friend_id, (char*)encrypt.decrypted );
+	int parseResult = message_parser( mysql, relid, id,user, friend_id, (char*)encrypt.decrypted );
 	if ( parseResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;

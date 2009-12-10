@@ -78,10 +78,10 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void broadcast_key( MYSQL *mysql, const char *relid, const char *user,
+void broadcastKey( MYSQL *mysql, const char *relid, long long friend_claim_id, const char *user,
 		const char *identity, long long generation, const char *bk );
 
-void forward_to( MYSQL *mysql, const char *user, const char *identity,
+void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const char *identity,
 		int child_num, long long generation, const char *relid, const char *to_identity );
 
 long fetch_public_key_net( PublicKey &pub, const char *site,
@@ -102,7 +102,7 @@ long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_ide
 		long long generation, const char *session_key );
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, int childNum, 
 		long long generation, const char *forwardToSite, const char *relid );
-void broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
+void receive_broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
 
 void receive_message( MYSQL *mysql, const char *relid, const char *message );
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
@@ -192,7 +192,7 @@ long hex2bin( unsigned char *dest, long len, const char *src );
 
 int exec_query( MYSQL *mysql, const char *fmt, ... );
 int message_parser( MYSQL *mysql, const char *relid,
-		const char *user, const char *from_user, const char *message );
+		long long friend_claim_id, const char *user, const char *from_user, const char *message );
 int prefriend_message_parser( MYSQL *mysql, const char *relid,
 		const char *user, const char *friend_id, const char *message );
 

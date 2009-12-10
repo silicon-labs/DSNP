@@ -11,7 +11,6 @@ CREATE TABLE broadcast_queue
 	generation BIGINT,
 	message TEXT,
 	
-
 	PRIMARY KEY(id)
 );
 

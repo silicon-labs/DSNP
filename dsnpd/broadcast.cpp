@@ -217,8 +217,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		"SELECT friend_claim.friend_id, friend_claim.put_relid "
 		"FROM friend_claim "
 		"JOIN put_tree "
-		"ON friend_claim.user = put_tree.user AND "
-		"	friend_claim.friend_id = put_tree.friend_id "
+		"ON friend_claim.id = put_tree.friend_claim_id "
 		"WHERE friend_claim.user = %e AND put_tree.root = true AND"
 		"	put_tree.generation <= %L "
 		"ORDER BY generation DESC LIMIT 1",

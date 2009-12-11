@@ -215,5 +215,5 @@ void friendProof()
 
 void run_test()
 {
-	friendProof();
+	checkTree();
 }

@@ -13,8 +13,9 @@ using std::list;
 
 struct FriendNode
 {
-	FriendNode( string identity, long long generation )
+	FriendNode( long long friendClaimId, string identity, long long generation )
 	:
+		friendClaimId(friendClaimId),
 		identity(identity),
 		generation(0),
 		isRoot(false),
@@ -22,6 +23,8 @@ struct FriendNode
 		left(0),
 		right(0)
 	{}
+
+	long long friendClaimId;
 	string identity;
 	long long generation;
 

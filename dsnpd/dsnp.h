@@ -246,6 +246,8 @@ struct DbQuery
 		{ return mysql_num_rows( result ); }
 	long affectedRows()
 		{ return mysql_affected_rows( mysql ); }
+	void seek( unsigned long long offset )
+		{ mysql_data_seek( result, offset ); }
 	
 	void free();
 

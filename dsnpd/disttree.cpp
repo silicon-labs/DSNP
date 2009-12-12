@@ -187,9 +187,6 @@ void execWorklist( MYSQL *mysql, const char *user, long long generation,
 			message( "inactive put tree node for %s, not contacting\n", w->identity );
 		}
 		else {
-			String bk( 
-				"broadcast_key %lld %s\r\n", 
-				w->generation, w->broadcast_key );
 			String parent, left, right;
 			parent.set("");
 			left.set("");
@@ -249,7 +246,7 @@ void execWorklist( MYSQL *mysql, const char *user, long long generation,
 				}
 			}
 
-			String msg( "%s%s%s%s", bk.data, parent.data, left.data, right.data );
+			String msg( "%s%s%s", parent.data, left.data, right.data );
 			queue_message( mysql, user, w->identity, msg.data );
 		}
 		active_generation = w->generation;

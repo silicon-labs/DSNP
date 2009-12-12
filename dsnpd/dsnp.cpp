@@ -1132,17 +1132,17 @@ void addBroadcastKey( MYSQL *mysql, long long friend_claim_id, long long generat
 	}
 }
 
-void broadcastKey( MYSQL *mysql, const char *relid, long long friend_claim_id, const char *user,
-		const char *friend_id, long long generation, const char *bk )
+void storeBroadcastKey( MYSQL *mysql, long long friend_claim_id, 
+		long long generation, const char *bk, const char *friendProof )
 {
 	addBroadcastKey( mysql, friend_claim_id, generation );
 
 	/* Make the query. */
 	DbQuery( mysql, 
 			"UPDATE get_broadcast_key "
-			"SET broadcast_key = %e "
+			"SET broadcast_key = %e, friend_proof = %e "
 			"WHERE friend_claim_id = %L AND generation = %L",
-			bk, friend_claim_id, generation );
+			bk, friendProof, friend_claim_id, generation );
 	
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -1509,9 +1509,6 @@ void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id )
 	/* Get the current time. */
 	String timeStr = timeNow();
 	String command( "friend_proof %s\r\n", timeStr.data );
-
-	/* Find current generation and youngest broadcast key */
-	currentPutBk( mysql, user, generation, broadcast_key );
 
 	encrypt.load( id_pub, user_priv );
 	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)command.data, command.length );

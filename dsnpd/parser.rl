@@ -358,6 +358,48 @@ int server_parse_loop()
 }
 
 /*
+ * notify_accept_result_parser
+ */
+
+%%{
+	machine notify_accept_result_parser;
+
+	include common;
+
+	main :=
+		'notify_accept_result'i ' ' token ' ' generation ' ' key ' ' sym EOL @{
+			type = ReturnedIdSalt;
+		};
+}%%
+
+%% write data;
+
+int NotifyAcceptResultParser::parse( const char *msg, long len )
+{
+	long cs;
+	const char *mark;
+	String gen_str;
+
+	type = Unknown;
+	%% write init;
+
+	const char *p = msg;
+	const char *pe = msg + strlen( msg );
+
+	%% write exec;
+
+	if ( cs < %%{ write first_final; }%% ) {
+		if ( cs == parser_error )
+			return ERR_PARSE_ERROR;
+		else
+			return ERR_UNEXPECTED_END;
+	}
+
+	return 0;
+}
+
+
+/*
  * prefriend_message_parser
  */
 
@@ -370,7 +412,7 @@ int server_parse_loop()
 		'notify_accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @{
 			type = NotifyAccept;
 		} |
-		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
+		'registered'i ' ' requested_relid ' ' returned_relid ' ' generation ' ' key ' ' sym EOL @{
 			type = Registered;
 		};
 
@@ -382,6 +424,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;
+	String gen_str;
 
 	type = Unknown;
 	%% write init;
@@ -411,9 +454,9 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' generation ' ' key 
+		'broadcast_key'i ' ' generation ' ' key ' ' sym
 			EOL @{
-				broadcastKey( mysql, to_relid, friend_claim_id, user, friend_id, generation, key );
+				storeBroadcastKey( mysql, friend_claim_id, generation, key, sym );
 			} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
 			EOL @{
@@ -615,46 +658,6 @@ long EncryptedBroadcastParser::parse( const char *msg )
 	long cs;
 	const char *mark;
 	String gen_str;
-
-	type = Unknown;
-	%% write init;
-
-	const char *p = msg;
-	const char *pe = msg + strlen( msg );
-
-	%% write exec;
-
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
-
-	return 0;
-}
-
-/*
- * notify_accept_result_parser
- */
-
-%%{
-	machine notify_accept_result_parser;
-
-	include common;
-
-	main :=
-		'returned_id_salt'i ' ' token EOL @{
-			type = ReturnedIdSalt;
-		};
-}%%
-
-%% write data;
-
-int NotifyAcceptResultParser::parse( const char *msg, long len )
-{
-	long cs;
-	const char *mark;
 
 	type = Unknown;
 	%% write init;

@@ -78,8 +78,8 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void set_config_by_uri( const char *uri );
 void set_config_by_name( const char *name );
-void broadcastKey( MYSQL *mysql, const char *relid, long long friend_claim_id, const char *user,
-		const char *identity, long long generation, const char *bk );
+void storeBroadcastKey( MYSQL *mysql, long long friend_claim_id, 
+		long long generation, const char *broadcastKey, const char *friendProof );
 
 void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const char *identity,
 		int child_num, long long generation, const char *relid, const char *to_identity );
@@ -345,6 +345,8 @@ struct PrefriendParser
 
 	Type type;
 	String id_salt, requested_relid, returned_relid;
+	long long generation;
+	String key, sym;
 
 	int parse( const char *msg, long mLen );
 };
@@ -359,6 +361,8 @@ struct NotifyAcceptResultParser
 
 	Type type;
 	String token;
+	long long generation;
+	String key, sym;
 
 	int parse( const char *msg, long mLen );
 };
@@ -371,6 +375,10 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *msg, char **result_msg );
 int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
 		const char *hash, long long generation, const char *sym );
+
+long long storeFriendClaim( MYSQL *mysql, const char *user, 
+		const char *identity, const char *id_salt, const char *put_relid, 
+		const char *get_relid );
 
 AllocString make_id_hash( const char *salt, const char *identity );
 

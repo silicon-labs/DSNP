@@ -368,27 +368,25 @@ int server_parse_loop()
 
 	main :=
 		'notify_accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @{
-			notify_accept( mysql, user, friend_id, id_salt, requested_relid, returned_relid );
+			type = NotifyAccept;
 		} |
 		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
-			registered( mysql, user, friend_id, requested_relid, returned_relid );
+			type = Registered;
 		};
 
 }%%
 
 %% write data;
 
-int prefriend_message_parser( MYSQL *mysql, const char *relid,
-		const char *user, const char *friend_id, const char *message )
+int PrefriendParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;
-	String id_salt, requested_relid, returned_relid;
 
 	%% write init;
 
-	const char *p = message;
-	const char *pe = message + strlen( message );
+	const char *p = msg;
+	const char *pe = msg + mLen;
 
 	%% write exec;
 
@@ -645,19 +643,16 @@ long EncryptedBroadcastParser::parse( const char *msg )
 
 	main :=
 		'returned_id_salt'i ' ' token EOL @{
-			notify_accept_returned_id_salt( mysql, user, user_reqid, 
-				from_id, requested_relid, returned_relid, token );
+			type = ReturnedIdSalt;
 		};
 }%%
 
 %% write data;
 
-int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *user_reqid, 
-		const char *from_id, const char *requested_relid, const char *returned_relid, const char *msg )
+int NotifyAcceptResultParser::parse( const char *msg, long len )
 {
 	long cs;
 	const char *mark;
-	String token;
 
 	%% write init;
 

@@ -324,6 +324,34 @@ struct BroadcastParser
 	int parse( const char *msg, long mLen );
 };
 
+struct PrefriendParser
+{
+	enum Type
+	{
+		NotifyAccept,
+		Registered
+	};
+
+	Type type;
+	String id_salt, requested_relid, returned_relid;
+
+	int parse( const char *msg, long mLen );
+};
+
+struct NotifyAcceptResultParser
+{
+	enum Type
+	{
+		ReturnedIdSalt
+	};
+
+	Type type;
+	String token;
+
+	int parse( const char *msg, long mLen );
+};
+
+
 RSA *fetch_public_key( MYSQL *mysql, const char *identity );
 RSA *load_key( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
@@ -331,5 +359,7 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *msg, char **result_msg );
 int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
 		const char *hash, long long generation, const char *sym );
+
+AllocString make_id_hash( const char *salt, const char *identity );
 
 #endif

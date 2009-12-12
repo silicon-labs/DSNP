@@ -201,7 +201,9 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 		case NotifyAcceptResultParser::ReturnedIdSalt:
 			notify_accept_returned_id_salt( mysql, user, user_reqid, 
 				from_id, requested_relid, returned_relid, narp.token );
-		break;
+			break;
+		default:
+			break;
 	}
 }
 
@@ -242,6 +244,8 @@ void prefriend_message( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case PrefriendParser::Registered:
 			registered( mysql, user, friend_id, pfp.requested_relid, pfp.returned_relid );
+			break;
+		default:
 			break;
 	}
 }

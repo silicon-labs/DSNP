@@ -284,6 +284,14 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friend_id );
 
 struct EncryptedBroadcastParser
 {
+	enum Type
+	{
+		Unknown = 1,
+		RemoteInner,
+		FriendProof
+	};
+
+	Type type;
 	String sym;
 	long long generation;
 
@@ -294,6 +302,7 @@ struct RemoteBroadcastParser
 {
 	enum Type
 	{
+		Unknown = 1,
 		RemoteInner,
 		FriendProof
 	};
@@ -311,6 +320,7 @@ struct BroadcastParser
 {
 	enum Type
 	{
+		Unknown = 1,
 		Direct,
 		Remote
 	};
@@ -328,6 +338,7 @@ struct PrefriendParser
 {
 	enum Type
 	{
+		Unknown = 1,
 		NotifyAccept,
 		Registered
 	};
@@ -342,6 +353,7 @@ struct NotifyAcceptResultParser
 {
 	enum Type
 	{
+		Unknown = 1,
 		ReturnedIdSalt
 	};
 

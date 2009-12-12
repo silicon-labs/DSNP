@@ -383,6 +383,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	long cs;
 	const char *mark;
 
+	type = Unknown;
 	%% write init;
 
 	const char *p = msg;
@@ -518,6 +519,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 	String length_str;
 	String seq_str, gen_str;
 
+	type = Unknown;
 	%% write init;
 
 	const char *p = msg;
@@ -574,8 +576,7 @@ int RemoteBroadcastParser::parse( const char *msg, long mLen )
 	const char *mark;
 	String length_str, seq_str;
 
-	message("parsing remote_broadcast string: %.*s\n", (int)mLen, msg );
-
+	type = Unknown;
 	%% write init;
 
 	const char *p = msg;
@@ -615,6 +616,7 @@ long EncryptedBroadcastParser::parse( const char *msg )
 	const char *mark;
 	String gen_str;
 
+	type = Unknown;
 	%% write init;
 
 	const char *p = msg;
@@ -654,6 +656,7 @@ int NotifyAcceptResultParser::parse( const char *msg, long len )
 	long cs;
 	const char *mark;
 
+	type = Unknown;
 	%% write init;
 
 	const char *p = msg;

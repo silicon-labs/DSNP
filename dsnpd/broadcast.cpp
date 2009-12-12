@@ -99,6 +99,9 @@ void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id,
 			case RemoteBroadcastParser::FriendProof:
 				friend_proof( mysql, user, friend_id, author_id, rbp.seq_num, rbp.date );
 				break;
+			default:
+				error("remote broadcast parse failed\n");
+				break;
 		}
 	}
 }
@@ -165,6 +168,8 @@ void receive_broadcast( MYSQL *mysql, const char *relid, long long generation, c
 			case BroadcastParser::Remote:
 				remote_broadcast( mysql, user, friend_id, bp.hash, 
 						bp.generation, bp.embeddedMsg, bp.length );
+				break;
+			default:
 				break;
 		}
 	}

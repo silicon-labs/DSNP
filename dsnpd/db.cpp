@@ -53,7 +53,7 @@ int exec_query_va( MYSQL *mysql, const char *fmt, va_list vls )
 	va_list vl1;
 	va_copy( vl1, vls );
 	while ( true ) {
-		char *p = strchr( src, '%' );
+		const char *p = strchr( src, '%' );
 		if ( p == 0 ) {
 			/* No more items. Count the rest. */
 			len += strlen( src );
@@ -109,7 +109,7 @@ int exec_query_va( MYSQL *mysql, const char *fmt, va_list vls )
 	va_list vl2;
 	va_copy( vl2, vls );
 	while ( true ) {
-		char *p = strchr( src, '%' );
+		const char *p = strchr( src, '%' );
 		if ( p == 0 ) {
 			/* No more items. Copy the rest. */
 			strcpy( dest, src );

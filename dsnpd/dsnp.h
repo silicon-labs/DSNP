@@ -334,6 +334,30 @@ struct BroadcastParser
 	int parse( const char *msg, long mLen );
 };
 
+struct MessageParser
+{
+	enum Type
+	{
+		Unknown = 1,
+		BroadcastKey,
+		ForwardTo,
+		EncryptRemoteBroadcast,
+		ReturnRemoteBroadcast,
+		FriendProofRequest,
+		FriendProof
+	};
+
+	Type type;
+
+	String identity, number_str, key, relid;
+	String sym, token, reqid, hash;
+	long length, number;
+	long long seq_num, generation;
+	const char *containedMsg;
+
+	int parse( const char *smg, long mLen );
+};
+
 struct PrefriendParser
 {
 	enum Type

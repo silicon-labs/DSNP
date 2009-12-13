@@ -456,51 +456,46 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	main := (
 		'broadcast_key'i ' ' generation ' ' key ' ' sym
 			EOL @{
-				storeBroadcastKey( mysql, friend_claim_id, generation, key, sym );
+				type = BroadcastKey;
 			} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
 			EOL @{
-				forwardTo( mysql, friend_claim_id, user, friend_id, number, generation, identity, relid );
+				type = ForwardTo;
 			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
-			EOL @{ msg = p+1; p += length; } 
+			EOL @{ containedMsg = p+1; p += length; } 
 			EOL @{
-				/* Rest of the input is the msssage. */
-				encrypt_remote_broadcast( mysql, user, friend_id, token, seq_num, msg );
+				type = EncryptRemoteBroadcast;
 			} |
 		'return_remote_broadcast'i ' ' reqid ' ' generation ' ' sym
 			EOL @{
-				return_remote_broadcast( mysql, user, friend_id, reqid, generation, sym );
+				type = ReturnRemoteBroadcast;
 			} |
 		'friend_proof_request'i
 			EOL @{
-				friendProofRequest( mysql, user, friend_id );
+				type = FriendProofRequest;
 			} |
 		'friend_proof'i ' ' hash ' ' generation ' ' sym
 			EOL @{
-				friendProof( mysql, user, friend_id, hash, generation, sym );
+				type = FriendProof;
 			}
 	)*;
 }%%
 
 %% write data;
 
-int message_parser( MYSQL *mysql, const char *to_relid,
-		long long friend_claim_id, const char *user, const char *friend_id, const char *msg )
+int MessageParser::parse( const char *msg, long len )
 {
 	long cs;
 	const char *mark;
-	String identity, number_str, key, relid, gen_str;
-	String sym, token, reqid, seq_str, length_str, hash;
-	long length, number;
-	long long seq_num, generation;
+	String gen_str, seq_str, length_str;
 
 	message( "message parser: parsing: %s\n", msg );
 
 	%% write init;
 
 	const char *p = msg;
-	const char *pe = msg + strlen( msg );
+	const char *pe = msg + len;
 
 	%% write exec;
 

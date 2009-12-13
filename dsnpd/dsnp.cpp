@@ -1314,10 +1314,30 @@ void receive_message( MYSQL *mysql, const char *relid, const char *message )
 		return;
 	}
 
-	int parseResult = message_parser( mysql, relid, id,user, friend_id, (char*)encrypt.decrypted );
-	if ( parseResult < 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
+	MessageParser mp;
+	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
+	switch ( mp.type ) {
+		case MessageParser::BroadcastKey:
+			storeBroadcastKey( mysql, id, mp.generation, mp.key, mp.sym );
+			break;
+		case MessageParser::ForwardTo: 
+			forwardTo( mysql, id, user, friend_id, mp.number, mp.generation, mp.identity, mp.relid );
+			break;
+		case MessageParser::EncryptRemoteBroadcast: 
+			encrypt_remote_broadcast( mysql, user, friend_id, mp.token, mp.seq_num, mp.containedMsg );
+			break;
+		case MessageParser::ReturnRemoteBroadcast:
+			return_remote_broadcast( mysql, user, friend_id, mp.reqid, mp.generation, mp.sym );
+			break;
+		case MessageParser::FriendProofRequest:
+			friendProofRequest( mysql, user, friend_id );
+			break;
+		case MessageParser::FriendProof:
+			friendProof( mysql, user, friend_id, mp.hash, mp.generation, mp.sym );
+			break;
+		default:
+			BIO_printf( bioOut, "ERROR\r\n" );
+			break;
 	}
 }
 

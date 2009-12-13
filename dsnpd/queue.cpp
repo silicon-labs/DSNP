@@ -88,6 +88,51 @@ bool send_broadcast_message()
 	return true;
 }
 
+long queue_message_db( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *relid, const char *msg )
+{
+	DbQuery( mysql,
+		"INSERT INTO message_queue "
+		"( from_user, to_id, relid, message, send_after ) "
+		"VALUES ( %e, %e, %e, %e, NOW() ) ",
+		from_user, to_identity, relid, msg );
+
+	/* Get the id that was assigned to the message. */
+	DbQuery lastId( mysql, "SELECT LAST_INSERT_ID()" );
+	if ( lastId.rows() > 0 ) {
+		MYSQL_ROW row = lastId.fetchRow();
+		message( "queued message %s from %s to %s\n", row[0], from_user, to_identity );
+	}
+
+	return 0;
+}
+
+long queue_message( MYSQL *mysql, const char *from_user,
+		const char *to_identity, const char *msg )
+{
+	DbQuery claim( mysql, 
+		"SELECT put_relid FROM friend_claim "
+		"WHERE user = %e AND friend_id = %e ",
+		from_user, to_identity );
+
+	if ( claim.rows() == 0 )
+		return -1;
+
+	MYSQL_ROW row = claim.fetchRow();
+	const char *relid = row[0];
+
+	RSA *id_pub = fetch_public_key( mysql, to_identity );
+	RSA *user_priv = load_key( mysql, from_user );
+
+	Encrypt encrypt( id_pub, user_priv );
+
+	/* Include the null in the message. */
+	encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
+	queue_message_db( mysql, from_user, to_identity, relid, encrypt.sym );
+	return 0;
+}
+
+
 bool send_message()
 {
 	MYSQL *mysql = db_connect();
@@ -122,6 +167,8 @@ bool send_message()
 	mysql_close( mysql );
 
 	if ( affected == 1 ) {
+		message("delivering message %lld from %s to %s\n", id, from_user, to_id );
+
 		long send_res = send_message_net( mysql, false, from_user, to_id, relid, 
 				msg, strlen(msg), 0 );
 

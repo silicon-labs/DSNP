@@ -1196,18 +1196,6 @@ void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const
 	BIO_printf( bioOut, "OK\n" );
 }
 
-long queue_message_db( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *relid, const char *message )
-{
-	exec_query( mysql,
-		"INSERT INTO message_queue "
-		"( from_user, to_id, relid, message, send_after ) "
-		"VALUES ( %e, %e, %e, %e, NOW() ) ",
-		from_user, to_identity, relid, message );
-
-	return 0;
-}
-
 long queue_broadcast_db( MYSQL *mysql, const char *to_site,
 		const char *relid, long long generation, const char *msg )
 {
@@ -1217,42 +1205,6 @@ long queue_broadcast_db( MYSQL *mysql, const char *to_site,
 		"VALUES ( %e, %e, %L, %e, NOW() ) ",
 		to_site, relid, generation, msg );
 
-	return 0;
-}
-
-
-long queue_message( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *message )
-{
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	RSA *id_pub, *user_priv;
-	Encrypt encrypt;
-	int encrypt_res;
-	const char *relid;
-
-	exec_query( mysql, 
-		"SELECT put_relid FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e ",
-		from_user, to_identity );
-
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 )
-		goto free_result;
-	relid = row[0];
-
-	id_pub = fetch_public_key( mysql, to_identity );
-	user_priv = load_key( mysql, from_user );
-
-	encrypt.load( id_pub, user_priv );
-
-	/* Include the null in the message. */
-	encrypt_res = encrypt.signEncrypt( (u_char*)message, strlen(message)+1 );
-
-	queue_message_db( mysql, from_user, to_identity, relid, encrypt.sym );
-free_result:
-	mysql_free_result( result );
 	return 0;
 }
 
@@ -1278,67 +1230,6 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identi
 		childNum, generation, forwardToSite, relid );
 
 	return queue_message( mysql, from_user, to_identity, buf );
-}
-
-void receive_message( MYSQL *mysql, const char *relid, const char *message )
-{
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	RSA *id_pub, *user_priv;
-	Encrypt encrypt;
-	int decrypt_res;
-
-	exec_query( mysql, 
-		"SELECT id, user, friend_id FROM friend_claim "
-		"WHERE get_relid = %e",
-		relid );
-
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
-		BIO_printf( bioOut, "ERROR finding friend\r\n" );
-		return;
-	}
-	long long id = strtoll(row[0], 0, 10);
-	const char *user = row[1];
-	const char *friend_id = row[2];
-
-	user_priv = load_key( mysql, user );
-	id_pub = fetch_public_key( mysql, friend_id );
-
-	encrypt.load( id_pub, user_priv );
-	decrypt_res = encrypt.decryptVerify( message );
-
-	if ( decrypt_res < 0 ) {
-		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
-		return;
-	}
-
-	MessageParser mp;
-	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
-	switch ( mp.type ) {
-		case MessageParser::BroadcastKey:
-			storeBroadcastKey( mysql, id, mp.generation, mp.key, mp.sym );
-			break;
-		case MessageParser::ForwardTo: 
-			forwardTo( mysql, id, user, friend_id, mp.number, mp.generation, mp.identity, mp.relid );
-			break;
-		case MessageParser::EncryptRemoteBroadcast: 
-			encrypt_remote_broadcast( mysql, user, friend_id, mp.token, mp.seq_num, mp.containedMsg );
-			break;
-		case MessageParser::ReturnRemoteBroadcast:
-			return_remote_broadcast( mysql, user, friend_id, mp.reqid, mp.generation, mp.sym );
-			break;
-		case MessageParser::FriendProofRequest:
-			friendProofRequest( mysql, user, friend_id );
-			break;
-		case MessageParser::FriendProof:
-			friendProof( mysql, user, friend_id, mp.hash, mp.generation, mp.sym );
-			break;
-		default:
-			BIO_printf( bioOut, "ERROR\r\n" );
-			break;
-	}
 }
 
 void login( MYSQL *mysql, const char *user, const char *pass )

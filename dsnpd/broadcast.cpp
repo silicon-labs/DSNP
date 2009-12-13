@@ -106,7 +106,7 @@ void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id,
 	}
 }
 
-void receive_broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
+void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
 {
 	message("received broadcast with relid %s generation %lld\n", relid, generation );
 
@@ -208,14 +208,14 @@ void receive_broadcast( MYSQL *mysql, const char *relid, long long generation, c
 }
 
 
-long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
+long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
 {
 	long long generation;
 	String broadcast_key;
 
 	/* Get the latest put session key. */
 	currentPutBk( mysql, user, generation, broadcast_key );
-	message("queue_broadcast: using %lld %s\n", generation, broadcast_key.data );
+	message("queue broadcast: using %lld %s\n", generation, broadcast_key.data );
 
 	/* Find root friend. */
 	DbQuery rootFriend( mysql,
@@ -236,7 +236,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		char *friend_id = row[0];
 		char *put_relid = row[1];
 
-		message( "queue_broadcast: using root node: %s\n", friend_id );
+		message( "queue broadcast: using root node: %s\n", friend_id );
 
 		/* Do the encryption. */
 		RSA *user_priv = load_key( mysql, user );
@@ -255,8 +255,7 @@ long queue_broadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 }
 
 
-long send_broadcast( MYSQL *mysql, const char *user,
-		const char *msg, long mLen )
+long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
@@ -270,8 +269,10 @@ long send_broadcast( MYSQL *mysql, const char *user,
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
-	if ( lastInsertId.rows() != 1 )
+	if ( lastInsertId.rows() != 1 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
+	}
 
 	long long seq_num = strtoll( lastInsertId.fetchRow()[0], 0, 10 );
 
@@ -284,29 +285,16 @@ long send_broadcast( MYSQL *mysql, const char *user,
 	memcpy( full + broadcastCmd.length, msg, mLen );
 	memcpy( full + broadcastCmd.length + mLen, "\r\n", 2 );
 
-	long sendResult = queue_broadcast( mysql, user, full, broadcastCmd.length + mLen + 2 );
-	if ( sendResult < 0 )
-		return -1;
-
-	return 0;
-}
-
-
-long submit_broadcast( MYSQL *mysql, const char *user,
-		const char *msg, long mLen )
-{
-	int result = send_broadcast( mysql, user, msg, mLen );
-
-	if ( result < 0 ) {
+	long sendResult = queueBroadcast( mysql, user, full, broadcastCmd.length + mLen + 2 );
+	if ( sendResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
-		goto close;
+		return -1;
 	}
 
 	BIO_printf( bioOut, "OK\r\n" );
-
-close:
 	return 0;
 }
+
 
 long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
 		const char *author_hash, long long generation,
@@ -321,7 +309,7 @@ long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_i
 		author_hash, generation, seq_num, encMessageLen );
 	String full = addMessageData( command, encMessage, encMessageLen );
 
-	long sendResult = queue_broadcast( mysql, user, full.data, full.length );
+	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
 	if ( sendResult < 0 )
 		return -1;
 

@@ -240,7 +240,15 @@ bool gblKeySubmitted = false;
 		#
 		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
-				submit_broadcast( mysql, user, message_buffer.data, length );
+				submitBroadcast( mysql, user, message_buffer.data, length );
+			} |
+
+		#
+		# Direct messages to friends
+		#
+		'submit_message'i ' ' user ' ' identity ' ' length
+			M_EOL @check_key @{
+				submitMessage( mysql, user, identity, message_buffer.data, length );
 			} |
 
 		#
@@ -267,12 +275,12 @@ bool gblKeySubmitted = false;
 		#
 		'message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
-				receive_message( mysql, relid, message_buffer.data );
+				receiveMessage( mysql, relid, message_buffer.data );
 			} |
 
 		'broadcast'i ' ' relid ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				receive_broadcast( mysql, relid, generation, message_buffer.data );
+				receiveBroadcast( mysql, relid, generation, message_buffer.data );
 			} |
 
 		#
@@ -478,6 +486,11 @@ int PrefriendParser::parse( const char *msg, long mLen )
 		'friend_proof'i ' ' hash ' ' generation ' ' sym
 			EOL @{
 				type = FriendProof;
+			} |
+		'user_message'i ' ' date ' ' length 
+			EOL @{ containedMsg = p+1; p += length; } 
+			EOL @{
+				type = UserMessage;
 			}
 	)*;
 }%%
@@ -490,17 +503,16 @@ int MessageParser::parse( const char *msg, long len )
 	const char *mark;
 	String gen_str, seq_str, length_str;
 
-	message( "message parser: parsing: %s\n", msg );
-
 	%% write init;
 
 	const char *p = msg;
 	const char *pe = msg + len;
+	type = Unknown;
 
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% ) {
-		message("message_parser: parse error\n");
+		message("message_parser: parse error\n" );
 		if ( cs == parser_error )
 			return ERR_PARSE_ERROR;
 		else

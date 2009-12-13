@@ -284,44 +284,46 @@ function remoteBoardPost( $user, $subject, $msg, $content_type )
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
-function sendRealName( $user, $to_ident )
+function sendRealName( $user, $toIdentity )
 {
 	global $CFG_URI;
 	global $CFG_PORT;
 	global $CFG_COMM_KEY;
 
 	$query = sprintf(
-		"SELECT name from user WHERE user = '%s'",
+		"SELECT name FROM user WHERE user = '%s'",
 		mysql_real_escape_string($user) );
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	if ( $row = mysql_fetch_assoc($result) ) {
 		$name = $row['name'];
 
-		/* User message */
-		$headers = 
-			"Content-Type: text/plain\r\n" .
-			"Type: name-change\r\n" .
-			"\r\n";
-		$message = $name;
-		$len = strlen( $headers ) + strlen( $message );
+		if ( isset( $name ) && strlen( $name ) > 0 ) {
+			/* User message */
+			$headers = 
+				"Content-Type: text/plain\r\n" .
+				"Type: name-change\r\n" .
+				"\r\n";
+			$message = $name;
+			$len = strlen( $headers ) + strlen( $message );
 
-		$fp = fsockopen( 'localhost', $CFG_PORT );
-		if ( !$fp )
-			exit(1);
+			$fp = fsockopen( 'localhost', $CFG_PORT );
+			if ( !$fp )
+				exit(1);
 
-		$send = 
-			"SPP/0.1 $CFG_URI\r\n" . 
-			"comm_key $CFG_COMM_KEY\r\n" .
-			"submit_broadcast $user $len\r\n";
+			$send = 
+				"SPP/0.1 $CFG_URI\r\n" . 
+				"comm_key $CFG_COMM_KEY\r\n" .
+				"submit_message $user $toIdentity $len\r\n";
 
-		fwrite( $fp, $send );
-		fwrite( $fp, $headers, strlen($headers) );
-		fwrite( $fp, $message, strlen($message) );
-		fwrite( $fp, "\r\n", 2 );
+			fwrite( $fp, $send );
+			fwrite( $fp, $headers, strlen($headers) );
+			fwrite( $fp, $message, strlen($message) );
+			fwrite( $fp, "\r\n", 2 );
 
-		$res = fgets($fp);
-		echo "send real name result: $res";
+			$res = fgets($fp);
+			echo "send real name result: $res";
+		}
 	}
 }
 
@@ -491,8 +493,7 @@ case "sent_friend_request_accepted": {
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-	//sendRealName( $user, $identity );
+	sendRealName( $user, $identity );
 	break;
 }
 
@@ -511,8 +512,7 @@ case "friend_request_accepted": {
 	);
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-	//sendRealName( $user, $identity );
+	sendRealName( $user, $identity );
 	break;
 }
 

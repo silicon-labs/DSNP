@@ -95,16 +95,15 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long queue_broadcast( MYSQL *mysql, const char *fwd_relid, const char *user, const char *msg, long mLen );
 long send_broadcast_net( MYSQL *mysql, const char *toSite, const char *relid,
 		long long generation, const char *message, long mLen );
 long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		long long generation, const char *session_key );
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, int childNum, 
 		long long generation, const char *forwardToSite, const char *relid );
-void receive_broadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
+void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
 
-void receive_message( MYSQL *mysql, const char *relid, const char *message );
+void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
 long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
 		long long generation, const char *message );
 long send_message_net( MYSQL *mysql, bool prefriend, 
@@ -127,8 +126,8 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *requested_relid, const char *returned_relid );
 
-long submit_broadcast( MYSQL *mysql, const char *user,
-		const char *user_message, long mLen );
+long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
+long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
 long remote_broadcast_request( MYSQL *mysql, const char *user, 
 		const char *identity, const char *hash, const char *token,
 		const char *user_message, long mLen );
@@ -344,13 +343,15 @@ struct MessageParser
 		EncryptRemoteBroadcast,
 		ReturnRemoteBroadcast,
 		FriendProofRequest,
-		FriendProof
+		FriendProof,
+		UserMessage
 	};
 
 	Type type;
 
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
+	String date;
 	long length, number;
 	long long seq_num, generation;
 	const char *containedMsg;
@@ -405,5 +406,6 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 		const char *get_relid );
 
 AllocString make_id_hash( const char *salt, const char *identity );
+long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
 
 #endif

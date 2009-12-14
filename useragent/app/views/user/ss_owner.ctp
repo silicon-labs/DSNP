@@ -21,8 +21,8 @@ include( 'functions.php' );
 ?>
 
 
-
-<div id="leftcol">
+<table><tr>
+<td id="leftcol">
 
 <div id="details">
 
@@ -93,9 +93,9 @@ foreach ( $friendClaims as $row ) {
 <div class="content">
 </div>
 
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <?
 #echo '<div>'; print_r( $activity ); echo '</div>';
@@ -135,5 +135,5 @@ foreach ( $friendClaims as $row ) {
 
 </div>
 
-</div>
-
+</td>
+</tr></table>

@@ -20,7 +20,8 @@ include('functions.php');
 
 ?>
 
-<div id="leftcol">
+<table><tr>
+<td id="leftcol">
 
 <div id="details">
 
@@ -61,9 +62,9 @@ foreach ( $friendClaims as $row ) {
 
 </div>
 
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <div class="content">
 
@@ -138,4 +139,6 @@ function show()
 <input type="button" onClick="init(elId,256);show();" name="show" value="show" style="width:10%;">
 
 </div>
-</div>
+</td>
+
+</tr></table>

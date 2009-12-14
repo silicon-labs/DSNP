@@ -1,11 +1,12 @@
+<table><tr>
 
-<div id="leftcol">
-<div class="content">
+<td id="leftcol">
+<div id="details">
 <h2><?php echo $USER['display_short'];?></h2>
 </div>
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <div class="content">
 
@@ -19,4 +20,6 @@ echo $form->end('Update');
 
 </div>
 
-</div>
+</td>
+
+</tr></table>

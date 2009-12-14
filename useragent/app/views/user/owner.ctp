@@ -20,7 +20,9 @@ include( 'functions.php' );
 
 ?>
 
-<div id="leftcol">
+<table><tr>
+
+<td id="leftcol">
 
 <div id="details">
 
@@ -126,9 +128,9 @@ if ( $count % 2 == 1 )
 ?>
 </table>
 </div>
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <?
 #echo '<div>'; print_r( $activity ); echo '</div>';
@@ -168,4 +170,6 @@ if ( count( $activity ) == $start + $activity_size )
 
 </div>
 
-</div>
+</td>
+
+</tr></table>

@@ -40,26 +40,27 @@
 	?>
 </head>
 <body>
-	<div id="header">
-		<div id="header_left"><div class="header_content">
+	<div id="header"><tr>
+	<table><tr>
+		<td id="header_left"><div class="header_content">
 		<h1>
 		<?php 
 			echo $html->link( Configure::read('CFG_SITE_NAME'), 
 					Configure::read('CFG_URI') );
 		?>
 		</h1>
-		</div></div>
+		</div></td>
 
-		<div id="header_middle"><div class="header_content">
+		<td id="header_middle"><div class="header_content">
 		<h1>
 		<?php
 			if ( isset( $USER['display_long'] ) )
 				echo $html->link( $USER['display_long'], $USER['identity'] );
 		?>
 		</h1>
-		</div></div>
+		</div></td>
 
-		<div id="header_right"><div class="header_content">
+		<td id="header_right"><div class="header_content">
 		<h1>
 		<?php 
 		if ( isset( $ROLE ) && $ROLE == 'friend' )
@@ -81,8 +82,9 @@
 		}
 		?>
 		</h1>
-		</div></div>
+		</div></td>
 
+	</tr></table>
 	</div>
 
 	<div id="page_body">
@@ -91,19 +93,20 @@
 	</div>
 
 	<div id="footer">
-		<div id="footer_left"><div class="footer_content">
-		</div></div>
+	<table><tr>
+		<td id="footer_left"><div class="footer_content">
+		</div></td>
 
-		<div id="footer_middle"><div class="footer_content">
+		<td id="footer_middle"><div class="footer_content">
 		<h1>
 		<?php echo $html->link(__('DSNP User-Agent One', true), 
 			'http://www.complang.org/dsnp/'); ?>
 		</h1>
-		</div></div>
+		</div></td>
 
-		<div id="footer_right"><div class="footer_content">
-		</div></div>
-
+		<td id="footer_right"><div class="footer_content">
+		</div></td>
+	</tr><table>
 	</div>
 </body>
 </html>

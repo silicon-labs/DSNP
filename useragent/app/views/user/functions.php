@@ -64,16 +64,17 @@ function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
 	$message = $item['message'];
 
 	echo '<div class="msgdisp">';
+	echo '<table><tr>';
 	if ( $type == 'PHT' ) {
-		echo '<div class="msgleft">';
+		echo '<td class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
-		echo '</div>';
+		echo '</td>';
 
-		echo '<div class="msgbody">';
+		echo '<td class="msgbody">';
 		echo '<div class="msgphoto">';
 		if ( isset( $remote_resid ) ) {
 			echo "<a href=\"${author_id}image/view/img-$remote_resid.jpg?h=" . 
@@ -87,25 +88,25 @@ function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
 					"\" alt=\"$message\"></a>\n";
 		}
 		echo '</div>';
-		echo '</div>';
+		echo '</td>';
 	}
 	else if ( $type == 'MSG' ) {
-		echo '<div class="msgleft">';
+		echo '<td class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
-		echo '</div>';
+		echo '</td>';
 
-		echo '<div class="msgbody">';
+		echo '<td class="msgbody">';
 		$message = htmlspecialchars($message);
 		$message = $text->autoLinkUrls($message);
 		echo $message;
-		echo '</div>';
+		echo '</td>';
 	}
 	else if ( $type == 'BRD' ) {
-		echo '<div class="msgleft">';
+		echo '<td class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
@@ -113,14 +114,15 @@ function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
 		printName( $USER, $BROWSER, $subject_id, $subject_name, true );
 		echo " board</font>";
 		echo '</div>';
-		echo '</div>';
+		echo '</td>';
 
-		echo '<div class="msgbody">';
+		echo '<td class="msgbody">';
 		$message = htmlspecialchars($message);
 		$message = $text->autoLinkUrls($message);
 		echo $message;
-		echo '</div>';
+		echo '</td>';
 	}
+	echo '</tr></table>';
 	echo '</div>';
 }
 

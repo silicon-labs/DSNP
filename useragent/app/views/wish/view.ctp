@@ -1,12 +1,13 @@
-<div id="leftcol">
+<table><tr>
+<td id="leftcol">
 
 <div id="details">
 <h2><?php echo $USER['display_short'];?></h2>
 </div>
 
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <div class="content">
 <h3>Wish List for <?echo $this->data['FriendClaim']['name']; ?></h3>
@@ -32,4 +33,6 @@ if ( $id == $BROWSER['id'] )
 ?>
 
 </div>
-</div>
+</td>
+
+</tr></table>

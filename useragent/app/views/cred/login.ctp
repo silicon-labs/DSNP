@@ -1,12 +1,13 @@
-<div id="leftcol">
+<table><tr>
+<td id="leftcol">
 
 <div id="details">
 <h2><?php print $USER_NAME;?></h2>
 </div>
 
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <div class="content">
 <h3>Login</h3>
@@ -30,4 +31,5 @@ if ( isset( $dest ) )
 
 </div>
 
-</div>
+</td>
+</tr></table>

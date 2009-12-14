@@ -17,7 +17,9 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 ?>
 
-<div id="leftcol">
+<table><tr>
+
+<td id="leftcol">
 
 <div class="content">
 
@@ -27,9 +29,9 @@ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 <a href="admin/newuser">create new user</a>
 
 </div>
-</div>
+</td>
 
-<div id="activity">
+<td id="activity">
 
 <div class="content">
 <h2>Users</h2>
@@ -46,4 +48,6 @@ while ( $row = mysql_fetch_assoc($result) ) {
 ?>
 </div>
 
-</div>
+</td>
+
+</tr></table>

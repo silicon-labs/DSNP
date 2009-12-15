@@ -109,9 +109,3 @@ while ( $row = mysql_fetch_assoc($result) ) {
 	$query = sprintf( "UPDATE friend_claim SET state = 1 WHERE id = %ld", $id );
 	mysql_query($query) or die('Query failed: ' . mysql_error());
 }
-
-foreach ( $namesSet as $user => $name )
-{
-	sendRealName( $user );
-}
-

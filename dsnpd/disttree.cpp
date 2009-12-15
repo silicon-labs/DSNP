@@ -247,7 +247,8 @@ void execWorklist( MYSQL *mysql, const char *user, long long generation,
 			}
 
 			String msg( "%s%s%s", parent.data, left.data, right.data );
-			queue_message( mysql, user, w->identity, msg.data );
+			if ( msg.length > 0 )
+				queue_message( mysql, user, w->identity, msg.data );
 		}
 		active_generation = w->generation;
 	}

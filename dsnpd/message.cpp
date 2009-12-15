@@ -33,20 +33,15 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	message("received message\n");
 
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	RSA *id_pub, *user_priv;
-	Encrypt encrypt;
-	int decrypt_res;
-
 	exec_query( mysql, 
 		"SELECT id, user, friend_id FROM friend_claim "
 		"WHERE get_relid = %e",
 		relid );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
+	MYSQL_RES *result = mysql_store_result( mysql );
+	MYSQL_ROW row = mysql_fetch_row( result );
 	if ( row == 0 ) {
+		message("message receipt: no friend claim for %s\n", relid );
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
 		return;
 	}
@@ -54,13 +49,14 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	const char *user = row[1];
 	const char *friend_id = row[2];
 
-	user_priv = load_key( mysql, user );
-	id_pub = fetch_public_key( mysql, friend_id );
+	RSA *user_priv = load_key( mysql, user );
+	RSA *id_pub = fetch_public_key( mysql, friend_id );
 
-	encrypt.load( id_pub, user_priv );
-	decrypt_res = encrypt.decryptVerify( msg );
+	Encrypt encrypt( id_pub, user_priv );
+	int decryptRes = encrypt.decryptVerify( msg );
 
-	if ( decrypt_res < 0 ) {
+	if ( decryptRes < 0 ) {
+		message("message receipt: decryption failed\n" );
 		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
 		return;
 	}
@@ -72,13 +68,16 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			storeBroadcastKey( mysql, id, mp.generation, mp.key, mp.sym );
 			break;
 		case MessageParser::ForwardTo: 
-			forwardTo( mysql, id, user, friend_id, mp.number, mp.generation, mp.identity, mp.relid );
+			forwardTo( mysql, id, user, friend_id, mp.number,
+					mp.generation, mp.identity, mp.relid );
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
-			encrypt_remote_broadcast( mysql, user, friend_id, mp.token, mp.seq_num, mp.containedMsg );
+			encrypt_remote_broadcast( mysql, user, friend_id, mp.token,
+					mp.seq_num, mp.containedMsg );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
-			return_remote_broadcast( mysql, user, friend_id, mp.reqid, mp.generation, mp.sym );
+			return_remote_broadcast( mysql, user, friend_id, mp.reqid,
+					mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProofRequest:
 			friendProofRequest( mysql, user, friend_id );

@@ -512,7 +512,7 @@ int MessageParser::parse( const char *msg, long len )
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% ) {
-		message("message_parser: parse error\n" );
+		message("message_parser: parse error: %.*s\n", (int)len, msg );
 		if ( cs == parser_error )
 			return ERR_PARSE_ERROR;
 		else

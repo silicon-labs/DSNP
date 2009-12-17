@@ -46,6 +46,7 @@ bool gblKeySubmitted = false;
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
 	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
+	group = [a-zA-Z0-9_.]+    >{mark=p;} %{group.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -99,7 +100,7 @@ bool gblKeySubmitted = false;
 		set_config_by_uri( identity );
 
 		/* Now that we have a config connect to the database. */
-		mysql = db_connect();
+		mysql = dbConnect();
 		if ( mysql == 0 )
 			fgoto *parser_error;
 	}
@@ -213,6 +214,23 @@ bool gblKeySubmitted = false;
 			} |
 
 		#
+		# Friend management.
+		#
+		'add_group'i ' ' user ' ' group
+			EOL @check_key @{
+				addGroup( mysql, user, group );
+			} |
+		'remove_group'i ' ' user ' ' group
+			EOL @check_key @{
+
+			} |
+		'add_to_group'i ' ' user ' ' group ' ' identity
+			EOL @check_key @{
+				addToGroup( mysql, user, group, identity );
+			} |
+			
+
+		#
 		# Friend login. 
 		#
 		'ftoken_request'i ' ' user ' ' hash
@@ -311,7 +329,7 @@ int server_parse_loop()
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
-	String gen_str, seq_str;
+	String gen_str, seq_str, group;
 	long length;
 	long long generation;
 	String message_buffer;
@@ -376,7 +394,7 @@ int server_parse_loop()
 
 	main :=
 		'notify_accept_result'i ' ' token ' ' generation ' ' key ' ' sym EOL @{
-			type = ReturnedIdSalt;
+			type = NotifyAcceptResult;
 		};
 }%%
 

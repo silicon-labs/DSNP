@@ -36,7 +36,7 @@
 
 bool send_broadcast_message()
 {
-	MYSQL *mysql = db_connect();
+	MYSQL *mysql = dbConnect();
 
 	/* Try to find a message. */
 	DbQuery findOne( mysql, 
@@ -72,7 +72,7 @@ bool send_broadcast_message()
 		if ( send_res < 0 ) {
 			error( "trouble sending message: %ld\n", send_res );
 
-			MYSQL *mysql = db_connect();
+			MYSQL *mysql = dbConnect();
 
 			/* Queue the message. */
 			DbQuery( mysql,
@@ -135,7 +135,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 
 bool send_message()
 {
-	MYSQL *mysql = db_connect();
+	MYSQL *mysql = dbConnect();
 
 	/* Try to find a message. */
 	DbQuery findOne( mysql, 
@@ -175,7 +175,7 @@ bool send_message()
 		if ( send_res < 0 ) {
 			error( "trouble sending message: %ld\n", send_res );
 
-			MYSQL *mysql = db_connect();
+			MYSQL *mysql = dbConnect();
 
 			/* Queue the message. */
 			DbQuery( mysql,

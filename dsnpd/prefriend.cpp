@@ -300,7 +300,7 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	NotifyAcceptResultParser narp;
 	narp.parse( result_message, strlen(result_message) );
 	switch ( narp.type ) {
-		case NotifyAcceptResultParser::ReturnedIdSalt:
+		case NotifyAcceptResultParser::NotifyAcceptResult:
 			notify_accept_returned_id_salt( mysql, user, user_reqid, 
 				from_id, requested_relid, returned_relid, narp.token, 
 				narp.generation, narp.key, narp.sym );

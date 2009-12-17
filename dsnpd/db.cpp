@@ -22,7 +22,7 @@
 #include <stdlib.h>
 
 
-MYSQL *db_connect()
+MYSQL *dbConnect()
 {
 	/* Open the database connection. */
 	MYSQL *mysql = mysql_init(0);
@@ -44,7 +44,7 @@ MYSQL *db_connect()
  */
 
 /* Format and execute a query. */
-int exec_query_va( MYSQL *mysql, const char *fmt, va_list vls )
+int execQueryVa( MYSQL *mysql, const char *fmt, va_list vls )
 {
 	long len = 0;
 	const char *src = fmt;
@@ -184,7 +184,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 {
 	va_list args;
 	va_start( args, fmt );
-	int res = exec_query_va( mysql, fmt, args );
+	int res = execQueryVa( mysql, fmt, args );
 	va_end( args );
 	return res;
 }
@@ -196,7 +196,7 @@ DbQuery::DbQuery( MYSQL *mysql, const char *fmt, ... )
 {
 	va_list args;
 	va_start( args, fmt );
-	exec_query_va( mysql, fmt, args );
+	execQueryVa( mysql, fmt, args );
 	va_end( args );
 
 	result = mysql_store_result( mysql );

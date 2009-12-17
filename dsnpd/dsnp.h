@@ -197,7 +197,7 @@ int prefriend_message_parser( MYSQL *mysql, const char *relid,
 
 void login( MYSQL *mysql, const char *user, const char *pass );
 
-MYSQL *db_connect();
+MYSQL *dbConnect();
 
 void fatal( const char *fmt, ... );
 void error( const char *fmt, ... );
@@ -381,7 +381,7 @@ struct NotifyAcceptResultParser
 	enum Type
 	{
 		Unknown = 1,
-		ReturnedIdSalt
+		NotifyAcceptResult
 	};
 
 	Type type;
@@ -407,5 +407,8 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 
 AllocString make_id_hash( const char *salt, const char *identity );
 long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
+
+void addGroup( MYSQL *mysql, const char *user, const char *group );
+void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );
 
 #endif

@@ -97,8 +97,6 @@ char *get_site( const char *identity );
 
 long send_broadcast_net( MYSQL *mysql, const char *toSite, const char *relid,
 		long long generation, const char *message, long mLen );
-long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		long long generation, const char *session_key );
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, int childNum, 
 		long long generation, const char *forwardToSite, const char *relid );
 void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );

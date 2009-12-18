@@ -848,20 +848,6 @@ void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const 
 }
 
 
-int send_current_broadcast_key( MYSQL *mysql, const char *user, const char *identity )
-{
-	long long generation;
-	String broadcast_key;
-
-	/* Get the latest put session key. */
-	currentPutBk( mysql, user, generation, broadcast_key );
-	int send_res = send_broadcast_key( mysql, user, identity, generation, broadcast_key );
-	if ( send_res < 0 )
-		error( "sending failed %d\n", send_res );
-
-	return 0;
-}
-
 long store_ftoken( MYSQL *mysql, const char *user, const char *identity,
 		const char *token_str, const char *reqid_str, const char *msg_sym )
 {
@@ -1206,18 +1192,6 @@ long queue_broadcast_db( MYSQL *mysql, const char *to_site,
 		to_site, relid, generation, msg );
 
 	return 0;
-}
-
-long send_broadcast_key( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		long long generation, const char *broadcast_key )
-{
-	static char buf[8192];
-
-	sprintf( buf,
-		"broadcast_key %lld %s\r\n", 
-		generation, broadcast_key );
-
-	return queue_message( mysql, from_user, to_identity, buf );
 }
 
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identity, 

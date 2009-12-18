@@ -1,4 +1,5 @@
 #include "dsnp.h"
+#include "disttree.h"
 #include "encrypt.h"
 
 void addGroup( MYSQL *mysql, const char *user, const char *group )
@@ -59,7 +60,7 @@ void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 
 	sendMessageNow( mysql, false, user, identity, putRelid, registered.data, 0 );
 
-//	forward_tree_insert( mysql, user, from_id, requested_relid );
+	forward_tree_insert( mysql, user, identity, putRelid );
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )

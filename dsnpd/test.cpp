@@ -36,7 +36,7 @@ void test_tls()
 {
 	static char buf[8192];
 
-	set_config_by_name( "spp" );
+	setConfigByName( "spp" );
 	MYSQL *mysql, *connect_res;
 
 	/* Open the database connection. */
@@ -146,7 +146,7 @@ void test_base64_2()
 
 void test_current_put_bk()
 {
-	set_config_by_name( "spp" );
+	setConfigByName( "spp" );
 	MYSQL *mysql, *connect_res;
 
 	/* Open the database connection. */
@@ -154,11 +154,8 @@ void test_current_put_bk()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
-	long long generation;
-	String broadcastKey;
-	currentPutBk( mysql, "age", generation, broadcastKey );
-
-	printf( "%lld %s\n", generation, broadcastKey.data );
+	//currentPutBk( mysql, "age", generation, broadcastKey );
+	//printf( "%lld %s\n", generation, broadcastKey.data );
 }
 
 
@@ -174,22 +171,18 @@ void update( MYSQL *mysql )
 
 void tree_load()
 {
-	set_config_by_name( "spp" );
+	setConfigByName( "spp" );
 	MYSQL *mysql, *connect_res;
 
 	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-
-	forward_tree_swap( mysql, "age",
-		"https://localhost/spp/pat/",
-		"https://localhost/spp/sarah/" );
 }
 
 void checkTree()
 {
-	set_config_by_name( "yoho" );
+	setConfigByName( "yoho" );
 	MYSQL *mysql, *connect_res;
 
 	/* Open the database connection. */
@@ -202,7 +195,7 @@ void checkTree()
 
 void friendProof()
 {
-	set_config_by_name( "yoho" );
+	setConfigByName( "yoho" );
 	MYSQL *mysql, *connect_res;
 
 	/* Open the database connection. */

@@ -20,6 +20,8 @@
 #include <mysql.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
+#include <list>
+#include <string>
 
 #include "string.h"
 
@@ -57,14 +59,35 @@ struct Identity
 	const char *site;
 };
 
-void run_queue( const char *siteName );
-long run_broadcast_queue_db();
-long run_message_queue_db();
-int server_parse_loop();
+void runQueue( const char *siteName );
+long runBroadcastQueue();
+long runMessageQueue();
+
+int serverParseLoop();
 int rcfile_parse( const char *data, long length );
 
+struct Global
+{
+	Global()
+	:
+		configFile(0),
+		siteName(0),
+		runQueue(false),
+		test(false),
+		pid(0)
+	{}
+		
+	const char *configFile;
+	const char *siteName;
+	bool runQueue;
+	bool test;
+	pid_t pid;
+};
+
+extern Global gbl;
+
 /* Commands. */
-void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email );
+void newUser( MYSQL *mysql, const char *user, const char *pass, const char *email );
 void public_key( MYSQL *mysql, const char *identity );
 void relid_request( MYSQL *mysql, const char *user, const char *identity );
 void fetch_requested_relid( MYSQL *mysql, const char *reqid );
@@ -76,8 +99,8 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash );
 void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str );
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
-void set_config_by_uri( const char *uri );
-void set_config_by_name( const char *name );
+void setConfigByUri( const char *uri );
+void setConfigByName( const char *name );
 void storeBroadcastKey( MYSQL *mysql, long long friend_claim_id, 
 		long long generation, const char *broadcastKey, const char *friendProof );
 
@@ -95,22 +118,27 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long send_broadcast_net( MYSQL *mysql, const char *toSite, const char *relid,
-		long long generation, const char *message, long mLen );
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, int childNum, 
 		long long generation, const char *forwardToSite, const char *relid );
-void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted );
+
+struct CurrentPutKey
+{
+	CurrentPutKey( MYSQL *mysql, const char *user );
+
+	long long keyGen;
+	String broadcastKey;
+	long long treeGenLow;
+	long long treeGenHigh;
+};
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
-long queue_broadcast_db( MYSQL *mysql, const char *to_site, const char *relid,
-		long long generation, const char *message );
 long send_message_net( MYSQL *mysql, bool prefriend, 
 		const char *from_user, const char *to_identity, const char *relid,
 		const char *message, long mLen, char **result_message );
 long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );
-long queue_message( MYSQL *mysql, const char *from_user,
+long queueMessage( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *message );
 void submit_ftoken( MYSQL *mysql, const char *token );
 void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
@@ -230,8 +258,6 @@ long base64_to_bin( unsigned char *out, long len, const char *src );
 AllocString bin_to_base64( const u_char *data, long len );
 AllocString bn_to_base64( const BIGNUM *n );
 
-extern pid_t pid;
-
 struct DbQuery
 {
 	DbQuery( MYSQL *mysql, const char *fmt, ... );
@@ -252,6 +278,8 @@ struct DbQuery
 	MYSQL_RES *result;
 };
 
+long long lastInsertId( MYSQL *mysql );
+
 struct TlsConnect
 {
 	int connect( const char *host, const char *site );
@@ -264,8 +292,6 @@ int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *use
 void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char *user_reqid, 
 		const char *from_id, const char *requested_relid, 
 		const char *returned_relid, const char *returned_id_salt );
-
-int currentPutBk( MYSQL *mysql, const char *user, long long &generation, String &bk );
 
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
 
@@ -408,5 +434,14 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen 
 
 void addGroup( MYSQL *mysql, const char *user, const char *group );
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );
+
+typedef std::list<std::string> RecipientList;
+
+void broadcastReceipient( MYSQL *mysql, RecipientList &recipientList, const char *relid );
+void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, long long keyGen,
+		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted ); 
+long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
+		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		const char *msg, long mLen );
 
 #endif

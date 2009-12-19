@@ -105,7 +105,7 @@ long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, cons
 	memcpy( full + messageCmd.length, msg, mLen );
 	memcpy( full + messageCmd.length + mLen, "\r\n", 2 );
 
-	long sendResult = queue_message( mysql, user, toIdentity, full );
+	long sendResult = queueMessage( mysql, user, toIdentity, full );
 	if ( sendResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;

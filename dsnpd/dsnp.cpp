@@ -40,7 +40,7 @@
 
 #define LOGIN_TOKEN_LASTS 86400
 
-void set_config_by_uri( const char *uri )
+void setConfigByUri( const char *uri )
 {
 	c = config_first;
 	while ( c != 0 && strcmp( c->CFG_URI, uri ) != 0 )
@@ -52,7 +52,7 @@ void set_config_by_uri( const char *uri )
 	}
 }
 
-void set_config_by_name( const char *name )
+void setConfigByName( const char *name )
 {
 	c = config_first;
 	while ( c != 0 && strcmp( c->name, name ) != 0 )
@@ -151,23 +151,24 @@ AllocString pass_hash( const u_char *pass_salt, const char *pass )
 	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
 }
 
-int currentPutBk( MYSQL *mysql, const char *user, long long &generation, String &bk )
+CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user )
 {
 	DbQuery query( mysql, 
-		"SELECT user.put_generation, broadcast_key "
+		"SELECT user.key_gen, broadcast_key, user.tree_gen_low, user.tree_gen_high "
 		"FROM put_broadcast_key JOIN user "
 		"WHERE user.user = put_broadcast_key.user AND "
-		"	put_broadcast_key.generation <= user.put_generation AND"
+		"	put_broadcast_key.generation <= user.key_gen AND "
 		"	user.user = %e "
-		"ORDER BY put_generation DESC", user );
+		"ORDER BY put_broadcast_key.generation DESC", user );
 	
 	if ( query.rows() == 0 )
 		fatal( "failed to get current put bk\n" );
 	
 	MYSQL_ROW row = query.fetchRow();
-	generation = strtoll( row[0], 0, 10 );
-	bk.set( row[1] );
-	return 1;
+	keyGen = strtoll( row[0], 0, 10 );
+	broadcastKey.set( row[1] );
+	treeGenLow = strtoll( row[2], 0, 10 );
+	treeGenHigh = strtoll( row[3], 0, 10 );
 }
 
 void new_broadcast_key( MYSQL *mysql, const char *user, long long generation )
@@ -186,7 +187,7 @@ void new_broadcast_key( MYSQL *mysql, const char *user, long long generation )
 		user, generation, bk );
 }
 
-void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
+void tryNewUser( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
 	//char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
 	char *pass_hashed, *pass_salt_str, *id_salt_str;
@@ -194,8 +195,6 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 
 	RAND_bytes( pass_salt, SALT_SIZE );
 	pass_salt_str = bin_to_base64( pass_salt, SALT_SIZE );
-	message("pass_salt_str: %s\n", bin2hex( pass_salt, SALT_SIZE ) );
-	message("pass: %s\n", pass );
 
 	RAND_bytes( id_salt, SALT_SIZE );
 	id_salt_str = bin_to_base64( id_salt, SALT_SIZE );
@@ -221,20 +220,20 @@ void try_new_user( MYSQL *mysql, const char *user, const char *pass, const char 
 	pass_hashed = pass_hash( pass_salt, pass );
 
 	/* Execute the insert. */
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO user "
 		"("
-		"	user, pass_salt, pass, email, id_salt, put_generation, "
+		"	user, pass_salt, pass, email, id_salt, key_gen, tree_gen_low, tree_gen_high, "
 		"	rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
 		")"
-		"VALUES ( %e, %e, %e, %e, %e, 1, %e, %e, %e, %e, %e, %e, %e, %e );", 
+		"VALUES ( %e, %e, %e, %e, %e, 1, 1, 1, %e, %e, %e, %e, %e, %e, %e, %e );", 
 		user, pass_salt_str, pass_hashed, email, id_salt_str,
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
 	RSA_free( rsa );
 }
 
-void new_user( MYSQL *mysql, const char *user, const char *pass, const char *email )
+void newUser( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
 	exec_query( mysql, "LOCK TABLES user WRITE;");
 
@@ -246,7 +245,7 @@ void new_user( MYSQL *mysql, const char *user, const char *pass, const char *ema
 		return;
 	}
 
-	try_new_user( mysql, user, pass, email );
+	tryNewUser( mysql, user, pass, email );
 	BIO_printf( bioOut, "OK\r\n" );
 
 	exec_query( mysql, "UNLOCK TABLES;" );
@@ -1182,18 +1181,6 @@ void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const
 	BIO_printf( bioOut, "OK\n" );
 }
 
-long queue_broadcast_db( MYSQL *mysql, const char *to_site,
-		const char *relid, long long generation, const char *msg )
-{
-	exec_query( mysql,
-		"INSERT INTO broadcast_queue "
-		"( to_site, relid, generation, message, send_after ) "
-		"VALUES ( %e, %e, %L, %e, NOW() ) ",
-		to_site, relid, generation, msg );
-
-	return 0;
-}
-
 long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identity, 
 		int childNum, long long generation, const char *forwardToSite, const char *relid )
 {
@@ -1203,7 +1190,7 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identi
 		"forward_to %d %lld %s %s\r\n", 
 		childNum, generation, forwardToSite, relid );
 
-	return queue_message( mysql, from_user, to_identity, buf );
+	return queueMessage( mysql, from_user, to_identity, buf );
 }
 
 void login( MYSQL *mysql, const char *user, const char *pass )
@@ -1304,8 +1291,6 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	Encrypt encrypt;
 	RSA *user_priv, *id_pub;
 	int sigRes;
-	String broadcast_key;
-	long long generation;
 
 	long mLen = strlen(msg);
 
@@ -1335,15 +1320,15 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	app_notification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */
-	currentPutBk( mysql, user, generation, broadcast_key );
-	message("current put_bk: %lld %s\n", generation, broadcast_key.data );
+	CurrentPutKey put( mysql, user );
+	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
 
 	/* Make the full message. */
 	String command( "remote_inner %lld %s %ld\r\n", seq_num, timeStr.data, mLen );
 	String full = addMessageData( command, msg, mLen );
 
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)full.data, full.length );
+	sigRes = encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)full.data, full.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
@@ -1359,7 +1344,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 		"INSERT INTO remote_broadcast_request "
 		"	( user, identity, reqid, generation, sym ) "
 		"VALUES ( %e, %e, %e, %L, %e )",
-		user, subject_id, reqid_str, generation, encrypt.sym );
+		user, subject_id, reqid_str, put.treeGenHigh, encrypt.sym );
 
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
 }
@@ -1368,8 +1353,6 @@ void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id )
 {
 	Encrypt encrypt;
 	int sigRes;
-	String broadcast_key;
-	long long generation;
 
 	message( "received friend proof request\n" );
 
@@ -1388,22 +1371,22 @@ void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id )
 	RSA *id_pub = fetch_public_key( mysql, friend_id );
 
 	/* Find current generation and youngest broadcast key */
-	currentPutBk( mysql, user, generation, broadcast_key );
-	message("current put_bk: %lld %s\n", generation, broadcast_key.data );
+	CurrentPutKey put( mysql, user );
+	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
 
 	/* Get the current time. */
 	String timeStr = timeNow();
 	String command( "friend_proof %s\r\n", timeStr.data );
 
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.bkSignEncrypt( broadcast_key, (u_char*)command.data, command.length );
+	sigRes = encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)command.data, command.length );
 	if ( sigRes < 0 ) {
 			BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 			return;
 	}
 
 	message( "friend_proof_request enc: %s\n", encrypt.sym );
-	String resultCmd( "encrypted_broadcast %lld %s\r\n", generation, encrypt.sym );
+	String resultCmd( "encrypted_broadcast %lld %s\r\n", put.treeGenHigh, encrypt.sym );
 
 	encrypt.signEncrypt( (u_char*)resultCmd.data, resultCmd.length+1 );
 

@@ -30,15 +30,17 @@ void addGroup( MYSQL *mysql, const char *user, const char *group )
 	BIO_printf( bioOut, "OK\n" );
 }
 
+/*
+ * To make group del and friend del instantaneous we need to destroy the tree.
+ */
+
 void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 		long long friendClaimId, const char *putRelid )
 {
 	/*
 	 * Send the current broadcast key and the friend_proof.
 	 */
-	long long outGen;
-	String outBroadcastKey;
-	currentPutBk( mysql, user, outGen, outBroadcastKey );
+	CurrentPutKey put( mysql, user );
 
 	/* Get the current time. */
 	String timeStr = timeNow();
@@ -48,7 +50,7 @@ void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 	RSA *id_pub = fetch_public_key( mysql, identity );
 
 	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( outBroadcastKey.data, (u_char*)command.data, command.length );
+	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
@@ -56,7 +58,7 @@ void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 
 	/* Notify the requester. */
 	String registered( "broadcast_key %lld %s %s\r\n", 
-			outGen, outBroadcastKey.data, encrypt.sym );
+			put.keyGen, put.broadcastKey.data, encrypt.sym );
 
 	sendMessageNow( mysql, false, user, identity, putRelid, registered.data, 0 );
 

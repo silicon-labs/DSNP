@@ -34,55 +34,102 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-bool send_broadcast_message()
+bool sendBroadcastMessage()
 {
 	MYSQL *mysql = dbConnect();
 
 	/* Try to find a message. */
-	DbQuery findOne( mysql, 
-		"SELECT id, to_site, relid, generation, message "
+	DbQuery queue( mysql, 
+		"SELECT id, message_id, to_site, forward "
 		"FROM broadcast_queue "
 		"WHERE now() >= send_after ORDER by id LIMIT 1"
 	);
 
-	if ( findOne.rows() == 0 )
+	if ( queue.rows() == 0 )
 		return false;
 
-	MYSQL_ROW row = findOne.fetchRow();
-	long long id = strtoll( row[0], 0, 10 );
-	char *to_site = row[1];
-	char *relid = row[2];
-	long long generation = strtoll( row[3], 0, 10 );
-	char *msg = row[4];
-	
-	/* Remove it. If removing fails then we assume that some other process
-	 * removed the item. */
-	DbQuery remove( mysql, 
-		"DELETE FROM broadcast_queue "
-		"WHERE id = %L",
-		id
-	);
+	MYSQL_ROW row = queue.fetchRow();
+	long long queueId = strtoll( row[0], 0, 10 );
+	long long messageId = strtoll( row[1], 0, 10 );
+	char *toSite = row[2];
+	int forward = atoi( row[3] );
+
+	/* Remove it. */
+	DbQuery remove( mysql, "DELETE FROM broadcast_queue WHERE id = %L", queueId );
 	int affected = remove.affectedRows();
+
+	message( "processing queue %lld with message %lld\n", queueId, messageId );
+
+	/* If we were not able to remove it, then someone other process removed it now
+	 * has repsonsibility for it. */
+	if ( affected == 0 ) {
+		mysql_close( mysql );
+		return true;
+	}
+		
+	DbQuery findMsg( mysql, 
+		"SELECT key_gen, tree_gen_low, tree_gen_high, message "
+		"FROM broadcast_message "
+		"WHERE id = %L ",
+		messageId
+	);
+
+	if ( findMsg.rows() != 1 ) {
+		error("broadcast message %lld not found, message lost\n");
+		mysql_close( mysql );
+		return true;
+	}
+
+	row = findMsg.fetchRow();
+	long long keyGen = strtoll( row[0], 0, 10 );
+	long long treeGenLow = strtoll( row[1], 0, 10 );
+	long long treeGenHigh = strtoll( row[2], 0, 10 );
+	char *msg = row[3];
+
+	DbQuery recipients( mysql,
+		"SELECT relid "
+		"FROM broadcast_recipient "
+		"WHERE queue_id = %L ",
+		queueId );
+
+	/* Free the connection. */
 	mysql_close( mysql );
 
-	if ( affected == 1 ) {
-		long send_res = send_broadcast_net( mysql, to_site, relid,
-				generation, msg, strlen(msg) );
+	message( "there are %d recipients\n", recipients.rows() );
+	RecipientList recipientList;
+	
+	while ( true ) {
+		row = recipients.fetchRow();
+		if ( !row )
+			break;
+		const char *toRelid = row[0];
+		recipientList.push_back( std::string(toRelid) );
+		message( "sending %lld to %s %s\n", queueId, toSite, toRelid );
+	}
 
-		if ( send_res < 0 ) {
-			error( "trouble sending message: %ld\n", send_res );
 
-			MYSQL *mysql = dbConnect();
+	/* If failed. */
+	long sendRes = sendBroadcastNet( mysql, toSite, recipientList, 
+			keyGen, forward, treeGenLow, treeGenHigh, msg, strlen(msg) );
 
-			/* Queue the message. */
-			DbQuery( mysql,
-					"INSERT INTO broadcast_queue "
-					"( to_site, relid, generation, message, send_after ) "
-					"VALUES ( %e, %e, %L, %e, DATE_ADD( NOW(), INTERVAL 10 MINUTE ) ) ",
-					to_site, relid, generation, msg );
+	if ( sendRes < 0 ) {
+		MYSQL *mysql = dbConnect();
 
-			mysql_close( mysql );
-		}
+		DbQuery( mysql,
+			"INSERT INTO broadcast_queue "
+			"( message_id, send_after, to_site, forward ) "
+			"VALUES ( %L, DATE_ADD( NOW(), INTERVAL 10 MINUTE ), %e, %b ) ",
+			messageId, toSite, forward );
+
+		long long newQueueId = lastInsertId( mysql );
+
+		DbQuery( mysql,
+			"UPDATE broadcast_recipient "
+			"SET queue_id = %L "
+			"WHERE queue_id = %L ",
+			newQueueId, queueId );
+
+		mysql_close( mysql );
 	}
 
 	return true;
@@ -107,7 +154,7 @@ long queue_message_db( MYSQL *mysql, const char *from_user,
 	return 0;
 }
 
-long queue_message( MYSQL *mysql, const char *from_user,
+long queueMessage( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *msg )
 {
 	DbQuery claim( mysql, 
@@ -132,8 +179,7 @@ long queue_message( MYSQL *mysql, const char *from_user,
 	return 0;
 }
 
-
-bool send_message()
+bool sendMessage()
 {
 	MYSQL *mysql = dbConnect();
 
@@ -191,32 +237,32 @@ bool send_message()
 	return true;
 }
 
-long run_broadcast_queue_db()
+long runBroadcastQueue()
 {
 	while ( true ) {
-		bool itemsLeft = send_broadcast_message();
+		bool itemsLeft = sendBroadcastMessage();
 		if ( !itemsLeft )
 			break;
 	}
 	return 0;
 }
 
-long run_message_queue_db()
+long runMessageQueue()
 {
 	while ( true ) {
-		bool itemsLeft = send_message();
+		bool itemsLeft = sendMessage();
 		if ( !itemsLeft )
 			break;
 	}
 	return 0;
 }
 
-void run_queue( const char *siteName )
+void runQueue( const char *siteName )
 {
-	set_config_by_name( siteName );
+	setConfigByName( siteName );
 	if ( c != 0 ) {
-		run_broadcast_queue_db();
-		run_message_queue_db();
+		runBroadcastQueue();
+		runMessageQueue();
 	}
 }
 

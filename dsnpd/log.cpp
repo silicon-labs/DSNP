@@ -51,7 +51,7 @@ void fatal( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "%-5d %s FATAL: ", pid, timeStr );
+		fprintf( logFile, "%-5d %s FATAL: ", gbl.pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
@@ -71,7 +71,7 @@ void error( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "%-5d %s ERROR: ", pid, timeStr );
+		fprintf( logFile, "%-5d %s ERROR: ", gbl.pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
@@ -90,7 +90,7 @@ void warning( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "%-5d %s WARNING: ", pid, timeStr );
+		fprintf( logFile, "%-5d %s WARNING: ", gbl.pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}
@@ -109,7 +109,7 @@ void message( const char *fmt, ... )
 
 	if ( logFile != 0 ) {
 		va_start( args, fmt );
-		fprintf( logFile, "%-5d %s message: ", pid, timeStr );
+		fprintf( logFile, "%-5d %s message: ", gbl.pid, timeStr );
 		vfprintf( logFile, fmt, args );
 		va_end( args );
 	}

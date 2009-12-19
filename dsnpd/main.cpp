@@ -31,6 +31,8 @@
 BIO *bioIn = 0;
 BIO *bioOut = 0;
 
+Global gbl;
+
 void read_rcfile( const char *confFile )
 {
 	FILE *rcfile = fopen( confFile, "r" );
@@ -45,13 +47,7 @@ void read_rcfile( const char *confFile )
 	rcfile_parse( buf, len );
 }
 
-const char *configFile = 0;
-const char *siteName = 0;
-bool runQueue = false;
-bool test = false;
-pid_t pid = 0;
-
-int check_args( int argc, char **argv )
+int checkArgs( int argc, char **argv )
 {
 	while ( true ) {
 		int opt = getopt( argc, argv, "q:t" );
@@ -61,19 +57,21 @@ int check_args( int argc, char **argv )
 
 		switch ( opt ) {
 			case 'q':
-				runQueue = true;
-				siteName = optarg;
+				gbl.runQueue = true;
+				gbl.siteName = optarg;
 				break;
 			case 't':
-				test = true;
+				gbl.test = true;
 				break;
+			case '?':
+				return -1;
 		}
 	}
 
 	if ( optind < argc )
-		configFile = argv[optind];
+		gbl.configFile = argv[optind];
 	else
-		configFile = SYSCONFDIR "/dsnpd.conf";
+		gbl.configFile = SYSCONFDIR "/dsnpd.conf";
 
 	return 0;
 }
@@ -98,11 +96,33 @@ void setupSignals()
 	signal( SIGTERM, &dieHandler );
 }
 
-int server_main()
+int serverMain()
 {
-	server_parse_loop();
-	run_broadcast_queue_db();
-	run_message_queue_db();
+	message( "STARTING UP\n" );
+
+	/* Set up the input BIO to wrap stdin. */
+	BIO *bioFdIn = BIO_new_fd( 0, BIO_NOCLOSE );
+	bioIn = BIO_new( BIO_f_buffer() );
+	BIO_push( bioIn, bioFdIn );
+
+	/* Set up the output bio to wrap stdout. */
+	BIO *bioFdOut = BIO_new_fd( 1, BIO_NOCLOSE );
+	bioOut = BIO_new( BIO_f_buffer() );
+	BIO_push( bioOut, bioFdOut );
+
+	close( 2 );
+
+	serverParseLoop();
+
+	close( 0 );
+	close( 1 );
+
+	message( "RUNNING QUEUE\n" );
+
+	runBroadcastQueue();
+	runMessageQueue();
+
+	message( "EXITING\n" );
 	return 0;
 }
 
@@ -111,35 +131,25 @@ int run_test();
 
 int main( int argc, char **argv )
 {
-	if ( check_args( argc, argv ) < 0 ) {
+	if ( checkArgs( argc, argv ) < 0 ) {
 		fprintf( stderr, "expecting: sppd [options] config\n" );
 		fprintf( stderr, "  options: -q<site>    don't listen, run queue\n" );
 		exit(1);
 	}
 
-	pid = getpid();
+	gbl.pid = getpid();
 	setupSignals();
 
-	read_rcfile( configFile );
+	read_rcfile( gbl.configFile );
 
 	RAND_load_file("/dev/urandom", 1024);
 
 	openLogFile();
 
-	/* Set up the input BIO to wrap stdin. */
-	BIO *bioFdIn = BIO_new_fd( fileno(stdin), BIO_NOCLOSE );
-	bioIn = BIO_new( BIO_f_buffer() );
-	BIO_push( bioIn, bioFdIn );
-
-	/* Set up the output bio to wrap stdout. */
-	BIO *bioFdOut = BIO_new_fd( fileno(stdout), BIO_NOCLOSE );
-	bioOut = BIO_new( BIO_f_buffer() );
-	BIO_push( bioOut, bioFdOut );
-
-	if ( runQueue )
-		run_queue( siteName );
-	else if ( test )
+	if ( gbl.runQueue )
+		runQueue( gbl.siteName );
+	else if ( gbl.test )
 		run_test();
 	else 
-		server_main();
+		serverMain();
 }

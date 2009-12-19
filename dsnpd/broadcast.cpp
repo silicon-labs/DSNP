@@ -21,6 +21,12 @@
 
 #include <string.h>
 
+void broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *relid )
+{
+	recipients.push_back( std::string(relid) );
+	BIO_printf( bioOut, "OK\r\n" );
+}
+
 void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
 		const char *author_id, long long seq_num, const char *date,
 		const char *msg, long mLen )
@@ -106,10 +112,35 @@ void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id,
 	}
 }
 
-void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, const char *encrypted )
+/* This could be optimized to only store into broadcast_queue when sites differ. */
+long long forwardBroadcast( MYSQL *mysql, long long messageId, 
+		String lastSite, long long &lastQueueId,
+		const char *site, const char *relid )
 {
-	message("received broadcast with relid %s generation %lld\n", relid, generation );
+	if ( lastSite.length == 0 || strcmp( lastSite.data, site ) != 0 ) {
+		DbQuery( mysql,
+			"INSERT INTO broadcast_queue "
+			"( message_id, send_after, to_site, forward ) "
+			"VALUES ( %L, NOW(), %e, true ) ",
+			messageId, site );
 
+		lastQueueId = lastInsertId( mysql );
+		lastSite.set( site );
+	}
+
+	/* Insert the recipient. */
+	DbQuery( mysql,
+		"INSERT INTO broadcast_recipient "
+		"( queue_id, relid ) "
+		"VALUES ( %L, %e ) ",
+		lastQueueId, relid );
+
+	return lastQueueId;
+}
+
+void receiveBroadcast( MYSQL *mysql, const char *relid, long long keyGen,
+		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted )
+{
 	/* Find the recipient. */
 	DbQuery recipient( mysql, 
 		"SELECT friend_claim.id, "
@@ -121,7 +152,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, co
 		"ON friend_claim.id = get_broadcast_key.friend_claim_id "
 		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L "
 		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
-		relid, generation );
+		relid, keyGen );
 
 	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR bad recipient\r\n");
@@ -129,20 +160,18 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, co
 	}
 
 	MYSQL_ROW row = recipient.fetchRow();
-	unsigned long long friend_claim_id = strtoull(row[0], 0, 10);
+	unsigned long long friendClaimId = strtoull(row[0], 0, 10);
 	const char *user = row[1];
-	const char *friend_id = row[2];
-	const char *broadcast_key = row[3];
-
-	message("received broadcast, have broadcast key\n");
+	const char *friendId = row[2];
+	const char *broadcastKey = row[3];
 
 	/* Do the decryption. */
-	RSA *id_pub = fetch_public_key( mysql, friend_id );
+	RSA *id_pub = fetch_public_key( mysql, friendId );
 	Encrypt encrypt( id_pub, 0 );
-	int decryptRes = encrypt.bkDecryptVerify( broadcast_key, encrypted );
+	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted );
 
 	if ( decryptRes < 0 ) {
-		message("bkDecryptVerify failed\n");
+		error("unable to decrypt broadcast message relid %s key gen %lld\n", relid, keyGen );
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
@@ -153,8 +182,6 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, co
 	decrypted[encrypt.decLen] = 0;
 	int decLen = encrypt.decLen;
 
-	message("decrypted broadcast with relid %s generation %lld\n", relid, generation );
-
 	BroadcastParser bp;
 	int parseRes = bp.parse( decrypted, decLen );
 	if ( parseRes < 0 )
@@ -162,11 +189,11 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, co
 	else {
 		switch ( bp.type ) {
 			case BroadcastParser::Direct:
-				direct_broadcast( mysql, relid, user, friend_id, bp.seq_num, 
+				direct_broadcast( mysql, relid, user, friendId, bp.seq_num, 
 						bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
-				remote_broadcast( mysql, user, friend_id, bp.hash, 
+				remote_broadcast( mysql, user, friendId, bp.hash, 
 						bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			default:
@@ -174,48 +201,144 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long generation, co
 		}
 	}
 
-	/* 
-	 * Now do the forwarding.
-	 */
+	if ( forward ) {
+		/* 
+		 * Now do the forwarding.
+		 */
 
-	DbQuery forward( mysql, 
-		"SELECT relid_ret, "
-		"	site1, relid1, "
-		"	site2, relid2 "
-		"FROM get_tree "
-		"WHERE friend_claim_id = %L AND generation <= %L "
-		"ORDER BY get_tree.generation DESC LIMIT 1",
-		friend_claim_id, generation );
+		DbQuery forward( mysql, 
+			"SELECT "
+			"	site1, relid1, "
+			"	site2, relid2 "
+			"FROM get_tree "
+			"WHERE friend_claim_id = %L AND "
+			"	%L << generation AND generation <= %L "
+			"ORDER BY get_tree.generation DESC LIMIT 1",
+			friendClaimId, treeGenLow, treeGenHigh );
 
-	if ( forward.rows() > 0 ) {
-		row = forward.fetchRow();
-		//const char *relid_ret = row[0];
-		const char *site1 = row[1];
-		const char *relid1 = row[2];
-		const char *site2 = row[3];
-		const char *relid2 = row[4];
+		if ( forward.rows() > 0 ) {
+			row = forward.fetchRow();
+			const char *site1 = row[0];
+			const char *relid1 = row[1];
+			const char *site2 = row[2];
+			const char *relid2 = row[3];
 
-		message("received broadcast, have get tree\n");
+			message("forwarding broadcast message\n");
 
-		if ( site1 != 0 )
-			queue_broadcast_db( mysql, site1, relid1, generation, encrypted );
+			long long messageId = -1;
+			if ( site1 != 0 || site2 != 0 ) {
+				/* Store the message. */
+				DbQuery( mysql,
+					"INSERT INTO broadcast_message "
+					"( key_gen, tree_gen_low, tree_gen_high, message ) "
+					"VALUES ( %L, %L, %L, %e ) ",
+					keyGen, treeGenLow, treeGenHigh, encrypted );
 
-		if ( site2 != 0 )
-			queue_broadcast_db( mysql, site2, relid2, generation, encrypted );
+				messageId = lastInsertId( mysql );
+			}
+
+			String lastSite;
+			long long lastQueueId = -1;
+			if ( site1 != 0 )
+				forwardBroadcast( mysql, messageId, lastSite, lastQueueId, site1, relid1 );
+
+			if ( site2 != 0 )
+				forwardBroadcast( mysql, messageId, lastSite, lastQueueId, site2, relid2 );
+		}
 	}
 	
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
 
+void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, long long keyGen,
+		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted )
+{
+	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ )
+		receiveBroadcast( mysql, r->c_str(), keyGen, forward, treeGenLow, treeGenHigh, encrypted );
+}
+
+long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long messageId, 
+		DbQuery &recipients, bool forward )
+{
+	String lastSite;
+	long long lastQueueId = -1;
+	long count = 0;
+
+	while ( true ) {
+		MYSQL_ROW row = recipients.fetchRow();
+		if ( !row )
+			break;
+		
+		char *friendId = row[0];
+		char *putRelid = row[1];
+		message( "send to %s %s\n", friendId, putRelid );
+
+		Identity id( friendId );
+		id.parse();
+
+		/* If we need a new host then add it. */
+		if ( lastSite.length == 0 || strcmp( lastSite.data, id.site ) != 0 ) {
+			DbQuery( mysql,
+				"INSERT INTO broadcast_queue "
+				"( message_id, send_after, to_site, forward ) "
+				"VALUES ( %L, NOW(), %e, %b ) ",
+				messageId, id.site, forward );
+
+			lastQueueId = lastInsertId( mysql );
+			lastSite.set( id.site );
+		}
+
+		/* Insert the recipient. */
+		DbQuery( mysql,
+			"INSERT INTO broadcast_recipient "
+			"( queue_id, relid ) "
+			"VALUES ( %L, %e ) ",
+			lastQueueId, putRelid );
+
+		count += 1;
+	}
+	return count;
+}
+
 long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
 {
-	long long generation;
-	String broadcast_key;
-
 	/* Get the latest put session key. */
-	currentPutBk( mysql, user, generation, broadcast_key );
-	message("queue broadcast: using %lld %s\n", generation, broadcast_key.data );
+	CurrentPutKey put( mysql, user );
+
+	/* Do the encryption. */ 
+	RSA *userPriv = load_key( mysql, user ); 
+	Encrypt encrypt( 0, userPriv ); 
+	encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)msg, mLen ); 
+
+	/* Stroe the message. */
+	DbQuery( mysql,
+		"INSERT INTO broadcast_message "
+		"( key_gen, tree_gen_low, tree_gen_high, message ) "
+		"VALUES ( %L, %L, %L, %e ) ",
+		put.keyGen, put.treeGenLow, put.treeGenHigh, encrypt.sym );
+
+	long long messageId = lastInsertId( mysql );
+
+	/*
+	 * Out-of-tree broadcasts.
+	 */
+	DbQuery outOfTree( mysql,
+		"SELECT friend_claim.friend_id, friend_claim.put_relid "
+		"FROM friend_claim "
+		"JOIN put_tree "
+		"ON friend_claim.id = put_tree.friend_claim_id "
+		"WHERE friend_claim.user = %e AND put_tree.state = 1 AND"
+		"	%L <= put_tree.generation AND put_tree.generation <= %L "
+		"ORDER BY friend_claim.friend_id",
+		user, put.treeGenLow, put.treeGenHigh );
+	
+	storeBroadcastRecipients( mysql, user, messageId, outOfTree, false );
+	
+
+	/*
+	 * In-tree broadcasts.
+	 */
 
 	/* Find root friend. */
 	DbQuery rootFriend( mysql,
@@ -224,32 +347,11 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen 
 		"JOIN put_tree "
 		"ON friend_claim.id = put_tree.friend_claim_id "
 		"WHERE friend_claim.user = %e AND put_tree.root = true AND"
-		"	put_tree.generation <= %L "
-		"ORDER BY generation DESC LIMIT 1",
-		user, generation );
+		"	%L <= put_tree.generation AND put_tree.generation <= %L "
+		"ORDER BY friend_claim.friend_id",
+		user, put.treeGenLow, put.treeGenHigh );
 
-	if ( rootFriend.rows() == 0 ) {
-		/* Nothing here means that the user has no friends (sniff). */
-	}
-	else {
-		MYSQL_ROW row = rootFriend.fetchRow();
-		char *friend_id = row[0];
-		char *put_relid = row[1];
-
-		message( "queue broadcast: using root node: %s\n", friend_id );
-
-		/* Do the encryption. */
-		RSA *user_priv = load_key( mysql, user );
-		Encrypt encrypt( 0, user_priv );
-		encrypt.bkSignEncrypt( broadcast_key, (u_char*)msg, mLen );
-
-		/* Find the root user to send to. */
-		Identity id( friend_id );
-		id.parse();
-
-		queue_broadcast_db( mysql, id.site, put_relid,
-				generation, encrypt.sym );
-	}
+	storeBroadcastRecipients( mysql, user, messageId, rootFriend, true );
 
 	return 0;
 }
@@ -268,7 +370,7 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		user, authorId.data, timeStr.data );
 
 	/* Get the id that was assigned to the message. */
-	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
+	DbQuery lastInsertId( mysql, "SELECT LAST_INSERT_ID()" );
 	if ( lastInsertId.rows() != 1 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
@@ -296,7 +398,7 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 }
 
 
-long send_remote_broadcast( MYSQL *mysql, const char *user, const char *author_id,
+long sendRemoteBroadcast( MYSQL *mysql, const char *user, const char *author_id,
 		const char *author_hash, long long generation,
 		long long seq_num, const char *encMessage )
 {
@@ -468,7 +570,7 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 		const char *generation = row[4];
 		const char *sym = row[5];
 
-		long res = send_remote_broadcast( mysql, user, identity, 
+		long res = sendRemoteBroadcast( mysql, user, identity, 
 				hash, strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
 		if ( res < 0 ) {
 			BIO_printf( bioOut, "ERROR\r\n" );
@@ -526,7 +628,8 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		"WHERE friend_claim_id = %L and generation = %L",
 		ebp.sym.data, friendClaimId, ebp.generation );
 
-	long res = send_remote_broadcast( mysql, user, friendId, friendHash, ebp.generation, 20, ebp.sym.data );
+	long res = sendRemoteBroadcast( mysql, user, friendId, friendHash, 
+			ebp.generation, 20, ebp.sym.data );
 	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
@@ -546,7 +649,7 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		if ( row[1] != 0 && row[2] != 0 ) {
 			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
 			message("trying to send %s\n", msg.data );
-			queue_message( mysql, user, friendId, msg.data );
+			queueMessage( mysql, user, friendId, msg.data );
 		}
 	}
 

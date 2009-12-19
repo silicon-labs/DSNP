@@ -84,23 +84,21 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	/*
 	 * Send the current broadcast key and the friend_proof.
 	 */
-	long long generation;
-	String broadcastKey;
-	currentPutBk( mysql, for_user, generation, broadcastKey );
+	CurrentPutKey put( mysql, for_user );
 
 	/* Get the current time. */
 	String timeStr = timeNow();
 	String command( "friend_proof %s\r\n", timeStr.data );
 
 	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( broadcastKey.data, (u_char*)command.data, command.length );
+	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return -1;
 	}
 
 	String resultCommand( "notify_accept_result %s %lld %s %s\r\n", 
-		returned_id_salt, generation, broadcastKey.data, encrypt.sym );
+		returned_id_salt, put.treeGenHigh, put.broadcastKey.data, encrypt.sym );
 
 	encrypt.signEncrypt( (u_char*)resultCommand.data, resultCommand.length+1 );
 
@@ -213,9 +211,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/*
 	 * Send the current broadcast key and the friend_proof.
 	 */
-	long long outGen;
-	String outBroadcastKey;
-	currentPutBk( mysql, user, outGen, outBroadcastKey );
+	CurrentPutKey put( mysql, user );
 
 	/* Get the current time. */
 	String timeStr = timeNow();
@@ -225,7 +221,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	RSA *id_pub = fetch_public_key( mysql, from_id );
 
 	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( outBroadcastKey.data, (u_char*)command.data, command.length );
+	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
@@ -233,8 +229,8 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 
 	/* Notify the requester. */
 	String registered( "registered %s %s %lld %s %s\r\n", 
-			requested_relid, returned_relid, outGen,
-			outBroadcastKey.data, encrypt.sym );
+			requested_relid, returned_relid, put.treeGenHigh,
+			put.broadcastKey.data, encrypt.sym );
 	sendMessageNow( mysql, true, user, from_id, requested_relid, registered.data, 0 );
 
 	/* Remove the user friend request. */

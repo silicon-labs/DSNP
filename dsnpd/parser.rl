@@ -67,6 +67,20 @@ bool gblKeySubmitted = false;
 			generation = strtoll( gen_str, 0, 10 );
 		};
 
+	tree_gen_low = [0-9]+       
+		>{mark=p;} 
+		%{
+			tree_gen_low_str.set(mark, p);
+			tree_gen_low = strtoll( tree_gen_low_str, 0, 10 );
+		};
+
+	tree_gen_high = [0-9]+       
+		>{mark=p;} 
+		%{
+			tree_gen_high_str.set(mark, p);
+			tree_gen_high = strtoll( tree_gen_high_str, 0, 10 );
+		};
+
 	number = [0-9]+           
 		>{mark=p;}
 		%{
@@ -97,7 +111,7 @@ bool gblKeySubmitted = false;
 	include common;
 
 	action set_config {
-		set_config_by_uri( identity );
+		setConfigByUri( identity );
 
 		/* Now that we have a config connect to the database. */
 		mysql = dbConnect();
@@ -163,7 +177,7 @@ bool gblKeySubmitted = false;
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass ' ' email
 			EOL @check_key @{
-				new_user( mysql, user, pass, email );
+				newUser( mysql, user, pass, email );
 			} |
 
 		# Public key sharing.
@@ -296,10 +310,25 @@ bool gblKeySubmitted = false;
 				receiveMessage( mysql, relid, message_buffer.data );
 			} |
 
-		'broadcast'i ' ' relid ' ' generation ' ' length
-			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, relid, generation, message_buffer.data );
+		'broadcast_recipient'i ' ' relid
+			EOL @{
+				broadcastReceipient( mysql, recipients, relid );
 			} |
+
+		'broadcast_forward'i ' ' generation ' ' tree_gen_low ' ' tree_gen_high ' ' length
+			M_EOL @check_ssl @{
+				receiveBroadcast( mysql, recipients, generation, true, 
+						tree_gen_low, tree_gen_high, message_buffer.data );
+				recipients.clear();
+			} |
+
+		'broadcast'i ' ' generation ' ' length
+			M_EOL @check_ssl @{
+				receiveBroadcast( mysql, recipients, generation, false, 
+						0, 0, message_buffer.data );
+				recipients.clear();
+			} |
+
 
 		#
 		# Testing
@@ -312,7 +341,13 @@ bool gblKeySubmitted = false;
 		'forward_tree_reset'i ' ' user EOL @check_key @{
 				forwardTreeReset( mysql, user );
 				BIO_printf( bioOut, "OK\r\n" );
+			} |
+
+		( 'quit'i | 'exit'i )
+			EOL @{
+				exit = true;
 			}
+			
 	)*;
 
 	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -322,7 +357,7 @@ bool gblKeySubmitted = false;
 
 const long linelen = 4096;
 
-int server_parse_loop()
+int serverParseLoop()
 {
 	long cs;
 	const char *mark;
@@ -330,16 +365,17 @@ int server_parse_loop()
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
 	String gen_str, seq_str, group;
+	String tree_gen_low_str, tree_gen_high_str;
 	long length;
-	long long generation;
+	long long generation, tree_gen_low, tree_gen_high;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 	int retVal = 0;
-
-	message( "parse loop begin\n" );
+	RecipientList recipients;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
+	bool exit = false;
 
 	%% write init;
 
@@ -347,11 +383,9 @@ int server_parse_loop()
 		static char buf[linelen];
 		int result = BIO_gets( bioIn, buf, linelen );
 
-		/* Just break when client closes the connection. */
-		if ( result <= 0 ) {
-			message("parse loop end\n" );
+		/* break when client closes the connection. */
+		if ( result <= 0 )
 			break;
-		}
 
 		/* Did we get a full line? */
 		long lineLen = strlen( buf );
@@ -364,6 +398,9 @@ int server_parse_loop()
 		%% write exec;
 
 		BIO_flush( bioOut );
+
+		if ( exit )
+			break;
 
 		if ( cs == parser_error ) {
 			error( "parse error, exiting\n" );
@@ -1017,8 +1054,9 @@ long Identity::parse()
 	write data;
 }%%
 
-long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid,
-		long long to_generation, const char *msg, long mLen )
+long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
+		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		const char *msg, long mLen )
 {
 	static char buf[8192];
 	long cs;
@@ -1028,21 +1066,37 @@ long send_broadcast_net( MYSQL *mysql, const char *to_site, const char *to_relid
 	String relid, gen_str, seq_str;
 
 	/* Need to parse the identity. */
-	Identity site( to_site );
+	Identity site( toSite );
 	pres = site.parse();
 
 	if ( pres < 0 )
 		return pres;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( site.host, to_site );
+	int result = tlsConnect.connect( site.host, toSite );
 	if ( result < 0 ) 
 		return result;
+	
+	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ ) {
+		BIO_printf( tlsConnect.sbio, 
+			"broadcast_recipient %s\r\n", r->c_str() );
+		BIO_flush( tlsConnect.sbio );
+
+		/* Read the result. */
+		BIO_gets( tlsConnect.sbio, buf, 8192 );
+	}
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, 
-		"broadcast %s %lld %ld\r\n", 
-		to_relid, to_generation, mLen );
+	if ( forward ) {
+		BIO_printf( tlsConnect.sbio, 
+			"broadcast_forward %lld %lld %lld %ld\r\n", 
+			keyGen, treeGenLow, treeGenHigh, mLen );
+	}
+	else {
+		BIO_printf( tlsConnect.sbio, 
+			"broadcast %lld %ld\r\n", 
+			keyGen, mLen );
+	}
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
 	BIO_flush( tlsConnect.sbio );

@@ -29,7 +29,7 @@ MYSQL *dbConnect()
 	MYSQL *connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	if ( connect_res == 0 ) {
-		error("failed to connect to the database\n");
+		error("failed to connect to the database: %s\n", mysql_error(mysql));
 
 		/* LOG THIS */
 		mysql_close( mysql );
@@ -37,6 +37,13 @@ MYSQL *dbConnect()
 	}
 
 	return mysql;
+}
+
+long long lastInsertId( MYSQL *mysql )
+{
+	/* Get the id that was assigned to the message. */
+	DbQuery lastInsertId( mysql, "SELECT LAST_INSERT_ID()" );
+	return strtoll( lastInsertId.fetchRow()[0], 0, 10 );
 }
 
 /*

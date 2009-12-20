@@ -62,7 +62,7 @@ void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 
 	sendMessageNow( mysql, false, user, identity, putRelid, registered.data, 0 );
 
-	forwardTreeInsert( mysql, user, identity, putRelid );
+	putTreeAdd( mysql, user, identity, putRelid );
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )

@@ -357,13 +357,34 @@ int forwardTreeInsert( MYSQL *mysql, const char *user,
 	return 0;
 }
 
+void putTreeAdd( MYSQL *mysql, const char *user,
+		const char *identity, const char *relid )
+{
+	DbQuery claim( mysql,
+		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		user, identity );
+
+	if ( claim.rows() > 0 ) {
+		MYSQL_ROW row = claim.fetchRow();
+		long long friendClaimId = strtoll( row[0], 0, 10 );
+
+		/* Need the current tree generation. */
+		CurrentPutKey put( mysql, user );
+
+		DbQuery( mysql,
+			"INSERT INTO put_tree "
+			"( friend_claim_id, generation, root, active, state ) "
+			"VALUES ( %L, %L, false, true, 1 )",
+			friendClaimId, put.treeGenHigh );
+	}
+}
+
 int forwardTreeReset( MYSQL *mysql, const char *user )
 {
 	message("resetting forwared tree for user %s\n", user );
 
 	/* Need the current broadcast key. */
 	CurrentPutKey put( mysql, user );
-
 	long long newTreeGen = put.treeGenHigh + 1;
 
 	DbQuery load( mysql,

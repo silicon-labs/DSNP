@@ -50,6 +50,13 @@ ALTER TABLE user CHANGE COLUMN put_generation key_gen BIGINT;
 ALTER TABLE user ADD COLUMN tree_gen_low BIGINT;
 ALTER TABLE user ADD COLUMN tree_gen_high BIGINT;
 
+-- Remove duplicates from get_broadcast_key;
+CREATE TEMPORARY TABLE get_broadcast_key_copy LIKE get_broadcast_key;
+INSERT INTO get_broadcast_key_copy SELECT * FROM get_broadcast_key GROUP BY friend_claim_id, broadcast_key;
+DELETE FROM get_broadcast_key;
+INSERT INTO get_broadcast_key SELECT * FROM get_broadcast_key_copy;
+DROP TABLE get_broadcast_key_copy;
+
 -- Reset the broadcast key generations.
 UPDATE get_broadcast_key SET generation = 1;
 UPDATE put_broadcast_key SET generation = 1;
@@ -70,6 +77,7 @@ INSERT INTO put_tree
 	FROM friend_claim 
 
 UPDATE user SET key_gen = 1, tree_gen_low = 1, tree_gen_high = 1
+
 
 DROP TABLE broadcast_queue;
 CREATE TABLE broadcast_message

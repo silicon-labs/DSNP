@@ -97,8 +97,7 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		return -1;
 	}
 
-	String resultCommand( "notify_accept_result %s %lld %s %s\r\n", 
-		returned_id_salt, put.treeGenHigh, put.broadcastKey.data, encrypt.sym );
+	String resultCommand( "notify_accept_result %s\r\n", returned_id_salt );
 
 	encrypt.signEncrypt( (u_char*)resultCommand.data, resultCommand.length+1 );
 
@@ -109,28 +108,8 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 }
 
 long registered( MYSQL *mysql, const char *for_user, const char *from_id,
-		const char *requested_relid, const char *returned_relid,
-		long long generation, const char *broadcastKey, const char *friendProof )
+		const char *requested_relid, const char *returned_relid )
 {
-	::message("registered: starting\n");
-
-	/*
-	 * Find the claim and set the bk, friend proof.
-	 */
-	DbQuery claim( mysql, 
-		"SELECT id, user, friend_id FROM friend_claim "
-		"WHERE get_relid = %e",
-		requested_relid );
-
-	if ( claim.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR finding friend\r\n" );
-		return -1;
-	}
-	MYSQL_ROW row = claim.fetchRow();
-	long long friendClaimId = strtoll(row[0], 0, 10);
-	
-	storeBroadcastKey( mysql, friendClaimId, generation, broadcastKey, friendProof );
-
 	DbQuery removeSentRequest( mysql, 
 		"DELETE FROM sent_friend_request "
 		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e AND "
@@ -139,12 +118,9 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	
 	BIO_printf( bioOut, "OK\r\n" );
 
-	::message("registered: finished\n");
-
 	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
 	app_notification( args, 0, 0 );
 
-	//obtainFriendProof( mysql, for_user, from_id );
 	return 0;
 }
 
@@ -184,27 +160,22 @@ void prefriend_message( MYSQL *mysql, const char *relid, const char *msg )
 			notify_accept( mysql, user, friend_id, pfp.id_salt, pfp.requested_relid, pfp.returned_relid );
 			break;
 		case PrefriendParser::Registered:
-			registered( mysql, user, friend_id, pfp.requested_relid,
-				pfp.returned_relid, pfp.generation, pfp.key, pfp.sym );
+			registered( mysql, user, friend_id, pfp.requested_relid, pfp.returned_relid  );
 			break;
 		default:
 			break;
 	}
 }
 
-void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char *user_reqid, 
+void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *user_reqid, 
 		const char *from_id, const char *requested_relid, 
-		const char *returned_relid, const char *returned_id_salt,
-		long long generation, const char *broadcastKey, const char *friendProof )
+		const char *returned_relid, const char *returned_id_salt )
 {
 	message( "accept_friend received: %s\n", returned_id_salt );
 
-	/* The friendship has been accepted. Store the claim. The fr_relid is the
-	 * one that we made on this end. It becomes the put_relid. */
-	long long friendClaimId = storeFriendClaim( mysql, user, from_id, 
+	/* The friendship has been accepted. Store the claim. */
+	storeFriendClaim( mysql, user, from_id, 
 			returned_id_salt, requested_relid, returned_relid );
-	
-	storeBroadcastKey( mysql, friendClaimId, generation, broadcastKey, friendProof );
 
 	/*
 	 * Send the current broadcast key and the friend_proof.
@@ -226,9 +197,8 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	}
 
 	/* Notify the requester. */
-	String registered( "registered %s %s %lld %s %s\r\n", 
-			requested_relid, returned_relid, put.treeGenHigh,
-			put.broadcastKey.data, encrypt.sym );
+	String registered( "registered %s %s\r\n", 
+			requested_relid, returned_relid );
 	sendMessageNow( mysql, true, user, from_id, requested_relid, registered.data, 0 );
 
 	/* Remove the user friend request. */
@@ -237,7 +207,6 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	String args( "friend_request_accepted %s %s", user, from_id );
 	app_notification( args, 0, 0 );
 
-	//obtainFriendProof( mysql, user, from_id );
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
@@ -293,9 +262,8 @@ void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid )
 	narp.parse( result_message, strlen(result_message) );
 	switch ( narp.type ) {
 		case NotifyAcceptResultParser::NotifyAcceptResult:
-			notify_accept_returned_id_salt( mysql, user, user_reqid, 
-				from_id, requested_relid, returned_relid, narp.token, 
-				narp.generation, narp.key, narp.sym );
+			notifyAcceptReturnedIdSalt( mysql, user, user_reqid, 
+				from_id, requested_relid, returned_relid, narp.token );
 			break;
 		default:
 			break;

@@ -46,12 +46,20 @@ class AdminController extends AppController
 		$this->loadModel('User');
 		$this->User->save( array( 
 				'user' => $user,
+				'name' => $user,
 				'identity' => $this->CFG_URI . $user . '/',
 				'type' => 0
 		));
+		$userId = $this->User->id;
 
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";
 		system( $photoDirCmd );
+
+		$this->loadModel('FriendGroup');
+		$this->FriendGroup->save( array( 
+				'user_id' => $userId,
+				'name' => 'friend'
+		));
 
 		$this->redirect( "/" );
 	}

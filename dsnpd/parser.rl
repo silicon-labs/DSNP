@@ -430,7 +430,7 @@ int serverParseLoop()
 	include common;
 
 	main :=
-		'notify_accept_result'i ' ' token ' ' generation ' ' key ' ' sym EOL @{
+		'notify_accept_result'i ' ' token EOL @{
 			type = NotifyAcceptResult;
 		};
 }%%
@@ -475,7 +475,7 @@ int NotifyAcceptResultParser::parse( const char *msg, long len )
 		'notify_accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @{
 			type = NotifyAccept;
 		} |
-		'registered'i ' ' requested_relid ' ' returned_relid ' ' generation ' ' key ' ' sym EOL @{
+		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
 			type = Registered;
 		};
 
@@ -487,7 +487,6 @@ int PrefriendParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	const char *mark;
-	String gen_str;
 
 	type = Unknown;
 	%% write init;

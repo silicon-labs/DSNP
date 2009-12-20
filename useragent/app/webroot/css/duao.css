@@ -5,11 +5,30 @@
 
 
 body {
-/*	color: #fff; */
 	font-family: 'lucida grande',verdana,helvetica,arial,sans-serif;
 	font-size: 90%;
 	margin: 0;
 }
+
+table.group_membership tr.head1 {
+	font-size: 150%;
+}
+
+table.group_membership tr.head2 {
+	font-size: 110%;
+}
+
+table.group_membership font.mod_link {
+	font-size: 60%;
+}
+
+table.group_membership thead td {
+	text-align: center;
+}
+table.group_membership td.member {
+	text-align: center;
+}
+
 
 table {
 	width: 100%;
@@ -92,6 +111,11 @@ div.content {
 }
 
 #edit {
+	float: right;
+	font-size: small;
+}
+
+#more {
 	float: right;
 	font-size: small;
 }
@@ -313,8 +337,6 @@ dd {
 
 /* Forms */
 form {
-	margin-right: 20px;
-	padding: 0;
 	width: 80%;
 }
 fieldset {

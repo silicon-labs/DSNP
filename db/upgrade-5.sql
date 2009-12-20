@@ -74,9 +74,9 @@ INSERT INTO put_tree
 	state
 )
 	SELECT id, 1, false, true, 1
-	FROM friend_claim 
+	FROM friend_claim;
 
-UPDATE user SET key_gen = 1, tree_gen_low = 1, tree_gen_high = 1
+UPDATE user SET key_gen = 1, tree_gen_low = 1, tree_gen_high = 1;
 
 
 DROP TABLE broadcast_queue;

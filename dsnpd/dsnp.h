@@ -149,8 +149,6 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
 long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
-long registered( MYSQL *mysql, const char *for_user, const char *from_id,
-		const char *requested_relid, const char *returned_relid );
 
 long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
 long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
@@ -394,8 +392,6 @@ struct PrefriendParser
 
 	Type type;
 	String id_salt, requested_relid, returned_relid;
-	long long generation;
-	String key, sym;
 
 	int parse( const char *msg, long mLen );
 };

@@ -657,5 +657,3 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 	
 	return 0;
 }
-
-

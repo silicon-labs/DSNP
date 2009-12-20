@@ -62,7 +62,7 @@ void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 
 	sendMessageNow( mysql, false, user, identity, putRelid, registered.data, 0 );
 
-	forward_tree_insert( mysql, user, identity, putRelid );
+	forwardTreeInsert( mysql, user, identity, putRelid );
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )
@@ -91,7 +91,7 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 	row = findGroup.fetchRow();
 	long long friendGroupId = strtoll( row[0], 0, 10 );
 
-	/* Query the group. */
+	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
 		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", user, identity );
 

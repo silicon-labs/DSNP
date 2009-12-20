@@ -171,7 +171,7 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user )
 	treeGenHigh = strtoll( row[3], 0, 10 );
 }
 
-void new_broadcast_key( MYSQL *mysql, const char *user, long long generation )
+void newBroadcastKey( MYSQL *mysql, const char *user, long long generation )
 {
 	unsigned char broadcast_key[RELID_SIZE];
 	const char *bk = 0;
@@ -187,17 +187,15 @@ void new_broadcast_key( MYSQL *mysql, const char *user, long long generation )
 		user, generation, bk );
 }
 
-void tryNewUser( MYSQL *mysql, const char *user, const char *pass, const char *email )
+void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pass, const char *email )
 {
-	//char *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
-	char *pass_hashed, *pass_salt_str, *id_salt_str;
-	u_char pass_salt[SALT_SIZE], id_salt[SALT_SIZE];
+	u_char passSalt[SALT_SIZE];
+	RAND_bytes( passSalt, SALT_SIZE );
+	char *passSaltStr = bin_to_base64( passSalt, SALT_SIZE );
 
-	RAND_bytes( pass_salt, SALT_SIZE );
-	pass_salt_str = bin_to_base64( pass_salt, SALT_SIZE );
-
-	RAND_bytes( id_salt, SALT_SIZE );
-	id_salt_str = bin_to_base64( id_salt, SALT_SIZE );
+	u_char idSalt[SALT_SIZE];
+	RAND_bytes( idSalt, SALT_SIZE );
+	char *idSaltStr = bin_to_base64( idSalt, SALT_SIZE );
 
 	/* Generate a new key. */
 	RSA *rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
@@ -217,41 +215,43 @@ void tryNewUser( MYSQL *mysql, const char *user, const char *pass, const char *e
 	String iqmp = bn_to_base64( rsa->iqmp );
 
 	/* Hash the password. */
-	pass_hashed = pass_hash( pass_salt, pass );
+	char *passHashed = pass_hash( passSalt, pass );
 
-	/* Execute the insert. */
 	DbQuery( mysql,
-		"INSERT INTO user "
-		"("
-		"	user, pass_salt, pass, email, id_salt, key_gen, tree_gen_low, tree_gen_high, "
-		"	rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
-		")"
-		"VALUES ( %e, %e, %e, %e, %e, 1, 1, 1, %e, %e, %e, %e, %e, %e, %e, %e );", 
-		user, pass_salt_str, pass_hashed, email, id_salt_str,
-		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
+		"UPDATE user "
+		"SET "
+		"	pass_salt = %e, pass = %e, email = %e, "
+		"	id_salt = %e, key_gen = 1, tree_gen_low = 1, tree_gen_high = 1, "
+		"	rsa_n = %e, rsa_e = %e, rsa_d = %e, rsa_p = %e, "
+		"	rsa_q = %e, rsa_dmp1 = %e, rsa_dmq1 = %e, rsa_iqmp = %e "
+		"WHERE "
+		"	id = %L ",
+		passSaltStr, passHashed, email, idSaltStr,
+		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, id );
 
 	RSA_free( rsa );
 }
 
 void newUser( MYSQL *mysql, const char *user, const char *pass, const char *email )
 {
-	exec_query( mysql, "LOCK TABLES user WRITE;");
-
-	/* Query the user. */
-	DbQuery userCheck( mysql, "SELECT user FROM user WHERE user = %e", user );
-	if ( userCheck.fetchRow() ) {
+	/* First try to make the new user. */
+	DbQuery insert( mysql, "INSERT IGNORE INTO user ( user) VALUES ( %e ) ", user );
+	if ( insert.affectedRows() == 0 ) {
 		BIO_printf( bioOut, "ERROR user exists\r\n" );
-		exec_query( mysql, "UNLOCK TABLES;" );
 		return;
 	}
 
-	tryNewUser( mysql, user, pass, email );
+	long long id = lastInsertId( mysql );
+
+	createNewUser( mysql, id, user, pass, email );
+
 	BIO_printf( bioOut, "OK\r\n" );
 
-	exec_query( mysql, "UNLOCK TABLES;" );
-
 	/* Make the first broadcast key for the user. */
-	new_broadcast_key( mysql, user, 1 );
+	newBroadcastKey( mysql, user, 1 );
+
+	/* Make the default group "friend" */
+	addGroup( mysql, user, "friend" );
 }
 
 void public_key( MYSQL *mysql, const char *user )
@@ -1102,6 +1102,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 
 void addBroadcastKey( MYSQL *mysql, long long friend_claim_id, long long generation )
 {
+	/* FIXME: not atomic. */
 	DbQuery check( mysql,
 		"SELECT friend_claim_id FROM get_broadcast_key "
 		"WHERE friend_claim_id = %L AND generation = %L",
@@ -1134,6 +1135,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friend_claim_id,
 
 void addGetTree( MYSQL *mysql, long long friend_claim_id, long long generation )
 {
+	/* FIXME: not atomic. */
 	DbQuery check( mysql,
 		"SELECT friend_claim_id FROM get_tree "
 		"WHERE friend_claim_id = %L AND generation = %L",

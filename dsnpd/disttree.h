@@ -37,7 +37,7 @@ typedef list<FriendNode*> NodeList;
 
 void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &roots );
 int forwardTreeReset( MYSQL *mysql, const char *user );
-int forward_tree_insert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
+int forwardTreeInsert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 int checkTree( MYSQL *mysql, const char *user );
 
 

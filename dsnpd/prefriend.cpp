@@ -137,7 +137,7 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 		"	returned_relid = %e",
 		for_user, from_id, requested_relid, returned_relid );
 	
-	forward_tree_insert( mysql, for_user, from_id, returned_relid );
+	forwardTreeInsert( mysql, for_user, from_id, returned_relid );
 
 	BIO_printf( bioOut, "OK\r\n" );
 
@@ -236,7 +236,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 	/* Remove the user friend request. */
 	deleteFriendRequest( mysql, user, user_reqid );
 
-	forward_tree_insert( mysql, user, from_id, requested_relid );
+	forwardTreeInsert( mysql, user, from_id, requested_relid );
 
 	String args( "friend_request_accepted %s %s", user, from_id );
 	app_notification( args, 0, 0 );

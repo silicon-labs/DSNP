@@ -331,7 +331,7 @@ void insertIntoTree( WorkList &workList, NodeList &roots, long long friendClaimI
 	}
 }
 
-int forward_tree_insert( MYSQL *mysql, const char *user,
+int forwardTreeInsert( MYSQL *mysql, const char *user,
 		const char *identity, const char *relid )
 {
 	DbQuery claim( mysql,

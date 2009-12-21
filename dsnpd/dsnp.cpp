@@ -1146,7 +1146,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 			broadcastKey, friendProof, friendClaimId, group, generation );
 
 	/* Broadcast the friend proof that we just received. */
-	long res = sendRemoteBroadcast( mysql, user, friendHash, generation, 20, friendProof );
+	sendRemoteBroadcast( mysql, user, friendHash, generation, 20, friendProof );
 	BIO_printf( bioOut, "OK\n" );
 }
 
@@ -1198,18 +1198,6 @@ void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const
 	}
 
 	BIO_printf( bioOut, "OK\n" );
-}
-
-long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_identity, 
-		int childNum, long long generation, const char *forwardToSite, const char *relid )
-{
-	static char buf[8192];
-
-	sprintf( buf, 
-		"forward_to %d %lld %s %s\r\n", 
-		childNum, generation, forwardToSite, relid );
-
-	return queueMessage( mysql, from_user, to_identity, buf );
 }
 
 void login( MYSQL *mysql, const char *user, const char *pass )
@@ -1303,18 +1291,16 @@ free_result:
 	mysql_free_result( result );
 }
 
-void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
+void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *subject_id, const char *token,
-		long long seq_num, const char *msg )
+		long long seqNum, const char *msg, long mLen )
 {
 	Encrypt encrypt;
 	RSA *user_priv, *id_pub;
 	int sigRes;
 
-	long mLen = strlen(msg);
-
-	message( "entering encrypt_remote_broadcast( %s, %s, %s, %lld, %s)\n", 
-		user, subject_id, token, seq_num, msg );
+	message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 
+		user, subject_id, token, seqNum, msg );
 
 	DbQuery flogin( mysql,
 		"SELECT user FROM remote_flogin_token "
@@ -1343,7 +1329,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
 
 	/* Make the full message. */
-	String command( "remote_inner %lld %s %ld\r\n", seq_num, timeStr.data, mLen );
+	String command( "remote_inner %lld %s %ld\r\n", seqNum, timeStr.data, mLen );
 	String full = addMessageData( command, msg, mLen );
 
 	encrypt.load( id_pub, user_priv );

@@ -102,6 +102,18 @@ bool gblKeySubmitted = false;
 		};
 
 	EOL = '\r'? '\n';
+
+	action skip_message {
+		if ( length > MAX_MSG_LEN ) {
+			error("message too large\n");
+			fgoto *parser_error;
+		}
+
+		/* Rest of the input is the msssage. */
+		embeddedMsg = p + 1;
+		p += length;
+	}
+
 }%%
 
 %%{
@@ -516,9 +528,8 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i @{message("one\n");} ' ' group ' ' @{message("two\n");} generation ' ' @{message("three\n");} key ' ' @{message("four\n");} sym
-			EOL @{message("five\n");}  @{
-				message("%d\n", pe - p );
+		'broadcast_key'i ' ' group ' ' generation ' ' key ' ' sym
+			EOL @{
 				type = BroadcastKey;
 			} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
@@ -526,8 +537,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 				type = ForwardTo;
 			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
-			EOL @{ containedMsg = p+1; p += length; } 
-			EOL @{
+			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;
 			} |
 		'return_remote_broadcast'i ' ' reqid ' ' generation ' ' sym
@@ -543,8 +553,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 				type = FriendProof;
 			} |
 		'user_message'i ' ' date ' ' length 
-			EOL @{ containedMsg = p+1; p += length; } 
-			EOL @{
+			EOL @skip_message EOL @{
 				type = UserMessage;
 			}
 	)*;
@@ -586,33 +595,15 @@ int MessageParser::parse( const char *msg, long len )
 
 	include common;
 
-	action direct_broadcast {
-		if ( length > MAX_MSG_LEN ) {
-			message("message too large\n");
-			fgoto *parser_error;
-		}
-
-		/* Rest of the input is the msssage. */
-		embeddedMsg = p + 1;
-		type = Direct;
-		fbreak;
-	}
-
-	action remote_broadcast {
-		if ( length > MAX_MSG_LEN ) {
-			message("message too large\n");
-			fgoto *parser_error;
-		}
-
-		/* Rest of the input is the msssage. */
-		embeddedMsg = p + 1;
-		type = Remote;
-		fbreak;
-	}
-
 	main :=
-		'direct_broadcast'i ' ' seq_num ' ' date ' ' length EOL @direct_broadcast |
-		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length EOL @remote_broadcast;
+		'direct_broadcast'i ' ' seq_num ' ' date ' ' length 
+			EOL @skip_message EOL @{
+				type = Direct;
+			} |
+		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length 
+			EOL @skip_message EOL @{
+				type = Remote;
+			};
 }%%
 
 %% write data;
@@ -651,25 +642,15 @@ int BroadcastParser::parse( const char *msg, long mLen )
 
 	include common;
 
-	action remote_inner {
-		if ( length > MAX_MSG_LEN ) {
-			message("message too large\n");
-			fgoto *parser_error;
-		}
-
-		/* Rest of the input is the msssage. */
-		embeddedMsg = p + 1;
-		type = RemoteInner;
-		fbreak;
-	}
-
-	action friend_proof {
-		type = FriendProof;
-	}
-
 	main :=
-		'remote_inner'i ' ' seq_num ' ' date ' ' length EOL @remote_inner |
-		'friend_proof'i ' ' date EOL @friend_proof;
+		'remote_inner'i ' ' seq_num ' ' date ' ' length 
+			EOL @skip_message EOL @{
+				type = RemoteInner;
+			} |
+		'friend_proof'i ' ' date 
+			EOL @{
+				type = FriendProof;
+			};
 
 }%%
 
@@ -1036,11 +1017,11 @@ long Identity::parse()
 	if ( cs < %%{ write first_final; }%% )
 		return ERR_PARSE_ERROR;
 	
-	host = alloc_string( h1, h2 );
-	user = alloc_string( pp1, pp2 );
+	host = allocString( h1, h2 );
+	user = allocString( pp1, pp2 );
 
-	/* We can use the last path part to get the site. */
-	site = alloc_string( identity, pp1 );
+	/* We can use the start of the last path part to get the site. */
+	site = allocString( identity, pp1 );
 
 	return result;
 }

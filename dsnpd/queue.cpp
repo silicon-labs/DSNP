@@ -135,7 +135,7 @@ bool sendBroadcastMessage()
 	return true;
 }
 
-long queue_message_db( MYSQL *mysql, const char *from_user,
+long queueMessageDb( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *relid, const char *msg )
 {
 	DbQuery( mysql,
@@ -155,7 +155,7 @@ long queue_message_db( MYSQL *mysql, const char *from_user,
 }
 
 long queueMessage( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *msg )
+		const char *to_identity, const char *msg, long mLen )
 {
 	DbQuery claim( mysql, 
 		"SELECT put_relid FROM friend_claim "
@@ -173,9 +173,8 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 
 	Encrypt encrypt( id_pub, user_priv );
 
-	/* Include the null in the message. */
-	encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
-	queue_message_db( mysql, from_user, to_identity, relid, encrypt.sym );
+	encrypt.signEncrypt( (u_char*)msg, mLen );
+	queueMessageDb( mysql, from_user, to_identity, relid, encrypt.sym );
 	return 0;
 }
 

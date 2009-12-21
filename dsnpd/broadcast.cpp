@@ -382,12 +382,9 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 	String broadcastCmd(
 		"direct_broadcast %lld %s %ld\r\n",
 		seq_num, timeStr.data, mLen );
-	char *full = new char[broadcastCmd.length + mLen + 2];
-	memcpy( full, broadcastCmd.data, broadcastCmd.length );
-	memcpy( full + broadcastCmd.length, msg, mLen );
-	memcpy( full + broadcastCmd.length + mLen, "\r\n", 2 );
+	String full = addMessageData( broadcastCmd, msg, mLen );
 
-	long sendResult = queueBroadcast( mysql, user, full, broadcastCmd.length + mLen + 2 );
+	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
 	if ( sendResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
@@ -564,7 +561,7 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 	if ( recipient.rows() == 1 ) {
 		MYSQL_ROW row = recipient.fetchRow();
 		const char *user = row[0];
-		const char *identity = row[1];
+		//const char *identity = row[1];
 		const char *hash = row[2];
 		const char *seq_num = row[3];
 		const char *generation = row[4];
@@ -649,7 +646,7 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		if ( row[1] != 0 && row[2] != 0 ) {
 			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
 			message("trying to send %s\n", msg.data );
-			queueMessage( mysql, user, friendId, msg.data );
+			queueMessage( mysql, user, friendId, msg.data, msg.length );
 		}
 	}
 

@@ -4,8 +4,7 @@
 #include <sys/types.h>
 #include <openssl/bn.h>
 
-char *alloc_string( const char *s, const char *e );
-
+char *allocString( const char *s, const char *e );
 
 struct AllocString
 {

@@ -20,7 +20,7 @@ AllocString::AllocString( char *data, long length )
 	: data(data), length(length)
 {}
 
-char *alloc_string( const char *s, const char *e )
+char *allocString( const char *s, const char *e )
 {
 	long length = e-s;
 	char *result = (char*)malloc( length+1 );
@@ -145,13 +145,13 @@ AllocString timeNow()
 AllocString addMessageData( const String &root, const char *msg, long mLen )
 {
 	message( "concatting: %s and %s\n", root.data, msg );
-	long totalLength = root.length + mLen + 1;
+	long totalLength = root.length + mLen + 2;
 	message( "root.length = %d mLen = %d totalLength = %d\n", root.length, mLen, totalLength );
 
-	char *result = new char[totalLength];
+	char *result = new char[totalLength+1];
 	memcpy( result, root.data, root.length );
 	memcpy( result + root.length, msg, mLen );
-	char *end = result + root.length + mLen;
-	*end++ = 0;
+	memcpy( result + root.length + mLen, "\r\n", 2 );
+	result[root.length + mLen + 2] = 0;
 	return AllocString( result, totalLength );
 }

@@ -41,12 +41,10 @@ struct RelidEncSig
 struct Identity
 {
 	Identity( const char *identity ) :
-		identity(identity), 
-		host(0), user(0), site(0) {}
+		identity(identity)
+		{}
 
-	Identity() :
-		identity(0), 
-		host(0), user(0), site(0) {}
+	Identity() {}
 
 	void load( const char *identity )
 		{ this->identity = identity; }
@@ -119,9 +117,6 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 char *get_site( const char *identity );
 
-long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, int childNum, 
-		long long generation, const char *forwardToSite, const char *relid );
-
 struct CurrentPutKey
 {
 	CurrentPutKey( MYSQL *mysql, const char *user, const char *group );
@@ -140,11 +135,11 @@ long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );
 long queueMessage( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *message );
+		const char *to_identity, const char *msg, long mLen );
 void submit_ftoken( MYSQL *mysql, const char *token );
-void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
+void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
-		long long seq_num, const char *msg );
+		long long seq_num, const char *msg, long mLen );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
@@ -377,7 +372,7 @@ struct MessageParser
 	String date, group;
 	long length, number;
 	long long seq_num, generation;
-	const char *containedMsg;
+	const char *embeddedMsg;
 
 	int parse( const char *smg, long mLen );
 };

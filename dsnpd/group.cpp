@@ -83,7 +83,7 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 		if ( row[1] != 0 && row[2] != 0 ) {
 			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
 			message("trying to send %s\n", msg.data );
-			queueMessage( mysql, user, friendId, msg.data );
+			queueMessage( mysql, user, friendId, msg.data, msg.length );
 		}
 	}
 }

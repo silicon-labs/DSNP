@@ -73,8 +73,8 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 					mp.generation, mp.identity, mp.relid );
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
-			encrypt_remote_broadcast( mysql, user, friendId, mp.token,
-					mp.seq_num, mp.containedMsg );
+			encryptRemoteBroadcast( mysql, user, friendId, mp.token,
+					mp.seq_num, mp.embeddedMsg, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			return_remote_broadcast( mysql, user, friendId, mp.reqid,
@@ -87,7 +87,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			friendProof( mysql, user, friendId, mp.hash, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
-			userMessage( mysql, user, friendId, mp.date, mp.containedMsg, mp.length );
+			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
 			break;
 		default:
 			BIO_printf( bioOut, "ERROR\r\n" );
@@ -100,13 +100,10 @@ long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, cons
 	String timeStr = timeNow();
 
 	/* Make the full message. */
-	String messageCmd( "user_message %s %ld\r\n", timeStr.data, mLen );
-	char *full = new char[messageCmd.length + mLen + 2];
-	memcpy( full, messageCmd.data, messageCmd.length );
-	memcpy( full + messageCmd.length, msg, mLen );
-	memcpy( full + messageCmd.length + mLen, "\r\n", 2 );
+	String command( "user_message %s %ld\r\n", timeStr.data, mLen );
+	String full = addMessageData( command, msg, mLen );
 
-	long sendResult = queueMessage( mysql, user, toIdentity, full );
+	long sendResult = queueMessage( mysql, user, toIdentity, full.data, full.length );
 	if ( sendResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;

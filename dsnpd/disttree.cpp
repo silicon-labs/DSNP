@@ -331,6 +331,8 @@ void insertIntoTree( WorkList &workList, NodeList &roots, long long friendClaimI
 	}
 }
 
+/* FIXME: add group. */
+#if 0
 int forwardTreeInsert( MYSQL *mysql, const char *user,
 		const char *identity, const char *relid )
 {
@@ -343,7 +345,7 @@ int forwardTreeInsert( MYSQL *mysql, const char *user,
 		long long friendClaimId = strtoll( row[0], 0, 10 );
 
 		/* Need the current broadcast key. */
-		CurrentPutKey put( mysql, user );
+		CurrentPutKey put( mysql, user, "friend" );
 
 		put.treeGenHigh += 1;
 		WorkList workList;
@@ -356,8 +358,9 @@ int forwardTreeInsert( MYSQL *mysql, const char *user,
 	}
 	return 0;
 }
+#endif
 
-void putTreeAdd( MYSQL *mysql, const char *user,
+void putTreeAdd( MYSQL *mysql, const char *user, long long friendGroupId,
 		const char *identity, const char *relid )
 {
 	DbQuery claim( mysql,
@@ -369,22 +372,24 @@ void putTreeAdd( MYSQL *mysql, const char *user,
 		long long friendClaimId = strtoll( row[0], 0, 10 );
 
 		/* Need the current tree generation. */
-		CurrentPutKey put( mysql, user );
+		CurrentPutKey put( mysql, user, "friend" );
 
 		DbQuery( mysql,
 			"INSERT INTO put_tree "
-			"( friend_claim_id, generation, root, active, state ) "
-			"VALUES ( %L, %L, false, true, 1 )",
-			friendClaimId, put.treeGenHigh );
+			"( friend_claim_id, friend_group_id, generation, root, active, state ) "
+			"VALUES ( %L, %L, %L, false, true, 1 )",
+			friendClaimId, friendGroupId, put.treeGenHigh );
 	}
 }
 
+/* FIXME: add group. */
+#if 0
 int forwardTreeReset( MYSQL *mysql, const char *user )
 {
 	message("resetting forwared tree for user %s\n", user );
 
 	/* Need the current broadcast key. */
-	CurrentPutKey put( mysql, user );
+	CurrentPutKey put( mysql, user, "friend" );
 	long long newTreeGen = put.treeGenHigh + 1;
 
 	DbQuery load( mysql,
@@ -399,12 +404,13 @@ int forwardTreeReset( MYSQL *mysql, const char *user )
 
 	return 0;
 }
+#endif
 
 /* This should perform some sanity checks on the distribution tree. */
 int checkTree( MYSQL *mysql, const char *user )
 {
 	/* Need the current broadcast key. */
-	CurrentPutKey put( mysql, user );
+	CurrentPutKey put( mysql, user, "friend" );
 
 	WorkList workList;
 	NodeList roots;

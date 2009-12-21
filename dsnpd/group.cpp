@@ -17,15 +17,20 @@ void addGroup( MYSQL *mysql, const char *user, const char *group )
 
 	DbQuery insert( mysql, 
 		"INSERT IGNORE INTO friend_group "
-		"( user_id, name ) "
-		"VALUES ( %L, %e )",
+		"( user_id, name, key_gen, tree_gen_low, tree_gen_high ) "
+		"VALUES ( %L, %e, 1, 1, 1 )",
 		userId, group
 	);
+
 
 	if ( insert.affectedRows() == 0 ) {
 		BIO_printf( bioOut, "ERROR friend group exists\r\n" );
 		return;
 	}
+
+	/* Make the first broadcast key for the user. */
+	long long friendGroupId = lastInsertId( mysql );
+	newBroadcastKey( mysql, friendGroupId, 1 );
 
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -34,13 +39,14 @@ void addGroup( MYSQL *mysql, const char *user, const char *group )
  * To make group del and friend del instantaneous we need to destroy the tree.
  */
 
-void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
+void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId, 
+		const char *group, const char *identity,
 		long long friendClaimId, const char *putRelid )
 {
 	/*
 	 * Send the current broadcast key and the friend_proof.
 	 */
-	CurrentPutKey put( mysql, user );
+	CurrentPutKey put( mysql, user, group );
 
 	/* Get the current time. */
 	String timeStr = timeNow();
@@ -57,12 +63,12 @@ void sendBkProof( MYSQL *mysql, const char *user, const char *identity,
 	}
 
 	/* Notify the requester. */
-	String registered( "broadcast_key %lld %s %s\r\n", 
-			put.keyGen, put.broadcastKey.data, encrypt.sym );
+	String registered( "broadcast_key %s %lld %s %s\r\n", 
+			group, put.keyGen, put.broadcastKey.data, encrypt.sym );
 
 	sendMessageNow( mysql, false, user, identity, putRelid, registered.data, 0 );
 
-	putTreeAdd( mysql, user, identity, putRelid );
+	putTreeAdd( mysql, user, friendGroupId, identity, putRelid );
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )
@@ -116,7 +122,7 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 		return;
 	}
 
-	sendBkProof( mysql, user, identity, friendClaimId, putRelid );
+	sendBkProof( mysql, user, friendGroupId, group, identity, friendClaimId, putRelid );
 
 	BIO_printf( bioOut, "OK\n" );
 }

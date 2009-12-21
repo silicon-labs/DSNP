@@ -65,7 +65,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
-			storeBroadcastKey( mysql, id, mp.generation, mp.key, mp.sym );
+			storeBroadcastKey( mysql, id, mp.group, mp.generation, mp.key, mp.sym );
 			break;
 		case MessageParser::ForwardTo: 
 			forwardTo( mysql, id, user, friend_id, mp.number,

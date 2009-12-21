@@ -80,25 +80,9 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 	}
 	MYSQL_ROW row = salt.fetchRow();
 	const char *returned_id_salt = row[0];
-
-	/*
-	 * Send the current broadcast key and the friend_proof.
-	 */
-	CurrentPutKey put( mysql, for_user );
-
-	/* Get the current time. */
-	String timeStr = timeNow();
-	String command( "friend_proof %s\r\n", timeStr.data );
-
-	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return -1;
-	}
-
 	String resultCommand( "notify_accept_result %s\r\n", returned_id_salt );
 
+	Encrypt encrypt( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)resultCommand.data, resultCommand.length+1 );
 
 	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
@@ -176,25 +160,6 @@ void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *use
 	/* The friendship has been accepted. Store the claim. */
 	storeFriendClaim( mysql, user, from_id, 
 			returned_id_salt, requested_relid, returned_relid );
-
-	/*
-	 * Send the current broadcast key and the friend_proof.
-	 */
-	CurrentPutKey put( mysql, user );
-
-	/* Get the current time. */
-	String timeStr = timeNow();
-	String command( "friend_proof %s\r\n", timeStr.data );
-
-	RSA *user_priv = load_key( mysql, user );
-	RSA *id_pub = fetch_public_key( mysql, from_id );
-
-	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
 
 	/* Notify the requester. */
 	String registered( "registered %s %s\r\n", 

@@ -87,7 +87,7 @@ struct Global
 extern Global gbl;
 
 /* Commands. */
-void newUser( MYSQL *mysql, const char *user, const char *pass, const char *email );
+void newUser( MYSQL *mysql, const char *user, const char *pass );
 void public_key( MYSQL *mysql, const char *identity );
 void relid_request( MYSQL *mysql, const char *user, const char *identity );
 void fetch_requested_relid( MYSQL *mysql, const char *reqid );
@@ -101,8 +101,8 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void setConfigByUri( const char *uri );
 void setConfigByName( const char *name );
-void storeBroadcastKey( MYSQL *mysql, long long friend_claim_id, 
-		long long generation, const char *broadcastKey, const char *friendProof );
+void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, 
+		const char *group, long long generation, const char *broadcastKey, const char *friendProof );
 
 void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const char *identity,
 		int child_num, long long generation, const char *relid, const char *to_identity );
@@ -123,7 +123,7 @@ long send_forward_to( MYSQL *mysql, const char *from_user, const char *to_id, in
 
 struct CurrentPutKey
 {
-	CurrentPutKey( MYSQL *mysql, const char *user );
+	CurrentPutKey( MYSQL *mysql, const char *user, const char *group );
 
 	long long keyGen;
 	String broadcastKey;
@@ -373,7 +373,7 @@ struct MessageParser
 
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
-	String date;
+	String date, group;
 	long length, number;
 	long long seq_num, generation;
 	const char *containedMsg;
@@ -439,5 +439,6 @@ void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, long long key
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
 		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen );
+void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );
 
 #endif

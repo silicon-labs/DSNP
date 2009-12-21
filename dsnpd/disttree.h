@@ -39,6 +39,7 @@ void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &
 int forwardTreeReset( MYSQL *mysql, const char *user );
 int forwardTreeInsert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
 int checkTree( MYSQL *mysql, const char *user );
-void putTreeAdd( MYSQL *mysql, const char *user, const char *identity, const char *relid );
+void putTreeAdd( MYSQL *mysql, const char *user, long long friendGroupId,
+		const char *identity, const char *relid );
 
 #endif

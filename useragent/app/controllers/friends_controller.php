@@ -74,7 +74,7 @@ class FriendsController extends AppController
 
 		$res = fgets($fp);
 		if ( !ereg("^OK", $res) )
-			die( "FAILURE *** group creation failed with <br> $res" );
+			die( "FAILURE *** group add failed with <br> $res" );
 
 		fclose( $fp );
 

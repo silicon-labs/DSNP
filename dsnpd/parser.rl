@@ -36,7 +36,6 @@ bool gblKeySubmitted = false;
 
 	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
 	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
-	email = graph+            >{mark=p;} %{email.set(mark, p);};
 	reqid = base64            >{mark=p;} %{reqid.set(mark, p);};
 	hash = base64             >{mark=p;} %{hash.set(mark, p);};
 	key = base64              >{mark=p;} %{key.set(mark, p);};
@@ -175,9 +174,9 @@ bool gblKeySubmitted = false;
 			} |
 
 		# Admin commands.
-		'new_user'i ' ' user ' ' pass ' ' email
+		'new_user'i ' ' user ' ' pass
 			EOL @check_key @{
-				newUser( mysql, user, pass, email );
+				newUser( mysql, user, pass );
 			} |
 
 		# Public key sharing.
@@ -338,8 +337,9 @@ bool gblKeySubmitted = false;
 				obtainFriendProof( mysql, user, identity );
 			} |
 
-		'forward_tree_reset'i ' ' user EOL @check_key @{
-				forwardTreeReset( mysql, user );
+		'forward_tree_reset'i ' ' user ' ' group EOL @check_key @{
+				/* FIXME: add group. */
+				//forwardTreeReset( mysql, user );
 				BIO_printf( bioOut, "OK\r\n" );
 			} |
 
@@ -516,7 +516,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' generation ' ' key ' ' sym
+		'broadcast_key'i ' ' group ' ' generation ' ' key ' ' sym
 			EOL @{
 				type = BroadcastKey;
 			} |

@@ -36,7 +36,7 @@ class AdminController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"new_user $user $pass1 unused\r\n";
+			"new_user $user $pass1\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);

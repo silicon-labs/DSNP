@@ -304,7 +304,7 @@ long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long message
 long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
 {
 	/* Get the latest put session key. */
-	CurrentPutKey put( mysql, user );
+	CurrentPutKey put( mysql, user, "friend" );
 
 	/* Do the encryption. */ 
 	RSA *userPriv = load_key( mysql, user ); 

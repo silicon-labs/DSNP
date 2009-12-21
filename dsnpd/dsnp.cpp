@@ -151,27 +151,34 @@ AllocString pass_hash( const u_char *pass_salt, const char *pass )
 	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
 }
 
-CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user )
+CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group )
 {
 	DbQuery query( mysql, 
-		"SELECT user.key_gen, broadcast_key, user.tree_gen_low, user.tree_gen_high "
-		"FROM put_broadcast_key JOIN user "
-		"WHERE user.user = put_broadcast_key.user AND "
-		"	put_broadcast_key.generation <= user.key_gen AND "
-		"	user.user = %e "
-		"ORDER BY put_broadcast_key.generation DESC", user );
+		"SELECT friend_group.key_gen, "
+		"	friend_group.tree_gen_low, "
+		"	friend_group.tree_gen_high, "
+		"	put_broadcast_key.broadcast_key "
+		"FROM user "
+		"JOIN friend_group "
+		"ON user.id = friend_group.user_id "
+		"JOIN put_broadcast_key "
+		"ON friend_group.id = put_broadcast_key.friend_group_id "
+		"WHERE user.user = %e AND "
+		"	friend_group.name = %e AND "
+		"	friend_group.key_gen = put_broadcast_key.generation ", 
+		user, group );
 	
 	if ( query.rows() == 0 )
-		fatal( "failed to get current put bk\n" );
+		fatal( "failed to get current put broadcast key\n" );
 	
 	MYSQL_ROW row = query.fetchRow();
 	keyGen = strtoll( row[0], 0, 10 );
-	broadcastKey.set( row[1] );
-	treeGenLow = strtoll( row[2], 0, 10 );
-	treeGenHigh = strtoll( row[3], 0, 10 );
+	treeGenLow = strtoll( row[1], 0, 10 );
+	treeGenHigh = strtoll( row[2], 0, 10 );
+	broadcastKey.set( row[3] );
 }
 
-void newBroadcastKey( MYSQL *mysql, const char *user, long long generation )
+void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation )
 {
 	unsigned char broadcast_key[RELID_SIZE];
 	const char *bk = 0;
@@ -180,14 +187,14 @@ void newBroadcastKey( MYSQL *mysql, const char *user, long long generation )
 	RAND_bytes( broadcast_key, RELID_SIZE );
 	bk = bin_to_base64( broadcast_key, RELID_SIZE );
 
-	exec_query( mysql, 
+	DbQuery( mysql, 
 		"INSERT INTO put_broadcast_key "
-		"( user, generation, broadcast_key ) "
-		"VALUES ( %e, %L, %e ) ",
-		user, generation, bk );
+		"( friend_group_id, generation, broadcast_key ) "
+		"VALUES ( %L, %L, %e ) ",
+		friendGroupId, generation, bk );
 }
 
-void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pass, const char *email )
+void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pass )
 {
 	u_char passSalt[SALT_SIZE];
 	RAND_bytes( passSalt, SALT_SIZE );
@@ -220,19 +227,32 @@ void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pa
 	DbQuery( mysql,
 		"UPDATE user "
 		"SET "
-		"	pass_salt = %e, pass = %e, email = %e, "
-		"	id_salt = %e, key_gen = 1, tree_gen_low = 1, tree_gen_high = 1, "
+		"	pass_salt = %e, pass = %e, id_salt = %e, "
 		"	rsa_n = %e, rsa_e = %e, rsa_d = %e, rsa_p = %e, "
 		"	rsa_q = %e, rsa_dmp1 = %e, rsa_dmq1 = %e, rsa_iqmp = %e "
 		"WHERE "
 		"	id = %L ",
-		passSaltStr, passHashed, email, idSaltStr,
+		passSaltStr, passHashed, idSaltStr,
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, id );
+
+	long long userId = lastInsertId( mysql );
+
+	DbQuery insert( mysql, 
+		"INSERT INTO friend_group "
+		"( user_id, name, key_gen, tree_gen_low, tree_gen_high ) "
+		"VALUES ( %L, 'friend', 1, 1, 1 )",
+		userId
+	);
+
+	long long friendGroupId = lastInsertId( mysql );
+	
+	/* Make the first broadcast key for the user. */
+	newBroadcastKey( mysql, friendGroupId, 1 );
 
 	RSA_free( rsa );
 }
 
-void newUser( MYSQL *mysql, const char *user, const char *pass, const char *email )
+void newUser( MYSQL *mysql, const char *user, const char *pass )
 {
 	/* First try to make the new user. */
 	DbQuery insert( mysql, "INSERT IGNORE INTO user ( user) VALUES ( %e ) ", user );
@@ -243,15 +263,9 @@ void newUser( MYSQL *mysql, const char *user, const char *pass, const char *emai
 
 	long long id = lastInsertId( mysql );
 
-	createNewUser( mysql, id, user, pass, email );
+	createNewUser( mysql, id, user, pass );
 
 	BIO_printf( bioOut, "OK\r\n" );
-
-	/* Make the first broadcast key for the user. */
-	newBroadcastKey( mysql, user, 1 );
-
-	/* Make the default group "friend" */
-	addGroup( mysql, user, "friend" );
 }
 
 void public_key( MYSQL *mysql, const char *user )
@@ -1100,35 +1114,35 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	free( flogin_token_str );
 }
 
-void addBroadcastKey( MYSQL *mysql, long long friend_claim_id, long long generation )
+void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, long long generation )
 {
 	/* FIXME: not atomic. */
 	DbQuery check( mysql,
 		"SELECT friend_claim_id FROM get_broadcast_key "
-		"WHERE friend_claim_id = %L AND generation = %L",
-		friend_claim_id, generation );
+		"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
+		friendClaimId, group, generation );
 	
 	if ( check.rows() == 0 ) {
 		/* Insert an entry for this relationship. */
 		DbQuery( mysql, 
 			"INSERT INTO get_broadcast_key "
-			"( friend_claim_id, generation )"
-			"VALUES ( %L, %L )", 
-			friend_claim_id, generation );
+			"( friend_claim_id, group_name, generation )"
+			"VALUES ( %L, %e, %L )", 
+			friendClaimId, group, generation );
 	}
 }
 
-void storeBroadcastKey( MYSQL *mysql, long long friend_claim_id, 
-		long long generation, const char *bk, const char *friendProof )
+void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group,
+		long long generation, const char *broadcastKey, const char *friendProof )
 {
-	addBroadcastKey( mysql, friend_claim_id, generation );
+	addBroadcastKey( mysql, friendClaimId, group, generation );
 
 	/* Make the query. */
 	DbQuery( mysql, 
 			"UPDATE get_broadcast_key "
 			"SET broadcast_key = %e, friend_proof = %e "
-			"WHERE friend_claim_id = %L AND generation = %L",
-			bk, friendProof, friend_claim_id, generation );
+			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
+			broadcastKey, friendProof, friendClaimId, group, generation );
 	
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -1322,7 +1336,7 @@ void encrypt_remote_broadcast( MYSQL *mysql, const char *user,
 	app_notification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */
-	CurrentPutKey put( mysql, user );
+	CurrentPutKey put( mysql, user, "friend" );
 	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
 
 	/* Make the full message. */
@@ -1373,7 +1387,7 @@ void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id )
 	RSA *id_pub = fetch_public_key( mysql, friend_id );
 
 	/* Find current generation and youngest broadcast key */
-	CurrentPutKey put( mysql, user );
+	CurrentPutKey put( mysql, user, "friend" );
 	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
 
 	/* Get the current time. */

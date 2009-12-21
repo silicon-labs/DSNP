@@ -456,10 +456,10 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 	encrypt.load( id_pub, user_priv );
 
 	/* Include the null in the message. */
-	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg)+1 );
+	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg) );
 
 	message( "send_message_now sending to: %s\n", to_identity );
-	return send_message_net( mysql, prefriend, from_user, to_identity, put_relid, encrypt.sym,
+	return sendMessageNet( mysql, prefriend, from_user, to_identity, put_relid, encrypt.sym,
 			strlen(encrypt.sym), result_msg );
 }
 
@@ -1132,7 +1132,8 @@ void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, 
 	}
 }
 
-void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group,
+void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
+		const char *identity, const char *friendHash, const char *group,
 		long long generation, const char *broadcastKey, const char *friendProof )
 {
 	addBroadcastKey( mysql, friendClaimId, group, generation );
@@ -1143,7 +1144,9 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group
 			"SET broadcast_key = %e, friend_proof = %e "
 			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
 			broadcastKey, friendProof, friendClaimId, group, generation );
-	
+
+	/* Broadcast the friend proof that we just received. */
+	long res = sendRemoteBroadcast( mysql, user, friendHash, generation, 20, friendProof );
 	BIO_printf( bioOut, "OK\n" );
 }
 

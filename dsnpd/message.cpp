@@ -31,10 +31,8 @@ void userMessage( MYSQL *mysql, const char *user, const char *friendId,
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
-	message("received message\n");
-
 	exec_query( mysql, 
-		"SELECT id, user, friend_id FROM friend_claim "
+		"SELECT id, user, friend_id, friend_hash FROM friend_claim "
 		"WHERE get_relid = %e",
 		relid );
 
@@ -47,10 +45,11 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	}
 	long long id = strtoll(row[0], 0, 10);
 	const char *user = row[1];
-	const char *friend_id = row[2];
+	const char *friendId = row[2];
+	const char *friendHash = row[3];
 
 	RSA *user_priv = load_key( mysql, user );
-	RSA *id_pub = fetch_public_key( mysql, friend_id );
+	RSA *id_pub = fetch_public_key( mysql, friendId );
 
 	Encrypt encrypt( id_pub, user_priv );
 	int decryptRes = encrypt.decryptVerify( msg );
@@ -61,32 +60,34 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 		return;
 	}
 
+	message("received message: %.*s\n", (int)encrypt.decLen, (char*)encrypt.decrypted );
+
 	MessageParser mp;
 	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
-			storeBroadcastKey( mysql, id, mp.group, mp.generation, mp.key, mp.sym );
+			storeBroadcastKey( mysql, id, user, friendId, friendHash, mp.group, mp.generation, mp.key, mp.sym );
 			break;
 		case MessageParser::ForwardTo: 
-			forwardTo( mysql, id, user, friend_id, mp.number,
+			forwardTo( mysql, id, user, friendId, mp.number,
 					mp.generation, mp.identity, mp.relid );
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
-			encrypt_remote_broadcast( mysql, user, friend_id, mp.token,
+			encrypt_remote_broadcast( mysql, user, friendId, mp.token,
 					mp.seq_num, mp.containedMsg );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
-			return_remote_broadcast( mysql, user, friend_id, mp.reqid,
+			return_remote_broadcast( mysql, user, friendId, mp.reqid,
 					mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProofRequest:
-			friendProofRequest( mysql, user, friend_id );
+			friendProofRequest( mysql, user, friendId );
 			break;
 		case MessageParser::FriendProof:
-			friendProof( mysql, user, friend_id, mp.hash, mp.generation, mp.sym );
+			friendProof( mysql, user, friendId, mp.hash, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
-			userMessage( mysql, user, friend_id, mp.date, mp.containedMsg, mp.length );
+			userMessage( mysql, user, friendId, mp.date, mp.containedMsg, mp.length );
 			break;
 		default:
 			BIO_printf( bioOut, "ERROR\r\n" );

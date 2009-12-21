@@ -516,8 +516,9 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' group ' ' generation ' ' key ' ' sym
-			EOL @{
+		'broadcast_key'i @{message("one\n");} ' ' group ' ' @{message("two\n");} generation ' ' @{message("three\n");} key ' ' @{message("four\n");} sym
+			EOL @{message("five\n");}  @{
+				message("%d\n", pe - p );
 				type = BroadcastKey;
 			} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
@@ -1141,7 +1142,7 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	write data;
 }%%
 
-long send_message_net( MYSQL *mysql, bool prefriend, const char *from_user,
+long sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *relid, const char *message,
 		long mLen, char **result_message )
 {

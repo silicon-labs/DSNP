@@ -215,7 +215,7 @@ bool sendMessage()
 	if ( affected == 1 ) {
 		message("delivering message %lld from %s to %s\n", id, from_user, to_id );
 
-		long send_res = send_message_net( mysql, false, from_user, to_id, relid, 
+		long send_res = sendMessageNet( mysql, false, from_user, to_id, relid, 
 				msg, strlen(msg), 0 );
 
 		if ( send_res < 0 ) {

@@ -337,16 +337,6 @@ function friendProof( $user, $subject, $author, $seq_num, $date, $time )
 		"INSERT INTO friend_link " .
 		"	( fc1_id, fc2_id ) " .
 		"VALUES ( %ld, %ld ) ",
-		$subject_id, 
-		$author_id
-	);
-	/* Allow this queyr to fail due to duplicates. */
-	mysql_query($query);
-
-	$query = sprintf(
-		"INSERT INTO friend_link " .
-		"	( fc1_id, fc2_id ) " .
-		"VALUES ( %ld, %ld ) ",
 		$author_id,
 		$subject_id 
 	);

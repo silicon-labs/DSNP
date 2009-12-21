@@ -40,7 +40,7 @@ void addGroup( MYSQL *mysql, const char *user, const char *group )
  */
 
 void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId, 
-		const char *group, const char *identity,
+		const char *group, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
 	/*
@@ -53,7 +53,7 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 	String command( "friend_proof %s\r\n", timeStr.data );
 
 	RSA *user_priv = load_key( mysql, user );
-	RSA *id_pub = fetch_public_key( mysql, identity );
+	RSA *id_pub = fetch_public_key( mysql, friendId );
 
 	Encrypt encrypt( id_pub, user_priv );
 	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
@@ -66,9 +66,26 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 	String registered( "broadcast_key %s %lld %s %s\r\n", 
 			group, put.keyGen, put.broadcastKey.data, encrypt.sym );
 
-	sendMessageNow( mysql, false, user, identity, putRelid, registered.data, 0 );
+	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
 
-	putTreeAdd( mysql, user, friendGroupId, identity, putRelid );
+	putTreeAdd( mysql, user, friendGroupId, friendId, putRelid );
+
+	/* Send out all proofs in the group. */
+	DbQuery allProofs( mysql,
+		"SELECT friend_hash, generation, friend_proof "
+		"FROM friend_claim "
+		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
+		"WHERE user = %e AND group_name = %e",
+		user, group );
+	
+	for ( int r = 0; r < allProofs.rows(); r++ ) {
+		MYSQL_ROW row = allProofs.fetchRow();
+		if ( row[1] != 0 && row[2] != 0 ) {
+			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
+			message("trying to send %s\n", msg.data );
+			queueMessage( mysql, user, friendId, msg.data );
+		}
+	}
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )

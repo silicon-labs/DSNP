@@ -101,8 +101,9 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 void fetch_ftoken( MYSQL *mysql, const char *reqid );
 void setConfigByUri( const char *uri );
 void setConfigByName( const char *name );
-void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, 
-		const char *group, long long generation, const char *broadcastKey, const char *friendProof );
+void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
+		const char *identity, const char *friendHash, const char *group,
+		long long generation, const char *broadcastKey, const char *friendProof );
 
 void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const char *identity,
 		int child_num, long long generation, const char *relid, const char *to_identity );
@@ -132,7 +133,7 @@ struct CurrentPutKey
 };
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
-long send_message_net( MYSQL *mysql, bool prefriend, 
+long sendMessageNet( MYSQL *mysql, bool prefriend, 
 		const char *from_user, const char *to_identity, const char *relid,
 		const char *message, long mLen, char **result_message );
 long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
@@ -441,4 +442,7 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 		const char *msg, long mLen );
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );
 
+long sendRemoteBroadcast( MYSQL *mysql, const char *user,
+		const char *author_hash, long long generation,
+		long long seq_num, const char *encMessage );
 #endif

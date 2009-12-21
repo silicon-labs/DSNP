@@ -398,7 +398,7 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 }
 
 
-long sendRemoteBroadcast( MYSQL *mysql, const char *user, const char *author_id,
+long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *author_hash, long long generation,
 		long long seq_num, const char *encMessage )
 {
@@ -570,8 +570,8 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 		const char *generation = row[4];
 		const char *sym = row[5];
 
-		long res = sendRemoteBroadcast( mysql, user, identity, 
-				hash, strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
+		long res = sendRemoteBroadcast( mysql, user, hash, 
+				strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
 		if ( res < 0 ) {
 			BIO_printf( bioOut, "ERROR\r\n" );
 			return;
@@ -628,7 +628,7 @@ int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
 		"WHERE friend_claim_id = %L and generation = %L",
 		ebp.sym.data, friendClaimId, ebp.generation );
 
-	long res = sendRemoteBroadcast( mysql, user, friendId, friendHash, 
+	long res = sendRemoteBroadcast( mysql, user, friendHash, 
 			ebp.generation, 20, ebp.sym.data );
 	if ( res < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );

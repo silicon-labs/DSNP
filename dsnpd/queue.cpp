@@ -68,7 +68,7 @@ bool sendBroadcastMessage()
 	}
 		
 	DbQuery findMsg( mysql, 
-		"SELECT key_gen, tree_gen_low, tree_gen_high, message "
+		"SELECT group_name, key_gen, tree_gen_low, tree_gen_high, message "
 		"FROM broadcast_message "
 		"WHERE id = %L ",
 		messageId
@@ -81,10 +81,11 @@ bool sendBroadcastMessage()
 	}
 
 	row = findMsg.fetchRow();
-	long long keyGen = strtoll( row[0], 0, 10 );
-	long long treeGenLow = strtoll( row[1], 0, 10 );
-	long long treeGenHigh = strtoll( row[2], 0, 10 );
-	char *msg = row[3];
+	const char *group = row[0];
+	long long keyGen = strtoll( row[1], 0, 10 );
+	long long treeGenLow = strtoll( row[2], 0, 10 );
+	long long treeGenHigh = strtoll( row[3], 0, 10 );
+	char *msg = row[4];
 
 	DbQuery recipients( mysql,
 		"SELECT relid "
@@ -109,7 +110,7 @@ bool sendBroadcastMessage()
 
 
 	/* If failed. */
-	long sendRes = sendBroadcastNet( mysql, toSite, recipientList, 
+	long sendRes = sendBroadcastNet( mysql, toSite, recipientList, group,
 			keyGen, forward, treeGenLow, treeGenHigh, msg, strlen(msg) );
 
 	if ( sendRes < 0 ) {

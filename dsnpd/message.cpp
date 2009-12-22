@@ -26,7 +26,7 @@ void userMessage( MYSQL *mysql, const char *user, const char *friendId,
 {
 	String args( "user_message %s - %s 0 %s %ld", 
 			user, friendId, date, length );
-	app_notification( args, msg, length );
+	appNotification( args, msg, length );
 }
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )

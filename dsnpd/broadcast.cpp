@@ -33,7 +33,7 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 {
 	String args( "user_message %s - %s %lld %s %ld", 
 			user, author_id, seq_num, date, mLen );
-	app_notification( args, msg, mLen );
+	appNotification( args, msg, mLen );
 }
 
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
@@ -41,7 +41,7 @@ void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const
 {
 	String args( "user_message %s %s %s %lld %s %ld", 
 			user, subject_id, author_id, seq_num, date, mLen );
-	app_notification( args, msg, mLen );
+	appNotification( args, msg, mLen );
 }
 
 void friendProofBroadcast( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
@@ -52,7 +52,7 @@ void friendProofBroadcast( MYSQL *mysql, const char *user, const char *subject_i
 
 	String args( "friend_proof %s %s %s %lld %s", 
 			user, subject_id, author_id, seq_num, date );
-	app_notification( args, 0, 0 );
+	appNotification( args, 0, 0 );
 }
 
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friend_id, 
@@ -138,7 +138,7 @@ long long forwardBroadcast( MYSQL *mysql, long long messageId,
 	return lastQueueId;
 }
 
-void receiveBroadcast( MYSQL *mysql, const char *relid, long long keyGen,
+void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long long keyGen,
 		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted )
 {
 	/* Find the recipient. */
@@ -230,9 +230,9 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long keyGen,
 				/* Store the message. */
 				DbQuery( mysql,
 					"INSERT INTO broadcast_message "
-					"( key_gen, tree_gen_low, tree_gen_high, message ) "
-					"VALUES ( %L, %L, %L, %e ) ",
-					keyGen, treeGenLow, treeGenHigh, encrypted );
+					"( group_name, key_gen, tree_gen_low, tree_gen_high, message ) "
+					"VALUES ( %e, %L, %L, %L, %e ) ",
+					group, keyGen, treeGenLow, treeGenHigh, encrypted );
 
 				messageId = lastInsertId( mysql );
 			}
@@ -251,11 +251,11 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long keyGen,
 }
 
 
-void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, long long keyGen,
+void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group, long long keyGen,
 		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted )
 {
 	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ )
-		receiveBroadcast( mysql, r->c_str(), keyGen, forward, treeGenLow, treeGenHigh, encrypted );
+		receiveBroadcast( mysql, r->c_str(), group, keyGen, forward, treeGenLow, treeGenHigh, encrypted );
 }
 
 long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long messageId, 
@@ -314,9 +314,9 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const ch
 	/* Stroe the message. */
 	DbQuery( mysql,
 		"INSERT INTO broadcast_message "
-		"( key_gen, tree_gen_low, tree_gen_high, message ) "
-		"VALUES ( %L, %L, %L, %e ) ",
-		put.keyGen, put.treeGenLow, put.treeGenHigh, encrypt.sym );
+		"( group_name, key_gen, tree_gen_low, tree_gen_high, message ) "
+		"VALUES ( %e, %L, %L, %L, %e ) ",
+		group, put.keyGen, put.treeGenLow, put.treeGenHigh, encrypt.sym );
 
 	long long messageId = lastInsertId( mysql );
 
@@ -624,7 +624,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	/* Notifiy the frontend. */
 	String args( "remote_publication %s %s %ld", 
 			user, subjectId, mLen );
-	app_notification( args, msg, mLen );
+	appNotification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */
 	CurrentPutKey put( mysql, user, group );

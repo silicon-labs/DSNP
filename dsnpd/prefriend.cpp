@@ -103,7 +103,7 @@ long registered( MYSQL *mysql, const char *for_user, const char *from_id,
 	BIO_printf( bioOut, "OK\r\n" );
 
 	String args( "sent_friend_request_accepted %s %s", for_user, from_id );
-	app_notification( args, 0, 0 );
+	appNotification( args, 0, 0 );
 
 	return 0;
 }
@@ -170,7 +170,7 @@ void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *use
 	deleteFriendRequest( mysql, user, user_reqid );
 
 	String args( "friend_request_accepted %s %s", user, from_id );
-	app_notification( args, 0, 0 );
+	appNotification( args, 0, 0 );
 
 	BIO_printf( bioOut, "OK\r\n" );
 }

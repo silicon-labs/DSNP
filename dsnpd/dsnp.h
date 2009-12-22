@@ -289,7 +289,7 @@ void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char 
 
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
 
-void app_notification( const char *args, const char *data, long length );
+void appNotification( const char *args, const char *data, long length );
 
 void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqid );
 void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
@@ -429,9 +429,10 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 typedef std::list<std::string> RecipientList;
 
 void broadcastReceipient( MYSQL *mysql, RecipientList &recipientList, const char *relid );
-void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, long long keyGen,
-		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted ); 
-long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
+void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, const char *group,
+		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		const char *encrypted ); 
+long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients, const char *group,
 		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen );
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );

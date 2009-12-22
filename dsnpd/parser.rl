@@ -326,16 +326,16 @@ bool gblKeySubmitted = false;
 				broadcastReceipient( mysql, recipients, relid );
 			} |
 
-		'broadcast_forward'i ' ' generation ' ' tree_gen_low ' ' tree_gen_high ' ' length
+		'broadcast_forward'i ' ' group ' ' generation ' ' tree_gen_low ' ' tree_gen_high ' ' length
 			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, generation, true, 
+				receiveBroadcast( mysql, recipients, group, generation, true, 
 						tree_gen_low, tree_gen_high, message_buffer.data );
 				recipients.clear();
 			} |
 
-		'broadcast'i ' ' generation ' ' length
+		'broadcast'i ' ' group ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, generation, false, 
+				receiveBroadcast( mysql, recipients, group, generation, false, 
 						0, 0, message_buffer.data );
 				recipients.clear();
 			} |
@@ -1027,7 +1027,7 @@ long Identity::parse()
 }%%
 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
-		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		const char *group, long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen )
 {
 	static char buf[8192];
@@ -1061,13 +1061,13 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	/* Send the request. */
 	if ( forward ) {
 		BIO_printf( tlsConnect.sbio, 
-			"broadcast_forward %lld %lld %lld %ld\r\n", 
-			keyGen, treeGenLow, treeGenHigh, mLen );
+			"broadcast_forward %s %lld %lld %lld %ld\r\n", 
+			group, keyGen, treeGenLow, treeGenHigh, mLen );
 	}
 	else {
 		BIO_printf( tlsConnect.sbio, 
-			"broadcast %lld %ld\r\n", 
-			keyGen, mLen );
+			"broadcast %s %lld %ld\r\n", 
+			group, keyGen, mLen );
 	}
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );

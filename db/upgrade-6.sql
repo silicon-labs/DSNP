@@ -89,3 +89,4 @@ DROP TABLE get_broadcast_key_copy;
 ALTER TABLE user DROP COLUMN email;
 
 ALTER TABLE pending_remote_broadcast ADD COLUMN group_name TEXT;
+ALTER TABLE broadcast_message ADD COLUMN group_name TEXT;

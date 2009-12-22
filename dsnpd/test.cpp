@@ -190,7 +190,7 @@ void checkTree()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	
-	checkTree( mysql, "age", "friend" );
+	checkTree( mysql, "age", "social" );
 }
 
 void friendProof()
@@ -214,7 +214,7 @@ void broadcastKey()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
-	CurrentPutKey put( mysql, "age", "friend" );
+	CurrentPutKey put( mysql, "age", "social" );
 }
 
 void run_test()

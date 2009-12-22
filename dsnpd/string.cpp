@@ -144,10 +144,7 @@ AllocString timeNow()
 
 AllocString addMessageData( const String &root, const char *msg, long mLen )
 {
-	message( "concatting: %s and %s\n", root.data, msg );
 	long totalLength = root.length + mLen + 2;
-	message( "root.length = %d mLen = %d totalLength = %d\n", root.length, mLen, totalLength );
-
 	char *result = new char[totalLength+1];
 	memcpy( result, root.data, root.length );
 	memcpy( result + root.length, msg, mLen );

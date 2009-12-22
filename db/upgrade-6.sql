@@ -90,3 +90,8 @@ ALTER TABLE user DROP COLUMN email;
 
 ALTER TABLE pending_remote_broadcast ADD COLUMN group_name TEXT;
 ALTER TABLE broadcast_message ADD COLUMN group_name TEXT;
+
+
+UPDATE get_broadcast_key SET group_name = 'social' WHERE group_name = 'friend';
+UPDATE get_tree SET group_name = 'social' WHERE group_name = 'friend';
+UPDATE friend_group SET name = 'social' WHERE name = 'friend';

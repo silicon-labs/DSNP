@@ -40,3 +40,5 @@ INSERT INTO group_member
 	SELECT friend_group.id, friend_claim.id FROM user 
 	JOIN friend_group ON user.id = friend_group.user_id
 	JOIN friend_claim ON user.id = friend_claim.user_id ORDER BY user.user;
+
+UPDATE friend_group SET name = 'social' WHERE name = 'friend';

@@ -58,7 +58,7 @@ class AdminController extends AppController
 		$this->loadModel('FriendGroup');
 		$this->FriendGroup->save( array( 
 				'user_id' => $userId,
-				'name' => 'friend'
+				'name' => 'social'
 		));
 
 		$this->redirect( "/" );

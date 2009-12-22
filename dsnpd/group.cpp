@@ -68,7 +68,7 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
 
-	putTreeAdd( mysql, user, friendGroupId, friendId, putRelid );
+	putTreeAdd( mysql, user, group, friendGroupId, friendId, putRelid );
 
 	/* Send out all proofs in the group. */
 	DbQuery allProofs( mysql,
@@ -81,7 +81,7 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 	for ( int r = 0; r < allProofs.rows(); r++ ) {
 		MYSQL_ROW row = allProofs.fetchRow();
 		if ( row[1] != 0 && row[2] != 0 ) {
-			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
+			String msg( "friend_proof %s %s %s %s\r\n", row[0], group, row[1], row[2] );
 			message("trying to send %s\n", msg.data );
 			queueMessage( mysql, user, friendId, msg.data, msg.length );
 		}

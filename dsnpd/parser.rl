@@ -281,9 +281,9 @@ bool gblKeySubmitted = false;
 		#
 		# Broadcasting
 		#
-		'submit_broadcast'i ' ' user ' ' length 
+		'submit_broadcast'i ' ' user ' ' group ' ' length 
 			M_EOL @check_key @{
-				submitBroadcast( mysql, user, message_buffer.data, length );
+				submitBroadcast( mysql, user, group, message_buffer.data, length );
 			} |
 
 		#
@@ -297,10 +297,10 @@ bool gblKeySubmitted = false;
 		#
 		# Remote broadcasting
 		#
-		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
+		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' group ' ' length
 			M_EOL @check_key @{
-				remote_broadcast_request( mysql, user, identity, hash, 
-						token, message_buffer.data, length );
+				remoteBroadcastRequest( mysql, user, identity, hash, 
+						token, group, message_buffer.data, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
@@ -345,13 +345,8 @@ bool gblKeySubmitted = false;
 		# Testing
 		#
 
-		'obtain_friend_proof'i ' ' user ' ' identity EOL @check_key @{
-				obtainFriendProof( mysql, user, identity );
-			} |
-
 		'forward_tree_reset'i ' ' user ' ' group EOL @check_key @{
-				/* FIXME: add group. */
-				//forwardTreeReset( mysql, user );
+				forwardTreeReset( mysql, user, group );
 				BIO_printf( bioOut, "OK\r\n" );
 			} |
 
@@ -536,7 +531,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @{
 				type = ForwardTo;
 			} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' group ' ' length 
 			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;
 			} |
@@ -544,11 +539,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @{
 				type = ReturnRemoteBroadcast;
 			} |
-		'friend_proof_request'i
-			EOL @{
-				type = FriendProofRequest;
-			} |
-		'friend_proof'i ' ' hash ' ' generation ' ' sym
+		'friend_proof'i ' ' hash ' ' group ' ' generation ' ' sym
 			EOL @{
 				type = FriendProof;
 			} |
@@ -600,7 +591,7 @@ int MessageParser::parse( const char *msg, long len )
 			EOL @skip_message EOL @{
 				type = Direct;
 			} |
-		'remote_broadcast'i ' ' hash ' ' generation ' ' seq_num ' ' length 
+		'remote_broadcast'i ' ' hash ' ' group ' ' generation ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
 				type = Remote;
 			};

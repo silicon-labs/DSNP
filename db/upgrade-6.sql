@@ -87,3 +87,5 @@ INSERT INTO get_broadcast_key SELECT * FROM get_broadcast_key_copy;
 DROP TABLE get_broadcast_key_copy;
 
 ALTER TABLE user DROP COLUMN email;
+
+ALTER TABLE pending_remote_broadcast ADD COLUMN group_name TEXT;

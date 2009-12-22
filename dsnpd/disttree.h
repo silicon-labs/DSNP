@@ -36,10 +36,10 @@ typedef map<string, FriendNode*> NodeMap;
 typedef list<FriendNode*> NodeList;
 
 void load_tree( MYSQL *mysql, const char *user, long long generation, NodeList &roots );
-int forwardTreeReset( MYSQL *mysql, const char *user );
+int forwardTreeReset( MYSQL *mysql, const char *user, const char *group );
 int forwardTreeInsert( MYSQL *mysql, const char *user, const char *identity, const char *relid );
-int checkTree( MYSQL *mysql, const char *user );
-void putTreeAdd( MYSQL *mysql, const char *user, long long friendGroupId,
+int checkTree( MYSQL *mysql, const char *user, const char *group );
+void putTreeAdd( MYSQL *mysql, const char *user, const char *group, long long friendGroupId,
 		const char *identity, const char *relid );
 
 #endif

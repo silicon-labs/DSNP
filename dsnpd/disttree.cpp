@@ -70,6 +70,18 @@ void loadTree( MYSQL *mysql, const char *user, long long treeGen, NodeList &root
 
 	NodeMap nodeMap;
 
+	DbQuery group( mysql,
+		"SELECT friend_group.id "
+		"FROM user "
+		"JOIN friend_group ON user.id = friend_group.id "
+		"WHERE user.user = %e AND friend_group.name = %e "
+	);
+	
+	if ( group.rows() == 0 )
+		return;
+	
+	long long friendGroupId = strtoll( group.fetchRow()[0], 0, 10 );
+
 	/* We limit to the current generation and below and do a descending sort by
 	 * generation. When we traverse, we ignore nodes that we have already read
 	 * in with a higher generation.  */
@@ -78,9 +90,10 @@ void loadTree( MYSQL *mysql, const char *user, long long treeGen, NodeList &root
 		"	put_tree.root, put_tree.forward1, put_tree.forward2, put_tree.active "
 		"FROM friend_claim "
 		"JOIN put_tree ON friend_claim.id = put_tree.friend_claim_id  "
-		"WHERE friend_claim.user = %e AND put_tree.generation <= %L "
+		"WHERE friend_claim.user = %e AND put_tree.friend_group_id = %L AND "
+		"	put_tree.state = 2 AND put_tree.generation <= %L "
 		"ORDER BY put_tree.generation DESC",
-		user, treeGen );
+		user, friendGroupId, treeGen );
 
 	/* One pass to load the nodes. */
 	while ( true ) {
@@ -333,7 +346,7 @@ void insertIntoTree( WorkList &workList, NodeList &roots, long long friendClaimI
 
 /* FIXME: add group. */
 #if 0
-int forwardTreeInsert( MYSQL *mysql, const char *user,
+int forwardTreeInsert( MYSQL *mysql, const char *user, const char *group,
 		const char *identity, const char *relid )
 {
 	DbQuery claim( mysql,
@@ -345,7 +358,7 @@ int forwardTreeInsert( MYSQL *mysql, const char *user,
 		long long friendClaimId = strtoll( row[0], 0, 10 );
 
 		/* Need the current broadcast key. */
-		CurrentPutKey put( mysql, user, "friend" );
+		CurrentPutKey put( mysql, user, group );
 
 		put.treeGenHigh += 1;
 		WorkList workList;
@@ -360,7 +373,7 @@ int forwardTreeInsert( MYSQL *mysql, const char *user,
 }
 #endif
 
-void putTreeAdd( MYSQL *mysql, const char *user, long long friendGroupId,
+void putTreeAdd( MYSQL *mysql, const char *user, const char *group, long long friendGroupId,
 		const char *identity, const char *relid )
 {
 	DbQuery claim( mysql,
@@ -372,7 +385,7 @@ void putTreeAdd( MYSQL *mysql, const char *user, long long friendGroupId,
 		long long friendClaimId = strtoll( row[0], 0, 10 );
 
 		/* Need the current tree generation. */
-		CurrentPutKey put( mysql, user, "friend" );
+		CurrentPutKey put( mysql, user, group );
 
 		DbQuery( mysql,
 			"INSERT INTO put_tree "
@@ -382,14 +395,12 @@ void putTreeAdd( MYSQL *mysql, const char *user, long long friendGroupId,
 	}
 }
 
-/* FIXME: add group. */
-#if 0
-int forwardTreeReset( MYSQL *mysql, const char *user )
+int forwardTreeReset( MYSQL *mysql, const char *user, const char *group )
 {
 	message("resetting forwared tree for user %s\n", user );
 
 	/* Need the current broadcast key. */
-	CurrentPutKey put( mysql, user, "friend" );
+	CurrentPutKey put( mysql, user, group );
 	long long newTreeGen = put.treeGenHigh + 1;
 
 	DbQuery load( mysql,
@@ -404,13 +415,12 @@ int forwardTreeReset( MYSQL *mysql, const char *user )
 
 	return 0;
 }
-#endif
 
 /* This should perform some sanity checks on the distribution tree. */
-int checkTree( MYSQL *mysql, const char *user )
+int checkTree( MYSQL *mysql, const char *user, const char *group )
 {
 	/* Need the current broadcast key. */
-	CurrentPutKey put( mysql, user, "friend" );
+	CurrentPutKey put( mysql, user, group );
 
 	WorkList workList;
 	NodeList roots;

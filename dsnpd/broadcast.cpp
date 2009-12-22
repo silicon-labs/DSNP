@@ -44,7 +44,7 @@ void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const
 	app_notification( args, msg, mLen );
 }
 
-void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+void friendProofBroadcast( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date )
 {
 	message("%s received friend proof subject_id %s author_id %s date %s\n",
@@ -55,10 +55,10 @@ void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const
 	app_notification( args, 0, 0 );
 }
 
-void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id, 
+void remoteBroadcast( MYSQL *mysql, const char *user, const char *friend_id, 
 		const char *hash, long long generation, const char *msg, long mLen )
 {
-	message( "remote_broadcast: user %s hash %s generation %lld\n", user, hash, generation );
+	message( "remote broadcast: user %s hash %s generation %lld\n", user, hash, generation );
 
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	DbQuery recipient( mysql, 
@@ -79,7 +79,7 @@ void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id,
 		const char *author_id = row[1];
 		const char *broadcast_key = row[2];
 
-		message( "remote_broadcast: have recipient\n");
+		message( "remote broadcast: have recipient\n");
 
 		/* Do the decryption. */
 		RSA *id_pub = fetch_public_key( mysql, author_id );
@@ -103,7 +103,7 @@ void remote_broadcast( MYSQL *mysql, const char *user, const char *friend_id,
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
-				friend_proof( mysql, user, friend_id, author_id, rbp.seq_num, rbp.date );
+				friendProofBroadcast( mysql, user, friend_id, author_id, rbp.seq_num, rbp.date );
 				break;
 			default:
 				error("remote broadcast parse failed\n");
@@ -193,7 +193,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, long long keyGen,
 						bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
-				remote_broadcast( mysql, user, friendId, bp.hash, 
+				remoteBroadcast( mysql, user, friendId, bp.hash, 
 						bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			default:
@@ -301,10 +301,10 @@ long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long message
 	return count;
 }
 
-long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
+long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen )
 {
 	/* Get the latest put session key. */
-	CurrentPutKey put( mysql, user, "friend" );
+	CurrentPutKey put( mysql, user, group );
 
 	/* Do the encryption. */ 
 	RSA *userPriv = load_key( mysql, user ); 
@@ -357,7 +357,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen 
 }
 
 
-long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen )
+long submitBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );
@@ -384,7 +384,7 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 		seq_num, timeStr.data, mLen );
 	String full = addMessageData( broadcastCmd, msg, mLen );
 
-	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
+	long sendResult = queueBroadcast( mysql, user, group, full.data, full.length );
 	if ( sendResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;
@@ -396,35 +396,34 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen
 
 
 long sendRemoteBroadcast( MYSQL *mysql, const char *user,
-		const char *author_hash, long long generation,
-		long long seq_num, const char *encMessage )
+		const char *authorHash, const char *group, long long generation,
+		long long seqNum, const char *encMessage )
 {
 	long encMessageLen = strlen(encMessage);
 	message("enc message len: %ld\n", encMessageLen);
 
 	/* Make the full message. */
 	String command( 
-		"remote_broadcast %s %lld %lld %ld\r\n", 
-		author_hash, generation, seq_num, encMessageLen );
+		"remote_broadcast %s %s %lld %lld %ld\r\n", 
+		authorHash, group, generation, seqNum, encMessageLen );
 	String full = addMessageData( command, encMessage, encMessageLen );
 
-	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
+	long sendResult = queueBroadcast( mysql, user, group, full.data, full.length );
 	if ( sendResult < 0 )
 		return -1;
 
 	return 0;
 }
 
-long remote_broadcast_request( MYSQL *mysql, const char *to_user, 
-		const char *author_id, const char *author_hash, 
-		const char *token, const char *msg, long mLen )
+long remoteBroadcastRequest( MYSQL *mysql, const char *toUser, 
+		const char *authorId, const char *authorHash, 
+		const char *token, const char *group, const char *msg, long mLen )
 {
 	int res;
 	RSA *user_priv, *id_pub;
 	Encrypt encrypt;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	long long seq_num;
 	char *result_message;
 
 	/* Get the current time. */
@@ -433,7 +432,7 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 	/* Find the relid from subject to author. */
 	DbQuery putRelidQuery( mysql,
 			"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-			to_user, author_id );
+			toUser, authorId );
 	if ( putRelidQuery.rows() != 1 ) {
 		message("find of put_relid from subject to author failed\n");
 		return -1;
@@ -441,14 +440,14 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 
 	String putRelid = putRelidQuery.fetchRow()[0];
 
-	String subjectId( "%s%s/", c->CFG_URI, to_user );
+	String subjectId( "%s%s/", c->CFG_URI, toUser );
 
 	/* Insert the broadcast message into the published table. */
 	exec_query( mysql,
 		"INSERT INTO broadcasted "
 		"( user, author_id, subject_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
-		to_user, author_id, subjectId.data, timeStr.data, msg, mLen );
+		toUser, authorId, subjectId.data, timeStr.data, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
@@ -457,18 +456,18 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 	if ( !row )
 		return -1;
 
-	seq_num = strtoll( row[0], 0, 10 );
+	long long seqNum = strtoll( row[0], 0, 10 );
 
-	user_priv = load_key( mysql, to_user );
-	id_pub = fetch_public_key( mysql, author_id );
+	user_priv = load_key( mysql, toUser );
+	id_pub = fetch_public_key( mysql, authorId );
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
 	String remotePublishCmd(
-		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
-		token, seq_num, mLen, msg );
+		"encrypt_remote_broadcast %s %lld %s %ld\r\n%s\r\n", 
+		token, seqNum, group, mLen, msg );
 
-	res = sendMessageNow( mysql, false, to_user, author_id, putRelid.data,
+	res = sendMessageNow( mysql, false, toUser, authorId, putRelid.data,
 			remotePublishCmd.data, &result_message );
 	if ( res < 0 ) {
 		message("encrypt_remote_broadcast message failed\n");
@@ -480,9 +479,9 @@ long remote_broadcast_request( MYSQL *mysql, const char *to_user,
 
 	exec_query( mysql,
 		"INSERT INTO pending_remote_broadcast "
-		"( user, identity, hash, reqid, seq_num ) "
-		"VALUES ( %e, %e, %e, %e, %L )",
-		to_user, author_id, author_hash, result_message, seq_num );
+		"( user, identity, hash, reqid, seq_num, group_name ) "
+		"VALUES ( %e, %e, %e, %e, %L, %e )",
+		toUser, authorId, authorHash, result_message, seqNum, group );
 
 	message("send_message_now returned: %s\n", result_message );
 	BIO_printf( bioOut, "OK %s\r\n", result_message );
@@ -553,7 +552,7 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 {
 	DbQuery recipient( mysql, 
-		"SELECT user, identity, hash, seq_num, generation, sym "
+		"SELECT user, identity, hash, seq_num, group_name, generation, sym "
 		"FROM pending_remote_broadcast "
 		"WHERE user = %e AND reqid_final = %e",
 		user, reqid );
@@ -564,10 +563,11 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 		//const char *identity = row[1];
 		const char *hash = row[2];
 		const char *seq_num = row[3];
-		const char *generation = row[4];
-		const char *sym = row[5];
+		const char *group = row[4];
+		const char *generation = row[5];
+		const char *sym = row[6];
 
-		long res = sendRemoteBroadcast( mysql, user, hash, 
+		long res = sendRemoteBroadcast( mysql, user, hash, group,
 				strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
 		if ( res < 0 ) {
 			BIO_printf( bioOut, "ERROR\r\n" );
@@ -584,73 +584,75 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
-		const char *hash, long long generation, const char *sym )
+int friendProofMessage( MYSQL *mysql, const char *user, const char *friend_id,
+		const char *hash, const char *group, long long generation, const char *sym )
 {
-	message("calling remote broadcast from friend_proof\n");
-	remote_broadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
+	message("calling remote broadcast from friend proof\n");
+	remoteBroadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
 	BIO_printf( bioOut, "OK\r\n" );
 	return 0;
 }
 
-int obtainFriendProof( MYSQL *mysql, const char *user, const char *friendId )
+void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
+		const char *subjectId, const char *token,
+		long long seqNum, const char *group, const char *msg, long mLen )
 {
-	message("obtaining friend proof\n");
+	Encrypt encrypt;
+	RSA *user_priv, *id_pub;
+	int sigRes;
 
-	DbQuery friendClaim( mysql, 
-		"SELECT id, friend_hash, put_relid FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e",
-		user, friendId );
+	message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 
+		user, subjectId, token, seqNum, msg );
 
-	if ( friendClaim.rows() == 0 ) {
+	DbQuery flogin( mysql,
+		"SELECT user FROM remote_flogin_token "
+		"WHERE user = %e AND identity = %e AND login_token = %e",
+		user, subjectId, token );
+
+	if ( flogin.rows() == 0 ) {
+		message("failed to find user from provided login token\n");
 		BIO_printf( bioOut, "ERROR\r\n" );
-		return -1;
-	}
-	MYSQL_ROW row = friendClaim.fetchRow();
-	long long friendClaimId = strtoll(row[0], 0, 10);
-	const char *friendHash = row[1];
-	const char *putRelid = row[2];
-
-	char *result = 0;
-	sendMessageNow( mysql, false, user, friendId, putRelid, "friend_proof_request\r\n", &result );
-
-	message( "send_message_now returned: %s\n", result );
-	EncryptedBroadcastParser ebp;
-	if ( ebp.parse( result ) == 0 )
-		message( "ebp: %lld %s\n", ebp.generation, ebp.sym.data );
-	
-	DbQuery update( mysql,
-		"UPDATE get_broadcast_key "
-		"SET friend_proof = %e "
-		"WHERE friend_claim_id = %L and generation = %L",
-		ebp.sym.data, friendClaimId, ebp.generation );
-
-	long res = sendRemoteBroadcast( mysql, user, friendHash, 
-			ebp.generation, 20, ebp.sym.data );
-	if ( res < 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return -1;
+		return;
 	}
 
-	/* FIXME: need to finish friend_proof. */
+	/* Get the current time. */
+	String timeStr = timeNow();
 
-	DbQuery allProofs( mysql,
-		"SELECT friend_hash, generation, friend_proof "
-		"FROM friend_claim "
-		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
-		"WHERE user = %e ",
-		user );
-	
-	for ( int r = 0; r < allProofs.rows(); r++ ) {
-		MYSQL_ROW row = allProofs.fetchRow();
-		if ( row[1] != 0 && row[2] != 0 ) {
-			String msg( "friend_proof %s %s %s\r\n", row[0], row[1], row[2] );
-			message("trying to send %s\n", msg.data );
-			queueMessage( mysql, user, friendId, msg.data, msg.length );
-		}
+	user_priv = load_key( mysql, user );
+	id_pub = fetch_public_key( mysql, subjectId );
+
+	/* Notifiy the frontend. */
+	String args( "remote_publication %s %s %ld", 
+			user, subjectId, mLen );
+	app_notification( args, msg, mLen );
+
+	/* Find current generation and youngest broadcast key */
+	CurrentPutKey put( mysql, user, group );
+	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
+
+	/* Make the full message. */
+	String command( "remote_inner %lld %s %ld\r\n", seqNum, timeStr.data, mLen );
+	String full = addMessageData( command, msg, mLen );
+
+	encrypt.load( id_pub, user_priv );
+	sigRes = encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)full.data, full.length );
+	if ( sigRes < 0 ) {
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		return;
 	}
 
-	BIO_printf( bioOut, "OK\r\n" );
-	
-	return 0;
+	message( "encrypt_remote_broadcast enc: %s\n", encrypt.sym );
+
+	u_char reqid[REQID_SIZE];
+	RAND_bytes( reqid, REQID_SIZE );
+	const char *reqid_str = bin_to_base64( reqid, REQID_SIZE );
+
+	exec_query( mysql,
+		"INSERT INTO remote_broadcast_request "
+		"	( user, identity, reqid, generation, sym ) "
+		"VALUES ( %e, %e, %e, %L, %e )",
+		user, subjectId, reqid_str, put.treeGenHigh, encrypt.sym );
+
+	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
 }
+

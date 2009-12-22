@@ -74,17 +74,14 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
 			encryptRemoteBroadcast( mysql, user, friendId, mp.token,
-					mp.seq_num, mp.embeddedMsg, mp.length );
+					mp.seq_num, mp.group, mp.embeddedMsg, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			return_remote_broadcast( mysql, user, friendId, mp.reqid,
 					mp.generation, mp.sym );
 			break;
-		case MessageParser::FriendProofRequest:
-			friendProofRequest( mysql, user, friendId );
-			break;
 		case MessageParser::FriendProof:
-			friendProof( mysql, user, friendId, mp.hash, mp.generation, mp.sym );
+			friendProofMessage( mysql, user, friendId, mp.hash, mp.group, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
 			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );

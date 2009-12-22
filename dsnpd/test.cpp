@@ -190,7 +190,7 @@ void checkTree()
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 	
-	checkTree( mysql, "age" );
+	checkTree( mysql, "age", "friend" );
 }
 
 void friendProof()
@@ -202,8 +202,6 @@ void friendProof()
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
 			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-
-	obtainFriendProof( mysql, "age", "https://yoho/ua/pat/" );
 }
 
 void broadcastKey()
@@ -221,5 +219,5 @@ void broadcastKey()
 
 void run_test()
 {
-	broadcastKey();
+	checkTree();
 }

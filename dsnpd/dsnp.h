@@ -139,7 +139,7 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 void submit_ftoken( MYSQL *mysql, const char *token );
 void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
-		long long seq_num, const char *msg, long mLen );
+		long long seqNum, const char *group, const char *msg, long mLen );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
@@ -147,10 +147,10 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
 
 long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
-long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
-long remote_broadcast_request( MYSQL *mysql, const char *user, 
-		const char *identity, const char *hash, const char *token,
-		const char *user_message, long mLen );
+long submitBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen );
+long remoteBroadcastRequest( MYSQL *mysql, const char *user, 
+		const char *identity, const char *hash, const char *token, const char *group,
+		const char *msg, long mLen );
 
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
                long long seq_num, const char *date, const char *msg, long mLen );
@@ -297,7 +297,6 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 		const char *friend_id, const char *nonce, long long generation, const char *sym );
 
 void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
-int obtainFriendProof( MYSQL *mysql, const char *user, const char *friend_id );
 
 struct EncryptedBroadcastParser
 {
@@ -343,7 +342,7 @@ struct BroadcastParser
 	};
 
 	Type type;
-	String date, hash;
+	String date, hash, group;
 	long long generation, seq_num;
 	long length;
 	const char *embeddedMsg;
@@ -414,8 +413,8 @@ RSA *load_key( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );
-int friendProof( MYSQL *mysql, const char *user, const char *friend_id,
-		const char *hash, long long generation, const char *sym );
+int friendProofMessage( MYSQL *mysql, const char *user, const char *friendId,
+		const char *hash, const char *group, long long generation, const char *sym );
 
 long long storeFriendClaim( MYSQL *mysql, const char *user, 
 		const char *identity, const char *id_salt, const char *put_relid, 
@@ -438,6 +437,6 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );
 
 long sendRemoteBroadcast( MYSQL *mysql, const char *user,
-		const char *author_hash, long long generation,
-		long long seq_num, const char *encMessage );
+		const char *authorHash, const char *group, long long generation,
+		long long seqNum, const char *encMessage );
 #endif

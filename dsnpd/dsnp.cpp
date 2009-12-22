@@ -1146,7 +1146,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 			broadcastKey, friendProof, friendClaimId, group, generation );
 
 	/* Broadcast the friend proof that we just received. */
-	sendRemoteBroadcast( mysql, user, friendHash, generation, 20, friendProof );
+	sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof );
 	BIO_printf( bioOut, "OK\n" );
 }
 
@@ -1289,114 +1289,6 @@ void submit_ftoken( MYSQL *mysql, const char *token )
 
 free_result:
 	mysql_free_result( result );
-}
-
-void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
-		const char *subject_id, const char *token,
-		long long seqNum, const char *msg, long mLen )
-{
-	Encrypt encrypt;
-	RSA *user_priv, *id_pub;
-	int sigRes;
-
-	message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 
-		user, subject_id, token, seqNum, msg );
-
-	DbQuery flogin( mysql,
-		"SELECT user FROM remote_flogin_token "
-		"WHERE user = %e AND identity = %e AND login_token = %e",
-		user, subject_id, token );
-
-	if ( flogin.rows() == 0 ) {
-		message("failed to find user from provided login token\n");
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
-
-	/* Get the current time. */
-	String timeStr = timeNow();
-
-	user_priv = load_key( mysql, user );
-	id_pub = fetch_public_key( mysql, subject_id );
-
-	/* Notifiy the frontend. */
-	String args( "remote_publication %s %s %ld", 
-			user, subject_id, mLen );
-	app_notification( args, msg, mLen );
-
-	/* Find current generation and youngest broadcast key */
-	CurrentPutKey put( mysql, user, "friend" );
-	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
-
-	/* Make the full message. */
-	String command( "remote_inner %lld %s %ld\r\n", seqNum, timeStr.data, mLen );
-	String full = addMessageData( command, msg, mLen );
-
-	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)full.data, full.length );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
-
-	message( "encrypt_remote_broadcast enc: %s\n", encrypt.sym );
-
-	u_char reqid[REQID_SIZE];
-	RAND_bytes( reqid, REQID_SIZE );
-	const char *reqid_str = bin_to_base64( reqid, REQID_SIZE );
-
-	exec_query( mysql,
-		"INSERT INTO remote_broadcast_request "
-		"	( user, identity, reqid, generation, sym ) "
-		"VALUES ( %e, %e, %e, %L, %e )",
-		user, subject_id, reqid_str, put.treeGenHigh, encrypt.sym );
-
-	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
-}
-
-void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id )
-{
-	Encrypt encrypt;
-	int sigRes;
-
-	message( "received friend proof request\n" );
-
-	DbQuery friendClaim( mysql,
-		"SELECT user FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e",
-		user, friend_id );
-
-	if ( friendClaim.rows() == 0 ) {
-		message("friend_proof_request for non user-friend pair\n");
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
-
-	RSA *user_priv = load_key( mysql, user );
-	RSA *id_pub = fetch_public_key( mysql, friend_id );
-
-	/* Find current generation and youngest broadcast key */
-	CurrentPutKey put( mysql, user, "friend" );
-	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
-
-	/* Get the current time. */
-	String timeStr = timeNow();
-	String command( "friend_proof %s\r\n", timeStr.data );
-
-	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)command.data, command.length );
-	if ( sigRes < 0 ) {
-			BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-			return;
-	}
-
-	message( "friend_proof_request enc: %s\n", encrypt.sym );
-	String resultCmd( "encrypted_broadcast %lld %s\r\n", put.treeGenHigh, encrypt.sym );
-
-	encrypt.signEncrypt( (u_char*)resultCmd.data, resultCmd.length+1 );
-
-	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
-	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 }
 
 char *decrypt_result( MYSQL *mysql, const char *from_user, 

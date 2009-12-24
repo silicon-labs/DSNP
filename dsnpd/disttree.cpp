@@ -395,6 +395,41 @@ void putTreeAdd( MYSQL *mysql, const char *user, const char *group, long long fr
 	}
 }
 
+void putTreeDel( MYSQL *mysql, const char *user, long long userId, 
+		const char *group, long long friendGroupId,
+		const char *identity, const char *relid )
+{
+	DbQuery claim( mysql,
+		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		user, identity );
+
+	if ( claim.rows() > 0 ) {
+		MYSQL_ROW row = claim.fetchRow();
+		long long friendClaimId = strtoll( row[0], 0, 10 );
+
+		message("resetting forwared tree for user %s, excluding %s\n", user, identity );
+
+		/* Need the current broadcast key. */
+		CurrentPutKey put( mysql, user, group );
+		long long newTreeGen = put.treeGenHigh + 1;
+
+		DbQuery load( mysql,
+			"INSERT INTO put_tree "
+			"( friend_claim_id, friend_group_id, generation, root, active, state ) "
+			"SELECT friend_claim.id, %L, %L, false, true, 1 "
+			"FROM friend_claim "
+			"JOIN group_member ON friend_claim.id = group_member.friend_claim_id "
+			"WHERE user = %e AND group_member.friend_group_id = %L AND friend_claim.id != %L ",
+			friendGroupId, newTreeGen, user, friendGroupId, friendClaimId );
+
+		DbQuery( mysql,
+			"UPDATE friend_group "
+			"SET tree_gen_low = %L, tree_gen_high = %L "
+			"WHERE user_id = %L AND name = %e",
+			newTreeGen, newTreeGen, userId, group );
+	}
+}
+
 int forwardTreeReset( MYSQL *mysql, const char *user, const char *group )
 {
 	message("resetting forwared tree for user %s\n", user );

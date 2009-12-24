@@ -88,11 +88,30 @@ class FriendsController extends AppController
 
 	function removeFromGroup( $group, $claim )
 	{
-		#echo "removing ";
-		#echo $claim['FriendClaim']['name'];
-		#echo " from ";
-		#echo $group['FriendGroup']['name'];
-		#echo "\n";
+		$identity = $claim['FriendClaim']['identity'];
+		$gname = $group['FriendGroup']['name'];
+
+		$fp = fsockopen( 'localhost', $this->CFG_PORT );
+		if ( !$fp )
+			exit(1);
+
+		$send = 
+			"SPP/0.1 $this->CFG_URI\r\n" . 
+			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"remove_from_group $this->USER_NAME $gname $identity\r\n";
+		fwrite($fp, $send);
+
+		$res = fgets($fp);
+		if ( !ereg("^OK", $res) )
+			die( "FAILURE *** group add failed with <br> $res" );
+
+		fclose( $fp );
+
+		$groupMember = $this->GroupMember->find( 'first', array( 
+				'friend_group_id' => $group['FriendGroup']['id'],
+				'friend_claim_id' => $claim['FriendClaim']['id']
+		));
+		$this->GroupMember->delete( $groupMember['GroupMember']['id'] );
 	}
 
 	function smanage()

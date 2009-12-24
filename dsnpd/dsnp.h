@@ -425,6 +425,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen 
 
 void addGroup( MYSQL *mysql, const char *user, const char *group );
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );
+void removeFromGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );
 
 typedef std::list<std::string> RecipientList;
 

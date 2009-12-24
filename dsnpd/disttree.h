@@ -41,5 +41,8 @@ int forwardTreeInsert( MYSQL *mysql, const char *user, const char *identity, con
 int checkTree( MYSQL *mysql, const char *user, const char *group );
 void putTreeAdd( MYSQL *mysql, const char *user, const char *group, long long friendGroupId,
 		const char *identity, const char *relid );
+void putTreeDel( MYSQL *mysql, const char *user, long long userId, 
+		const char *group, long long friendGroupId,
+		const char *identity, const char *relid );
 
 #endif

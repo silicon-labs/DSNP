@@ -237,7 +237,7 @@ void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pa
 	DbQuery insert( mysql, 
 		"INSERT INTO friend_group "
 		"( user_id, name, key_gen, tree_gen_low, tree_gen_high ) "
-		"VALUES ( %L, 'friend', 1, 1, 1 )",
+		"VALUES ( %L, 'social', 1, 1, 1 )",
 		userId
 	);
 

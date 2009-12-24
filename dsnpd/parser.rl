@@ -253,6 +253,10 @@ bool gblKeySubmitted = false;
 			EOL @check_key @{
 				addToGroup( mysql, user, group, identity );
 			} |
+		'remove_from_group'i ' ' user ' ' group ' ' identity
+			EOL @check_key @{
+				removeFromGroup( mysql, user, group, identity );
+			} |
 			
 
 		#

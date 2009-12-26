@@ -19,13 +19,16 @@ class FriendsController extends AppController
 
 		/* LInk to the group member and get the next level (friend_group). */
 		$this->FriendClaim->bindModel( array(
-			'hasMany' => array( 'GroupMember' ) ) );
+			'hasMany' => array( 'GroupMember' => array( 
+				'foreignKey' => 'friend_claim_id' 
+		) ) ) );
 		$this->FriendClaim->recursive = 2;
 
 		$friendClaims = $this->FriendClaim->find('all', 
 				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
 		return $friendClaims;
 	}
+
 	function findGroups()
 	{
 		/* Get the list of groups so we known how many columns to make. */
@@ -46,6 +49,7 @@ class FriendsController extends AppController
 
 		$friendGroups = $this->findGroups();
 		$this->set( 'friendGroups', $friendGroups );
+
 	}
 
 	function isMember( $groupMembers, $groupId )

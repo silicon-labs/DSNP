@@ -142,7 +142,7 @@ class FreqController extends AppController
 			die( "FAILURE *** Friend accept failed with: <br>" . $res );
 
 		$query = sprintf(
-			"DELETE FROM friend_request ".
+			"DELETE FROM friend_request_ua ".
 			"WHERE for_user = '%s' AND reqid = '%s'",
 			$this->USER_NAME, $reqid );
 

@@ -64,9 +64,9 @@ function parse( $len )
 function findFriendClaimId( $user, $identity )
 {
 	$query = sprintf(
-		"SELECT friend_claim.id FROM friend_claim " .
-		"JOIN user ON user.id = friend_claim.user_id " .
-		"WHERE user.user = '%s' AND friend_claim.identity = '%s'",
+		"SELECT friend_claim_ua.id FROM friend_claim_ua " .
+		"JOIN user_ua ON user_ua.id = friend_claim_ua.user_id " .
+		"WHERE user_ua.user = '%s' AND friend_claim_ua.identity = '%s'",
 		mysql_real_escape_string($user),
 		mysql_real_escape_string($identity)
 	);
@@ -80,7 +80,7 @@ function findFriendClaimId( $user, $identity )
 function findUserId( $user )
 {
 	$query = sprintf(
-		"SELECT id FROM user WHERE user.user = '%s'",
+		"SELECT id FROM user_ua WHERE user_ua.user = '%s'",
 		mysql_real_escape_string($user)
 	);
 
@@ -155,12 +155,12 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 		return;
 
 	$query = sprintf(
-		"SELECT id from user WHERE user = '%s'",
+		"SELECT id FROM user_ua WHERE user = '%s'",
 		mysql_real_escape_string($for_user) );
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 	if ( $row = mysql_fetch_assoc($result) ) {
 		$query = sprintf(
-			"UPDATE friend_claim SET name = '%s' " .
+			"UPDATE friend_claim_ua SET name = '%s' " .
 			"WHERE user_id = %ld AND identity = '%s'",
 			mysql_real_escape_string($msg[1]),
 			mysql_real_escape_string($row['id']), 
@@ -291,7 +291,7 @@ function sendRealName( $user, $toIdentity )
 	global $CFG_COMM_KEY;
 
 	$query = sprintf(
-		"SELECT name FROM user WHERE user = '%s'",
+		"SELECT name FROM user_ua WHERE user = '%s'",
 		mysql_real_escape_string($user) );
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -451,7 +451,7 @@ case "sent_friend_request": {
 	$for_id = $argv[$b+1];
 
 	$query = sprintf(
-		"INSERT INTO sent_friend_request " .
+		"INSERT INTO sent_friend_request_ua " .
 		"	( from_user, for_id ) " .
 		"VALUES ( '%s', '%s' )",
 		mysql_real_escape_string($from_user), 
@@ -471,7 +471,7 @@ case "friend_request": {
 	$returned_relid = $argv[$b+4];
 
 	$query = sprintf(
-		"INSERT INTO friend_request " .
+		"INSERT INTO friend_request_ua " .
 		" ( for_user, from_id, reqid, requested_relid, returned_relid ) " .
 		" VALUES ( '%s', '%s', '%s', '%s', '%s' ) ",
 		$for_user, $from_id, $user_reqid, $requested_relid, $returned_relid);
@@ -487,8 +487,8 @@ case "sent_friend_request_accepted": {
 	$fr_user = user_name_from_id( $identity );
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, identity, name, state )  " .
-		"SELECT id, '%s', '%s', 0 from user where user = '%s' LIMIT 1",
+		"INSERT INTO friend_claim_ua ( user_id, identity, name, state )  " .
+		"SELECT id, '%s', '%s', 0 FROM user_ua WHERE user = '%s' LIMIT 1",
 		mysql_real_escape_string($identity), 
 		mysql_real_escape_string($fr_user), 
 		mysql_real_escape_string($user)
@@ -497,7 +497,7 @@ case "sent_friend_request_accepted": {
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 	$query = sprintf(
-		"DELETE FROM sent_friend_request " .
+		"DELETE FROM sent_friend_request_ua " .
 		"WHERE from_user = '%s' AND for_id = '%s'",
 		mysql_real_escape_string($user), 
 		mysql_real_escape_string($identity)
@@ -515,8 +515,8 @@ case "friend_request_accepted": {
 	$fr_user = user_name_from_id( $identity );
 
 	$query = sprintf(
-		"INSERT INTO friend_claim ( user_id, identity, name, state )  " .
-		"SELECT id, '%s', '%s', 0 from user where user = '%s' LIMIT 1",
+		"INSERT INTO friend_claim_ua ( user_id, identity, name, state )  " .
+		"SELECT id, '%s', '%s', 0 FROM user_ua WHERE user = '%s' LIMIT 1",
 		mysql_real_escape_string($identity),
 		mysql_real_escape_string($fr_user),
 		mysql_real_escape_string($user)

@@ -31,7 +31,7 @@ $badMatch = array(
 );
 
 
-$query = "SELECT id, identity FROM friend_claim WHERE user_id = 4;";
+$query = "SELECT id, identity FROM friend_claim_ua WHERE user_id = 4;";
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 while ( $row = mysql_fetch_assoc($result) )
 	$people[$row['identity']] =  $row['id'];

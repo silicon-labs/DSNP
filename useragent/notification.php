@@ -345,6 +345,14 @@ function friendProof( $user, $subject, $author, $seq_num, $date, $time )
 	mysql_query($query);
 }
 
+function groupMemberRevocation( $user, $friendId, $group, $generation, $revokedId )
+{
+	echo "group member revocation: $user $friendId $group $generation $revokedId\n";
+}
+
+function groupMemberRevocation( $user, $subject, $author, $seq_num, $date, $time )
+{
+
 switch ( $notification_type ) {
 case "user_message": {
 	# Collect the args.
@@ -423,6 +431,19 @@ case "friend_proof": {
 	friendProof( $user, $subject, $author, $seq_num, $date, $time );
 	break;
 }
+
+case "group_member_revocation": {
+	# Collect the args.
+	$user = $argv[$b+0];
+	$friendId = $argv[$b+1];
+	$group = $argv[$b+2];
+	$generation = $argv[$b+3];
+	$revokedId = $argv[$b+4];
+
+	groupMemberRevocation( $user, $friendId, $group, $generation, $revokedId );
+	break;
+}
+
 
 case "sent_friend_request": {
 	# Collect the args.

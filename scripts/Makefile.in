@@ -22,3 +22,6 @@ sedsubst = \
 init.sh: init.sh.in
 	sed $(sedsubst) init.sh.in > init.sh
 	chmod +x init.sh
+
+
+install:

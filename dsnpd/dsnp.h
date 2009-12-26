@@ -338,11 +338,12 @@ struct BroadcastParser
 	{
 		Unknown = 1,
 		Direct,
-		Remote
+		Remote,
+		GroupMemberRevocation
 	};
 
 	Type type;
-	String date, hash, group;
+	String date, hash, group, identity;
 	long long generation, seq_num;
 	long length;
 	const char *embeddedMsg;
@@ -421,7 +422,7 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 		const char *get_relid );
 
 AllocString make_id_hash( const char *salt, const char *identity );
-long queueBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
+long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen );
 
 void addGroup( MYSQL *mysql, const char *user, const char *group );
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );

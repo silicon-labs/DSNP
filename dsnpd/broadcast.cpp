@@ -36,6 +36,15 @@ void direct_broadcast( MYSQL *mysql, const char *relid, const char *user,
 	appNotification( args, msg, mLen );
 }
 
+void groupMemberRevocation( MYSQL *mysql, const char *user, 
+		const char *friendId, const char *group, long long generation,
+		const char *revokedId )
+{
+	String args( "group_member_revocation %s %s %s %lld %s",
+			user, friendId, group, generation, revokedId );
+	appNotification( args, 0, 0 );
+}
+
 void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date, const char *msg, long mLen )
 {
@@ -196,6 +205,9 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 				remoteBroadcast( mysql, user, friendId, bp.hash, 
 						bp.generation, bp.embeddedMsg, bp.length );
 				break;
+			case BroadcastParser::GroupMemberRevocation:
+				groupMemberRevocation( mysql, user, friendId,
+						bp.group, bp.generation, bp.identity );
 			default:
 				break;
 		}

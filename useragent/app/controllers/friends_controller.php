@@ -83,7 +83,6 @@ class FriendsController extends AppController
 				'friend_group_id' => $group['FriendGroup']['id'],
 				'friend_claim_id' => $claim['FriendClaim']['id']
 		));
-
 	}
 
 	function removeFromGroup( $group, $claim )

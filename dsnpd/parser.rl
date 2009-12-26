@@ -598,6 +598,10 @@ int MessageParser::parse( const char *msg, long len )
 		'remote_broadcast'i ' ' hash ' ' group ' ' generation ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
 				type = Remote;
+			} |
+		'group_member_revocation'i ' ' group ' ' generation ' ' identity
+			EOL @{
+				type = GroupMemberRevocation;
 			};
 }%%
 

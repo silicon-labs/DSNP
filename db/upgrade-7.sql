@@ -1,4 +1,4 @@
-CREATE TABLE user
+CREATE TABLE user_ua
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user VARCHAR(20), 
@@ -9,7 +9,7 @@ CREATE TABLE user
 	PRIMARY KEY(id)
 );
 
-CREATE TABLE friend_request
+CREATE TABLE friend_request_ua
 (
 	for_user VARCHAR(20), 
 	from_id TEXT,
@@ -18,13 +18,13 @@ CREATE TABLE friend_request
 	returned_relid VARCHAR(48)
 );
 
-CREATE TABLE sent_friend_request
+CREATE TABLE sent_friend_request_ua
 (
 	from_user VARCHAR(20),
 	for_id TEXT
 );
 
-CREATE TABLE friend_claim
+CREATE TABLE friend_claim_ua
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	user_id BIGINT,

@@ -1,6 +1,6 @@
 
-ALTER TABLE user ADD COLUMN type INT;
-UPDATE user SET type = 0;
+ALTER TABLE user_ua ADD COLUMN type INT;
+UPDATE user_ua SET type = 0;
 
 CREATE TABLE wish
 (

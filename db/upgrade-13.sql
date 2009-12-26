@@ -1,6 +1,6 @@
-UPDATE user SET name = user WHERE name IS NULL;
+UPDATE user_ua SET name = user WHERE name IS NULL;
 
-CREATE TABLE friend_group
+CREATE TABLE friend_group_ua
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
@@ -12,14 +12,14 @@ CREATE TABLE friend_group
 	UNIQUE ( user_id, name )
 );
 
-INSERT INTO friend_group
+INSERT INTO friend_group_ua
 ( 
 	user_id, 
 	name
 )
-	SELECT id, 'friend' FROM user;
+	SELECT id, 'friend' FROM user_ua;
 
-CREATE TABLE group_member
+CREATE TABLE group_member_ua
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
@@ -32,13 +32,13 @@ CREATE TABLE group_member
 );
 
 
-INSERT INTO group_member 
+INSERT INTO group_member_ua 
 (
 	friend_group_id,
 	friend_claim_id
 )
-	SELECT friend_group.id, friend_claim.id FROM user 
-	JOIN friend_group ON user.id = friend_group.user_id
-	JOIN friend_claim ON user.id = friend_claim.user_id ORDER BY user.user;
+	SELECT friend_group_ua.id, friend_claim_ua.id FROM user_ua 
+	JOIN friend_group_ua ON user_ua.id = friend_group_ua.user_id
+	JOIN friend_claim_ua ON user_ua.id = friend_claim_ua.user_id ORDER BY user_ua.user;
 
-UPDATE friend_group SET name = 'social' WHERE name = 'friend';
+UPDATE friend_group_ua SET name = 'social' WHERE name = 'friend';

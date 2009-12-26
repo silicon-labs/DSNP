@@ -1,2 +1,2 @@
-ALTER TABLE friend_claim ADD COLUMN state INT;
-UPDATE friend_claim SET state = 0;
+ALTER TABLE friend_claim_ua ADD COLUMN state INT;
+UPDATE friend_claim_ua SET state = 0;

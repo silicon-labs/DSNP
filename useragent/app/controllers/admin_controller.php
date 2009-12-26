@@ -43,23 +43,19 @@ class AdminController extends AppController
 		if ( !ereg("^OK", $res) )
 			die( "FAILURE *** New user creation failed with: <br> $res" );
    	
+		# Find the new user and update it with the attributes controlled by the UI.
 		$this->loadModel('User');
-		$this->User->save( array( 
-				'user' => $user,
-				'name' => $user,
-				'identity' => $this->CFG_URI . $user . '/',
-				'type' => 0
-		));
-		$userId = $this->User->id;
+		$newUser = $this->User->find('first', array( 'conditions' => 
+				array ( 'user' => $user ) ) );
 
+		$newUser['User']['name'] = $user;
+		$newUser['User']['identity'] = $this->CFG_URI . $user . '/';
+		$newUser['User']['type'] = 0;
+		$this->User->save( $newUser, true, array( 'name', 'identity', 'type' ) );
+
+		# Create the photo directory.
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";
 		system( $photoDirCmd );
-
-		$this->loadModel('FriendGroup');
-		$this->FriendGroup->save( array( 
-				'user_id' => $userId,
-				'name' => 'social'
-		));
 
 		$this->redirect( "/" );
 	}

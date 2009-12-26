@@ -66,6 +66,9 @@ class FriendsController extends AppController
 		$identity = $claim['FriendClaim']['identity'];
 		$gname = $group['FriendGroup']['name'];
 
+		#echo "$identity to $gname\n";
+		#return;
+
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
 			exit(1);
@@ -93,6 +96,15 @@ class FriendsController extends AppController
 	{
 		$identity = $claim['FriendClaim']['identity'];
 		$gname = $group['FriendGroup']['name'];
+		#
+		#echo "$identity from $gname\n";
+		#
+		#$gid = $group['FriendGroup']['id'];
+		#$cid = $claim['FriendClaim']['id'];
+		#
+		#$gmid = $groupMember['GroupMember']['id'];
+		#echo "$gid $cid $gmid\n";
+		#return;
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
@@ -111,9 +123,11 @@ class FriendsController extends AppController
 		fclose( $fp );
 
 		$groupMember = $this->GroupMember->find( 'first', array( 
-				'friend_group_id' => $group['FriendGroup']['id'],
-				'friend_claim_id' => $claim['FriendClaim']['id']
-		));
+				'conditions' => array (
+					'friend_group_id' => $group['FriendGroup']['id'],
+					'friend_claim_id' => $claim['FriendClaim']['id']
+				)
+			));
 		$this->GroupMember->delete( $groupMember['GroupMember']['id'] );
 	}
 

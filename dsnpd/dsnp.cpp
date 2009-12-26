@@ -166,7 +166,7 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 		user, group );
 	
 	if ( query.rows() == 0 )
-		fatal( "failed to get current put broadcast key\n" );
+		fatal( "failed to get current put broadcast key for user %s and group %s\n", user, group );
 	
 	MYSQL_ROW row = query.fetchRow();
 	keyGen = strtoll( row[0], 0, 10 );

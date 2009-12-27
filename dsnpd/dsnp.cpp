@@ -267,7 +267,7 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-void public_key( MYSQL *mysql, const char *user )
+void publicKey( MYSQL *mysql, const char *user )
 {
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -491,7 +491,7 @@ bool friend_request_exists( MYSQL *mysql, const char *user, const char *identity
 	return false;
 }
 
-void relid_request( MYSQL *mysql, const char *user, const char *identity )
+void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -566,7 +566,7 @@ void relid_request( MYSQL *mysql, const char *user, const char *identity )
 	delete[] reqid_str;
 }
 
-void fetch_requested_relid( MYSQL *mysql, const char *reqid )
+void fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 {
 	long query_res;
 	MYSQL_RES *select_res;
@@ -617,7 +617,7 @@ AllocString make_id_hash( const char *salt, const char *identity )
 	return bin_to_base64( friend_hash, SHA_DIGEST_LENGTH );
 }
 
-void relid_response( MYSQL *mysql, const char *user, 
+void relidResponse( MYSQL *mysql, const char *user, 
 		const char *fr_reqid_str, const char *identity )
 {
 	/*  a) verifies browser is logged in as owner
@@ -717,7 +717,7 @@ void relid_response( MYSQL *mysql, const char *user,
 	delete[] response_reqid_str;
 }
 
-void fetch_response_relid( MYSQL *mysql, const char *reqid )
+void fetchResponseRelid( MYSQL *mysql, const char *reqid )
 {
 	long query_res;
 	MYSQL_RES *select_res;
@@ -774,7 +774,7 @@ query_fail:
 	return result;
 }
 
-void friend_final( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity )
+void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 
 	 * b) decrypts and verifies message, must contain correct $FR-RELID

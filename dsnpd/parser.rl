@@ -194,7 +194,7 @@ bool gblKeySubmitted = false;
 		# Public key sharing.
 		'public_key'i ' ' user
 			EOL @check_ssl @{
-				public_key( mysql, user );
+				publicKey( mysql, user );
 			} |
 
 		# 
@@ -202,27 +202,27 @@ bool gblKeySubmitted = false;
 		#
 		'relid_request'i ' ' user ' ' identity
 			EOL @check_key @{
-				relid_request( mysql, user, identity );
+				relidRequest( mysql, user, identity );
 			} |
 
 		'relid_response'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
-				relid_response( mysql, user, reqid, identity );
+				relidResponse( mysql, user, reqid, identity );
 			} |
 
 		'friend_final'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
-				friend_final( mysql, user, reqid, identity );
+				friendFinal( mysql, user, reqid, identity );
 			} |
 
 		'fetch_requested_relid'i ' ' reqid
 			EOL @check_ssl @{
-				fetch_requested_relid( mysql, reqid );
+				fetchRequestedRelid( mysql, reqid );
 			} |
 
 		'fetch_response_relid'i ' ' reqid
 			EOL @check_ssl @{
-				fetch_response_relid( mysql, reqid );
+				fetchResponseRelid( mysql, reqid );
 			} |
 
 		#
@@ -235,7 +235,7 @@ bool gblKeySubmitted = false;
 
 		'prefriend_message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
-				prefriend_message( mysql, relid, message_buffer.data );
+				prefriendMessage( mysql, relid, message_buffer.data );
 			} |
 
 		#

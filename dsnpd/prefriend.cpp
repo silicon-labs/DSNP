@@ -114,7 +114,7 @@ long registered( MYSQL *mysql, const char *forUser, const char *from_id,
 	return 0;
 }
 
-void prefriend_message( MYSQL *mysql, const char *relid, const char *msg )
+void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	DbQuery sent( mysql, 
 		"SELECT from_user, for_id FROM sent_friend_request "

@@ -86,12 +86,12 @@ extern Global gbl;
 
 /* Commands. */
 void newUser( MYSQL *mysql, const char *user, const char *pass );
-void public_key( MYSQL *mysql, const char *identity );
-void relid_request( MYSQL *mysql, const char *user, const char *identity );
-void fetch_requested_relid( MYSQL *mysql, const char *reqid );
-void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity );
-void fetch_response_relid( MYSQL *mysql, const char *reqid );
-void friend_final( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
+void publicKey( MYSQL *mysql, const char *identity );
+void relidRequest( MYSQL *mysql, const char *user, const char *identity );
+void fetchRequestedRelid( MYSQL *mysql, const char *reqid );
+void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity );
+void fetchResponseRelid( MYSQL *mysql, const char *reqid );
+void friendFinal( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
 void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid );
 void ftoken_request( MYSQL *mysql, const char *user, const char *hash );
 void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
@@ -143,7 +143,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		long long seqNum, const char *group, const char *msg, long mLen );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
-void prefriend_message( MYSQL *mysql, const char *relid, const char *message );
+void prefriendMessage( MYSQL *mysql, const char *relid, const char *message );
 long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
 

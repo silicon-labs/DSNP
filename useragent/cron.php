@@ -84,12 +84,8 @@ function sendRealName( $user )
 	}
 }
 
-#$query = sprintf(
-#	"SELECT user.user AS user, user.name AS name, " .
-#	"	friend_claim.id AS id, friend_claim.identity AS identity " .
-#	"FROM friend_claim " .
-#	"JOIN user ON user.id = friend_claim.user_id " .
-#	"WHERE state = 0" );
+#$query = 
+#	"SELECT user.user AS user, user.name AS name FROM user";
 #
 #$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 #$namesSet = array();
@@ -97,15 +93,7 @@ function sendRealName( $user )
 #while ( $row = mysql_fetch_assoc($result) ) {
 #	$name = $row['name'];
 #	$user = $row['user'];
-#	$id = $row['id'];
-#	$identity = $row['identity'];
 #
 #	if ( isset( $name ) )
-#		$namesSet[$user] = $name;
-#
-#	echo "obtain_friend_proof $user $identity\n";
-#	obtainFriendProof( $user, $identity );
-#
-#	$query = sprintf( "UPDATE friend_claim SET state = 1 WHERE id = %ld", $id );
-#	mysql_query($query) or die('Query failed: ' . mysql_error());
+#		sendRealName( $user );
 #}

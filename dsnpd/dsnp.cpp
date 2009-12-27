@@ -151,7 +151,8 @@ AllocString pass_hash( const u_char *pass_salt, const char *pass )
 CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group )
 {
 	DbQuery query( mysql, 
-		"SELECT friend_group.key_gen, "
+		"SELECT friend_group.id, "
+		"	friend_group.key_gen, "
 		"	friend_group.tree_gen_low, "
 		"	friend_group.tree_gen_high, "
 		"	put_broadcast_key.broadcast_key "
@@ -169,10 +170,11 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 		fatal( "failed to get current put broadcast key for user %s and group %s\n", user, group );
 	
 	MYSQL_ROW row = query.fetchRow();
-	keyGen = strtoll( row[0], 0, 10 );
-	treeGenLow = strtoll( row[1], 0, 10 );
-	treeGenHigh = strtoll( row[2], 0, 10 );
-	broadcastKey.set( row[3] );
+	friendGroupId = strtoll( row[0], 0, 10 );
+	keyGen = strtoll( row[1], 0, 10 );
+	treeGenLow = strtoll( row[2], 0, 10 );
+	treeGenHigh = strtoll( row[3], 0, 10 );
+	broadcastKey.set( row[4] );
 }
 
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation )
@@ -1142,8 +1144,20 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
 			broadcastKey, friendProof, friendClaimId, group, generation );
 
-	/* Broadcast the friend proof that we just received. */
-	sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof );
+	DbQuery haveGroup( mysql, 
+		"SELECT friend_group.id "
+		"FROM user "
+		"JOIN friend_group "
+		"ON user.id = friend_group.user_id "
+		"WHERE user.user = %e AND "
+		"	friend_group.name = %e ",
+		user, group );
+	
+	/* If we have anyone in this group, then broadcast the friend proof. */
+	if ( haveGroup.rows() > 0 ) {
+		/* Broadcast the friend proof that we just received. */
+		sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof );
+	}
 	BIO_printf( bioOut, "OK\n" );
 }
 

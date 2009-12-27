@@ -159,9 +159,10 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 		"FROM friend_claim "
 		"JOIN get_broadcast_key "
 		"ON friend_claim.id = get_broadcast_key.friend_claim_id "
-		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L "
+		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L AND "
+		"	get_broadcast_key.group_name = %e "
 		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
-		relid, keyGen );
+		relid, keyGen, group );
 
 	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR bad recipient\r\n");
@@ -180,7 +181,8 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted );
 
 	if ( decryptRes < 0 ) {
-		error("unable to decrypt broadcast message relid %s key gen %lld\n", relid, keyGen );
+		error("unable to decrypt broadcast message for %s from "
+			"%s group %s key gen %lld\n", user, friendId, group, keyGen );
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
@@ -340,10 +342,11 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const ch
 		"FROM friend_claim "
 		"JOIN put_tree "
 		"ON friend_claim.id = put_tree.friend_claim_id "
-		"WHERE friend_claim.user = %e AND put_tree.state = 1 AND"
+		"WHERE friend_claim.user = %e AND put_tree.friend_group_id = %L AND "
+		"	put_tree.state = 1 AND"
 		"	%L <= put_tree.generation AND put_tree.generation <= %L "
 		"ORDER BY friend_claim.friend_id",
-		user, put.treeGenLow, put.treeGenHigh );
+		user, put.friendGroupId, put.treeGenLow, put.treeGenHigh );
 	
 	storeBroadcastRecipients( mysql, user, messageId, outOfTree, false );
 	
@@ -358,10 +361,11 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const ch
 		"FROM friend_claim "
 		"JOIN put_tree "
 		"ON friend_claim.id = put_tree.friend_claim_id "
-		"WHERE friend_claim.user = %e AND put_tree.root = true AND"
+		"WHERE friend_claim.user = %e AND put_tree.friend_group_id = %L AND "
+		"	put_tree.root = true AND "
 		"	%L <= put_tree.generation AND put_tree.generation <= %L "
 		"ORDER BY friend_claim.friend_id",
-		user, put.treeGenLow, put.treeGenHigh );
+		user, put.friendGroupId, put.treeGenLow, put.treeGenHigh );
 
 	storeBroadcastRecipients( mysql, user, messageId, rootFriend, true );
 

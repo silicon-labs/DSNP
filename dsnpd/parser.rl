@@ -230,7 +230,7 @@ bool gblKeySubmitted = false;
 		#
 		'accept_friend'i ' ' user ' ' reqid
 			EOL @check_key @{
-				accept_friend( mysql, user, reqid );
+				acceptFriend( mysql, user, reqid );
 			} |
 
 		'prefriend_message'i ' ' relid ' ' length 

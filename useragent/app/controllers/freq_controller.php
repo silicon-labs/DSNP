@@ -141,13 +141,6 @@ class FreqController extends AppController
 		if ( !ereg("^OK", $res) )
 			die( "FAILURE *** Friend accept failed with: <br>" . $res );
 
-		$query = sprintf(
-			"DELETE FROM friend_request_ua ".
-			"WHERE for_user = '%s' AND reqid = '%s'",
-			$this->USER_NAME, $reqid );
-
-		$this->User->query( $query );
-
 		header("Location: $this->USER_URI" );
 	}
 }

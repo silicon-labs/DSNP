@@ -40,20 +40,19 @@ if test `cat $OUTPUT` == 0; then
 		"CREATE USER '${site_name}_dsnp'@'localhost' IDENTIFIED BY '$DB_PASS';"
 fi
 
-
-# Check for the database.
-mysql_cmd mysql -e \
-	"SELECT count(db) FROM db WHERE db = '${site_name}_dsnp';" > $OUTPUT
-
 # Create the database if necessary.
-if test `cat $OUTPUT` == 0; then
+if ! mysql_cmd ${site_name}_dsnp -e "" 2>/dev/null; then
 	echo "+ CREATING DATABASE ${site_name}_dsnp"
 	mysql_cmd mysql -e \
 		"CREATE DATABASE ${site_name}_dsnp;"
 
 	mysql_cmd mysql -e \
 		"GRANT ALL ON ${site_name}_dsnp.* TO '${site_name}_dsnp'@'localhost';"
+
+	mysql_cmd mysql -e \
+		"GRANT ALL ON ${site_name}_ua.* TO '${site_name}_dsnp'@'localhost';"
 fi
+
 
 # Check for the init table. If there assume we have run init.sh
 if ! mysql_cmd ${site_name}_dsnp -e "show tables;" | grep -q user; then

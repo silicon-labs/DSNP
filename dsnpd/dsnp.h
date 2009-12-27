@@ -92,7 +92,7 @@ void fetch_requested_relid( MYSQL *mysql, const char *reqid );
 void relid_response( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity );
 void fetch_response_relid( MYSQL *mysql, const char *reqid );
 void friend_final( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
-void accept_friend( MYSQL *mysql, const char *user, const char *user_reqid );
+void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid );
 void ftoken_request( MYSQL *mysql, const char *user, const char *hash );
 void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str );
@@ -121,6 +121,7 @@ struct CurrentPutKey
 {
 	CurrentPutKey( MYSQL *mysql, const char *user, const char *group );
 
+	long long friendGroupId;
 	long long keyGen;
 	String broadcastKey;
 	long long treeGenLow;

@@ -1,7 +1,7 @@
 <?php
 	class FriendClaim extends AppModel
 	{
-		var $useTable = 'friend_claim_ua';
+		var $useTable = 'friend_claim';
 		var $name = 'FriendClaim';
 	}
 ?>

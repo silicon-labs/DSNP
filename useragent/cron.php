@@ -50,7 +50,7 @@ function sendRealName( $user )
 	global $CFG_COMM_KEY;
 
 	$query = sprintf(
-		"SELECT name FROM user_ua WHERE user = '%s'",
+		"SELECT name FROM user WHERE user = '%s'",
 		mysql_real_escape_string($user) );
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -85,10 +85,10 @@ function sendRealName( $user )
 }
 
 #$query = sprintf(
-#	"SELECT user_ua.user AS user, user_ua.name AS name, " .
-#	"	friend_claim_ua.id AS id, friend_claim_ua.identity AS identity " .
-#	"FROM friend_claim_ua " .
-#	"JOIN user_ua ON user_ua.id = friend_claim_ua.user_id " .
+#	"SELECT user.user AS user, user.name AS name, " .
+#	"	friend_claim.id AS id, friend_claim.identity AS identity " .
+#	"FROM friend_claim " .
+#	"JOIN user ON user.id = friend_claim.user_id " .
 #	"WHERE state = 0" );
 #
 #$result = mysql_query($query) or die('Query failed: ' . mysql_error());
@@ -106,6 +106,6 @@ function sendRealName( $user )
 #	echo "obtain_friend_proof $user $identity\n";
 #	obtainFriendProof( $user, $identity );
 #
-#	$query = sprintf( "UPDATE friend_claim_ua SET state = 1 WHERE id = %ld", $id );
+#	$query = sprintf( "UPDATE friend_claim SET state = 1 WHERE id = %ld", $id );
 #	mysql_query($query) or die('Query failed: ' . mysql_error());
 #}

@@ -84,12 +84,6 @@ class FriendsController extends AppController
 			die( "FAILURE *** group add failed with <br> $res" );
 
 		fclose( $fp );
-
-		$this->GroupMember->create();
-		$this->GroupMember->save( array( 
-				'friend_group_id' => $group['FriendGroup']['id'],
-				'friend_claim_id' => $claim['FriendClaim']['id']
-		));
 	}
 
 	function removeFromGroup( $group, $claim )
@@ -121,14 +115,6 @@ class FriendsController extends AppController
 			die( "FAILURE *** group add failed with <br> $res" );
 
 		fclose( $fp );
-
-		$groupMember = $this->GroupMember->find( 'first', array( 
-				'conditions' => array (
-					'friend_group_id' => $group['FriendGroup']['id'],
-					'friend_claim_id' => $claim['FriendClaim']['id']
-				)
-			));
-		$this->GroupMember->delete( $groupMember['GroupMember']['id'] );
 	}
 
 	function smanage()
@@ -192,12 +178,6 @@ class FriendsController extends AppController
 		$res = fgets($fp);
 		if ( !ereg("^OK", $res) )
 			die( "FAILURE *** group creation failed with <br> $res" );
-   	
-		$this->loadModel('FriendGroup');
-		$this->FriendGroup->save( array( 
-				'user_id' => $this->USER_ID,
-				'name' => $name
-		));
 
 		$this->redirect( "/$this->USER_NAME/friends/manage/" );
 	}

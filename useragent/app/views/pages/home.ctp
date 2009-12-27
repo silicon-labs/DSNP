@@ -12,7 +12,7 @@ mysql_select_db($CFG_DB_DATABASE) or die
 	('Could not select database ' . $CFG_DB_DATABASE);
 
 # Look for the user/pass combination.
-$query = "SELECT user FROM user_ua";
+$query = "SELECT user FROM user";
 $result = mysql_query($query) or die('Query failed: ' . mysql_error());
 
 ?>

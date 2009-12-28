@@ -443,4 +443,7 @@ void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generatio
 long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *authorHash, const char *group, long long generation,
 		long long seqNum, const char *encMessage );
+
+void sendAllProofs( MYSQL *mysql, const char *user, const char *group, 
+		const char *friendId );
 #endif

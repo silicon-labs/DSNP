@@ -45,15 +45,17 @@ void groupMemberRevocation( MYSQL *mysql, const char *user,
 	appNotification( args, 0, 0 );
 }
 
-void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
-		long long seq_num, const char *date, const char *msg, long mLen )
+void remote_inner( MYSQL *mysql, const char *user, const char *subject_id,
+		const char *author_id, long long seq_num, const char *date,
+		const char *msg, long mLen )
 {
 	String args( "user_message %s %s %s %lld %s %ld", 
 			user, subject_id, author_id, seq_num, date, mLen );
 	appNotification( args, msg, mLen );
 }
 
-void friendProofBroadcast( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+void friendProofBroadcast( MYSQL *mysql, const char *user, 
+		const char *subject_id, const char *author_id,
 		long long seq_num, const char *date )
 {
 	message("%s received friend proof subject_id %s author_id %s date %s\n",
@@ -112,7 +114,8 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friend_id,
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
-				friendProofBroadcast( mysql, user, friend_id, author_id, rbp.seq_num, rbp.date );
+				friendProofBroadcast( mysql, user, friend_id, author_id,
+						rbp.seq_num, rbp.date );
 				break;
 			default:
 				error("remote broadcast parse failed\n");
@@ -264,12 +267,14 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-
-void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group, long long keyGen,
-		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted )
+void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group,
+		long long keyGen, bool forward, long long treeGenLow, 
+		long long treeGenHigh, const char *encrypted )
 {
-	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ )
-		receiveBroadcast( mysql, r->c_str(), group, keyGen, forward, treeGenLow, treeGenHigh, encrypted );
+	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ ) {
+		receiveBroadcast( mysql, r->c_str(), group, keyGen, forward, treeGenLow, 
+				treeGenHigh, encrypted );
+	}
 }
 
 long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long messageId, 
@@ -315,7 +320,8 @@ long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long message
 	return count;
 }
 
-long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen )
+long queueBroadcast( MYSQL *mysql, const char *user, const char *group,
+		const char *msg, long mLen )
 {
 	/* Get the latest put session key. */
 	CurrentPutKey put( mysql, user, group );
@@ -373,7 +379,8 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const ch
 }
 
 
-long submitBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen )
+long submitBroadcast( MYSQL *mysql, const char *user, const char *group,
+		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 	String authorId( "%s%s/", c->CFG_URI, user );

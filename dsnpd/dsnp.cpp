@@ -1132,7 +1132,7 @@ void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, 
 }
 
 void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
-		const char *identity, const char *friendHash, const char *group,
+		const char *friendId, const char *friendHash, const char *group,
 		long long generation, const char *broadcastKey, const char *friendProof )
 {
 	addBroadcastKey( mysql, friendClaimId, group, generation );
@@ -1158,6 +1158,9 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		/* Broadcast the friend proof that we just received. */
 		sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof );
 	}
+
+	//sendAllProofs( mysql, user, group, friendId );
+
 	BIO_printf( bioOut, "OK\n" );
 }
 

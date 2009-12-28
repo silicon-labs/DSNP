@@ -35,6 +35,27 @@ void addGroup( MYSQL *mysql, const char *user, const char *group )
 	BIO_printf( bioOut, "OK\n" );
 }
 
+
+void sendAllProofs( MYSQL *mysql, const char *user, const char *group, const char *friendId )
+{
+	/* Send out all proofs in the group. */
+	DbQuery allProofs( mysql,
+		"SELECT friend_hash, generation, friend_proof "
+		"FROM friend_claim "
+		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
+		"WHERE user = %e AND group_name = %e",
+		user, group );
+	
+	for ( int r = 0; r < allProofs.rows(); r++ ) {
+		MYSQL_ROW row = allProofs.fetchRow();
+		if ( row[1] != 0 && row[2] != 0 ) {
+			String msg( "friend_proof %s %s %s %s\r\n", row[0], group, row[1], row[2] );
+			message("trying to send %s\n", msg.data );
+			queueMessage( mysql, user, friendId, msg.data, msg.length );
+		}
+	}
+}
+
 /*
  * To make group del and friend del instantaneous we need to destroy the tree.
  */
@@ -56,7 +77,8 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 	RSA *id_pub = fetch_public_key( mysql, friendId );
 
 	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data, (u_char*)command.data, command.length );
+	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data,
+			(u_char*)command.data, command.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
@@ -70,22 +92,7 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 
 	putTreeAdd( mysql, user, group, friendGroupId, friendId, putRelid );
 
-	/* Send out all proofs in the group. */
-	DbQuery allProofs( mysql,
-		"SELECT friend_hash, generation, friend_proof "
-		"FROM friend_claim "
-		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
-		"WHERE user = %e AND group_name = %e",
-		user, group );
-	
-	for ( int r = 0; r < allProofs.rows(); r++ ) {
-		MYSQL_ROW row = allProofs.fetchRow();
-		if ( row[1] != 0 && row[2] != 0 ) {
-			String msg( "friend_proof %s %s %s %s\r\n", row[0], group, row[1], row[2] );
-			message("trying to send %s\n", msg.data );
-			queueMessage( mysql, user, friendId, msg.data, msg.length );
-		}
-	}
+	sendAllProofs( mysql, user, group, friendId );
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )
@@ -116,7 +123,8 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
-		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", user, identity );
+		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", 
+		user, identity );
 
 	if ( findClaim.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR not a friend\r\n" );

@@ -40,6 +40,8 @@ bool gblKeySubmitted = false;
 	hash = base64             >{mark=p;} %{hash.set(mark, p);};
 	key = base64              >{mark=p;} %{key.set(mark, p);};
 	sym = base64              >{mark=p;} %{sym.set(mark, p);};
+	sym1 = base64             >{mark=p;} %{sym1.set(mark, p);};
+	sym2 = base64             >{mark=p;} %{sym2.set(mark, p);};
 	relid = base64            >{mark=p;} %{relid.set(mark, p);};
 	token = base64            >{mark=p;} %{token.set(mark, p);};
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
@@ -55,9 +57,12 @@ bool gblKeySubmitted = false;
 
 	path_part = (graph-'/')+;
 
-	identity = 
-		( 'https://' path_part '/' ( path_part '/' )* )
-		>{mark=p;} %{identity.set(mark, p);};
+	identity_pat = 
+		( 'https://' path_part '/' ( path_part '/' )* );
+
+	identity = identity_pat >{mark=p;} %{identity.set(mark, p);};
+	identity1 = identity_pat >{mark=p;} %{identity1.set(mark, p);};
+	identity2 = identity_pat >{mark=p;} %{identity2.set(mark, p);};
 
 	generation = [0-9]+       
 		>{mark=p;} 
@@ -349,6 +354,11 @@ bool gblKeySubmitted = false;
 		# Testing
 		#
 
+		'send_all'i ' ' user ' ' group ' ' identity EOL @check_key @{
+				sendAllProofs( mysql, user, group, identity );
+				sendAllProofs2( mysql, user, group, identity );
+				BIO_printf( bioOut, "OK\r\n" );
+			} |
 		'forward_tree_reset'i ' ' user ' ' group EOL @check_key @{
 				forwardTreeReset( mysql, user, group );
 				BIO_printf( bioOut, "OK\r\n" );
@@ -527,7 +537,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' group ' ' generation ' ' key ' ' sym
+		'broadcast_key'i ' ' group ' ' generation ' ' key ' ' sym1 ' ' sym2
 			EOL @{
 				type = BroadcastKey;
 			} |
@@ -646,7 +656,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 			EOL @skip_message EOL @{
 				type = RemoteInner;
 			} |
-		'friend_proof'i ' ' date 
+		'friend_proof'i ' ' identity1 ' ' identity2 ' ' date 
 			EOL @{
 				type = FriendProof;
 			};

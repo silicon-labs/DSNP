@@ -101,7 +101,7 @@ void setConfigByUri( const char *uri );
 void setConfigByName( const char *name );
 void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		const char *identity, const char *friendHash, const char *group,
-		long long generation, const char *broadcastKey, const char *friendProof );
+		long long generation, const char *broadcastKey, const char *friendProof1, const char *friendProof2 );
 
 void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user, const char *identity,
 		int child_num, long long generation, const char *relid, const char *to_identity );
@@ -329,6 +329,7 @@ struct RemoteBroadcastParser
 	long length;
 	String date;
 	const char *embeddedMsg;
+	String identity1, identity2;
 
 	int parse( const char *msg, long mLen );
 };
@@ -370,7 +371,7 @@ struct MessageParser
 
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
-	String date, group;
+	String date, group, sym1, sym2;
 	long length, number;
 	long long seq_num, generation;
 	const char *embeddedMsg;
@@ -445,5 +446,7 @@ long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 		long long seqNum, const char *encMessage );
 
 void sendAllProofs( MYSQL *mysql, const char *user, const char *group, 
+		const char *friendId );
+void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, 
 		const char *friendId );
 #endif

@@ -38,6 +38,8 @@ void addGroup( MYSQL *mysql, const char *user, const char *group )
 
 void sendAllProofs( MYSQL *mysql, const char *user, const char *group, const char *friendId )
 {
+	message("send all proofs for %s %s %s\n", user, group, friendId );
+
 	/* Send out all proofs in the group. */
 	DbQuery allProofs( mysql,
 		"SELECT friend_hash, generation, friend_proof "
@@ -46,12 +48,55 @@ void sendAllProofs( MYSQL *mysql, const char *user, const char *group, const cha
 		"WHERE user = %e AND group_name = %e",
 		user, group );
 	
+	/* FIXME: need to deal with specific generation. */
 	for ( int r = 0; r < allProofs.rows(); r++ ) {
 		MYSQL_ROW row = allProofs.fetchRow();
+
 		if ( row[1] != 0 && row[2] != 0 ) {
-			String msg( "friend_proof %s %s %s %s\r\n", row[0], group, row[1], row[2] );
+			const char *friendHash = row[0];
+			long long generation = strtoll( row[1], 0, 10 );
+			const char *friendProof = row[2];
+
+			String msg( "friend_proof %s %s %lld %s\r\n", friendHash, group, generation, friendProof );
 			message("trying to send %s\n", msg.data );
 			queueMessage( mysql, user, friendId, msg.data, msg.length );
+		}
+	}
+}
+
+void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, const char *friendId )
+{
+	message("send all proofs (2) for %s %s %s\n", user, group, friendId );
+
+	DbQuery findGroup( mysql, 
+		"SELECT friend_group.id FROM user "
+		"JOIN friend_group ON user.id = friend_group.user_id "
+		"WHERE user.user = %e AND friend_group.name = %e ",
+		user, group );
+
+	if ( findGroup.rows() > 0 ) {
+		long long groupId = strtoll( findGroup.fetchRow()[0], 0, 10 );
+
+		DbQuery allProofs( mysql,
+			"SELECT friend_hash, generation, reverse_proof "
+			"FROM friend_claim "
+			"JOIN group_member "
+			"	ON friend_claim.id = group_member.friend_claim_id "
+			"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
+			"WHERE friend_claim.user = %e AND group_member.friend_group_id = %L",
+			user, groupId );
+
+		for ( int r = 0; r < allProofs.rows(); r++ ) {
+			MYSQL_ROW row = allProofs.fetchRow();
+			if ( row[1] != 0 && row[2] != 0 ) {
+				const char *friendHash = row[0];
+				long long generation = strtoll( row[1], 0, 10 );
+				const char *friendProof = row[2];
+
+				String msg( "friend_proof %s %s %lld %s\r\n", friendHash, group, generation, friendProof );
+				message("trying to send %s\n", msg.data );
+				queueMessage( mysql, user, friendId, msg.data, msg.length );
+			}
 		}
 	}
 }
@@ -71,28 +116,38 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 
 	/* Get the current time. */
 	String timeStr = timeNow();
-	String command( "friend_proof %s\r\n", timeStr.data );
+	String proof1( "friend_proof %s%s/ %s %s\r\n", c->CFG_URI, user, friendId, timeStr.data );
+	String proof2( "friend_proof %s %s%s/ %s\r\n", friendId, c->CFG_URI, user, timeStr.data );
 
 	RSA *user_priv = load_key( mysql, user );
 	RSA *id_pub = fetch_public_key( mysql, friendId );
 
-	Encrypt encrypt( id_pub, user_priv );
-	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey.data,
-			(u_char*)command.data, command.length );
+	Encrypt encrypt1( id_pub, user_priv );
+	int sigRes = encrypt1.bkSignEncrypt( put.broadcastKey.data,
+			(u_char*)proof1.data, proof1.length );
+	if ( sigRes < 0 ) {
+		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		return;
+	}
+
+	Encrypt encrypt2( id_pub, user_priv );
+	sigRes = encrypt2.bkSignEncrypt( put.broadcastKey.data,
+			(u_char*)proof2.data, proof2.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
 	/* Notify the requester. */
-	String registered( "broadcast_key %s %lld %s %s\r\n", 
-			group, put.keyGen, put.broadcastKey.data, encrypt.sym );
+	String registered( "broadcast_key %s %lld %s %s %s\r\n", 
+			group, put.keyGen, put.broadcastKey.data, encrypt1.sym, encrypt2.sym );
 
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
 
 	putTreeAdd( mysql, user, group, friendGroupId, friendId, putRelid );
 
 	sendAllProofs( mysql, user, group, friendId );
+	sendAllProofs2( mysql, user, group, friendId );
 }
 
 void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )

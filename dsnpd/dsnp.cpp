@@ -1113,57 +1113,6 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	free( flogin_token_str );
 }
 
-void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, long long generation )
-{
-	/* FIXME: not atomic. */
-	DbQuery check( mysql,
-		"SELECT friend_claim_id FROM get_broadcast_key "
-		"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
-		friendClaimId, group, generation );
-	
-	if ( check.rows() == 0 ) {
-		/* Insert an entry for this relationship. */
-		DbQuery( mysql, 
-			"INSERT INTO get_broadcast_key "
-			"( friend_claim_id, group_name, generation )"
-			"VALUES ( %L, %e, %L )", 
-			friendClaimId, group, generation );
-	}
-}
-
-void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
-		const char *friendId, const char *friendHash, const char *group,
-		long long generation, const char *broadcastKey, const char *friendProof )
-{
-	addBroadcastKey( mysql, friendClaimId, group, generation );
-
-	/* Make the query. */
-	DbQuery( mysql, 
-			"UPDATE get_broadcast_key "
-			"SET broadcast_key = %e, friend_proof = %e "
-			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
-			broadcastKey, friendProof, friendClaimId, group, generation );
-
-	DbQuery haveGroup( mysql, 
-		"SELECT friend_group.id "
-		"FROM user "
-		"JOIN friend_group "
-		"ON user.id = friend_group.user_id "
-		"WHERE user.user = %e AND "
-		"	friend_group.name = %e ",
-		user, group );
-	
-	/* If we have anyone in this group, then broadcast the friend proof. */
-	if ( haveGroup.rows() > 0 ) {
-		/* Broadcast the friend proof that we just received. */
-		sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof );
-	}
-
-	//sendAllProofs( mysql, user, group, friendId );
-
-	BIO_printf( bioOut, "OK\n" );
-}
-
 void addGetTree( MYSQL *mysql, long long friend_claim_id, long long generation )
 {
 	/* FIXME: not atomic. */

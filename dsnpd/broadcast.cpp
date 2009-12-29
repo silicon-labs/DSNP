@@ -55,18 +55,25 @@ void remote_inner( MYSQL *mysql, const char *user, const char *subject_id,
 }
 
 void friendProofBroadcast( MYSQL *mysql, const char *user, 
-		const char *subject_id, const char *author_id,
-		long long seq_num, const char *date )
+		const char *subjectId, const char *authorId,
+		long long seq_num, const char *fromId, const char *toId, const char *date )
 {
 	message("%s received friend proof subject_id %s author_id %s date %s\n",
-		user, subject_id, author_id, date );
+		user, subjectId, authorId, date );
 
-	String args( "friend_proof %s %s %s %lld %s", 
-			user, subject_id, author_id, seq_num, date );
-	appNotification( args, 0, 0 );
+	if ( strcmp( fromId, subjectId ) == 0 && strcmp( toId, authorId ) == 0 ) {
+		String args( "friend_proof %s %s %s %lld %s", 
+				user, subjectId, authorId, seq_num, date );
+		appNotification( args, 0, 0 );
+	}
+	else if ( strcmp( fromId, authorId ) == 0 && strcmp( toId, subjectId ) == 0 ) {
+		String args( "friend_proof %s %s %s %lld %s", 
+				user, authorId, subjectId, seq_num, date );
+		appNotification( args, 0, 0 );
+	}
 }
 
-void remoteBroadcast( MYSQL *mysql, const char *user, const char *friend_id, 
+void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
 		const char *hash, long long generation, const char *msg, long mLen )
 {
 	message( "remote broadcast: user %s hash %s generation %lld\n", user, hash, generation );
@@ -87,38 +94,41 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friend_id,
 	if ( recipient.rows() > 0 ) {
 		MYSQL_ROW row = recipient.fetchRow();
 		//long long friend_claim_id = strtoll(row[0], 0, 10);
-		const char *author_id = row[1];
-		const char *broadcast_key = row[2];
+		const char *authorId = row[1];
+		const char *broadcastKey = row[2];
 
 		message( "remote broadcast: have recipient\n");
+		message( "remote broadcast msgLen %d msg %s\n", strlen(msg), msg );
 
 		/* Do the decryption. */
-		RSA *id_pub = fetch_public_key( mysql, author_id );
+		RSA *id_pub = fetch_public_key( mysql, authorId );
 		Encrypt encrypt( id_pub, 0 );
-		int decryptRes = encrypt.bkDecryptVerify( broadcast_key, msg );
+		String fixed;
+		fixed.set( msg, msg+mLen );
+		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, fixed.data );
 
 		if ( decryptRes < 0 ) {
-			message("second level bkDecryptVerify failed with %s\n", encrypt.err);
+			error("second level broadcast decrypt verify failed with %s\n", encrypt.err);
 			BIO_printf( bioOut, "ERROR\r\n" );
 			return;
 		}
 
-		message( "second level broadcast_key: %s  author_id: %s  decLen: %d\n", 
-				broadcast_key, author_id, encrypt.decLen );
+		message( "second level broadcast key: %s  author_id: %s  decLen: %d\n", 
+				broadcastKey, authorId, encrypt.decLen );
 
 		RemoteBroadcastParser rbp;
 		rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 		switch ( rbp.type ) {
 			case RemoteBroadcastParser::RemoteInner:
-				remote_inner( mysql, user, friend_id, author_id, rbp.seq_num, 
+				remote_inner( mysql, user, friendId, authorId, rbp.seq_num, 
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
-				friendProofBroadcast( mysql, user, friend_id, author_id,
-						rbp.seq_num, rbp.date );
+				friendProofBroadcast( mysql, user, friendId, authorId,
+						rbp.seq_num, rbp.identity1, rbp.identity2, rbp.date );
 				break;
 			default:
-				error("remote broadcast parse failed\n");
+				error("remote broadcast parse failed: %.*s\n", (int)encrypt.decLen, (char*)encrypt.decrypted );
 				break;
 		}
 	}
@@ -423,7 +433,6 @@ long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 		long long seqNum, const char *encMessage )
 {
 	long encMessageLen = strlen(encMessage);
-	message("enc message len: %ld\n", encMessageLen);
 
 	/* Make the full message. */
 	String command( 
@@ -610,7 +619,7 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 int friendProofMessage( MYSQL *mysql, const char *user, const char *friend_id,
 		const char *hash, const char *group, long long generation, const char *sym )
 {
-	message("calling remote broadcast from friend proof\n");
+	message("calling remote broadcast from friend proof symLen %d sym %s\n", strlen(sym), sym );
 	remoteBroadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
 	BIO_printf( bioOut, "OK\r\n" );
 	return 0;

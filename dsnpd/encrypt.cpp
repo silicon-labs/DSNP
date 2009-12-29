@@ -232,7 +232,7 @@ int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg )
 	u_char broadcst_key[SK_SIZE];
 	long skLen = base64_to_bin( broadcst_key, SK_SIZE, srcBk );
 	if ( skLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded session key string to binary" );
+		sprintf( err, "error converting base64-encoded session key string to binary" );
 		return -1;
 	}
 
@@ -240,7 +240,7 @@ int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg )
 	u_char *msg = (u_char*)malloc( strlen(srcMsg) );
 	long msgLen = base64_to_bin( msg, strlen(srcMsg), srcMsg );
 	if ( msgLen <= 0 ) {
-		sprintf( err, "error converting hex-encoded message to binary" );
+		sprintf( err, "error converting base64-encoded message to binary" );
 		return -1;
 	}
 

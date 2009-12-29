@@ -29,6 +29,73 @@ void userMessage( MYSQL *mysql, const char *user, const char *friendId,
 	appNotification( args, msg, length );
 }
 
+void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, long long generation )
+{
+	/* FIXME: not atomic. */
+	DbQuery check( mysql,
+		"SELECT friend_claim_id FROM get_broadcast_key "
+		"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
+		friendClaimId, group, generation );
+	
+	if ( check.rows() == 0 ) {
+		/* Insert an entry for this relationship. */
+		DbQuery( mysql, 
+			"INSERT INTO get_broadcast_key "
+			"( friend_claim_id, group_name, generation )"
+			"VALUES ( %L, %e, %L )", 
+			friendClaimId, group, generation );
+	}
+}
+
+
+void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
+		const char *friendId, const char *friendHash, const char *group,
+		long long generation, const char *broadcastKey, const char *friendProof1, const char *friendProof2 )
+{
+	addBroadcastKey( mysql, friendClaimId, group, generation );
+
+	/* Make the query. */
+	DbQuery( mysql, 
+			"UPDATE get_broadcast_key "
+			"SET broadcast_key = %e, friend_proof = %e, reverse_proof = %e "
+			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
+			broadcastKey, friendProof1, friendProof2, friendClaimId, group, generation );
+
+	DbQuery haveGroup( mysql, 
+		"SELECT friend_group.id "
+		"FROM user "
+		"JOIN friend_group "
+		"ON user.id = friend_group.user_id "
+		"WHERE user.user = %e AND "
+		"	friend_group.name = %e ",
+		user, group );
+	
+	/* If we have anyone in this group, then broadcast the friend proof. */
+	if ( haveGroup.rows() > 0 ) {
+		/* Broadcast the friend proof that we just received. */
+		message("broadcasting friend proof 1 %s\n",  friendProof1);
+		sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof1 );
+
+		long long friendGroupId = strtoll( haveGroup.fetchRow()[0], 0, 10 );
+
+		/* If we have them in this group then broadcast the reverse as well. */
+		DbQuery haveReverse( mysql,
+			"SELECT id FROM group_member "
+			"WHERE friend_group_id = %L AND friend_claim_id = %L",
+			friendGroupId, friendClaimId
+		);
+
+		if ( haveReverse.rows() ) {
+			/* Sending friend */
+			message( "broadcasting friend proof 2 %s\n", friendProof2 );
+			sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof2 );
+		}
+	}
+
+	BIO_printf( bioOut, "OK\n" );
+}
+
+
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	exec_query( mysql, 
@@ -67,7 +134,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
 			storeBroadcastKey( mysql, id, user, friendId, friendHash,
-					mp.group, mp.generation, mp.key, mp.sym );
+					mp.group, mp.generation, mp.key, mp.sym1, mp.sym2 );
 			break;
 		case MessageParser::ForwardTo: 
 			forwardTo( mysql, id, user, friendId, mp.number,

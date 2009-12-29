@@ -88,7 +88,7 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 
 	/* FIXME: check results here. */
 
-	sym = bin_to_base64( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
+	sym = binToBase64( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
 
 	free( encrypted );
 	free( signature );
@@ -105,7 +105,7 @@ int Encrypt::decryptVerify( const char *srcMsg )
 
 	/* Convert the message to binary. */
 	u_char *message = (u_char*)malloc( strlen(srcMsg) );
-	long msgLen = base64_to_bin( message, strlen(srcMsg), srcMsg );
+	long msgLen = base64ToBin( message, srcMsg, strlen(srcMsg) );
 	if ( msgLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded message to binary" );
 		return -1;
@@ -173,7 +173,7 @@ int Encrypt::bkSignEncrypt( const char *srcBk, u_char *msg, long mLen )
 
 	/* Convert the broadcst_key to binary. */
 	u_char broadcst_key[SK_SIZE];
-	long skLen = base64_to_bin( broadcst_key, SK_SIZE, srcBk );
+	long skLen = base64ToBin( broadcst_key, srcBk, strlen(srcBk) );
 	if ( skLen <= 0 ) {
 		sprintf( err, "error converting hex-encoded session key string to binary" );
 		return -1;
@@ -214,7 +214,7 @@ int Encrypt::bkSignEncrypt( const char *srcBk, u_char *msg, long mLen )
 
 	/* FIXME: check results here. */
 
-	sym = bin_to_base64( output, lenLen+sigLen+mLen );
+	sym = binToBase64( output, lenLen+sigLen+mLen );
 
 	free( signature );
 	free( output );
@@ -222,7 +222,7 @@ int Encrypt::bkSignEncrypt( const char *srcBk, u_char *msg, long mLen )
 	return 0;
 }
 	
-int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg )
+int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg, long srcMsgLen )
 {
 	RC4_KEY rc4_key;
 	u_char *signature, *data;
@@ -230,15 +230,15 @@ int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg )
 
 	/* Convert the broadcst_key to binary. */
 	u_char broadcst_key[SK_SIZE];
-	long skLen = base64_to_bin( broadcst_key, SK_SIZE, srcBk );
+	long skLen = base64ToBin( broadcst_key, srcBk, strlen(srcBk) );
 	if ( skLen <= 0 ) {
 		sprintf( err, "error converting base64-encoded session key string to binary" );
 		return -1;
 	}
 
 	/* Convert the message to binary. */
-	u_char *msg = (u_char*)malloc( strlen(srcMsg) );
-	long msgLen = base64_to_bin( msg, strlen(srcMsg), srcMsg );
+	u_char *msg = (u_char*)malloc( srcMsgLen );
+	long msgLen = base64ToBin( msg, srcMsg, srcMsgLen );
 	if ( msgLen <= 0 ) {
 		sprintf( err, "error converting base64-encoded message to binary" );
 		return -1;

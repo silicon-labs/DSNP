@@ -95,6 +95,15 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 	BIO_printf( bioOut, "OK\n" );
 }
 
+int friendProofMessage( MYSQL *mysql, const char *user, const char *friend_id,
+		const char *hash, const char *group, long long generation, const char *sym )
+{
+	message("calling remote broadcast from friend proof symLen %d sym %s\n", strlen(sym), sym );
+	remoteBroadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
+	BIO_printf( bioOut, "OK\r\n" );
+	return 0;
+}
+
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {

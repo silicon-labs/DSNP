@@ -59,7 +59,7 @@ struct Encrypt
 	int decryptVerify( const char *message );
 
 	int bkSignEncrypt( const char *bk, u_char *src, long len );
-	int bkDecryptVerify( const char *bk, const char *msg );
+	int bkDecryptVerify( const char *bk, const char *msg, long msgLen );
 
 	void clear()
 	{

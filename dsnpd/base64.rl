@@ -23,7 +23,7 @@
 	write data;
 }%%
 
-AllocString bin_to_base64( const u_char *data, long len )
+AllocString binToBase64( const u_char *data, long len )
 {
 	const char *index = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 	long group;
@@ -62,7 +62,7 @@ AllocString bin_to_base64( const u_char *data, long len )
 	return AllocString( output, strlen(output) );
 }
 
-long base64_to_bin( unsigned char *out, long len, const char *src )
+long base64ToBin( unsigned char *out, const char *src, long length )
 {
 	long sixBits;
 	long group;
@@ -117,13 +117,14 @@ long base64_to_bin( unsigned char *out, long len, const char *src )
 			( sixBits @c1 sixBits ) %one ;
 
 		# Lots of ambiguity, but duplicate removal makes it okay.
-		main := group* short? 0;
+		main := group* short?;
 			
 	}%%
 
 	/* Note: including the null. */
 	const char *p = src;
-	const char *pe = src + strlen(src) + 1;
+	const char *pe = src + length;
+	const char *eof = pe;
 	int cs;
 
 	%% write init;

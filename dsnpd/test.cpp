@@ -75,63 +75,63 @@ void test_tls()
 	message( "result: %s\n", buf );
 }
 
-void test_base64()
+void testBase64()
 {
 	unsigned char out[64];
 	char *enc;
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "aGVsbG8gdGhlcmUhIQ" );
+	base64ToBin( out, "aGVsbG8gdGhlcmUhIQ", 18 );
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YQ");
+	base64ToBin( out, "YQ", 2);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWI");
+	base64ToBin( out, "YWI", 3);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJj");
+	base64ToBin( out, "YWJj", 4);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZA");
+	base64ToBin( out, "YWJjZA", 6);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGU");
+	base64ToBin( out, "YWJjZGU", 7);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGVm");
+	base64ToBin( out, "YWJjZGVm", 8);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGVmZw");
+	base64ToBin( out, "YWJjZGVmZw", 10);
 	printf( "%s\n", out );
 
 	memset( out, 0, 64 );
-	base64_to_bin( out, 64, "YWJjZGVmZ2g");
+	base64ToBin( out, "YWJjZGVmZ2g", 11);
 	printf( "%s\n", out );
 
-	enc = bin_to_base64( (const u_char*) "a", 1 );
+	enc = binToBase64( (const u_char*) "a", 1 );
 	printf( "%s\n", enc );
 
-	enc = bin_to_base64( (const u_char*) "ab", 2 );
+	enc = binToBase64( (const u_char*) "ab", 2 );
 	printf( "%s\n", enc );
 
-	enc = bin_to_base64( (const u_char*) "abc", 3 );
+	enc = binToBase64( (const u_char*) "abc", 3 );
 	printf( "%s\n", enc );
 
-	enc = bin_to_base64( (const u_char*) "abcd", 4 );
+	enc = binToBase64( (const u_char*) "abcd", 4 );
 	printf( "%s\n", enc );
 
-	enc = bin_to_base64( (const u_char*) "abcde", 5 );
+	enc = binToBase64( (const u_char*) "abcde", 5 );
 	printf( "%s\n", enc );
 
-	enc = bin_to_base64( (const u_char*) "abcdef", 6 );
+	enc = binToBase64( (const u_char*) "abcdef", 6 );
 	printf( "%s\n", enc );
 }
 
@@ -140,7 +140,7 @@ void test_base64_2()
 	u_char token[TOKEN_SIZE];
 	memset( token, 0, TOKEN_SIZE );
 	RAND_bytes( token, TOKEN_SIZE );
-	char *token_str = bin_to_base64( token, TOKEN_SIZE );
+	char *token_str = binToBase64( token, TOKEN_SIZE );
 	printf( "%s\n", token_str );
 }
 
@@ -219,5 +219,5 @@ void broadcastKey()
 
 void run_test()
 {
-	checkTree();
+	testBase64();
 }

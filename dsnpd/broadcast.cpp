@@ -27,7 +27,7 @@ void broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *r
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-void direct_broadcast( MYSQL *mysql, const char *relid, const char *user, 
+void directBroadcast( MYSQL *mysql, const char *relid, const char *user, 
 		const char *author_id, long long seq_num, const char *date,
 		const char *msg, long mLen )
 {
@@ -45,12 +45,12 @@ void groupMemberRevocation( MYSQL *mysql, const char *user,
 	appNotification( args, 0, 0 );
 }
 
-void remote_inner( MYSQL *mysql, const char *user, const char *subject_id,
-		const char *author_id, long long seq_num, const char *date,
+void remoteInner( MYSQL *mysql, const char *user, const char *subjectId,
+		const char *authorId, long long seqNum, const char *date,
 		const char *msg, long mLen )
 {
 	String args( "user_message %s %s %s %lld %s %ld", 
-			user, subject_id, author_id, seq_num, date, mLen );
+			user, subjectId, authorId, seqNum, date, mLen );
 	appNotification( args, msg, mLen );
 }
 
@@ -98,14 +98,11 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		const char *broadcastKey = row[2];
 
 		message( "remote broadcast: have recipient\n");
-		message( "remote broadcast msgLen %d msg %s\n", strlen(msg), msg );
 
 		/* Do the decryption. */
 		RSA *id_pub = fetch_public_key( mysql, authorId );
 		Encrypt encrypt( id_pub, 0 );
-		String fixed;
-		fixed.set( msg, msg+mLen );
-		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, fixed.data );
+		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
 
 		if ( decryptRes < 0 ) {
 			error("second level broadcast decrypt verify failed with %s\n", encrypt.err);
@@ -120,7 +117,7 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 		switch ( rbp.type ) {
 			case RemoteBroadcastParser::RemoteInner:
-				remote_inner( mysql, user, friendId, authorId, rbp.seq_num, 
+				remoteInner( mysql, user, friendId, authorId, rbp.seq_num, 
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
@@ -191,7 +188,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 	/* Do the decryption. */
 	RSA *id_pub = fetch_public_key( mysql, friendId );
 	Encrypt encrypt( id_pub, 0 );
-	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted );
+	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted, strlen(encrypted) );
 
 	if ( decryptRes < 0 ) {
 		error("unable to decrypt broadcast message for %s from "
@@ -213,7 +210,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 	else {
 		switch ( bp.type ) {
 			case BroadcastParser::Direct:
-				direct_broadcast( mysql, relid, user, friendId, bp.seq_num, 
+				directBroadcast( mysql, relid, user, friendId, bp.seq_num, 
 						bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
@@ -570,7 +567,7 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 
 	u_char reqid_final[REQID_SIZE];
 	RAND_bytes( reqid_final, REQID_SIZE );
-	const char *reqid_final_str = bin_to_base64( reqid_final, REQID_SIZE );
+	const char *reqid_final_str = binToBase64( reqid_final, REQID_SIZE );
 
 	DbQuery recipient( mysql, 
 		"UPDATE pending_remote_broadcast "
@@ -616,15 +613,6 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-int friendProofMessage( MYSQL *mysql, const char *user, const char *friend_id,
-		const char *hash, const char *group, long long generation, const char *sym )
-{
-	message("calling remote broadcast from friend proof symLen %d sym %s\n", strlen(sym), sym );
-	remoteBroadcast( mysql, user, friend_id, hash, generation, sym, strlen(sym) );
-	BIO_printf( bioOut, "OK\r\n" );
-	return 0;
-}
-
 void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *subjectId, const char *token,
 		long long seqNum, const char *group, const char *msg, long mLen )
@@ -633,8 +621,8 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	RSA *user_priv, *id_pub;
 	int sigRes;
 
-	message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 
-		user, subjectId, token, seqNum, msg );
+	//message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 
+	//	user, subjectId, token, seqNum, msg );
 
 	DbQuery flogin( mysql,
 		"SELECT user FROM remote_flogin_token "
@@ -677,7 +665,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 
 	u_char reqid[REQID_SIZE];
 	RAND_bytes( reqid, REQID_SIZE );
-	const char *reqid_str = bin_to_base64( reqid, REQID_SIZE );
+	const char *reqid_str = binToBase64( reqid, REQID_SIZE );
 
 	exec_query( mysql,
 		"INSERT INTO remote_broadcast_request "

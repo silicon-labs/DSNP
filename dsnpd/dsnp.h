@@ -153,7 +153,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *user,
 		const char *identity, const char *hash, const char *token, const char *group,
 		const char *msg, long mLen );
 
-void remote_inner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
+void remoteInner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
                long long seq_num, const char *date, const char *msg, long mLen );
 void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
 		long long seq_num, const char *date );
@@ -249,9 +249,9 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
 void start_tls();
-long base64_to_bin( unsigned char *out, long len, const char *src );
-AllocString bin_to_base64( const u_char *data, long len );
-AllocString bn_to_base64( const BIGNUM *n );
+long base64ToBin( unsigned char *out, const char *src, long len );
+AllocString binToBase64( const u_char *data, long len );
+AllocString bnToBase64( const BIGNUM *n );
 
 struct DbQuery
 {
@@ -449,4 +449,6 @@ void sendAllProofs( MYSQL *mysql, const char *user, const char *group,
 		const char *friendId );
 void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, 
 		const char *friendId );
+void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
+		const char *hash, long long generation, const char *msg, long mLen );
 #endif

@@ -119,20 +119,20 @@ long hex2bin( unsigned char *dest, long len, const char *src )
 	return slen;
 }
 
-AllocString bn_to_base64( const BIGNUM *n )
+AllocString bnToBase64( const BIGNUM *n )
 {
 	long len = BN_num_bytes(n);
 	u_char *bin = new u_char[len];
 	BN_bn2bin( n, bin );
-	AllocString b64 = bin_to_base64( bin, len );
+	AllocString b64 = binToBase64( bin, len );
 	delete[] bin;
 	return b64;
 }
 
-BIGNUM *base64_to_bn( const char *base64 )
+BIGNUM *base64ToBn( const char *base64 )
 {
 	u_char *bin = new u_char[strlen(base64)];
-	long len = base64_to_bin( bin, 0, base64 );
+	long len = base64ToBin( bin, base64, strlen(base64) );
 	BIGNUM *bn = BN_bin2bn( bin, len, 0 );
 	delete[] bin;
 	return bn;
@@ -145,7 +145,7 @@ AllocString pass_hash( const u_char *pass_salt, const char *pass )
 	memcpy( pass_comb, pass_salt, SALT_SIZE );
 	memcpy( pass_comb + SALT_SIZE, pass, strlen(pass) );
 	SHA1( pass_comb, SALT_SIZE+strlen(pass), pass_hash );
-	return bin_to_base64( pass_hash, SHA_DIGEST_LENGTH );
+	return binToBase64( pass_hash, SHA_DIGEST_LENGTH );
 }
 
 CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group )
@@ -184,7 +184,7 @@ void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generatio
 
 	/* Generate the relationship and request ids. */
 	RAND_bytes( broadcast_key, RELID_SIZE );
-	bk = bin_to_base64( broadcast_key, RELID_SIZE );
+	bk = binToBase64( broadcast_key, RELID_SIZE );
 
 	DbQuery( mysql, 
 		"INSERT INTO put_broadcast_key "
@@ -197,11 +197,11 @@ void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pa
 {
 	u_char passSalt[SALT_SIZE];
 	RAND_bytes( passSalt, SALT_SIZE );
-	char *passSaltStr = bin_to_base64( passSalt, SALT_SIZE );
+	char *passSaltStr = binToBase64( passSalt, SALT_SIZE );
 
 	u_char idSalt[SALT_SIZE];
 	RAND_bytes( idSalt, SALT_SIZE );
-	char *idSaltStr = bin_to_base64( idSalt, SALT_SIZE );
+	char *idSaltStr = binToBase64( idSalt, SALT_SIZE );
 
 	/* Generate a new key. */
 	RSA *rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
@@ -211,14 +211,14 @@ void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pa
 	}
 
 	/* Extract the components to hex strings. */
-	String n = bn_to_base64( rsa->n );
-	String e = bn_to_base64( rsa->e );
-	String d = bn_to_base64( rsa->d );
-	String p = bn_to_base64( rsa->p );
-	String q = bn_to_base64( rsa->q );
-	String dmp1 = bn_to_base64( rsa->dmp1 );
-	String dmq1 = bn_to_base64( rsa->dmq1 );
-	String iqmp = bn_to_base64( rsa->iqmp );
+	String n = bnToBase64( rsa->n );
+	String e = bnToBase64( rsa->e );
+	String d = bnToBase64( rsa->d );
+	String p = bnToBase64( rsa->p );
+	String q = bnToBase64( rsa->q );
+	String dmp1 = bnToBase64( rsa->dmp1 );
+	String dmq1 = bnToBase64( rsa->dmq1 );
+	String iqmp = bnToBase64( rsa->iqmp );
 
 	/* Hash the password. */
 	char *passHashed = pass_hash( passSalt, pass );
@@ -396,8 +396,8 @@ RSA *fetch_public_key( MYSQL *mysql, const char *identity )
 	}
 
 	rsa = RSA_new();
-	rsa->n = base64_to_bn( pub.n );
-	rsa->e = base64_to_bn( pub.e );
+	rsa->n = base64ToBn( pub.n );
+	rsa->e = base64ToBn( pub.e );
 
 	return rsa;
 }
@@ -426,14 +426,14 @@ RSA *load_key( MYSQL *mysql, const char *user )
 
 	/* Everythings okay. */
 	rsa = RSA_new();
-	rsa->n =    base64_to_bn( row[0] );
-	rsa->e =    base64_to_bn( row[1] );
-	rsa->d =    base64_to_bn( row[2] );
-	rsa->p =    base64_to_bn( row[3] );
-	rsa->q =    base64_to_bn( row[4] );
-	rsa->dmp1 = base64_to_bn( row[5] );
-	rsa->dmq1 = base64_to_bn( row[6] );
-	rsa->iqmp = base64_to_bn( row[7] );
+	rsa->n =    base64ToBn( row[0] );
+	rsa->e =    base64ToBn( row[1] );
+	rsa->d =    base64ToBn( row[2] );
+	rsa->p =    base64ToBn( row[3] );
+	rsa->q =    base64ToBn( row[4] );
+	rsa->dmp1 = base64ToBn( row[5] );
+	rsa->dmq1 = base64ToBn( row[6] );
+	rsa->iqmp = base64ToBn( row[7] );
 
 free_result:
 	mysql_free_result( result );
@@ -550,8 +550,8 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	}
 	
 	/* Store the request. */
-	requested_relid_str = bin_to_base64( requested_relid, RELID_SIZE );
-	reqid_str = bin_to_base64( fr_reqid, REQID_SIZE );
+	requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	reqid_str = binToBase64( fr_reqid, REQID_SIZE );
 
 	exec_query( mysql,
 		"INSERT INTO relid_request "
@@ -614,7 +614,7 @@ AllocString make_id_hash( const char *salt, const char *identity )
 	sprintf( total, "%s%s", salt, identity );
 	unsigned char friend_hash[SHA_DIGEST_LENGTH];
 	SHA1( (unsigned char*)total, len, friend_hash );
-	return bin_to_base64( friend_hash, SHA_DIGEST_LENGTH );
+	return binToBase64( friend_hash, SHA_DIGEST_LENGTH );
 }
 
 void relidResponse( MYSQL *mysql, const char *user, 
@@ -693,9 +693,9 @@ void relidResponse( MYSQL *mysql, const char *user,
 	}
 
 	/* Store the request. */
-	requested_relid_str = bin_to_base64( requested_relid, RELID_SIZE );
-	response_relid_str = bin_to_base64( response_relid, RELID_SIZE );
-	response_reqid_str = bin_to_base64( response_reqid, REQID_SIZE );
+	requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	response_relid_str = binToBase64( response_relid, RELID_SIZE );
+	response_reqid_str = binToBase64( response_reqid, REQID_SIZE );
 
 	store_relid_response( mysql, identity, requested_relid_str, fr_reqid_str, 
 			response_relid_str, response_reqid_str, encrypt.sym );
@@ -747,7 +747,7 @@ void fetchResponseRelid( MYSQL *mysql, const char *reqid )
 long verify_returned_fr_relid( MYSQL *mysql, unsigned char *fr_relid )
 {
 	long result = 0;
-	char *requested_relid_str = bin_to_base64( fr_relid, RELID_SIZE );
+	char *requested_relid_str = binToBase64( fr_relid, RELID_SIZE );
 	int query_res;
 	MYSQL_RES *select_res;
 	MYSQL_ROW row;
@@ -835,12 +835,12 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 		return;
 	}
 		
-	requested_relid_str = bin_to_base64( requested_relid, RELID_SIZE );
-	returned_relid_str = bin_to_base64( returned_relid, RELID_SIZE );
+	requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	returned_relid_str = binToBase64( returned_relid, RELID_SIZE );
 
 	/* Make a user request id. */
 	RAND_bytes( user_reqid, REQID_SIZE );
-	user_reqid_str = bin_to_base64( user_reqid, REQID_SIZE );
+	user_reqid_str = binToBase64( user_reqid, REQID_SIZE );
 
 	exec_query( mysql, 
 		"INSERT INTO friend_request "
@@ -960,7 +960,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 		 * away that there is no claim. FIXME: Would be good to fake this with
 		 * an appropriate time delay. */
 		RAND_bytes( reqid, RELID_SIZE );
-		reqid_str = bin_to_base64( reqid, RELID_SIZE );
+		reqid_str = binToBase64( reqid, RELID_SIZE );
 
 		/*FIXME: Hang for a bit here instead. */
 		BIO_printf( bioOut, "OK %s\r\n", reqid_str );
@@ -991,8 +991,8 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	}
 
 	/* Store the request. */
-	flogin_token_str = bin_to_base64( flogin_token, TOKEN_SIZE );
-	reqid_str = bin_to_base64( reqid, REQID_SIZE );
+	flogin_token_str = binToBase64( flogin_token, TOKEN_SIZE );
+	reqid_str = binToBase64( reqid, REQID_SIZE );
 
 	store_ftoken( mysql, user, friend_id.identity, 
 			flogin_token_str, reqid_str, encrypt.sym );
@@ -1099,7 +1099,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	}
 
 	flogin_token = encrypt.decrypted;
-	flogin_token_str = bin_to_base64( flogin_token, RELID_SIZE );
+	flogin_token_str = binToBase64( flogin_token, RELID_SIZE );
 
 	exec_query( mysql,
 		"INSERT INTO remote_flogin_token "
@@ -1183,7 +1183,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 
 	/* Hash the password using the sale found in the DB. */
 	u_char pass_salt[SALT_SIZE];
-	base64_to_bin( pass_salt, 0, salt_str );
+	base64ToBin( pass_salt, salt_str, strlen(salt_str) );
 	String pass_hashed = pass_hash( pass_salt, pass );
 
 	/* Check the login. */
@@ -1196,7 +1196,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	/* Login successful. Make a token. */
 	u_char token[TOKEN_SIZE];
 	RAND_bytes( token, TOKEN_SIZE );
-	String token_str = bin_to_base64( token, TOKEN_SIZE );
+	String token_str = binToBase64( token, TOKEN_SIZE );
 
 	/* Record the token. */
 	DbQuery loginToken( mysql, 

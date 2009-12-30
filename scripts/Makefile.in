@@ -25,3 +25,5 @@ init.sh: init.sh.in
 
 
 install:
+	install -d @prefix@/lib/dsnp
+	install util.php @prefix@/lib/dsnp/util.php

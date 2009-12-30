@@ -271,7 +271,7 @@ void removeFromGroup( MYSQL *mysql, const char *user, const char *group, const c
 	);
 
 	if ( del.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR friend not in grou\r\n" );
+		BIO_printf( bioOut, "ERROR friend not in group\r\n" );
 		return;
 	}
 

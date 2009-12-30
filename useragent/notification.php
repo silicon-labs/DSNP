@@ -348,7 +348,7 @@ function friendProof( $user, $group, $subject, $author, $seq_num, $date, $time )
 
 function groupMemberRevocation( $user, $friend, $group, $generation, $revoked )
 {
-	echo "group member revocation: $user $friendId $group $generation $revoked\n";
+	echo "group member revocation: $user $friend $group $generation $revoked\n";
 
 	$userId = findUserId( $user );
 	$friendId = findFriendClaimId( $user, $friend );

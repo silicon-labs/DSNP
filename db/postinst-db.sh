@@ -38,44 +38,47 @@ if test `cat $OUTPUT` == 0; then
 
 	mysql_cmd mysql -e \
 		"CREATE USER '${site_name}_dsnp'@'localhost' IDENTIFIED BY '$DB_PASS';"
+
+	mysql_cmd mysql -e \
+		"CREATE USER '${site_name}_ua'@'localhost' IDENTIFIED BY '$DB_PASS';"
 fi
 
 # Create the database if necessary.
-if ! mysql_cmd ${site_name}_dsnp -e "" 2>/dev/null; then
-	echo "+ CREATING DATABASE ${site_name}_dsnp"
+if ! mysql_cmd ${site_name} -e "" 2>/dev/null; then
+	echo "+ CREATING DATABASE ${site_name}"
 	mysql_cmd mysql -e \
-		"CREATE DATABASE ${site_name}_dsnp;"
+		"CREATE DATABASE ${site_name};"
 
 	mysql_cmd mysql -e \
-		"GRANT ALL ON ${site_name}_dsnp.* TO '${site_name}_dsnp'@'localhost';"
+		"GRANT ALL ON ${site_name}.* TO '${site_name}_dsnp'@'localhost';"
 
 	mysql_cmd mysql -e \
-		"GRANT ALL ON ${site_name}_ua.* TO '${site_name}_dsnp'@'localhost';"
+		"GRANT ALL ON ${site_name}.* TO '${site_name}_ua'@'localhost';"
 fi
 
 
 # Check for the init table. If there assume we have run init.sh
-if ! mysql_cmd ${site_name}_dsnp -e "show tables;" | grep -q user; then
+if ! mysql_cmd ${site_name} -e "show tables;" | grep -q user; then
 	# Init the database.
-	echo "+ INITIALIAING DATABASE ${site_name}_dsnp"
-	mysql_cmd ${site_name}_dsnp < init.sql
+	echo "+ INITIALIAING DATABASE ${site_name}"
+	mysql_cmd ${site_name} < init.sql
 fi
 
 # Check for the version table.
-if ! mysql_cmd ${site_name}_dsnp -e "show tables;" | grep -q version; then
+if ! mysql_cmd ${site_name} -e "show tables;" | grep -q version; then
 	echo "+ adding version table"
-	mysql_cmd ${site_name}_dsnp -e "CREATE TABLE version ( version INT )"
-	mysql_cmd ${site_name}_dsnp -e "INSERT INTO version ( version ) VALUES ( 0 )"
+	mysql_cmd ${site_name} -e "CREATE TABLE version ( version INT )"
+	mysql_cmd ${site_name} -e "INSERT INTO version ( version ) VALUES ( 0 )"
 fi
 
 # Rely on the the version number from now on. 
-db_ver=`mysql_cmd ${site_name}_dsnp -e "SELECT version FROM version"`
+db_ver=`mysql_cmd ${site_name} -e "SELECT version FROM version"`
 
 i=$((db_ver+1))
 while [ -f $runfrom/upgrade-$i.sql ]; do
 	echo "+ upgrading to db version $i"
-	mysql_cmd ${site_name}_dsnp < $runfrom/upgrade-$i.sql
-	mysql_cmd ${site_name}_dsnp -e "UPDATE version SET version = $i"
+	mysql_cmd ${site_name} < $runfrom/upgrade-$i.sql
+	mysql_cmd ${site_name} -e "UPDATE version SET version = $i"
 	i=$((i+1))
 done
 

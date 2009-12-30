@@ -327,7 +327,7 @@ function sendRealName( $user, $toIdentity )
 	}
 }
 
-function friendProof( $user, $subject, $author, $seq_num, $date, $time )
+function friendProof( $user, $group, $subject, $author, $seq_num, $date, $time )
 {
 	$user_id = findUserId( $user );
 	$subject_id = findFriendClaimId( $user, $subject );
@@ -335,19 +335,35 @@ function friendProof( $user, $subject, $author, $seq_num, $date, $time )
 
 	$query = sprintf(
 		"INSERT INTO friend_link " .
-		"	( fc1_id, fc2_id ) " .
-		"VALUES ( %ld, %ld ) ",
+		"	( group_name, fc1_id, fc2_id ) " .
+		"VALUES ( '%s', %ld, %ld ) ",
+		mysql_real_escape_string( $group ),
 		$author_id,
 		$subject_id 
 	);
 
 	/* Allow this query to fail due to duplicates. */
-	mysql_query($query);
+	mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
-function groupMemberRevocation( $user, $friendId, $group, $generation, $revokedId )
+function groupMemberRevocation( $user, $friend, $group, $generation, $revoked )
 {
-	echo "group member revocation: $user $friendId $group $generation $revokedId\n";
+	echo "group member revocation: $user $friendId $group $generation $revoked\n";
+
+	$userId = findUserId( $user );
+	$friendId = findFriendClaimId( $user, $friend );
+	$revokedId = findFriendClaimId( $user, $revoked );
+
+	$query = sprintf(
+		"DELETE FROM friend_link " .
+		"WHERE fc1_id = %ld AND fc2_id = %ld AND group_name = '%s' ",
+		$friendId,
+		$revokedId ,
+		mysql_real_escape_string( $group )
+	);
+
+	/* Allow this query to fail due to duplicates. */
+	mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
 switch ( $notification_type ) {
@@ -419,13 +435,14 @@ case "remote_publication": {
 case "friend_proof": {
 	# Collect the args.
 	$user = $argv[$b+0];
-	$subject = $argv[$b+1];
-	$author = $argv[$b+2];
-	$seq_num = $argv[$b+3];
-	$date = $argv[$b+4];
-	$time = $argv[$b+5];
+	$group = $argv[$b+1];
+	$subject = $argv[$b+2];
+	$author = $argv[$b+3];
+	$seq_num = $argv[$b+4];
+	$date = $argv[$b+5];
+	$time = $argv[$b+6];
 
-	friendProof( $user, $subject, $author, $seq_num, $date, $time );
+	friendProof( $user, $group, $subject, $author, $seq_num, $date, $time );
 	break;
 }
 

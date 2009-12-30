@@ -450,5 +450,6 @@ void sendAllProofs( MYSQL *mysql, const char *user, const char *group,
 void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, 
 		const char *friendId );
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
-		const char *hash, long long generation, const char *msg, long mLen );
+		const char *hash, const char *group, long long generation,
+		const char *msg, long mLen );
 #endif

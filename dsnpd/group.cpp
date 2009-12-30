@@ -275,7 +275,8 @@ void removeFromGroup( MYSQL *mysql, const char *user, const char *group, const c
 		return;
 	}
 
-	invalidateBkProof( mysql, user, userId, friendGroupId, group, identity, friendClaimId, putRelid );
+	invalidateBkProof( mysql, user, userId, friendGroupId, group, 
+			identity, friendClaimId, putRelid );
 
 	BIO_printf( bioOut, "OK\n" );
 }

@@ -55,26 +55,27 @@ void remoteInner( MYSQL *mysql, const char *user, const char *subjectId,
 }
 
 void friendProofBroadcast( MYSQL *mysql, const char *user, 
-		const char *subjectId, const char *authorId,
-		long long seq_num, const char *fromId, const char *toId, const char *date )
+		const char *group, const char *subjectId, const char *authorId,
+		long long seqNum, const char *fromId, const char *toId, const char *date )
 {
 	message("%s received friend proof subject_id %s author_id %s date %s\n",
 		user, subjectId, authorId, date );
 
 	if ( strcmp( fromId, subjectId ) == 0 && strcmp( toId, authorId ) == 0 ) {
-		String args( "friend_proof %s %s %s %lld %s", 
-				user, subjectId, authorId, seq_num, date );
+		String args( "friend_proof %s %s %s %s %lld %s", 
+				user, group, subjectId, authorId, seqNum, date );
 		appNotification( args, 0, 0 );
 	}
 	else if ( strcmp( fromId, authorId ) == 0 && strcmp( toId, subjectId ) == 0 ) {
-		String args( "friend_proof %s %s %s %lld %s", 
-				user, authorId, subjectId, seq_num, date );
+		String args( "friend_proof %s %s %s %s %lld %s", 
+				user, group, authorId, subjectId, seqNum, date );
 		appNotification( args, 0, 0 );
 	}
 }
 
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
-		const char *hash, long long generation, const char *msg, long mLen )
+		const char *hash, const char *group, long long generation,
+		const char *msg, long mLen )
 {
 	message( "remote broadcast: user %s hash %s generation %lld\n", user, hash, generation );
 
@@ -121,11 +122,12 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
-				friendProofBroadcast( mysql, user, friendId, authorId,
+				friendProofBroadcast( mysql, user, group, friendId, authorId,
 						rbp.seq_num, rbp.identity1, rbp.identity2, rbp.date );
 				break;
 			default:
-				error("remote broadcast parse failed: %.*s\n", (int)encrypt.decLen, (char*)encrypt.decrypted );
+				error("remote broadcast parse failed: %.*s\n", 
+						(int)encrypt.decLen, (char*)encrypt.decrypted );
 				break;
 		}
 	}
@@ -215,7 +217,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 				break;
 			case BroadcastParser::Remote:
 				remoteBroadcast( mysql, user, friendId, bp.hash, 
-						bp.generation, bp.embeddedMsg, bp.length );
+						bp.group, bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::GroupMemberRevocation:
 				groupMemberRevocation( mysql, user, friendId,

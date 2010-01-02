@@ -2,39 +2,38 @@
 #include "disttree.h"
 #include "encrypt.h"
 
-void addGroup( MYSQL *mysql, const char *user, const char *group )
+long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId )
 {
-	/* Query the user. */
-	DbQuery findUser( mysql, "SELECT id FROM user WHERE user = %e", user );
-
-	if ( findUser.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		return;
-	}
-
-	MYSQL_ROW row = findUser.fetchRow();
-	long long userId = strtoll( row[0], 0, 10 );
-
+	/* Always, try to insert. Ignore failures. */
 	DbQuery insert( mysql, 
-		"INSERT IGNORE INTO friend_group "
-		"( user_id, name, key_gen, tree_gen_low, tree_gen_high ) "
-		"VALUES ( %L, %e, 1, 1, 1 )",
-		userId, group
+		"INSERT IGNORE INTO network "
+		"( user_id, network_name_id, key_gen, tree_gen_low, tree_gen_high ) "
+		"VALUES ( %L, %L, 1, 1, 1 )",
+		userId, networkNameId
 	);
 
-
-	if ( insert.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR friend group exists\r\n" );
-		return;
+	long long networkId = 0;
+	if ( insert.affectedRows() > 0  ) {
+        /* Make the first broadcast key for the user. */
+       networkId = lastInsertId( mysql );
+       newBroadcastKey( mysql, networkId, 1 );
+	}
+	else {
+		DbQuery findNetwork( mysql,
+			"SELECT id from network WHERE user_id = %L and network_name_id = %L",
+			userId, networkNameId );
+		if ( findNetwork.rows() == 0 ) {
+			fatal("could not insert or find network for user_id "
+					"%lld and network_name_id %lld\n", userId, networkNameId );
+		}
+		else {
+			MYSQL_ROW row = findNetwork.fetchRow();
+			networkId = strtoll( row[0], 0, 10 );
+		}
 	}
 
-	/* Make the first broadcast key for the user. */
-	long long friendGroupId = lastInsertId( mysql );
-	newBroadcastKey( mysql, friendGroupId, 1 );
-
-	BIO_printf( bioOut, "OK\n" );
+	return networkId;
 }
-
 
 void sendAllProofs( MYSQL *mysql, const char *user, const char *group, const char *friendId )
 {
@@ -64,18 +63,19 @@ void sendAllProofs( MYSQL *mysql, const char *user, const char *group, const cha
 	}
 }
 
-void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, const char *friendId )
+void sendAllProofs2( MYSQL *mysql, const char *user, const char *network,
+		long long networkId, const char *friendId )
 {
-	message("send all proofs (2) for %s %s %s\n", user, group, friendId );
+	message("send all proofs (2) for %s %s %s\n", user, network, friendId );
 
 	DbQuery findGroup( mysql, 
 		"SELECT friend_group.id FROM user "
 		"JOIN friend_group ON user.id = friend_group.user_id "
-		"WHERE user.user = %e AND friend_group.name = %e ",
-		user, group );
+		"WHERE user.user = %e AND friend_group.network_id = %L ",
+		user, networkId );
 
 	if ( findGroup.rows() > 0 ) {
-		long long groupId = strtoll( findGroup.fetchRow()[0], 0, 10 );
+		//long long groupId = strtoll( findGroup.fetchRow()[0], 0, 10 );
 
 		DbQuery allProofs( mysql,
 			"SELECT friend_hash, generation, reverse_proof "
@@ -83,8 +83,8 @@ void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, const ch
 			"JOIN group_member "
 			"	ON friend_claim.id = group_member.friend_claim_id "
 			"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
-			"WHERE friend_claim.user = %e AND group_member.friend_group_id = %L",
-			user, groupId );
+			"WHERE friend_claim.user = %e AND group_member.network_id = %L",
+			user, networkId );
 
 		for ( int r = 0; r < allProofs.rows(); r++ ) {
 			MYSQL_ROW row = allProofs.fetchRow();
@@ -93,7 +93,7 @@ void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, const ch
 				long long generation = strtoll( row[1], 0, 10 );
 				const char *friendProof = row[2];
 
-				String msg( "friend_proof %s %s %lld %s\r\n", friendHash, group, generation, friendProof );
+				String msg( "friend_proof %s %s %lld %s\r\n", friendHash, network, generation, friendProof );
 				message("trying to send %s\n", msg.data );
 				queueMessage( mysql, user, friendId, msg.data, msg.length );
 			}
@@ -105,14 +105,14 @@ void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, const ch
  * To make group del and friend del instantaneous we need to destroy the tree.
  */
 
-void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId, 
-		const char *group, const char *friendId,
+void sendBkProof( MYSQL *mysql, const char *user, 
+		const char *network, long long networkId, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
 	/*
 	 * Send the current broadcast key and the friend_proof.
 	 */
-	CurrentPutKey put( mysql, user, group );
+	CurrentPutKey put( mysql, user, network );
 
 	/* Get the current time. */
 	String timeStr = timeNow();
@@ -140,18 +140,20 @@ void sendBkProof( MYSQL *mysql, const char *user, long long friendGroupId,
 
 	/* Notify the requester. */
 	String registered( "broadcast_key %s %lld %s %s %s\r\n", 
-			group, put.keyGen, put.broadcastKey.data, encrypt1.sym, encrypt2.sym );
+			network, put.keyGen, put.broadcastKey.data, encrypt1.sym, encrypt2.sym );
 
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
 
-	putTreeAdd( mysql, user, group, friendGroupId, friendId, putRelid );
+	putTreeAdd( mysql, user, network, networkId, friendId, putRelid );
 
-	sendAllProofs( mysql, user, group, friendId );
-	sendAllProofs2( mysql, user, group, friendId );
+	sendAllProofs( mysql, user, network, friendId );
+	sendAllProofs2( mysql, user, network, networkId, friendId );
 }
 
-void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )
+void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
 {
+	message("adding %s to %s for %s\n", identity, network, user );
+
 	/* Query the user. */
 	DbQuery findUser( mysql, 
 		"SELECT id FROM user WHERE user = %e", user );
@@ -164,17 +166,20 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 	MYSQL_ROW row = findUser.fetchRow();
 	long long userId = strtoll( row[0], 0, 10 );
 
-	/* Query the group. */
-	DbQuery findGroup( mysql, 
-		"SELECT id FROM friend_group WHERE user_id = %L AND name = %e", userId, group );
+	/* Query the network. */
+	DbQuery findNetworkName( mysql, 
+		"SELECT id FROM network_name WHERE name = %e", network );
 
-	if ( findGroup.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid friend group\r\n" );
+	if ( findNetworkName.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
 		return;
 	}
 
-	row = findGroup.fetchRow();
-	long long friendGroupId = strtoll( row[0], 0, 10 );
+	row = findNetworkName.fetchRow();
+	long long networkNameId = strtoll( row[0], 0, 10 );
+
+	/* Make sure we have the network parameters for this user. */
+	long long networkId = addNetwork( mysql, userId, networkNameId );
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
@@ -190,11 +195,12 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 	long long friendClaimId = strtoll( row[0], 0, 10 );
 	const char *putRelid = row[1];
 
+	/* Try to insert the group member. */
 	DbQuery insert( mysql, 
-		"INSERT IGNORE INTO group_member "
-		"( friend_group_id, friend_claim_id   ) "
+		"INSERT IGNORE INTO network_member "
+		"( network_id, friend_claim_id  ) "
 		"VALUES ( %L, %L )",
-		friendGroupId, friendClaimId
+		networkId, friendClaimId
 	);
 
 	if ( insert.affectedRows() == 0 ) {
@@ -202,7 +208,7 @@ void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *
 		return;
 	}
 
-	sendBkProof( mysql, user, friendGroupId, group, identity, friendClaimId, putRelid );
+	//sendBkProof( mysql, user, network, networkId, identity, friendClaimId, putRelid );
 
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -223,10 +229,11 @@ void invalidateBkProof( MYSQL *mysql, const char *user, long long userId, long l
 	queueBroadcast( mysql, user, group, command.data, command.length );
 }
 
-void removeFromGroup( MYSQL *mysql, const char *user, const char *group, const char *identity )
+void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
 {
-	message("removing %s from %s for %s\n", identity, group, user );
+	message("removing %s from %s for %s\n", identity, network, user );
 
+#if 0
 	/* Query the user. */
 	DbQuery findUser( mysql, 
 		"SELECT id FROM user WHERE user = %e", user );
@@ -277,6 +284,45 @@ void removeFromGroup( MYSQL *mysql, const char *user, const char *group, const c
 
 	invalidateBkProof( mysql, user, userId, friendGroupId, group, 
 			identity, friendClaimId, putRelid );
+#endif
+	BIO_printf( bioOut, "OK\n" );
+}
 
+void showNetwork( MYSQL *mysql, const char *user, const char *network )
+{
+	message("showing network %s for %s\n", network, user );
+
+	/* Query the user. */
+	DbQuery findUser( mysql, 
+		"SELECT id FROM user WHERE user = %e", user );
+
+	if ( findUser.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR user not found\r\n" );
+		return;
+	}
+
+	MYSQL_ROW row = findUser.fetchRow();
+	long long userId = strtoll( row[0], 0, 10 );
+
+	/* Query the network. */
+	DbQuery findNetworkName( mysql, 
+		"SELECT id FROM network_name WHERE name = %e", network );
+
+	if ( findNetworkName.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
+		return;
+	}
+
+	row = findNetworkName.fetchRow();
+	long long networkNameId = strtoll( row[0], 0, 10 );
+
+	/* Make sure we have the network parameters for this user. */
+	addNetwork( mysql, userId, networkNameId );
+
+	BIO_printf( bioOut, "OK\n" );
+}
+
+void unshowNetwork( MYSQL *mysql, const char *user, const char *network )
+{
 	BIO_printf( bioOut, "OK\n" );
 }

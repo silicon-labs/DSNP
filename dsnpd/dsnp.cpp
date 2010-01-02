@@ -159,10 +159,12 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 		"FROM user "
 		"JOIN friend_group "
 		"ON user.id = friend_group.user_id "
+		"JOIN network "
+		"ON friend_group.network_id = network.id "
 		"JOIN put_broadcast_key "
 		"ON friend_group.id = put_broadcast_key.friend_group_id "
 		"WHERE user.user = %e AND "
-		"	friend_group.name = %e AND "
+		"	network.name = %e AND "
 		"	friend_group.key_gen = put_broadcast_key.generation ", 
 		user, group );
 	
@@ -177,20 +179,18 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 	broadcastKey.set( row[4] );
 }
 
-void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation )
+void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 {
-	unsigned char broadcast_key[RELID_SIZE];
-	const char *bk = 0;
-
 	/* Generate the relationship and request ids. */
+	unsigned char broadcast_key[RELID_SIZE];
 	RAND_bytes( broadcast_key, RELID_SIZE );
-	bk = binToBase64( broadcast_key, RELID_SIZE );
+	const char *bk = binToBase64( broadcast_key, RELID_SIZE );
 
 	DbQuery( mysql, 
 		"INSERT INTO put_broadcast_key "
-		"( friend_group_id, generation, broadcast_key ) "
+		"( network_id, generation, broadcast_key ) "
 		"VALUES ( %L, %L, %e ) ",
-		friendGroupId, generation, bk );
+		networkId, generation, bk );
 }
 
 void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pass )
@@ -233,20 +233,6 @@ void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pa
 		"	id = %L ",
 		passSaltStr, passHashed, idSaltStr,
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, id );
-
-	long long userId = lastInsertId( mysql );
-
-	DbQuery insert( mysql, 
-		"INSERT INTO friend_group "
-		"( user_id, name, key_gen, tree_gen_low, tree_gen_high ) "
-		"VALUES ( %L, 'social', 1, 1, 1 )",
-		userId
-	);
-
-	long long friendGroupId = lastInsertId( mysql );
-	
-	/* Make the first broadcast key for the user. */
-	newBroadcastKey( mysql, friendGroupId, 1 );
 
 	RSA_free( rsa );
 }

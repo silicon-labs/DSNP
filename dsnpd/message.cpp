@@ -49,32 +49,34 @@ void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, 
 
 
 void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
-		const char *friendId, const char *friendHash, const char *group,
-		long long generation, const char *broadcastKey, const char *friendProof1, const char *friendProof2 )
+		const char *friendId, const char *friendHash, const char *network,
+		long long generation, const char *broadcastKey, const char *friendProof1, 
+		const char *friendProof2 )
 {
-	addBroadcastKey( mysql, friendClaimId, group, generation );
+	addBroadcastKey( mysql, friendClaimId, network, generation );
 
 	/* Make the query. */
 	DbQuery( mysql, 
 			"UPDATE get_broadcast_key "
 			"SET broadcast_key = %e, friend_proof = %e, reverse_proof = %e "
 			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
-			broadcastKey, friendProof1, friendProof2, friendClaimId, group, generation );
+			broadcastKey, friendProof1, friendProof2, friendClaimId, network, generation );
 
 	DbQuery haveGroup( mysql, 
 		"SELECT friend_group.id "
 		"FROM user "
+		"JOIN network "
 		"JOIN friend_group "
-		"ON user.id = friend_group.user_id "
+		"ON user.id = friend_group.user_id AND network.id = friend_group.network_id "
 		"WHERE user.user = %e AND "
-		"	friend_group.name = %e ",
-		user, group );
+		"	network.name = %e ",
+		user, network );
 	
 	/* If we have anyone in this group, then broadcast the friend proof. */
 	if ( haveGroup.rows() > 0 ) {
 		/* Broadcast the friend proof that we just received. */
 		message("broadcasting friend proof 1 %s\n",  friendProof1);
-		sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof1 );
+		sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof1 );
 
 		long long friendGroupId = strtoll( haveGroup.fetchRow()[0], 0, 10 );
 
@@ -88,7 +90,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		if ( haveReverse.rows() ) {
 			/* Sending friend */
 			message( "broadcasting friend proof 2 %s\n", friendProof2 );
-			sendRemoteBroadcast( mysql, user, friendHash, group, generation, 20, friendProof2 );
+			sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
 		}
 	}
 

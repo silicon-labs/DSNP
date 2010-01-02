@@ -12,16 +12,16 @@ class FriendsController extends AppController
 		$this->checkRole();
 	}
 
-	function findFriendsWithGroups()
+	function findFriendsWithNetworkMembers()
 	{
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 
 		/* LInk to the group member and get the next level (friend_group). */
 		$this->FriendClaim->bindModel( array(
-			'hasMany' => array( 'GroupMember' => array( 
-				'foreignKey' => 'friend_claim_id' 
-		) ) ) );
+			'hasMany' => array( 'NetworkMember' => array( 
+				'foreignKey' => 'friend_claim_id' ))
+		));
 		$this->FriendClaim->recursive = 2;
 
 		$friendClaims = $this->FriendClaim->find('all', 
@@ -40,33 +40,45 @@ class FriendsController extends AppController
 		return $friendGroups;
 	}
 
+	function findNetworks()
+	{
+		$this->loadModel( 'Network' );
+		$this->Network->bindModel( array(
+			'belongsTo' => array( 'NetworkName' )
+		));
+		$networks = $this->Network->find( 'all', array( 
+			'conditions' => array( 'user_id' => $this->USER_ID ),
+			'order' => 'NetworkName.id' 
+		));
+		return $networks;
+	}
+
 	function manage()
 	{
 		$this->requireOwner();
 
-		$friendClaims = $this->findFriendsWithGroups();
+		$friendClaims = $this->findFriendsWithNetworkMembers();
 		$this->set( 'friendClaims', $friendClaims );
 
-		$friendGroups = $this->findGroups();
-		$this->set( 'friendGroups', $friendGroups );
-
+		$networks = $this->findNetworks();
+		$this->set( 'networks', $networks );
 	}
 
-	function isMember( $groupMembers, $groupId )
+	function isMember( $networkId, $groupMembers )
 	{
 		foreach ( $groupMembers as $member ) {
-			if ( $groupId == $member['friend_group_id'] )
+			if ( $networkId == $member['network_id'] )
 				return true;
 		}
 		return false;
 	}
 
-	function addToGroup( $group, $claim )
+	function addToNetwork( $networkName, $claim )
 	{
 		$identity = $claim['FriendClaim']['identity'];
-		$gname = $group['FriendGroup']['name'];
+		$nn = $networkName['NetworkName']['name'];
 
-		#echo "$identity to $gname\n";
+		#echo "adding $identity to $nn\n";
 		#return;
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
@@ -76,28 +88,21 @@ class FriendsController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"add_to_group $this->USER_NAME $gname $identity\r\n";
+			"add_to_network $this->USER_NAME $nn $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
-		if ( !ereg("^OK", $res) )
-			die( "FAILURE *** group add failed with <br> $res" );
+		if ( !ereg("^OK", $res) ) die( "FAILURE *** group add failed with <br> $res" );
 
 		fclose( $fp );
 	}
 
-	function removeFromGroup( $group, $claim )
+	function removeFromNetwork( $networkName, $claim )
 	{
 		$identity = $claim['FriendClaim']['identity'];
-		$gname = $group['FriendGroup']['name'];
-		#
-		#echo "$identity from $gname\n";
-		#
-		#$gid = $group['FriendGroup']['id'];
-		#$cid = $claim['FriendClaim']['id'];
-		#
-		#$gmid = $groupMember['GroupMember']['id'];
-		#echo "$gid $cid $gmid\n";
+		$nn = $networkName['NetworkName']['name'];
+		
+		#echo "removing $identity from $nn\n";
 		#return;
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
@@ -107,7 +112,7 @@ class FriendsController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"remove_from_group $this->USER_NAME $gname $identity\r\n";
+			"remove_from_network $this->USER_NAME $nn $identity\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
@@ -122,23 +127,26 @@ class FriendsController extends AppController
 		#echo '<pre>'; 
 		#print_r( $this->data ); 
 
-		$friendClaims = $this->findFriendsWithGroups();
-		$friendGroups = $this->findGroups();
-		$this->loadModel('GroupMember');
+		$friendClaims = $this->findFriendsWithNetworkMembers();
+		$networks = $this->findNetworks();
 
 		foreach ( $friendClaims as $claim ) {
-			foreach ( $friendGroups as $group ) {
-				$current = false;
-				if ( $this->isMember( $claim['GroupMember'], $group['FriendGroup']['id'] ) )
-					$current = true;
-
-				$checkboxName = 'v_' . $group['FriendGroup']['id'] . '_' . $claim['FriendClaim']['id'];
+			foreach ( $networks as $network ) {
+				$checkboxName = 'v_' . $network['Network']['id'] . '_' . $claim['FriendClaim']['id'];
 				if ( isset( $this->data['Membership'][$checkboxName] ) ) {
-					$new = $this->data['Membership'][$checkboxName] != 0;
-					if ( !$current && $new )
-						$this->addToGroup( $group, $claim );
-					if ( $current && !$new )
-						$this->removeFromGroup( $group, $claim );
+					/* Curent membership status. */
+					$currentlyMember = false;
+					if ( $this->isMember( $network['Network']['id'], $claim['NetworkMember'] ) )
+						$currentlyMember = true;
+
+					/* New membership status. */
+					$newMemberStatus = $this->data['Membership'][$checkboxName] != 0;
+
+					/* Add or remove? */
+					if ( !$currentlyMember && $newMemberStatus )
+						$this->addToNetwork( $network, $claim );
+					if ( $currentlyMember && !$newMemberStatus )
+						$this->removeFromNetwork( $network, $claim );
 				}
 			}
 		}
@@ -148,22 +156,22 @@ class FriendsController extends AppController
 		$this->redirect( "/$this->USER_NAME/friends/manage/" );
 	}
 
-	function addgroup()
+	function addnet()
 	{
 		$this->requireOwner();
+		$networks = $this->findNetworks();
+		$this->set( 'networks', $networks );
 
-		/* Get the list of groups so we known how many columns to make. */
-		$this->loadModel( 'FriendGroup' );
-		$friendGroups = $this->FriendGroup->find('all', array( 
-			'conditions' => array( 'user_id' => $this->USER_ID ),
-			'order' => 'id'
+		$this->loadModel( 'NetworkName' );
+		$networkNames = $this->NetworkName->find( 'all', array( 
+			'order' => 'NetworkName.id' 
 		));
-		$this->set( 'friendGroups', $friendGroups );
+		$this->set( 'networkNames', $networkNames );
 	}
 
-	function saddgroup()
+	function showNetwork( $networkName )
 	{
-		$name = $this->data['FriendGroup']['name'];
+		$nn = $networkName['NetworkName']['name'];
 
 		$fp = fsockopen( 'localhost', $this->CFG_PORT );
 		if ( !$fp )
@@ -172,15 +180,59 @@ class FriendsController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"add_group $this->USER_NAME $name\r\n";
+			"show_network $this->USER_NAME $nn\r\n";
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
-		if ( !ereg("^OK", $res) )
-			die( "FAILURE *** group creation failed with <br> $res" );
+		if ( !ereg("^OK", $res) ) die( "FAILURE *** network naame show failed with <br> $res" );
 
-		$this->redirect( "/$this->USER_NAME/friends/manage/" );
+		fclose( $fp );
 	}
 
+	function unshowNetwork( $networkName )
+	{
+
+	}
+
+	function saddnet()
+	{
+		$this->requireOwner();
+		$networks = $this->findNetworks();
+
+		$this->loadModel( 'NetworkName' );
+		$networkNames = $this->NetworkName->find( 'all', array( 
+			'order' => 'NetworkName.id' 
+		));
+
+		echo "<pre>";
+		print_r( $this->data['NetworkUsage'] );
+		echo "</pre>";
+
+		foreach ( $networkNames as $nn ) {
+			$currentStatus = false;
+			foreach ( $networks as $net ) {
+				if ( isset( $net['NetworkName']['name'] ) && 
+						$net['NetworkName']['id'] == $nn['NetworkName']['id'] )
+				{
+					$currentStatus = true;
+					break;
+				}
+			}
+
+			$checkboxName = 'v' . $nn['NetworkName']['id'];
+			if ( isset( $this->data['NetworkUsage'][$checkboxName] ) ) {
+				$newStatus = $this->data['NetworkUsage'][$checkboxName] != 0;
+
+				/* Add or remove? */
+				if ( !$currentStatus && $newStatus )
+					$this->showNetwork( $nn );
+				if ( $currentStatus && !$newStatus )
+					$this->unshowNetwork( $nn );
+			}
+		}
+
+		exit();
+		$this->redirect( "/$this->USER_NAME/friends/manage/" );
+	}
 }
 ?>

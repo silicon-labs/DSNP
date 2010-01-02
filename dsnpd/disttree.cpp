@@ -373,8 +373,8 @@ int forwardTreeInsert( MYSQL *mysql, const char *user, const char *group,
 }
 #endif
 
-void putTreeAdd( MYSQL *mysql, const char *user, const char *group, long long friendGroupId,
-		const char *identity, const char *relid )
+void putTreeAdd( MYSQL *mysql, const char *user, const char *network,
+		long long networkId, const char *identity, const char *relid )
 {
 	DbQuery claim( mysql,
 		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
@@ -385,18 +385,18 @@ void putTreeAdd( MYSQL *mysql, const char *user, const char *group, long long fr
 		long long friendClaimId = strtoll( row[0], 0, 10 );
 
 		/* Need the current tree generation. */
-		CurrentPutKey put( mysql, user, group );
+		CurrentPutKey put( mysql, user, network );
 
 		DbQuery( mysql,
 			"INSERT INTO put_tree "
-			"( friend_claim_id, friend_group_id, generation, root, active, state ) "
+			"( friend_claim_id, network_id, generation, root, active, state ) "
 			"VALUES ( %L, %L, %L, false, true, 1 )",
-			friendClaimId, friendGroupId, put.treeGenHigh );
+			friendClaimId, networkId, put.treeGenHigh );
 	}
 }
 
 void putTreeDel( MYSQL *mysql, const char *user, long long userId, 
-		const char *group, long long friendGroupId,
+		const char *network, long long networkId,
 		const char *identity, const char *relid )
 {
 	DbQuery claim( mysql,
@@ -410,23 +410,23 @@ void putTreeDel( MYSQL *mysql, const char *user, long long userId,
 		message("resetting forwared tree for user %s, excluding %s\n", user, identity );
 
 		/* Need the current broadcast key. */
-		CurrentPutKey put( mysql, user, group );
+		CurrentPutKey put( mysql, user, network );
 		long long newTreeGen = put.treeGenHigh + 1;
 
 		DbQuery load( mysql,
 			"INSERT INTO put_tree "
-			"( friend_claim_id, friend_group_id, generation, root, active, state ) "
+			"( friend_claim_id, network_id, generation, root, active, state ) "
 			"SELECT friend_claim.id, %L, %L, false, true, 1 "
 			"FROM friend_claim "
 			"JOIN group_member ON friend_claim.id = group_member.friend_claim_id "
-			"WHERE user = %e AND group_member.friend_group_id = %L AND friend_claim.id != %L ",
-			friendGroupId, newTreeGen, user, friendGroupId, friendClaimId );
+			"WHERE user = %e AND group_member.network_id = %L AND friend_claim.id != %L ",
+			networkId, newTreeGen, user, networkId, friendClaimId );
 
 		DbQuery( mysql,
 			"UPDATE friend_group "
 			"SET tree_gen_low = %L, tree_gen_high = %L "
 			"WHERE user_id = %L AND name = %e",
-			newTreeGen, newTreeGen, userId, group );
+			newTreeGen, newTreeGen, userId, network );
 	}
 }
 

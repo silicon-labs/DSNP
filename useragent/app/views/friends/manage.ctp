@@ -18,19 +18,18 @@ echo $form->create( 'Membership', array( 'url' => "/$USER_NAME/friends/smanage")
 <thead class=>
 <tr class="head1">
 	<td>Person</td> 
-	<td colspan="<? echo count( $friendGroups ); ?>">
-		Groups 
+	<td colspan="<? echo count( $networks ); ?>">
+		Networks 
 		<font class="mod_link">
-			<? echo $html->link('add', "/$USER_NAME/friends/addgroup/"); ?>
+		<? echo $html->link('add', "/$USER_NAME/friends/addnet/"); ?>
 		</font>
-		
 	</td> 
 </tr>
 <tr class="head2">
 	<td></td> 
 	<? 
-	foreach ( $friendGroups as $group ) {
-		echo "<td>" . $group['FriendGroup']['name'] . "</td>";
+	foreach ( $networks as $networkName ) {
+		echo "<td>" . $networkName['NetworkName']['name'] . "</td>";
 	}
 	?>
 </tr>
@@ -38,10 +37,15 @@ echo $form->create( 'Membership', array( 'url' => "/$USER_NAME/friends/smanage")
 
 <?
 
-function isMember( $groupMembers, $groupId )
+#echo "<pre>";
+#print_r( $networks );
+#print_r( $friendClaims );
+#echo "</pre>";
+
+function isMember( $networkId, $groupMembers )
 {
 	foreach ( $groupMembers as $member ) {
-		if ( $groupId == $member['friend_group_id'] )
+		if ( $networkId == $member['network_id'] )
 			return true;
 	}
 	return false;
@@ -54,13 +58,13 @@ foreach ( $friendClaims as $claim ) {
 	echo $claim['FriendClaim']['name'];
 	echo "</td>";
 
-	foreach ( $friendGroups as $group ) {
+	foreach ( $networks as $network ) {
 		echo "<td class='member'>";
 		$checked = false;
-		if ( isMember( $claim['GroupMember'], $group['FriendGroup']['id'] ) )
+		if ( isMember( $network['Network']['id'], $claim['NetworkMember'] ) )
 			$checked = true;
 
-		$checkboxName = 'v_' . $group['FriendGroup']['id'] . '_' . $claim['FriendClaim']['id'];
+		$checkboxName = 'v_' . $network['Network']['id'] . '_' . $claim['FriendClaim']['id'];
 
 		echo $form->checkbox($checkboxName, array (
 				'checked' => $checked ) );
@@ -69,7 +73,6 @@ foreach ( $friendClaims as $claim ) {
 
 	echo "</tr>";
 }
-
 
 ?>
 </table>

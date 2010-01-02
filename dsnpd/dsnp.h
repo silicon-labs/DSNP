@@ -426,9 +426,10 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 AllocString make_id_hash( const char *salt, const char *identity );
 long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen );
 
-void addGroup( MYSQL *mysql, const char *user, const char *group );
-void addToGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );
-void removeFromGroup( MYSQL *mysql, const char *user, const char *group, const char *identity );
+void showNetwork( MYSQL *mysql, const char *user, const char *network );
+void unshowNetwork( MYSQL *mysql, const char *user, const char *network );
+void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
+void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
 
 typedef std::list<std::string> RecipientList;
 
@@ -446,8 +447,6 @@ long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 		long long seqNum, const char *encMessage );
 
 void sendAllProofs( MYSQL *mysql, const char *user, const char *group, 
-		const char *friendId );
-void sendAllProofs2( MYSQL *mysql, const char *user, const char *group, 
 		const char *friendId );
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
 		const char *hash, const char *group, long long generation,

@@ -48,6 +48,7 @@ bool gblKeySubmitted = false;
 	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
 	group = [a-zA-Z0-9_.]+    >{mark=p;} %{group.set(mark, p);};
+	network = [a-zA-Z0-9_.]+  >{mark=p;} %{network.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -246,21 +247,21 @@ bool gblKeySubmitted = false;
 		#
 		# Friend management.
 		#
-		'add_group'i ' ' user ' ' group
+		'show_network'i ' ' user ' ' network
 			EOL @check_key @{
-				addGroup( mysql, user, group );
+				showNetwork( mysql, user, network );
 			} |
-		'remove_group'i ' ' user ' ' group
+		'unshow_network'i ' ' user ' ' network
 			EOL @check_key @{
-
+				unshowNetwork( mysql, user, network );
 			} |
-		'add_to_group'i ' ' user ' ' group ' ' identity
+		'add_to_network'i ' ' user ' ' network ' ' identity
 			EOL @check_key @{
-				addToGroup( mysql, user, group, identity );
+				addToNetwork( mysql, user, network, identity );
 			} |
-		'remove_from_group'i ' ' user ' ' group ' ' identity
+		'remove_from_network'i ' ' user ' ' network ' ' identity
 			EOL @check_key @{
-				removeFromGroup( mysql, user, group, identity );
+				removeFromNetwork( mysql, user, network, identity );
 			} |
 			
 
@@ -355,8 +356,8 @@ bool gblKeySubmitted = false;
 		#
 
 		'send_all'i ' ' user ' ' group ' ' identity EOL @check_key @{
-				sendAllProofs( mysql, user, group, identity );
-				sendAllProofs2( mysql, user, group, identity );
+				//sendAllProofs( mysql, user, group, identity );
+				//sendAllProofs2( mysql, user, group, identity );
 				BIO_printf( bioOut, "OK\r\n" );
 			} |
 		'forward_tree_reset'i ' ' user ' ' group EOL @check_key @{
@@ -385,7 +386,7 @@ int serverParseLoop()
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
-	String gen_str, seq_str, group;
+	String gen_str, seq_str, group, network;
 	String tree_gen_low_str, tree_gen_high_str;
 	long length;
 	long long generation, tree_gen_low, tree_gen_high;

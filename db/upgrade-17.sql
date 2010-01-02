@@ -62,6 +62,7 @@ CREATE TABLE put_tree
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
 	network_id BIGINT,
+	friend_claim_id BIGINT,
 
 	generation BIGINT,
 	root BOOLEAN,
@@ -83,11 +84,25 @@ CREATE TABLE friend_link
 	PRIMARY KEY ( network_id, from_fcid, to_fcid )
 );
 
--- ALTER TABLE get_broadcast_key ADD COLUMN network_id BIGINT;
--- UPDATE get_broadcast_key, network 
---	SET get_broadcast_key.network_id = network.id
---	WHERE get_broadcast_key.group_name = network.name;
---
+DROP TABLE get_broadcast_key;
+CREATE TABLE get_broadcast_key
+(
+	id bigint NOT NULL AUTO_INCREMENT,
+
+	friend_claim_id BIGINT,
+	network_id BIGINT,
+	generation BIGINT,
+
+	broadcast_key VARCHAR(48),
+	friend_proof TEXT,
+	reverse_proof TEXT,
+
+	UNIQUE KEY ( network_id, friend_claim_id, generation ),
+	PRIMARY KEY (id)
+);
+
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 -- ALTER TABLE get_tree ADD COLUMN network_id BIGINT;
 --UPDATE get_tree, network 
 --	SET get_tree.network_id = network.id

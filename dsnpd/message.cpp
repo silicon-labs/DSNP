@@ -29,39 +29,43 @@ void userMessage( MYSQL *mysql, const char *user, const char *friendId,
 	appNotification( args, msg, length );
 }
 
-void addBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *group, long long generation )
+void addGetBroadcastKey( MYSQL *mysql, long long friendClaimId, long long networkId, long long generation )
 {
-	/* FIXME: not atomic. */
 	DbQuery check( mysql,
-		"SELECT friend_claim_id FROM get_broadcast_key "
-		"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
-		friendClaimId, group, generation );
-	
-	if ( check.rows() == 0 ) {
-		/* Insert an entry for this relationship. */
-		DbQuery( mysql, 
-			"INSERT INTO get_broadcast_key "
-			"( friend_claim_id, group_name, generation )"
-			"VALUES ( %L, %e, %L )", 
-			friendClaimId, group, generation );
-	}
+		"INSERT IGNORE INTO get_broadcast_key ( friend_claim_id, network_id, generation ) "
+		"VALUES ( %L, %L, %L )",
+		friendClaimId, networkId, generation );
 }
 
-
-void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
+void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user, long long userId,
 		const char *friendId, const char *friendHash, const char *network,
 		long long generation, const char *broadcastKey, const char *friendProof1, 
 		const char *friendProof2 )
 {
-	addBroadcastKey( mysql, friendClaimId, network, generation );
+	/* Query the network. */
+	DbQuery findNetworkName( mysql, 
+		"SELECT id FROM network_name WHERE name = %e", network );
 
-	/* Make the query. */
+	if ( findNetworkName.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
+		return;
+	}
+
+	MYSQL_ROW row = findNetworkName.fetchRow();
+	long long networkNameId = strtoll( row[0], 0, 10 );
+
+	/* Make sure we have the network for the user. */
+	long long networkId = addNetwork( mysql, userId, networkNameId );
+
+	/* Store the key. */
+	addGetBroadcastKey( mysql, friendClaimId, networkId, generation );
 	DbQuery( mysql, 
 			"UPDATE get_broadcast_key "
 			"SET broadcast_key = %e, friend_proof = %e, reverse_proof = %e "
-			"WHERE friend_claim_id = %L AND group_name = %e AND generation = %L",
-			broadcastKey, friendProof1, friendProof2, friendClaimId, network, generation );
+			"WHERE friend_claim_id = %L AND network_id = %L AND generation = %L",
+			broadcastKey, friendProof1, friendProof2, friendClaimId, networkId, generation );
 
+#if 0
 	DbQuery haveGroup( mysql, 
 		"SELECT friend_group.id "
 		"FROM user "
@@ -93,6 +97,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 			sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
 		}
 	}
+#endif
 
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -110,7 +115,10 @@ int friendProofMessage( MYSQL *mysql, const char *user, const char *friend_id,
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	exec_query( mysql, 
-		"SELECT id, user, friend_id, friend_hash FROM friend_claim "
+		"SELECT friend_claim.id, friend_claim.user, friend_claim.friend_id, "
+		"	friend_claim.friend_hash, user.id "
+		"FROM friend_claim "
+		"JOIN user ON friend_claim.user = user.user "
 		"WHERE get_relid = %e",
 		relid );
 
@@ -121,10 +129,12 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
 		return;
 	}
+
 	long long id = strtoll(row[0], 0, 10);
 	const char *user = row[1];
 	const char *friendId = row[2];
 	const char *friendHash = row[3];
+	long long userId = strtoll(row[4], 0, 10);
 
 	RSA *user_priv = load_key( mysql, user );
 	RSA *id_pub = fetch_public_key( mysql, friendId );
@@ -144,7 +154,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
-			storeBroadcastKey( mysql, id, user, friendId, friendHash,
+			storeBroadcastKey( mysql, id, user, userId, friendId, friendHash,
 					mp.group, mp.generation, mp.key, mp.sym1, mp.sym2 );
 			break;
 		case MessageParser::ForwardTo: 

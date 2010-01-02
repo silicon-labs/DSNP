@@ -361,7 +361,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group,
 		"	put_tree.state = 1 AND"
 		"	%L <= put_tree.generation AND put_tree.generation <= %L "
 		"ORDER BY friend_claim.friend_id",
-		user, put.friendGroupId, put.treeGenLow, put.treeGenHigh );
+		user, put.networkId, put.treeGenLow, put.treeGenHigh );
 	
 	storeBroadcastRecipients( mysql, user, messageId, outOfTree, false );
 	
@@ -380,7 +380,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group,
 		"	put_tree.root = true AND "
 		"	%L <= put_tree.generation AND put_tree.generation <= %L "
 		"ORDER BY friend_claim.friend_id",
-		user, put.friendGroupId, put.treeGenLow, put.treeGenHigh );
+		user, put.networkId, put.treeGenLow, put.treeGenHigh );
 
 	storeBroadcastRecipients( mysql, user, messageId, rootFriend, true );
 

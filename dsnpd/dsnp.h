@@ -121,7 +121,7 @@ struct CurrentPutKey
 {
 	CurrentPutKey( MYSQL *mysql, const char *user, const char *group );
 
-	long long friendGroupId;
+	long long networkId;
 	long long keyGen;
 	String broadcastKey;
 	long long treeGenLow;
@@ -451,4 +451,6 @@ void sendAllProofs( MYSQL *mysql, const char *user, const char *group,
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
 		const char *hash, const char *group, long long generation,
 		const char *msg, long mLen );
+
+long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId );
 #endif

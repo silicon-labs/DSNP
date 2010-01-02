@@ -80,7 +80,7 @@ INSERT INTO put_tree
 	JOIN friend_group on user.id = friend_group.user_id AND friend_group.name = put_tree_copy.group_name;
 DROP TABLE put_tree_copy;
 
-CREATE TAbLE get_broadcast_key_copy LIKE get_broadcast_key;
+CREATE TABLE get_broadcast_key_copy LIKE get_broadcast_key;
 INSERT INTO get_broadcast_key_copy SELECT * FROM get_broadcast_key GROUP BY friend_claim_id, broadcast_key;
 DELETE FROM get_broadcast_key;
 INSERT INTO get_broadcast_key SELECT * FROM get_broadcast_key_copy;

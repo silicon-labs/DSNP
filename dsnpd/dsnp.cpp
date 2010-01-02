@@ -151,28 +151,27 @@ AllocString pass_hash( const u_char *pass_salt, const char *pass )
 CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group )
 {
 	DbQuery query( mysql, 
-		"SELECT friend_group.id, "
-		"	friend_group.key_gen, "
-		"	friend_group.tree_gen_low, "
-		"	friend_group.tree_gen_high, "
+		"SELECT network.id, "
+		"	network.key_gen, "
+		"	network.tree_gen_low, "
+		"	network.tree_gen_high, "
 		"	put_broadcast_key.broadcast_key "
 		"FROM user "
-		"JOIN friend_group "
-		"ON user.id = friend_group.user_id "
+		"JOIN network_name "
 		"JOIN network "
-		"ON friend_group.network_id = network.id "
+		"ON user.id = network.user_id AND network_name.id = network.network_name_id "
 		"JOIN put_broadcast_key "
-		"ON friend_group.id = put_broadcast_key.friend_group_id "
+		"ON network.id = put_broadcast_key.network_id "
 		"WHERE user.user = %e AND "
-		"	network.name = %e AND "
-		"	friend_group.key_gen = put_broadcast_key.generation ", 
+		"	network_name.name = %e AND "
+		"	network.key_gen = put_broadcast_key.generation ", 
 		user, group );
 	
 	if ( query.rows() == 0 )
 		fatal( "failed to get current put broadcast key for user %s and group %s\n", user, group );
 	
 	MYSQL_ROW row = query.fetchRow();
-	friendGroupId = strtoll( row[0], 0, 10 );
+	networkId = strtoll( row[0], 0, 10 );
 	keyGen = strtoll( row[1], 0, 10 );
 	treeGenLow = strtoll( row[2], 0, 10 );
 	treeGenHigh = strtoll( row[3], 0, 10 );

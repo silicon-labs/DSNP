@@ -78,10 +78,10 @@ DROP TABLE friend_link;
 CREATE TABLE friend_link
 (
 	network_id BIGINT,
-	from_fcid BIGINT,
-	to_fcid BIGINT,
+	from_fc_id BIGINT,
+	to_fc_id BIGINT,
 
-	PRIMARY KEY ( network_id, from_fcid, to_fcid )
+	PRIMARY KEY ( network_id, from_fc_id, to_fc_id )
 );
 
 DROP TABLE get_broadcast_key;
@@ -101,19 +101,11 @@ CREATE TABLE get_broadcast_key
 	PRIMARY KEY (id)
 );
 
-/*!40101 SET character_set_client = @saved_cs_client */;
+ALTER TABLE broadcast_message CHANGE group_name network_name TEXT;
+ALTER TABLE pending_remote_broadcast CHANGE group_name network_name TEXT;
 
 -- ALTER TABLE get_tree ADD COLUMN network_id BIGINT;
 --UPDATE get_tree, network 
 --	SET get_tree.network_id = network.id
 --	WHERE get_tree.group_name = network.name;
 --
---ALTER TABLE broadcast_message ADD COLUMN network_id BIGINT;
---UPDATE broadcast_message, network 
---	SET broadcast_message.network_id = network.id
---	WHERE broadcast_message.group_name = network.name;
---
---ALTER TABLE pending_remote_broadcast ADD COLUMN network_id BIGINT;
---UPDATE pending_remote_broadcast, network 
---	SET pending_remote_broadcast.network_id = network.id
---	WHERE pending_remote_broadcast.group_name = network.name;

@@ -65,48 +65,44 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 			"WHERE friend_claim_id = %L AND network_id = %L AND generation = %L",
 			broadcastKey, friendProof1, friendProof2, friendClaimId, networkId, generation );
 
-#if 0
-	DbQuery haveGroup( mysql, 
-		"SELECT friend_group.id "
-		"FROM user "
-		"JOIN network "
-		"JOIN friend_group "
-		"ON user.id = friend_group.user_id AND network.id = friend_group.network_id "
-		"WHERE user.user = %e AND "
-		"	network.name = %e ",
-		user, network );
-	
-	/* If we have anyone in this group, then broadcast the friend proof. */
-	if ( haveGroup.rows() > 0 ) {
-		/* Broadcast the friend proof that we just received. */
-		message("broadcasting friend proof 1 %s\n",  friendProof1);
-		sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof1 );
+	/* Broadcast the friend proof that we just received. */
+	message( "broadcasting in-proof for user %s network %s <- %s\n", user, network, friendId );
+	sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof1 );
 
-		long long friendGroupId = strtoll( haveGroup.fetchRow()[0], 0, 10 );
+	/* If we have them in this group then broadcast the reverse as well. */
+	DbQuery haveReverse( mysql,
+		"SELECT id FROM network_member "
+		"WHERE network_id = %L AND friend_claim_id = %L",
+		networkId, friendClaimId );
 
-		/* If we have them in this group then broadcast the reverse as well. */
-		DbQuery haveReverse( mysql,
-			"SELECT id FROM group_member "
-			"WHERE friend_group_id = %L AND friend_claim_id = %L",
-			friendGroupId, friendClaimId
-		);
-
-		if ( haveReverse.rows() ) {
-			/* Sending friend */
-			message( "broadcasting friend proof 2 %s\n", friendProof2 );
-			sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
-		}
+	if ( haveReverse.rows() ) {
+		/* Sending friend */
+		message( "broadcasting out-proof for user %s network %s -> %s\n", user, network, friendId );
+		sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
 	}
-#endif
 
 	BIO_printf( bioOut, "OK\n" );
 }
 
-int friendProofMessage( MYSQL *mysql, const char *user, const char *friend_id,
-		const char *hash, const char *group, long long generation, const char *sym )
+int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const char *friend_id,
+		const char *hash, const char *network, long long generation, const char *sym )
 {
 	message("calling remote broadcast from friend proof symLen %d sym %s\n", strlen(sym), sym );
-	remoteBroadcast( mysql, user, friend_id, hash, group, generation, sym, strlen(sym) );
+
+	DbQuery findNetworkName( mysql, 
+		"SELECT id FROM network_name WHERE name = %e", network );
+
+	if ( findNetworkName.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
+		return -1;
+	}
+
+	MYSQL_ROW row = findNetworkName.fetchRow();
+	long long networkNameId = strtoll( row[0], 0, 10 );
+
+	long long networkId = addNetwork( mysql, userId, networkNameId );
+
+	remoteBroadcast( mysql, user, friend_id, hash, network, networkId, generation, sym, strlen(sym) );
 	BIO_printf( bioOut, "OK\r\n" );
 	return 0;
 }
@@ -170,7 +166,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 					mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProof:
-			friendProofMessage( mysql, user, friendId, mp.hash, mp.group, mp.generation, mp.sym );
+			friendProofMessage( mysql, user, userId, friendId, mp.hash, mp.group, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
 			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );

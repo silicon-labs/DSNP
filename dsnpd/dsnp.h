@@ -449,7 +449,7 @@ long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 void sendAllProofs( MYSQL *mysql, const char *user, const char *group, 
 		const char *friendId );
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
-		const char *hash, const char *group, long long generation,
+		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen );
 
 long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId );

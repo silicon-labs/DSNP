@@ -35,6 +35,37 @@ long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId )
 	return networkId;
 }
 
+void sendAllInProofs( MYSQL *mysql, const char *user, const char *network, long long networkId, const char *friendId )
+{
+	message("sending all in-proofs for user %s network %s to %s\n", user, network, friendId );
+
+	/* Send out all proofs in the group. */
+	DbQuery allProofs( mysql,
+		"SELECT friend_id, friend_hash, generation, friend_proof "
+		"FROM friend_claim "
+		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
+		"WHERE user = %e AND network_id = %L",
+		user, networkId );
+	
+	/* FIXME: need to deal with specific generation. */
+	for ( int r = 0; r < allProofs.rows(); r++ ) {
+		MYSQL_ROW row = allProofs.fetchRow();
+		const char *friendProof = row[3];
+
+		if ( friendProof != 0 ) {
+			const char *proofId = row[0];
+			const char *friendHash = row[1];
+			long long generation = strtoll( row[2], 0, 10 );
+
+			message("sending in-proof for user %s network %s <- %s to %s\n", user, network, proofId, friendId );
+			String msg( "friend_proof %s %s %lld %s\r\n", friendHash, network, generation, friendProof );
+			queueMessage( mysql, user, friendId, msg.data, msg.length );
+		}
+	}
+}
+
+
+
 void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 		long long networkId, const char *friendId )
 {
@@ -65,36 +96,6 @@ void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 		}
 	}
 }
-
-void sendAllInProofs( MYSQL *mysql, const char *user, const char *network, long long networkId, const char *friendId )
-{
-	message("sending all in proofs for user %s network %s to %s\n", user, network, friendId );
-
-	/* Send out all proofs in the group. */
-	DbQuery allProofs( mysql,
-		"SELECT friend_id, friend_hash, generation, friend_proof "
-		"FROM friend_claim "
-		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
-		"WHERE user = %e AND network_id = %L",
-		user, networkId );
-	
-	/* FIXME: need to deal with specific generation. */
-	for ( int r = 0; r < allProofs.rows(); r++ ) {
-		MYSQL_ROW row = allProofs.fetchRow();
-		const char *friendProof = row[3];
-
-		if ( friendProof != 0 ) {
-			const char *proofId = row[0];
-			const char *friendHash = row[1];
-			long long generation = strtoll( row[2], 0, 10 );
-
-			message("sending in proof for user %s network %s -> %s to %s\n", user, network, proofId, friendId );
-			String msg( "friend_proof %s %s %lld %s\r\n", friendHash, network, generation, friendProof );
-			queueMessage( mysql, user, friendId, msg.data, msg.length );
-		}
-	}
-}
-
 
 /*
  * To make group del and friend del instantaneous we need to destroy the tree.
@@ -140,8 +141,8 @@ void sendBkProof( MYSQL *mysql, const char *user,
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
 	putTreeAdd( mysql, user, network, networkId, friendId, putRelid );
 
-	sendAllOutProofs( mysql, user, network, networkId, friendId );
 	sendAllInProofs( mysql, user, network, networkId, friendId );
+	sendAllOutProofs( mysql, user, network, networkId, friendId );
 }
 
 void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )

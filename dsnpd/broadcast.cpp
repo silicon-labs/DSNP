@@ -54,27 +54,45 @@ void remoteInner( MYSQL *mysql, const char *user, const char *subjectId,
 	appNotification( args, msg, mLen );
 }
 
+void storeFriendLink( MYSQL *mysql, const char *user, long long networkId, const char *from, const char *to )
+{
+	DbQuery findFrom( mysql,
+		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		user, from );
+
+	DbQuery findTo( mysql,
+		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		user, to );
+
+	if ( findFrom.rows() > 0 && findTo.rows() > 0 ) {
+		long long fromId = strtoll( findFrom.fetchRow()[0], 0, 10 );
+		long long toId = strtoll( findTo.fetchRow()[0], 0, 10 );
+
+		DbQuery( mysql,
+			"INSERT INTO friend_link "
+			"( network_id, from_fc_id, to_fc_id ) "
+			"VALUES ( %L, %L, %L ) ",
+			networkId, fromId, toId );
+	}
+}
+
 void friendProofBroadcast( MYSQL *mysql, const char *user, 
-		const char *group, const char *subjectId, const char *authorId,
+		const char *group, long long networkId, const char *subjectId, const char *authorId,
 		long long seqNum, const char *fromId, const char *toId, const char *date )
 {
 	message("%s received friend proof subject_id %s author_id %s date %s\n",
 		user, subjectId, authorId, date );
 
-	if ( strcmp( fromId, subjectId ) == 0 && strcmp( toId, authorId ) == 0 ) {
-		String args( "friend_proof %s %s %s %s %lld %s", 
-				user, group, subjectId, authorId, seqNum, date );
-		appNotification( args, 0, 0 );
-	}
-	else if ( strcmp( fromId, authorId ) == 0 && strcmp( toId, subjectId ) == 0 ) {
-		String args( "friend_proof %s %s %s %s %lld %s", 
-				user, group, authorId, subjectId, seqNum, date );
-		appNotification( args, 0, 0 );
-	}
+	/* Check that the ids in the link mesage are about the subject and author
+	 * (which are verified). */
+	if ( strcmp( fromId, subjectId ) == 0 && strcmp( toId, authorId ) == 0 )
+		storeFriendLink( mysql, user, networkId, fromId, toId );
+	else if ( strcmp( fromId, authorId ) == 0 && strcmp( toId, subjectId ) == 0 )
+		storeFriendLink( mysql, user, networkId, fromId, toId );
 }
 
 void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
-		const char *hash, const char *group, long long generation,
+		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen )
 {
 	message( "remote broadcast: user %s hash %s generation %lld\n", user, hash, generation );
@@ -122,7 +140,7 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
-				friendProofBroadcast( mysql, user, group, friendId, authorId,
+				friendProofBroadcast( mysql, user, network, networkId, friendId, authorId,
 						rbp.seq_num, rbp.identity1, rbp.identity2, rbp.date );
 				break;
 			default:
@@ -159,7 +177,7 @@ long long forwardBroadcast( MYSQL *mysql, long long messageId,
 	return lastQueueId;
 }
 
-void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long long keyGen,
+void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, long long keyGen,
 		bool forward, long long treeGenLow, long long treeGenHigh, const char *encrypted )
 {
 	/* Find the recipient. */
@@ -167,14 +185,19 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 		"SELECT friend_claim.id, "
 		"	friend_claim.user, "
 		"	friend_claim.friend_id, "
-		"	get_broadcast_key.broadcast_key "
+		"	get_broadcast_key.broadcast_key, "
+		"	network.id "
 		"FROM friend_claim "
+		"JOIN network "
+		"ON friend_claim.user_id = network.user_id "
+		"JOIN network_name "
+		"ON network.network_name_id = network_name.id "
 		"JOIN get_broadcast_key "
 		"ON friend_claim.id = get_broadcast_key.friend_claim_id "
 		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L AND "
-		"	get_broadcast_key.group_name = %e "
+		"	network_name.name = %e "
 		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
-		relid, keyGen, group );
+		relid, keyGen, network );
 
 	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR bad recipient\r\n");
@@ -182,10 +205,11 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 	}
 
 	MYSQL_ROW row = recipient.fetchRow();
-	unsigned long long friendClaimId = strtoull(row[0], 0, 10);
+	long long friendClaimId = strtoull(row[0], 0, 10);
 	const char *user = row[1];
 	const char *friendId = row[2];
 	const char *broadcastKey = row[3];
+	long long networkId = strtoll( row[4], 0, 10 );
 
 	/* Do the decryption. */
 	RSA *id_pub = fetch_public_key( mysql, friendId );
@@ -194,7 +218,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 
 	if ( decryptRes < 0 ) {
 		error("unable to decrypt broadcast message for %s from "
-			"%s group %s key gen %lld\n", user, friendId, group, keyGen );
+			"%s network %s key gen %lld\n", user, friendId, network, keyGen );
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
@@ -217,7 +241,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 				break;
 			case BroadcastParser::Remote:
 				remoteBroadcast( mysql, user, friendId, bp.hash, 
-						bp.group, bp.generation, bp.embeddedMsg, bp.length );
+						bp.group, networkId, bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::GroupMemberRevocation:
 				groupMemberRevocation( mysql, user, friendId,
@@ -256,9 +280,9 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *group, long 
 				/* Store the message. */
 				DbQuery( mysql,
 					"INSERT INTO broadcast_message "
-					"( group_name, key_gen, tree_gen_low, tree_gen_high, message ) "
+					"( network_name, key_gen, tree_gen_low, tree_gen_high, message ) "
 					"VALUES ( %e, %L, %L, %L, %e ) ",
-					group, keyGen, treeGenLow, treeGenHigh, encrypted );
+					network, keyGen, treeGenLow, treeGenHigh, encrypted );
 
 				messageId = lastInsertId( mysql );
 			}
@@ -343,7 +367,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group,
 	/* Stroe the message. */
 	DbQuery( mysql,
 		"INSERT INTO broadcast_message "
-		"( group_name, key_gen, tree_gen_low, tree_gen_high, message ) "
+		"( network_name, key_gen, tree_gen_low, tree_gen_high, message ) "
 		"VALUES ( %e, %L, %L, %L, %e ) ",
 		group, put.keyGen, put.treeGenLow, put.treeGenHigh, encrypt.sym );
 
@@ -357,7 +381,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group,
 		"FROM friend_claim "
 		"JOIN put_tree "
 		"ON friend_claim.id = put_tree.friend_claim_id "
-		"WHERE friend_claim.user = %e AND put_tree.friend_group_id = %L AND "
+		"WHERE friend_claim.user = %e AND put_tree.network_id = %L AND "
 		"	put_tree.state = 1 AND"
 		"	%L <= put_tree.generation AND put_tree.generation <= %L "
 		"ORDER BY friend_claim.friend_id",
@@ -376,7 +400,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group,
 		"FROM friend_claim "
 		"JOIN put_tree "
 		"ON friend_claim.id = put_tree.friend_claim_id "
-		"WHERE friend_claim.user = %e AND put_tree.friend_group_id = %L AND "
+		"WHERE friend_claim.user = %e AND put_tree.network_id = %L AND "
 		"	put_tree.root = true AND "
 		"	%L <= put_tree.generation AND put_tree.generation <= %L "
 		"ORDER BY friend_claim.friend_id",
@@ -510,7 +534,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 
 	exec_query( mysql,
 		"INSERT INTO pending_remote_broadcast "
-		"( user, identity, hash, reqid, seq_num, group_name ) "
+		"( user, identity, hash, reqid, seq_num, network_name ) "
 		"VALUES ( %e, %e, %e, %e, %L, %e )",
 		toUser, authorId, authorHash, result_message, seqNum, group );
 
@@ -583,7 +607,7 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 {
 	DbQuery recipient( mysql, 
-		"SELECT user, identity, hash, seq_num, group_name, generation, sym "
+		"SELECT user, identity, hash, seq_num, network_name, generation, sym "
 		"FROM pending_remote_broadcast "
 		"WHERE user = %e AND reqid_final = %e",
 		user, reqid );

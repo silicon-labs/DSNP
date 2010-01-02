@@ -1,0 +1,10 @@
+DELETE FROM network;
+DELETE FROM network_member;
+DELETE FROM put_broadcast_key;
+DELETE FROM put_tree;
+DELETE FROM get_broadcast_key;
+DELETE FROM get_tree;
+DELETE FROM broadcast_queue;
+DELETE FROM broadcast_recipient;
+DELETE FROM broadcast_message;
+DELETE FROM message_queue;

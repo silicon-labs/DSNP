@@ -336,16 +336,16 @@ bool gblKeySubmitted = false;
 				broadcastReceipient( mysql, recipients, relid );
 			} |
 
-		'broadcast_forward'i ' ' group ' ' generation ' ' tree_gen_low ' ' tree_gen_high ' ' length
+		'broadcast_forward'i ' ' network ' ' generation ' ' tree_gen_low ' ' tree_gen_high ' ' length
 			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, group, generation, true, 
+				receiveBroadcast( mysql, recipients, network, generation, true, 
 						tree_gen_low, tree_gen_high, message_buffer.data );
 				recipients.clear();
 			} |
 
-		'broadcast'i ' ' group ' ' generation ' ' length
+		'broadcast'i ' ' network ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, group, generation, false, 
+				receiveBroadcast( mysql, recipients, network, generation, false, 
 						0, 0, message_buffer.data );
 				recipients.clear();
 			} |

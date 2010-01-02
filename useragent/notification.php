@@ -432,20 +432,6 @@ case "remote_publication": {
 	break;
 }
 
-case "friend_proof": {
-	# Collect the args.
-	$user = $argv[$b+0];
-	$group = $argv[$b+1];
-	$subject = $argv[$b+2];
-	$author = $argv[$b+3];
-	$seq_num = $argv[$b+4];
-	$date = $argv[$b+5];
-	$time = $argv[$b+6];
-
-	friendProof( $user, $group, $subject, $author, $seq_num, $date, $time );
-	break;
-}
-
 case "group_member_revocation": {
 	# Collect the args.
 	$user = $argv[$b+0];

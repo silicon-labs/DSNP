@@ -8,3 +8,4 @@ DELETE FROM broadcast_queue;
 DELETE FROM broadcast_recipient;
 DELETE FROM broadcast_message;
 DELETE FROM message_queue;
+DELETE FROM friend_link;

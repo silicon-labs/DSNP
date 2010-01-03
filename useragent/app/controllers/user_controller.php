@@ -93,8 +93,8 @@ class UserController extends AppController
 							'type' => 'left outer',
 							'foreignKey' => false,
 							'conditions'=> array(
-								'FriendClaim.id = FriendLink.fc1_id', 
-								'FriendLink.fc2_id' => $BROWSER['id']
+								'FriendClaim.id = FriendLink.from_fc_id', 
+								'FriendLink.to_fc_id' => $BROWSER['id']
 							) 
 						)
 					)
@@ -397,7 +397,7 @@ class UserController extends AppController
 		$res = fgets($fp);
 
 		if ( !ereg("^OK ([-A-Za-z0-9_]+)", $res, $regs) )
-			die( 'kak' );
+			die( "remote_broadcast_response failed with $res ");
 		$reqid = $regs[1];
 
 		$this->redirect( "${backto}user/finish?reqid=$reqid" );
@@ -421,7 +421,7 @@ class UserController extends AppController
 		$res = fgets($fp);
 
 		if ( !ereg("^OK", $res, $regs) )
-			die( 'kak' );
+			die( "remote_broadcast_final failed with $res" );
 
 		$this->redirect( "/$this->USER_NAME/" );
 	}

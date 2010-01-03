@@ -39,7 +39,7 @@ include('functions.php');
 foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['identity'];
-	$fc1_id = $row['FriendLink']['fc1_id'];
+	$from_fc_id = $row['FriendLink']['from_fc_id'];
 
 	if ( $dest_id == $BROWSER['identity'] ) {
 		echo "* <a href=\"${dest_id}\">";
@@ -54,9 +54,9 @@ foreach ( $friendClaims as $row ) {
 foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['identity'];
-	$fc1_id = $row['FriendLink']['fc1_id'];
+	$from_fc_id = $row['FriendLink']['from_fc_id'];
 
-	if ( isset( $fc1_id ) ) {
+	if ( isset( $from_fc_id ) ) {
 		echo "+ <a href=\"${dest_id}cred/sflogin?h=" . 
 			urlencode( $_SESSION['hash'] ) . "\">";
 		if ( isset( $name ) )
@@ -70,9 +70,9 @@ foreach ( $friendClaims as $row ) {
 foreach ( $friendClaims as $row ) {
 	$name = $row['FriendClaim']['name'];
 	$dest_id = $row['FriendClaim']['identity'];
-	$fc1_id = $row['FriendLink']['fc1_id'];
+	$from_fc_id = $row['FriendLink']['from_fc_id'];
 
-	if ( $dest_id != $BROWSER['identity'] && !isset( $fc1_id ) ) {
+	if ( $dest_id != $BROWSER['identity'] && !isset( $from_fc_id ) ) {
 		echo "&nbsp;&nbsp;<a href=\"${dest_id}\">";
 		if ( isset( $name ) )
 			echo $name;

@@ -307,10 +307,10 @@ bool gblKeySubmitted = false;
 		#
 		# Remote broadcasting
 		#
-		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' group ' ' length
+		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' network ' ' length
 			M_EOL @check_key @{
 				remoteBroadcastRequest( mysql, user, identity, hash, 
-						token, group, message_buffer.data, length );
+						token, network, message_buffer.data, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid

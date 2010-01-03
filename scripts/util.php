@@ -87,7 +87,7 @@ function sendRealName( $user )
 	}
 }
 
-function removeFromGroup( $user, $gname, $identity )
+function removeFromNetwork( $user, $network, $identity )
 {
 	global $CFG_URI;
 	global $CFG_PORT;
@@ -100,18 +100,20 @@ function removeFromGroup( $user, $gname, $identity )
 	$send = 
 		"SPP/0.1 $CFG_URI\r\n" . 
 		"comm_key $CFG_COMM_KEY\r\n" .
-		"remove_from_group $user $gname $identity\r\n";
+		"remove_from_group $user $network $identity\r\n";
 
 	fwrite( $fp, $send );
 	$res = fgets($fp);
 	echo "remove_from_group result: $res\n";
 }
 
-function addToGroup( $user, $gname, $identity )
+function addToNetwork( $user, $network, $identity )
 {
 	global $CFG_URI;
 	global $CFG_PORT;
 	global $CFG_COMM_KEY;
+
+	echo "add to network: $user $network $identity\n";
 
 	$fp = fsockopen( 'localhost', $CFG_PORT );
 	if ( !$fp )
@@ -120,29 +122,30 @@ function addToGroup( $user, $gname, $identity )
 	$send = 
 		"SPP/0.1 $CFG_URI\r\n" . 
 		"comm_key $CFG_COMM_KEY\r\n" .
-		"add_to_group $user $gname $identity\r\n";
+		"add_to_network $user $network $identity\r\n";
 
 	fwrite( $fp, $send );
-	$res = fgets($fp);
-	echo "add_to_group result: $res\n";
+	$result = fgets($fp);
+
+	echo "result: $result\n";
 }
 
 $notification_type = $argv[3];
 $b = 4;
 
 switch ( $notification_type ) {
-case "remove_from_group": {
+case "remove_from_network": {
 	$user = $argv[$b+0];
 	$group = $argv[$b+1];
 	$identity = $argv[$b+2];
 	removeFromGroup( $user, $group, $identity );
 	break;
 }
-case "add_to_group": {
+case "add_to_network": {
 	$user = $argv[$b+0];
-	$group = $argv[$b+1];
+	$network = $argv[$b+1];
 	$identity = $argv[$b+2];
-	echo "addToGroup( $user, $group, $identity );\n";
+	addToNetwork( $user, $network, $identity );
 	break;
 }
 }

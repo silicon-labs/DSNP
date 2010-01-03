@@ -208,11 +208,11 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 	BIO_printf( bioOut, "OK\n" );
 }
 
-void invalidateBkProof( MYSQL *mysql, const char *user, long long userId, long long networkId, 
-		const char *network, const char *friendId,
+void invalidateBkProof( MYSQL *mysql, const char *user, long long userId,
+		const char *network, long long networkId, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
-	//putTreeDel( mysql, user, userId, network, friendGroupId, friendId, putRelid );
+	putTreeDel( mysql, user, userId, network, networkId, friendId, putRelid );
 
 	/*
 	 * Send the current broadcast key and the friend_proof.
@@ -280,7 +280,7 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 		return;
 	}
 
-	invalidateBkProof( mysql, user, userId, networkId, network,
+	invalidateBkProof( mysql, user, userId, network, networkId,
 			identity, friendClaimId, putRelid );
 	BIO_printf( bioOut, "OK\n" );
 }

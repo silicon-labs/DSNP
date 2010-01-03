@@ -418,15 +418,15 @@ void putTreeDel( MYSQL *mysql, const char *user, long long userId,
 			"( friend_claim_id, network_id, generation, root, active, state ) "
 			"SELECT friend_claim.id, %L, %L, false, true, 1 "
 			"FROM friend_claim "
-			"JOIN group_member ON friend_claim.id = group_member.friend_claim_id "
-			"WHERE user = %e AND group_member.network_id = %L AND friend_claim.id != %L ",
+			"JOIN network_member ON friend_claim.id = network_member.friend_claim_id "
+			"WHERE user = %e AND network_member.network_id = %L AND friend_claim.id != %L ",
 			networkId, newTreeGen, user, networkId, friendClaimId );
 
 		DbQuery( mysql,
-			"UPDATE friend_group "
+			"UPDATE network "
 			"SET tree_gen_low = %L, tree_gen_high = %L "
-			"WHERE user_id = %L AND name = %e",
-			newTreeGen, newTreeGen, userId, network );
+			"WHERE id = %L",
+			newTreeGen, newTreeGen, networkId );
 	}
 }
 

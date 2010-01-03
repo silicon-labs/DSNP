@@ -90,7 +90,25 @@ function findUserId( $user )
 	return -1;
 }
 
-function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content_type )
+function findNetworkId( $userId, $networkName )
+{
+	$query = sprintf(
+		"SELECT network.id AS id FROM network JOIN network_name " .
+		"ON network_name.id = network.network_name_id " .
+		"WHERE network.user_id = %ld AND network_name.name = '%s'",
+		$userId,
+		mysql_real_escape_string($networkName)
+	);
+
+	echo "findNetworkId: $query\n";
+
+	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( $row = mysql_fetch_assoc($result) )
+		return (int) $row['id'];
+	return -1;
+}
+
+function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	global $CFG_PHOTO_DIR;
 
@@ -100,7 +118,9 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 
 	$local_resid = $seq_num;
 	$remote_resid = (int) $msg[0]['resource-id'];
+
 	$user_id = findUserId( $for_user );
+	$network_id = findNetworkId( $user_id, $network );
 	$author_id = findFriendClaimId( $for_user, $author );
 
 	print( "message is a photo, capturing\n" );
@@ -133,10 +153,11 @@ function photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user_id, author_id, seq_num, time_published, " . 
+		"	( user_id, network_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, local_resid, remote_resid, message ) " .
-		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', %ld, %ld, '%s' )",
+		"VALUES ( %ld, %ld, %ld, %ld, '%s', now(), '%s', %ld, %ld, '%s' )",
 		$user_id,
+		$network_id,
 		$author_id, 
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
@@ -171,13 +192,14 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 	}
 }
 
-function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_type )
+function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	/* Need a resource id. */
 	if ( $content_type != 'text/plain' )
 		return;
 
 	$user_id = findUserId( $for_user );
+	$network_id = findNetworkId( $user_id, $network );
 	$author_id = findFriendClaimId( $for_user, $author );
 
 	$query = sprintf(
@@ -198,10 +220,11 @@ function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_t
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user_id, author_id, seq_num, time_published, " . 
+		"	( user_id, network_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, message ) " .
-		"VALUES ( '%s', %ld, %ld, '%s', now(), '%s', '%s' )",
+		"VALUES ( %ld, %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
 		$user_id,
+		$network_id,
 		$author_id,
 		$seq_num, 
 		mysql_real_escape_string($date . ' ' . $time),
@@ -213,9 +236,10 @@ function broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_t
 }
 
 
-function boardPost( $for_user, $subject, $author, $seq_num, $date, $time, $msg, $content_type )
+function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	$user_id = findUserId( $for_user );
+	$network_id = findNetworkId( $user_id, $network );
 	$subject_id = findFriendClaimId( $for_user, $subject );
 	$author_id = findFriendClaimId( $for_user, $author );
 
@@ -239,10 +263,11 @@ function boardPost( $for_user, $subject, $author, $seq_num, $date, $time, $msg, 
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user_id, subject_id, author_id, seq_num, time_published, time_received, ".
+		"	( user_id, network_id, subject_id, author_id, seq_num, time_published, time_received, ".
 		"		type, message ) " .
-		"VALUES ( '%s', %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
+		"VALUES ( %ld, %ld, %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
 		$user_id,
+		$network_id,
 		$subject_id, 
 		$author_id, 
 		$seq_num, 
@@ -254,9 +279,10 @@ function boardPost( $for_user, $subject, $author, $seq_num, $date, $time, $msg, 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
-function remoteBoardPost( $user, $subject, $msg, $content_type )
+function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 {
 	$user_id = findUserId( $user );
+	$network_id = findNetworkId( $user_id, $network );
 	$subject_id = findFriendClaimId( $user, $subject );
 
 	$query = sprintf(
@@ -273,13 +299,16 @@ function remoteBoardPost( $user, $subject, $msg, $content_type )
 
 	$query = sprintf(
 		"INSERT INTO activity " .
-		"	( user_id, subject_id, published, time_published, type, message ) " .
-		"VALUES ( '%s', %ld, true, now(), '%s', '%s' )",
+		"	( user_id, network_id, subject_id, published, time_published, type, message ) " .
+		"VALUES ( %ld, %ld, %ld, true, now(), '%s', '%s' )",
 		$user_id,
+		$network_id,
 		$subject_id, 
 		mysql_real_escape_string('BRD'),
 		mysql_real_escape_string($msg[1])
 	);
+
+	echo $query;
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
@@ -331,13 +360,16 @@ switch ( $notification_type ) {
 case "user_message": {
 	# Collect the args.
 	$for_user = $argv[$b+0];
-	$subject = $argv[$b+1];
-	$author = $argv[$b+2];
-	$seq_num = $argv[$b+3];
-	$date = $argv[$b+4];
-	$time = $argv[$b+5];
-	$length = $argv[$b+6];
+	$network = $argv[$b+1];
+	$subject = $argv[$b+2];
+	$author = $argv[$b+3];
+	$seq_num = $argv[$b+4];
+	$date = $argv[$b+5];
+	$time = $argv[$b+6];
+	$length = $argv[$b+7];
 
+	if ( $network === '-' )
+		$network = null;
 	if ( $subject === '-' )
 		$subject = null;
 
@@ -355,13 +387,13 @@ case "user_message": {
 				nameChange( $for_user, $author, $seq_num, $date, $time, $msg, $content_type );
 				break;
 			case 'photo-upload':
-				photoUpload( $for_user, $author, $seq_num, $date, $time, $msg, $content_type );
+				photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type );
 				break;
 			case 'broadcast':
-				broadcast( $for_user, $author, $seq_num, $date, $time, $msg, $content_type );
+				broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type );
 				break;
 			case 'board-post':
-				boardPost( $for_user, $subject, $author, $seq_num,
+				boardPost( $for_user, $network, $subject, $author, $seq_num,
 						$date, $time, $msg, $content_type );
 				break;
 		}
@@ -372,8 +404,9 @@ case "user_message": {
 case "remote_publication": {
 	# Collect the args.
 	$user = $argv[$b+0];
-	$subject = $argv[$b+1];
-	$length = $argv[$b+2];
+	$network = $argv[$b+1];
+	$subject = $argv[$b+2];
+	$length = $argv[$b+3];
 
 	# Read the message from stdin.
 	$msg = parse( $length );
@@ -386,7 +419,7 @@ case "remote_publication": {
 
 		switch ( $type ) {
 			case 'board-post':
-				remoteBoardPost( $user, $subject, $msg, $content_type );
+				remoteBoardPost( $user, $network, $subject, $msg, $content_type );
 				break;
 		}
 	}

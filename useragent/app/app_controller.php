@@ -109,7 +109,11 @@ class AppController extends Controller
 			$BROWSER = $this->Session->read('BROWSER');
 			$this->set( 'BROWSER', $BROWSER );
 		}
+
 		$this->set('ROLE', $this->ROLE );
+
+		$this->NETWORK = $this->Session->read('network');
+		$this->set('NETWORK', $this->NETWORK );
 	}
 
 	function privName()

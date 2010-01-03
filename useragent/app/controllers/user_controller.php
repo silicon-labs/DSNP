@@ -112,11 +112,14 @@ class UserController extends AppController
 		));
 		$this->set( 'images', $images );
 
+		$networkId = $this->findNetworkId( 'family' );
+
 		$this->loadModel('Activity');
 		$activity = $this->Activity->find( 'all', array( 
 				'conditions' => array( 
 					'Activity.user_id' => $this->USER_ID,
-					'published' => 'true'
+					'Activity.network_id' => $networkId,
+					'Activity.published' => 'true'
 				),
 				'order' => 'time_published DESC',
 				'limit' => $start + Configure::read('activity_size')
@@ -319,6 +322,22 @@ class UserController extends AppController
 			echo $res;
 	}
 
+	function findNetworkId( $networkName )
+	{
+		$this->loadModel( 'Network' );
+		$this->Network->bindModel( array(
+			'belongsTo' => array( 'NetworkName' )
+		));
+		$networks = $this->Network->find( 'first', array( 
+			'conditions' => array( 
+				'Network.user_id' => $this->USER_ID,
+				'NetworkName.name' => $networkName ),
+			'order' => 'NetworkName.id' 
+		));
+
+		return $networks['Network']['id'];
+	}
+
 	function board()
 	{
 		$this->requireFriend();
@@ -341,9 +360,12 @@ class UserController extends AppController
 			'message' => $message,
 		));
 
+		$networkId = $this->findNetworkId('family');
+
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
 			'user_id'  => $this->USER_ID,
+			'network_id' => $networkId,
 			'author_id' => $BROWSER['id'],
 			'published' => 'true',
 			'type' => 'BRD',
@@ -361,7 +383,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"remote_broadcast_request $this->USER_NAME $identity $hash $token social $len\r\n";
+			"remote_broadcast_request $this->USER_NAME $identity $hash $token family $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

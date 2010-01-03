@@ -46,10 +46,25 @@ class CredController extends AppController
 			));
 		}
 
+		$this->loadModel('LoginState');
+		$loginState = $this->LoginState->find('first', array(
+			'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
+
+		if ( isset( $loginState['LoginState'] ) > 0 )
+			$network = $loginState['LoginState']['network_name'];
+		else {
+			$network = 'social';
+			$loginState = $this->LoginState->save( array(
+				'user_id' => $this->USER_ID,
+				'network_name' => $network
+			));
+		}
+
 		# Login successful.
 		$this->Session->write( 'ROLE', 'owner' );
 		$this->Session->write( 'hash', $regs[1] );
 		$this->Session->write( 'token', $regs[2] );
+		$this->Session->write( 'network', $network );
 
 		if ( isset( $_POST['d'] ) )
 			$this->redirect( urldecode($_POST['d']) );
@@ -60,13 +75,19 @@ class CredController extends AppController
 	function sflogin()
 	{
 		$hash = $_REQUEST['h'];
+		$network = $_REQUEST['n'];
 
 		if ( !$hash )
 			die('no hash given');
 
+		if ( !$network )
+			$network = 'social';
+
 		/* Maybe we are already logged in as this friend. */
-		if ( isset( $_SESSION['ROLE'] ) && $_SESSION['ROLE'] == 'friend' && 
-				isset( $_SESSION['hash'] ) && $_SESSION['hash'] == $hash ) {
+		if ( isset( $_SESSION['ROLE'] ) && $_SESSION['ROLE'] === 'friend' && 
+				isset( $_SESSION['hash'] ) && $_SESSION['hash'] === $hash && 
+				isset( $_SESSION['network']) && $_SESSION['network'] === $network )
+		{
 			header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 		}
 		else {
@@ -78,7 +99,7 @@ class CredController extends AppController
 			$send = 
 				"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
 				"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
-				"ftoken_request " . $this->USER_NAME . " $hash\r\n";
+				"ftoken_request " . $this->USER_NAME . " $network $hash\r\n";
 			fwrite($fp, $send);
 
 			$res = fgets($fp);
@@ -159,18 +180,19 @@ class CredController extends AppController
 		$res = fgets($fp);
 
 		# If there is a result then the login is successful. 
-		if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+		if ( ereg("^OK ([A-Za-z]+) ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 			# Login successful.
 			$this->Session->write( 'ROLE', 'friend' );
 			$this->Session->write( 'token', $ftoken );
-			$this->Session->write( 'hash', $regs[1] );
+			$this->Session->write( 'network', $regs[1] );
+			$this->Session->write( 'hash', $regs[2] );
 
 			/* Find the friend claim data and store in the session. */
 			$this->loadModel('FriendClaim');
 			$BROWSER = $this->FriendClaim->find('first', array(
 				'conditions' => array (
 					'user_id' => $this->USER_ID,
-					'identity' => $regs[3]
+					'identity' => $regs[4]
 				)
 			));
 
@@ -183,8 +205,9 @@ class CredController extends AppController
 		}
 		else {
 			echo "<center>\n";
-			echo "FRIEND LOGIN FAILED<br>\n";
+			echo "FRIEND LOGIN FAILED<br> $res\n";
 			echo "</center>\n";
+			exit;
 		}
 	}
 

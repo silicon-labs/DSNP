@@ -702,6 +702,62 @@ void relidResponse( MYSQL *mysql, const char *user,
 	delete[] response_reqid_str;
 }
 
+void submitFtoken( MYSQL *mysql, const char *token )
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	long lasts = LOGIN_TOKEN_LASTS;
+	char *user, *from_id, *hash;
+
+	exec_query( mysql,
+		"SELECT user, from_id, network_id FROM ftoken_request WHERE token = %e",
+		token );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
+	}
+	user = row[0];
+	from_id = row[1];
+	long long networkId = strtoll( row[2], 0, 10 );
+
+	exec_query( mysql, 
+		"INSERT INTO flogin_token ( user, network_id, identity, login_token, expires ) "
+		"VALUES ( %e, %L, %e, %e, date_add( now(), interval %l second ) )", 
+		user, networkId, from_id, token, lasts );
+
+	exec_query( mysql,
+		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", from_id );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
+	}
+	hash = row[0];
+
+	DbQuery findNetworkName( mysql,
+		"SELECT network_name.name "
+		"FROM network_name "
+		"JOIN network "
+		"ON network_name.id = network.network_name_id "
+		"WHERE network.id = %L",
+		networkId );
+
+	if ( findNetworkName.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
+		return;
+	}
+	row = findNetworkName.fetchRow();
+	const char *networkName = row[0];
+
+	BIO_printf( bioOut, "OK %s %s %ld %s\r\n", networkName, hash, lasts, from_id );
+}
+
+
 void fetchResponseRelid( MYSQL *mysql, const char *reqid )
 {
 	long query_res;
@@ -845,24 +901,6 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 }
 
 
-long store_ftoken( MYSQL *mysql, const char *user, const char *identity,
-		const char *token_str, const char *reqid_str, const char *msg_sym )
-{
-	long result = 0;
-	int query_res;
-
-	query_res = exec_query( mysql,
-		"INSERT INTO ftoken_request "
-		"( user, from_id, token, reqid, msg_sym ) "
-		"VALUES ( %e, %e, %e, %e, %e ) ",
-		user, identity, token_str, reqid_str, msg_sym );
-
-	if ( query_res != 0 )
-		result = ERR_QUERY_ERROR;
-
-	return result;
-}
-
 long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user, 
 		const char *friend_hash )
 {
@@ -926,7 +964,7 @@ query_fail:
 	return id_hash_str;
 }
 
-void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
+void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const char *hash )
 {
 	int sigRes;
 	RSA *user_priv, *id_pub;
@@ -939,7 +977,7 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
-		::message("ftoken_request: hash %s for user %s is not valid\n", hash, user );
+		message("ftoken_request: hash %s for user %s is not valid\n", hash, user );
 
 		/* No friend claim ... send back a reqid anyways. Don't want to give
 		 * away that there is no claim. FIXME: Would be good to fake this with
@@ -979,17 +1017,47 @@ void ftoken_request( MYSQL *mysql, const char *user, const char *hash )
 	flogin_token_str = binToBase64( flogin_token, TOKEN_SIZE );
 	reqid_str = binToBase64( reqid, REQID_SIZE );
 
-	store_ftoken( mysql, user, friend_id.identity, 
-			flogin_token_str, reqid_str, encrypt.sym );
+	/* Find the user. */
+	DbQuery findUser( mysql, 
+		"SELECT id FROM user WHERE user = %e", user );
 
-	::message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
+	if ( findUser.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR user not found\r\n" );
+		return;
+	}
+
+	MYSQL_ROW row = findUser.fetchRow();
+	long long userId = strtoll( row[0], 0, 10 );
+
+	/* Try to find the network. */
+	DbQuery findNetwork( mysql, 
+		"SELECT network.id FROM network "
+		"JOIN network_name ON network.network_name_id = network_name.id "
+		"WHERE user_id = %L AND network_name.name = %e", 
+		userId, network );
+
+	if ( findNetwork.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
+		return;
+	}
+
+	row = findNetwork.fetchRow();
+	long long networkId = strtoll( row[0], 0, 10 );
+
+	DbQuery( mysql,
+		"INSERT INTO ftoken_request "
+		"( user, network_id, from_id, token, reqid, msg_sym ) "
+		"VALUES ( %e, %L, %e, %e, %e, %e ) ",
+		user, networkId, friend_id.identity, flogin_token_str, reqid_str, encrypt.sym );
+
+	message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
 
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str,
 			friend_id.identity, user_identity_hash( mysql, user ) );
 }
 
-void fetch_ftoken( MYSQL *mysql, const char *reqid )
+void fetchFtoken( MYSQL *mysql, const char *reqid )
 {
 	long query_res;
 	MYSQL_RES *select_res;
@@ -1018,7 +1086,7 @@ void fetch_ftoken( MYSQL *mysql, const char *reqid )
 	message("fetch_ftoken finished\n");
 }
 
-void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
+void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str )
 {
 	/*
@@ -1036,8 +1104,6 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	Identity friend_id;
 	char *site;
 	Encrypt encrypt;
-
-	message("ftoken_response\n");
 
 	/* Check if this identity is our friend. */
 	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
@@ -1072,7 +1138,7 @@ void ftoken_response( MYSQL *mysql, const char *user, const char *hash,
 	/* Decrypt the flogin_token. */
 	verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
-		::message("ftoken_response: ERROR_DECRYPT_VERIFY\n" );
+		message("ftoken_response: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		return;
 	}
@@ -1195,48 +1261,6 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	BIO_printf( bioOut, "OK %s %s %ld\r\n", id_hash_str.data, token_str.data, lasts );
 
 	message("login of %s successful\n", user );
-}
-
-void submit_ftoken( MYSQL *mysql, const char *token )
-{
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	long lasts = LOGIN_TOKEN_LASTS;
-	char *user, *from_id, *hash;
-
-	exec_query( mysql,
-		"SELECT user, from_id FROM ftoken_request WHERE token = %e",
-		token );
-
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
-	}
-	user = row[0];
-	from_id = row[1];
-
-	exec_query( mysql, 
-		"INSERT INTO flogin_token ( user, identity, login_token, expires ) "
-		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
-		user, from_id, token, lasts );
-
-	exec_query( mysql,
-		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", from_id );
-
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		goto free_result;
-	}
-	hash = row[0];
-
-	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash, lasts, from_id );
-
-free_result:
-	mysql_free_result( result );
 }
 
 char *decrypt_result( MYSQL *mysql, const char *from_user, 

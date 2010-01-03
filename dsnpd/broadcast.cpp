@@ -27,12 +27,12 @@ void broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *r
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-void directBroadcast( MYSQL *mysql, const char *relid, const char *user, 
+void directBroadcast( MYSQL *mysql, const char *relid, const char *user, const char *network,
 		const char *author_id, long long seq_num, const char *date,
 		const char *msg, long mLen )
 {
-	String args( "user_message %s - %s %lld %s %ld", 
-			user, author_id, seq_num, date, mLen );
+	String args( "user_message %s %s - %s %lld %s %ld", 
+			user, network, author_id, seq_num, date, mLen );
 	appNotification( args, msg, mLen );
 }
 
@@ -59,12 +59,12 @@ void groupMemberRevocation( MYSQL *mysql, const char *user,
 	}
 }
 
-void remoteInner( MYSQL *mysql, const char *user, const char *subjectId,
+void remoteInner( MYSQL *mysql, const char *user, const char *network, const char *subjectId,
 		const char *authorId, long long seqNum, const char *date,
 		const char *msg, long mLen )
 {
-	String args( "user_message %s %s %s %lld %s %ld", 
-			user, subjectId, authorId, seqNum, date, mLen );
+	String args( "user_message %s %s %s %s %lld %s %ld", 
+			user, network, subjectId, authorId, seqNum, date, mLen );
 	appNotification( args, msg, mLen );
 }
 
@@ -145,7 +145,7 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 		switch ( rbp.type ) {
 			case RemoteBroadcastParser::RemoteInner:
-				remoteInner( mysql, user, friendId, authorId, rbp.seq_num, 
+				remoteInner( mysql, user, network, friendId, authorId, rbp.seq_num, 
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			case RemoteBroadcastParser::FriendProof:
@@ -249,7 +249,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 	else {
 		switch ( bp.type ) {
 			case BroadcastParser::Direct:
-				directBroadcast( mysql, relid, user, friendId, bp.seq_num, 
+				directBroadcast( mysql, relid, user, network, friendId, bp.seq_num, 
 						bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
@@ -683,8 +683,8 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	id_pub = fetch_public_key( mysql, subjectId );
 
 	/* Notifiy the frontend. */
-	String args( "remote_publication %s %s %ld", 
-			user, subjectId, mLen );
+	String args( "remote_publication %s %s %s %ld", 
+			user, network, subjectId, mLen );
 	appNotification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */

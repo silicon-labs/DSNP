@@ -93,10 +93,11 @@ void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str, co
 void fetchResponseRelid( MYSQL *mysql, const char *reqid );
 void friendFinal( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
 void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid );
-void ftoken_request( MYSQL *mysql, const char *user, const char *hash );
-void ftoken_response( MYSQL *mysql, const char *user, const char *hash, 
+void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const char *hash );
+void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str );
-void fetch_ftoken( MYSQL *mysql, const char *reqid );
+void submitFtoken( MYSQL *mysql, const char *token );
+void fetchFtoken( MYSQL *mysql, const char *reqid );
 void setConfigByUri( const char *uri );
 void setConfigByName( const char *name );
 void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
@@ -137,7 +138,6 @@ long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *msg, char **result_msg );
 long queueMessage( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *msg, long mLen );
-void submit_ftoken( MYSQL *mysql, const char *token );
 void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *identity, const char *token,
 		long long seqNum, const char *group, const char *msg, long mLen );

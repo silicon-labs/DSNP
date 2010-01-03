@@ -18,6 +18,7 @@
 
 function printName( $USER, $BROWSER, $identity, $name, $possessive )
 {
+	global $NETWORK;
 	if ( !isset($identity) && isset($BROWSER) ) {
 		echo "<font class=\"msgwho\">";
 		echo $USER['display_short'];
@@ -35,8 +36,8 @@ function printName( $USER, $BROWSER, $identity, $name, $possessive )
 			echo "<font class=\"msgwho\"> you </font>";
 	}
 	else {
-		echo "<a href=\"${identity}cred/sflogin?h=" . urlencode($_SESSION['hash']);
-		echo "\"> <font class=\"msgwho\">";
+		echo "<a href=\"${identity}cred/sflogin?h=" . urlencode($_SESSION['hash']) . "&n=$NETWORK\">";
+		echo "<font class=\"msgwho\">";
 		if ( isset( $name ) )
 			echo $name;
 		else

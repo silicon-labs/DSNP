@@ -268,24 +268,24 @@ bool gblKeySubmitted = false;
 		#
 		# Friend login. 
 		#
-		'ftoken_request'i ' ' user ' ' hash
+		'ftoken_request'i ' ' user ' ' network ' ' hash
 			EOL @check_key @{
-				ftoken_request( mysql, user, hash );
+				ftokenRequest( mysql, user, network, hash );
 			} |
 
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
 			EOL @check_key @{
-				ftoken_response( mysql, user, hash, reqid );
+				ftokenResponse( mysql, user, hash, reqid );
 			} |
 
 		'fetch_ftoken'i ' ' reqid
 			EOL @check_ssl @{
-				fetch_ftoken( mysql, reqid );
+				fetchFtoken( mysql, reqid );
 			} |
 
 		'submit_ftoken'i ' ' token
 			EOL @check_key @{
-				submit_ftoken( mysql, token );
+				submitFtoken( mysql, token );
 			} |
 
 		#

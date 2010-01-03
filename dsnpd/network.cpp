@@ -240,7 +240,7 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 	MYSQL_ROW row = findUser.fetchRow();
 	long long userId = strtoll( row[0], 0, 10 );
 
-	/* Query the group. */
+	/* Query the network. */
 	DbQuery findNetwork( mysql, 
 		"SELECT network.id FROM network "
 		"JOIN network_name ON network.network_name_id = network_name.id "

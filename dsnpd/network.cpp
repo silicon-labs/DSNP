@@ -208,27 +208,26 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 	BIO_printf( bioOut, "OK\n" );
 }
 
-void invalidateBkProof( MYSQL *mysql, const char *user, long long userId, long long friendGroupId, 
-		const char *group, const char *friendId,
+void invalidateBkProof( MYSQL *mysql, const char *user, long long userId, long long networkId, 
+		const char *network, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
-	putTreeDel( mysql, user, userId, group, friendGroupId, friendId, putRelid );
+	//putTreeDel( mysql, user, userId, network, friendGroupId, friendId, putRelid );
 
 	/*
 	 * Send the current broadcast key and the friend_proof.
 	 */
-	CurrentPutKey put( mysql, user, group );
+	CurrentPutKey put( mysql, user, network );
 
 	String command( "group_member_revocation %s %lld %s\r\n", 
-		group, put.keyGen, friendId );
-	queueBroadcast( mysql, user, group, command.data, command.length );
+		network, put.keyGen, friendId );
+	queueBroadcast( mysql, user, network, command.data, command.length );
 }
 
 void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
 {
 	message("removing %s from %s for %s\n", identity, network, user );
 
-#if 0
 	/* Query the user. */
 	DbQuery findUser( mysql, 
 		"SELECT id FROM user WHERE user = %e", user );
@@ -242,20 +241,24 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 	long long userId = strtoll( row[0], 0, 10 );
 
 	/* Query the group. */
-	DbQuery findGroup( mysql, 
-		"SELECT id FROM friend_group WHERE user_id = %L AND name = %e", userId, group );
+	DbQuery findNetwork( mysql, 
+		"SELECT network.id FROM network "
+		"JOIN network_name ON network.network_name_id = network_name.id "
+		"WHERE user_id = %L AND network_name.name = %e", 
+		userId, network );
 
-	if ( findGroup.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid friend group\r\n" );
+	if ( findNetwork.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
 		return;
 	}
 
-	row = findGroup.fetchRow();
-	long long friendGroupId = strtoll( row[0], 0, 10 );
+	row = findNetwork.fetchRow();
+	long long networkId = strtoll( row[0], 0, 10 );
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
-		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", user, identity );
+		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", 
+		user, identity );
 
 	if ( findClaim.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR not a friend\r\n" );
@@ -267,19 +270,18 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 	const char *putRelid = row[1];
 
 	DbQuery del( mysql, 
-		"DELETE FROM group_member "
-		"WHERE friend_group_id = %L AND friend_claim_id = %L",
-		friendGroupId, friendClaimId
+		"DELETE FROM network_member "
+		"WHERE network_id = %L AND friend_claim_id = %L",
+		networkId, friendClaimId
 	);
 
 	if ( del.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR friend not in group\r\n" );
+		BIO_printf( bioOut, "ERROR friend not in network\r\n" );
 		return;
 	}
 
-	invalidateBkProof( mysql, user, userId, friendGroupId, group, 
+	invalidateBkProof( mysql, user, userId, networkId, network,
 			identity, friendClaimId, putRelid );
-#endif
 	BIO_printf( bioOut, "OK\n" );
 }
 

@@ -37,12 +37,26 @@ void directBroadcast( MYSQL *mysql, const char *relid, const char *user,
 }
 
 void groupMemberRevocation( MYSQL *mysql, const char *user, 
-		const char *friendId, const char *group, long long generation,
-		const char *revokedId )
+		const char *friendId, const char *network, long long networkId,
+		long long generation, const char *revokedId )
 {
-	String args( "group_member_revocation %s %s %s %lld %s",
-			user, friendId, group, generation, revokedId );
-	appNotification( args, 0, 0 );
+	DbQuery findFrom( mysql,
+		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		user, friendId );
+
+	DbQuery findTo( mysql,
+		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		user, revokedId );
+
+	if ( findFrom.rows() > 0 && findTo.rows() > 0 ) {
+		long long fromId = strtoll( findFrom.fetchRow()[0], 0, 10 );
+		long long toId = strtoll( findTo.fetchRow()[0], 0, 10 );
+
+		DbQuery remove( mysql,
+			"DELETE FROM friend_link "
+			"WHERE network_id = %L AND from_fc_id = %L AND to_fc_id = %L ",
+			networkId, fromId, toId );
+	}
 }
 
 void remoteInner( MYSQL *mysql, const char *user, const char *subjectId,
@@ -244,7 +258,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 				break;
 			case BroadcastParser::GroupMemberRevocation:
 				groupMemberRevocation( mysql, user, friendId,
-						bp.group, bp.generation, bp.identity );
+						bp.group, networkId, bp.generation, bp.identity );
 			default:
 				break;
 		}

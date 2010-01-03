@@ -327,45 +327,6 @@ function sendRealName( $user, $toIdentity )
 	}
 }
 
-function friendProof( $user, $group, $subject, $author, $seq_num, $date, $time )
-{
-	$user_id = findUserId( $user );
-	$subject_id = findFriendClaimId( $user, $subject );
-	$author_id = findFriendClaimId( $user, $author );
-
-	$query = sprintf(
-		"INSERT INTO friend_link " .
-		"	( group_name, fc1_id, fc2_id ) " .
-		"VALUES ( '%s', %ld, %ld ) ",
-		mysql_real_escape_string( $group ),
-		$author_id,
-		$subject_id 
-	);
-
-	/* Allow this query to fail due to duplicates. */
-	mysql_query($query) or die('Query failed: ' . mysql_error());
-}
-
-function groupMemberRevocation( $user, $friend, $group, $generation, $revoked )
-{
-	echo "group member revocation: $user $friend $group $generation $revoked\n";
-
-	$userId = findUserId( $user );
-	$friendId = findFriendClaimId( $user, $friend );
-	$revokedId = findFriendClaimId( $user, $revoked );
-
-	$query = sprintf(
-		"DELETE FROM friend_link " .
-		"WHERE fc1_id = %ld AND fc2_id = %ld AND group_name = '%s' ",
-		$friendId,
-		$revokedId ,
-		mysql_real_escape_string( $group )
-	);
-
-	/* Allow this query to fail due to duplicates. */
-	mysql_query($query) or die('Query failed: ' . mysql_error());
-}
-
 switch ( $notification_type ) {
 case "user_message": {
 	# Collect the args.
@@ -431,60 +392,5 @@ case "remote_publication": {
 	}
 	break;
 }
-
-case "group_member_revocation": {
-	# Collect the args.
-	$user = $argv[$b+0];
-	$friendId = $argv[$b+1];
-	$group = $argv[$b+2];
-	$generation = $argv[$b+3];
-	$revokedId = $argv[$b+4];
-
-	groupMemberRevocation( $user, $friendId, $group, $generation, $revokedId );
-	break;
-}
-
-
-case "sent_friend_request": {
-	# Collect the args.
-	$from_user = $argv[$b+0];
-	$for_id = $argv[$b+1];
-	break;
-}
-
-case "friend_request": {
-	# Collect the args.
-	$for_user = $argv[$b+0];
-	$from_id = $argv[$b+1];
-	$user_reqid = $argv[$b+2];
-	$requested_relid = $argv[$b+3];
-	$returned_relid = $argv[$b+4];
-
-	break;
-}
-
-case "sent_friend_request_accepted": {
-	$user = $argv[$b+0];
-	$identity = $argv[$b+1];
-
-	#sendRealName( $user, $identity );
-	break;
-}
-
-case "friend_request_accepted": {
-	$user = $argv[$b+0];
-	$identity = $argv[$b+1];
-
-	#sendRealName( $user, $identity );
-	break;
-}
-
-case "send_real_name": {
-	$user = $argv[$b+0];
-	$identity = $argv[$b+1];
-	#sendRealName( $user, $identity );
-	break;
-}
-	
 }
 ?>

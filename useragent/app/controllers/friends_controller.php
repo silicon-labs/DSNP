@@ -92,7 +92,8 @@ class FriendsController extends AppController
 		fwrite($fp, $send);
 
 		$res = fgets($fp);
-		if ( !ereg("^OK", $res) ) die( "FAILURE *** group add failed with <br> $res" );
+		if ( !ereg("^OK", $res) )
+			die( "FAILURE *** add to network failed with <br> $res" );
 
 		fclose( $fp );
 	}
@@ -117,7 +118,7 @@ class FriendsController extends AppController
 
 		$res = fgets($fp);
 		if ( !ereg("^OK", $res) )
-			die( "FAILURE *** group add failed with <br> $res" );
+			die( "FAILURE *** remove from network with <br> $res" );
 
 		fclose( $fp );
 	}

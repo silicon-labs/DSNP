@@ -112,7 +112,7 @@ class UserController extends AppController
 		));
 		$this->set( 'images', $images );
 
-		$networkId = $this->findNetworkId( 'family' );
+		$networkId = $this->findNetworkId( $this->NETWORK );
 
 		$this->loadModel('Activity');
 		$activity = $this->Activity->find( 'all', array( 
@@ -360,7 +360,7 @@ class UserController extends AppController
 			'message' => $message,
 		));
 
-		$networkId = $this->findNetworkId('family');
+		$networkId = $this->findNetworkId( $this->NETWORK );
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
@@ -498,6 +498,23 @@ class UserController extends AppController
 			echo $res;
 
 		header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
+	}
+
+	function cnet()
+	{
+		$this->requireOwner();
+
+		$this->loadModel( 'Network' );
+		$this->Network->bindModel( array(
+			'belongsTo' => array( 'NetworkName' )
+		));
+		$networks = $this->Network->find( 'all', array( 
+			'conditions' => array( 
+				'Network.user_id' => $this->USER_ID ),
+			'order' => 'NetworkName.id' 
+		));
+
+		$this->set( 'networks', $networks );	
 	}
 }
 ?>

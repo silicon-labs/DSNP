@@ -216,5 +216,25 @@ class CredController extends AppController
 		$this->Session->destroy();
 		$this->redirect( "/" . $this->USER_NAME . "/" );
 	}
+	
+	function nnet()
+	{
+		$this->requireOwner();
+
+		$this->loadModel('LoginState');
+		$loginState = $this->LoginState->find('first', array(
+			'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
+
+		#echo "<pre>";
+		#print_r( $this->data );
+		#echo "</pre>";
+		#exit;
+
+		$newNetwork = $this->data['User']['network'];
+		$loginState['LoginState']['network_name'] = $newNetwork;
+		$loginState = $this->LoginState->save( $loginState );
+		$this->Session->write('network', $newNetwork );
+		$this->redirect( "/" . $this->USER_NAME . "/" );
+	}
 }
 ?>

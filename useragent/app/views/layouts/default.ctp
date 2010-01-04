@@ -78,7 +78,7 @@
 			echo $html->link( $USER['name'], $USER['identity'] );
 			echo " - ";
 			if ( isset( $NETWORK ) )
-				echo $NETWORK;
+				echo $html->link( $NETWORK, "/$USER_NAME/user/cnet" );
 			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}

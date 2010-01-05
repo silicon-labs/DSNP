@@ -101,19 +101,30 @@ class UserController extends AppController
 				array( 
 					'fields' => array(
 						'FriendClaim.*',
+						'NetworkMember.*',
 						'FriendLink.*'
 					),
 					'conditions' => array( 'user_id' => $this->USER_ID ),
 					'joins' => array (
+						array(
+							'table' => 'network_member',
+							'alias' => 'NetworkMember',
+							'type' => 'inner',
+							'foreignKey' => false,
+							'conditions' => array(
+								'NetworkMember.network_id' => $networkId,
+								'FriendClaim.id = NetworkMember.friend_claim_id'
+							)
+						),
 						array( 
 							'table' => 'friend_link',
 							'alias' => 'FriendLink',
-							'type' => 'inner',
+							'type' => 'left outer',
 							'foreignKey' => false,
 							'conditions'=> array(
 								'FriendClaim.id = FriendLink.from_fc_id', 
-								'FriendLink.to_fc_id' => $BROWSER['id'],
-								'FriendLink.network_id' => $networkId
+								'FriendLink.network_id' => $networkId,
+								'FriendLink.to_fc_id' => $BROWSER['id']
 							) 
 						)
 					)

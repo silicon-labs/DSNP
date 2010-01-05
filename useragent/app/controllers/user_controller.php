@@ -34,10 +34,26 @@ class UserController extends AppController
 				array( 'conditions' => array( 'for_user' => $this->USER_NAME )));
 		$this->set( 'friendRequests', $friendRequests );
 
+		$networkId = $this->findNetworkId( $this->NETWORK );
+
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
-		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
+		$friendClaims = $this->FriendClaim->find('all', array( 
+				'conditions' => array( 'user_id' => $this->USER_ID ),
+				'joins' => array (
+					array( 
+						'table' => 'network_member',
+						'alias' => 'NetworkMember',
+						'type' => 'inner',
+						'foreignKey' => false,
+						'conditions'=> array(
+							'FriendClaim.id = NetworkMember.friend_claim_id',
+							'NetworkMember.network_id' => $networkId
+						) 
+					)
+				)
+			));
+
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
@@ -77,6 +93,8 @@ class UserController extends AppController
 		$BROWSER = $this->Session->read('BROWSER');
 		$this->set( 'BROWSER', $BROWSER );
 
+		$networkId = $this->findNetworkId( $this->NETWORK );
+
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
 		$friendClaims = $this->FriendClaim->find('all', 
@@ -90,11 +108,12 @@ class UserController extends AppController
 						array( 
 							'table' => 'friend_link',
 							'alias' => 'FriendLink',
-							'type' => 'left outer',
+							'type' => 'inner',
 							'foreignKey' => false,
 							'conditions'=> array(
 								'FriendClaim.id = FriendLink.from_fc_id', 
-								'FriendLink.to_fc_id' => $BROWSER['id']
+								'FriendLink.to_fc_id' => $BROWSER['id'],
+								'FriendLink.network_id' => $networkId
 							) 
 						)
 					)
@@ -112,7 +131,6 @@ class UserController extends AppController
 		));
 		$this->set( 'images', $images );
 
-		$networkId = $this->findNetworkId( $this->NETWORK );
 
 		$this->loadModel('Activity');
 		$activity = $this->Activity->find( 'all', array( 

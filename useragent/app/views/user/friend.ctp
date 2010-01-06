@@ -58,7 +58,7 @@ foreach ( $friendClaims as $row ) {
 
 	if ( isset( $from_fc_id ) ) {
 		echo "+ <a href=\"${dest_id}cred/sflogin?h=" . 
-			urlencode( $_SESSION['hash'] ) . "&n=$NETWORK\">";
+			urlencode( $_SESSION['hash'] ) . "&n=$NETWORK_NAME\">";
 		if ( isset( $name ) )
 			echo $name;
 		else

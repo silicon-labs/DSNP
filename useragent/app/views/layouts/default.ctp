@@ -68,8 +68,8 @@
 			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
 					$BROWSER['identity'], $BROWSER['identity'] );
 			echo " - ";
-			if ( isset( $NETWORK ) )
-				echo $NETWORK;
+			if ( isset( $NETWORK_NAME ) )
+				echo $NETWORK_NAME;
 			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
@@ -77,8 +77,8 @@
 		{
 			echo $html->link( $USER['name'], $USER['identity'] );
 			echo " - ";
-			if ( isset( $NETWORK ) )
-				echo $html->link( $NETWORK, "/$USER_NAME/user/cnet" );
+			if ( isset( $NETWORK_NAME ) )
+				echo $html->link( $NETWORK_NAME, "/$USER_NAME/user/cnet" );
 			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}

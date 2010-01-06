@@ -13,9 +13,6 @@ class WishController extends AppController
 
 	function view( $fc_id )
 	{
-		$this->set( 'ROLE', 'friend' );
-		$this->privName();
-
 		$BROWSER = $this->Session->read('BROWSER');
 		$this->set( 'BROWSER', $BROWSER );
 
@@ -31,9 +28,6 @@ class WishController extends AppController
 
 	function edit( $fc_id )
 	{
-		$this->set( 'ROLE', 'friend' );
-		$this->privName();
-
 		# Make sure that the wish list requested correspons to the signed in
 		# friend.
 		$BROWSER = $this->Session->read('BROWSER');

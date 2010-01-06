@@ -62,9 +62,9 @@ class CredController extends AppController
 
 		# Login successful.
 		$this->Session->write( 'ROLE', 'owner' );
+		$this->Session->write( 'NETWORK_NAME', $network );
 		$this->Session->write( 'hash', $regs[1] );
 		$this->Session->write( 'token', $regs[2] );
-		$this->Session->write( 'network', $network );
 
 		if ( isset( $_POST['d'] ) )
 			$this->redirect( urldecode($_POST['d']) );
@@ -183,8 +183,8 @@ class CredController extends AppController
 		if ( ereg("^OK ([A-Za-z]+) ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 			# Login successful.
 			$this->Session->write( 'ROLE', 'friend' );
+			$this->Session->write( 'NETWORK_NAME', $regs[1] );
 			$this->Session->write( 'token', $ftoken );
-			$this->Session->write( 'network', $regs[1] );
 			$this->Session->write( 'hash', $regs[2] );
 
 			/* Find the friend claim data and store in the session. */
@@ -233,7 +233,7 @@ class CredController extends AppController
 		$newNetwork = $this->data['User']['network'];
 		$loginState['LoginState']['network_name'] = $newNetwork;
 		$loginState = $this->LoginState->save( $loginState );
-		$this->Session->write('network', $newNetwork );
+		$this->Session->write('NETWORK_NAME', $newNetwork );
 		$this->redirect( "/" . $this->USER_NAME . "/" );
 	}
 }

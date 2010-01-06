@@ -19,10 +19,14 @@ class AppController extends Controller
 	var $CFG_PHOTO_DIR = null;
 	var $CFG_IM_CONVERT = null;
 
+	var $USER = NULL;
 	var $USER_ID = null;
 	var $USER_NAME = null;
 	var $USER_URI = null;
 	var $ROLE = null;
+	var $NETWORK_NAME = null;
+	var $NETWORK_ID = null;
+	var $BROWSWER = null;
 
 	function hereFull()
 	{
@@ -63,19 +67,6 @@ class AppController extends Controller
 		$this->cakeError( $error, $params );
 	}
 
-	function activateSession()
-	{
-		$this->Session->activate( Router::url( "/$this->USER_NAME/" ) );
-	}
-
-	function maybeActivateSession()
-	{
-		# Only resume sessions or start a new one when *a* session variable is provided
-		# Note that it might not be the right one.
-		if ( isset( $_COOKIE['CAKEPHP'] ) )
-			$this->activateSession();
-	}
-
 	function checkUser()
 	{
 		$user = $this->User->find( 'first', array('conditions' => 
@@ -89,6 +80,8 @@ class AppController extends Controller
 		$this->USER_ID = $user['User']['id'];
 		$this->USER = $user['User'];
 
+		/* Default these to something not too revealing. At session activation
+		 * time we will upgrade if the role allows it. */
 		$this->USER['display_short'] = $this->USER['user'];
 		$this->USER['display_long'] = $this->USER['identity'];
 
@@ -98,30 +91,44 @@ class AppController extends Controller
 		$this->set( 'USER', $this->USER );
 	}
 
-	function checkRole()
+	function activateSession()
 	{
-		$this->ROLE = 'public';
-		$auth = $this->Session->read('ROLE');
-		if ( $this->Session->valid() && isset($auth) )
-			$this->ROLE = $auth;
-
-		if ( $this->ROLE === 'friend' ) {
-			$BROWSER = $this->Session->read('BROWSER');
-			$this->set( 'BROWSER', $BROWSER );
-		}
-
-		$this->set('ROLE', $this->ROLE );
-
-		$this->NETWORK = $this->Session->read('network');
-		$this->set('NETWORK', $this->NETWORK );
+		$this->Session->activate( Router::url( "/$this->USER_NAME/" ) );
 	}
 
-	function privName()
+	/* Try to activate the session if a session variable has been provided. If
+	 * activation is successful then load authorization/identity data from the
+	 * session. */
+	function maybeActivateSession()
 	{
-		if ( isset( $this->USER['name'] ) ) {
-			$this->USER['display_short'] = $this->USER['name'];
-			$this->USER['display_long'] = $this->USER['name'];
-			$this->set( 'USER', $this->USER );
+		if ( isset( $_COOKIE['CAKEPHP'] ) ) {
+			$this->activateSession();
+			if ( $this->Session->valid() ) {
+				/* Role. */
+				$this->ROLE = $this->Session->read('ROLE');
+				$this->set('ROLE', $this->ROLE );
+
+				/* Browser if this is a friend. */
+				if ( $this->ROLE === 'friend' ) {
+					$this->BROWSER = $this->Session->read('BROWSER');
+					$this->set( 'BROWSER', $this->BROWSER );
+				}
+
+				/* Upgrade the display names if trusted. */
+				if ( ( $this->ROLE === 'owner' || $this->ROLE === 'friend' ) && 
+						isset( $this->USER['name'] ) )
+				{
+					$this->USER['display_short'] = $this->USER['name'];
+					$this->USER['display_long'] = $this->USER['name'];
+					$this->set( 'USER', $this->USER );
+				}
+
+				/* Network. */
+				$this->NETWORK_NAME = $this->Session->read('NETWORK_NAME');
+				$this->NETWORK_ID = $this->Session->read('NETWORK_ID');
+				$this->set('NETWORK_NAME', $this->NETWORK_NAME );
+				$this->set('NETWORK_ID', $this->NETWORK_ID );
+			}
 		}
 	}
 
@@ -129,14 +136,12 @@ class AppController extends Controller
 	{
 		if ( !$this->Session->valid() || $this->Session->read('ROLE') !== 'owner' )
 			$this->userError('notAuthorized', array( 'cred' => 'o' ));
-		$this->privName();
 	}
 
 	function requireFriend()
 	{
 		if ( !$this->Session->valid() || $this->Session->read('ROLE') !== 'friend' )
 			$this->userError('notAuthorized', array( 'cred' => 'f' ));
-		$this->privName();
 	}
 
 	function requireOwnerOrFriend()
@@ -147,8 +152,6 @@ class AppController extends Controller
 		{
 			$this->userError('notAuthorized', array( 'cred' => 'of' ));
 		}
-
-		$this->privName();
 	}
 
 	function isOwnerOrFriend()
@@ -170,6 +173,21 @@ class AppController extends Controller
 		return $this->Session->valid() &&
 			$this->Session->read('ROLE') === 'friend';
 	}
-}
 
+	function findNetworkId( $networkName )
+	{
+		$this->loadModel( 'Network' );
+		$this->Network->bindModel( array(
+			'belongsTo' => array( 'NetworkName' )
+		));
+		$networks = $this->Network->find( 'first', array( 
+			'conditions' => array( 
+				'Network.user_id' => $this->USER_ID,
+				'NetworkName.name' => $networkName ),
+			'order' => 'NetworkName.id' 
+		));
+
+		return $networks['Network']['id'];
+	}
+}
 ?>

@@ -9,14 +9,18 @@ class UserController extends AppController
 	{
 		$this->checkUser();
 		$this->maybeActivateSession();
-		$this->checkRole();
+	}
+
+	function foo()
+	{
+		echo "<pre>";
+		print_r( isset($this->FOO) );
+		echo "</pre>";
+		exit;
 	}
 
 	function indexOwner()
 	{
-		$this->set( 'ROLE', 'owner' );
-		$this->privName();
-
 		if ( isset( $_GET['start'] ) )
 			$start = $_GET['start'];
 		else
@@ -34,7 +38,7 @@ class UserController extends AppController
 				array( 'conditions' => array( 'for_user' => $this->USER_NAME )));
 		$this->set( 'friendRequests', $friendRequests );
 
-		$networkId = $this->findNetworkId( $this->NETWORK );
+		$networkId = $this->findNetworkId( $this->NETWORK_NAME );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -82,9 +86,6 @@ class UserController extends AppController
 
 	function indexFriend()
 	{
-		$this->set( 'ROLE', 'friend' );
-		$this->privName();
-
 		if ( isset( $_GET['start'] ) )
 			$start = $_GET['start'];
 		else
@@ -93,7 +94,7 @@ class UserController extends AppController
 		$BROWSER = $this->Session->read('BROWSER');
 		$this->set( 'BROWSER', $BROWSER );
 
-		$networkId = $this->findNetworkId( $this->NETWORK );
+		$networkId = $this->findNetworkId( $this->NETWORK_NAME );
 
 		# Load the friend list.
 		$this->loadModel( 'FriendClaim' );
@@ -161,144 +162,18 @@ class UserController extends AppController
 
 	function indexPublic()
 	{
-		$this->set( 'ROLE', 'public' );
 		$this->render( 'public' );
 	}
 
-	function ssOwner()
-	{
-		$this->set( 'ROLE', 'owner' );
-		$this->privName();
-
-		# Load the user's sent friend requests
-		$this->loadModel('SentFriendRequest');
-		$sentFriendRequests = $this->SentFriendRequest->find('all', 
-				array( 'conditions' => array( 'from_user' => $this->USER_NAME )));
-		$this->set( 'sentFriendRequests', $sentFriendRequests );
-
-		# Load the user's friend requests. 
-		$this->loadModel('FriendRequest');
-		$friendRequests = $this->FriendRequest->find( 'all',
-				array( 'conditions' => array( 'for_user' => $this->USER_NAME )));
-		$this->set( 'friendRequests', $friendRequests );
-
-		# Load the friend list.
-		$this->loadModel( 'FriendClaim' );
-		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
-		$this->set( 'friendClaims', $friendClaims );
-
-		# Load the user's images.
-		$this->loadModel('Image');
-		$images = $this->Image->find('all', array(
-			'conditions' => 
-				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' ),
-			'limit' => 30
-		));
-		$this->set( 'images', $images );
-
-		$this->loadModel('Activity');
-		$activity = $this->Activity->find( 'all', array( 
-				'conditions' => array( 
-					'Activity.user_id' => $this->USER_ID
-				),
-				'order' => 'time_published DESC',
-				'limit' => 30
-			));
-		$this->set( 'activity', $activity );
-
-		$this->render( 'ss_owner' );
-	}
-
-	function ssFriend()
-	{
-		$this->set( 'ROLE', 'friend' );
-		$this->privName();
-
-		$BROWSER = $this->Session->read('BROWSER');
-		$this->set( 'BROWSER', $BROWSER );
-
-		# Load the friend list.
-		$this->loadModel( 'FriendClaim' );
-		$friendClaims = $this->FriendClaim->find('all', 
-				array( 'conditions' => array( 'user_id' => $this->USER_ID )));
-		$this->set( 'friendClaims', $friendClaims );
-
-		# Load the user's images.
-		$this->loadModel('Image');
-		$images = $this->Image->find('all', array( 
-			'conditions' => 
-				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' ),
-			'limit' => 30
-		));
-		$this->set( 'images', $images );
-
-		$this->loadModel('Activity');
-		$activity = $this->Activity->find( 'all', array( 
-				'conditions' => array( 
-					'Activity.user_id' => $this->USER_ID,
-					'published' => 'true'
-				),
-				'order' => 'time_published DESC',
-				'limit' => 30
-			));
-		$this->set( 'activity', $activity );
-
-		$this->loadModel('SecretSanta');
-		$givesTo = $this->SecretSanta->find('first', array( 
-			'conditions' => 
-				array( 'friend_id' => $BROWSER['id'] )
-		));
-		$givesTo = $this->FriendClaim->find('first', array( 
-			'conditions' => 
-				array( 'id' => $givesTo['SecretSanta']['gives_to_id'] )
-		));
-		$this->set( 'givesTo', $givesTo );
-
-		$this->render( 'ss_friend' );
-	}
-
-	function ssPublic()
-	{
-		$this->set( 'ROLE', 'public' );
-		$this->render( 'ss_public' );
-	}
 
 	function index()
 	{
-		switch ( $this->USER['type'] ) {
-
-			case 0: {
-				/* Regular user. */
-				if ( $this->Session->valid() ) {
-					if ( $this->Session->read('ROLE') === 'owner' )
-						$this->indexOwner();
-					else if ( $this->Session->read('ROLE') === 'friend' )
-						$this->indexFriend();
-					else
-						$this->indexPublic();
-				}
-				else
-					$this->indexPublic();
-				break;
-			}
-
-			case 1: {
-				if ( $this->Session->valid() ) {
-					if ( $this->Session->read('ROLE') === 'owner' )
-						$this->ssOwner();
-					else if ( $this->Session->read('ROLE') === 'friend' )
-						$this->ssFriend();
-					else
-						$this->ssPublic();
-				}
-				else
-					$this->ssPublic();
-				break;
-			}
-		}
+		if ( $this->ROLE === 'owner' )
+			$this->indexOwner();
+		else if ( $this->ROLE === 'friend' )
+			$this->indexFriend();
+		else
+			$this->indexPublic();
 	}
 
 	function broadcast()
@@ -336,7 +211,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"submit_broadcast $this->USER_NAME social $len\r\n";
+			"submit_broadcast $this->USER_NAME $this->NETWORK_NAME $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
@@ -349,22 +224,6 @@ class UserController extends AppController
 			$this->redirect( "/$this->USER_NAME/" );
 		else
 			echo $res;
-	}
-
-	function findNetworkId( $networkName )
-	{
-		$this->loadModel( 'Network' );
-		$this->Network->bindModel( array(
-			'belongsTo' => array( 'NetworkName' )
-		));
-		$networks = $this->Network->find( 'first', array( 
-			'conditions' => array( 
-				'Network.user_id' => $this->USER_ID,
-				'NetworkName.name' => $networkName ),
-			'order' => 'NetworkName.id' 
-		));
-
-		return $networks['Network']['id'];
 	}
 
 	function board()
@@ -389,7 +248,7 @@ class UserController extends AppController
 			'message' => $message,
 		));
 
-		$networkId = $this->findNetworkId( $this->NETWORK );
+		$networkId = $this->findNetworkId( $this->NETWORK_NAME );
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
@@ -412,7 +271,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"remote_broadcast_request $this->USER_NAME $identity $hash $token family $len\r\n";
+			"remote_broadcast_request $this->USER_NAME $identity $hash $token $this->NETWORK_NAME $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

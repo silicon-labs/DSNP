@@ -177,9 +177,6 @@ class AppController extends Controller
 	function findNetworkId( $networkName )
 	{
 		$this->loadModel( 'Network' );
-		$this->Network->bindModel( array(
-			'belongsTo' => array( 'NetworkName' )
-		));
 		$networks = $this->Network->find( 'first', array( 
 			'conditions' => array( 
 				'Network.user_id' => $this->USER_ID,

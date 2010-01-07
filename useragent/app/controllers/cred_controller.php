@@ -5,6 +5,9 @@ class CredController extends AppController
 	var $name = 'Cred';
 	var $uses = array();
 
+	var $NETWORK_NAME = null;
+	var $NETWORK_ID = null;
+
 	function beforeFilter()
 	{
 		$this->checkUser();
@@ -20,6 +23,39 @@ class CredController extends AppController
 	{
 		if ( isset( $_REQUEST['d'] ) )	
 			$this->set('dest', $_REQUEST['d'] );
+	}
+
+	function ownerNetwork()
+	{
+		/* Load the most recent login state. */
+		$this->loadModel('LoginState');
+		$loginState = $this->LoginState->find('first', array(
+			'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
+
+		if ( isset( $loginState['LoginState'] ) > 0 ) {
+			/* Use the stored login state. */
+			$networkName = $loginState['LoginState']['network_name'];
+			$networkId = $this->findNetworkId( $networkName );
+		}
+		else {
+			/* No previous login state. Find a network. */
+			$this->loadModel('Network');
+			$first = $this->Network->find('first', array(
+				'conditions' => array ( 'user_id' => $this->USER_ID ) ));
+
+			if ( isset( $first['Network'] ) ) {
+				$networkName = $first['NetworkName']['name'];
+				$networkId = $first['Network']['id'];
+			}
+			else {
+				/* No network. */
+				$networkName = null;
+				$networkId = null;
+			}
+		}
+
+		$this->NETWORK_NAME = $networkName;
+		$this->NETWORK_ID = $networkId;
 	}
 
 	function slogin()
@@ -46,23 +82,12 @@ class CredController extends AppController
 			));
 		}
 
-		$this->loadModel('LoginState');
-		$loginState = $this->LoginState->find('first', array(
-			'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
-
-		if ( isset( $loginState['LoginState'] ) > 0 )
-			$network = $loginState['LoginState']['network_name'];
-		else {
-			$network = 'social';
-			$loginState = $this->LoginState->save( array(
-				'user_id' => $this->USER_ID,
-				'network_name' => $network
-			));
-		}
+		$this->ownerNetwork();
 
 		# Login successful.
 		$this->Session->write( 'ROLE', 'owner' );
-		$this->Session->write( 'NETWORK_NAME', $network );
+		$this->Session->write( 'NETWORK_NAME', $this->NETWORK_NAME );
+		$this->Session->write( 'NETWORK_ID', $this->NETWORK_ID );
 		$this->Session->write( 'hash', $regs[1] );
 		$this->Session->write( 'token', $regs[2] );
 
@@ -72,25 +97,80 @@ class CredController extends AppController
 			$this->redirect( "/$this->USER_NAME/" );
 	}
 
+	function friendNetwork( $networkName, $hash )
+	{
+		if ( !isset($networkName) || count($networkName) == 0 )
+			$networkName = '-';
+			
+		/* See if we have this network. */
+		$this->loadModel('Network');
+		$first = $this->Network->find('first', array(
+			'conditions' => array ( 
+				'user_id' => $this->USER_ID,
+				'NetworkName.name' => $networkName )));
+
+		if ( !isset( $first['NetworkName'] ) )
+			$networkName = '-';
+		else {
+			$networkName = $first['NetworkName']['name'];
+
+			/* Is the user a member of the network. */
+			$this->loadModel( 'FriendClaim' );
+			$friendClaim = $this->FriendClaim->find('first', array( 
+					'conditions' => array( 
+						'user_id' => $this->USER_ID,
+						'friend_hash' => $hash
+					),
+					'joins' => array (
+						array( 
+							'table' => 'network_member',
+							'alias' => 'NetworkMember',
+							'type' => 'inner',
+							'foreignKey' => false,
+							'conditions'=> array(
+								'FriendClaim.id = NetworkMember.friend_claim_id',
+								'NetworkMember.network_id' => $first['Network']['id']
+							) 
+						)
+					)
+				));
+
+			if ( !isset( $friendClaim['FriendClaim'] ) )
+				$networkName = '-';
+		}
+
+		if ( $networkName === '-' ) {
+			/* Cannot login as the requested login name. Pick one. */
+			$first = $this->Network->find('first', array(
+				'conditions' => array ( 'user_id' => $this->USER_ID ) ));
+
+			if ( isset( $first['Network'] ) )
+				$networkName = $first['NetworkName']['name'];
+			else
+				$networkName = '-';
+		}
+
+		return $networkName;
+	}
+
 	function sflogin()
 	{
 		$hash = $_REQUEST['h'];
-		$network = $_REQUEST['n'];
+		$networkName = $_REQUEST['n'];
 
 		if ( !$hash )
 			die('no hash given');
 
-		if ( !$network )
-			$network = 'social';
-
 		/* Maybe we are already logged in as this friend. */
-		if ( isset( $_SESSION['ROLE'] ) && $_SESSION['ROLE'] === 'friend' && 
-				isset( $_SESSION['hash'] ) && $_SESSION['hash'] === $hash && 
-				isset( $_SESSION['network']) && $_SESSION['network'] === $network )
+		if ( isset( $this->ROLE ) && $this->ROLE === 'friend' && 
+				isset( $this->NETWORK_NAME ) && $this->NETWORK_NAME === $networkName &&
+				isset( $_SESSION['hash'] ) && $_SESSION['hash'] === $hash )
 		{
 			header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 		}
 		else {
+			$networkName = $this->friendNetwork( $networkName, $hash );
+
 			/* Not logged in as the hashed user. */
 			$fp = fsockopen( 'localhost', $this->CFG_PORT );
 			if ( !$fp )
@@ -99,7 +179,7 @@ class CredController extends AppController
 			$send = 
 				"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
 				"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
-				"ftoken_request " . $this->USER_NAME . " $network $hash\r\n";
+				"ftoken_request " . $this->USER_NAME . " $networkName $hash\r\n";
 			fwrite($fp, $send);
 
 			$res = fgets($fp);

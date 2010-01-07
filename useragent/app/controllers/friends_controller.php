@@ -9,7 +9,6 @@ class FriendsController extends AppController
 	{
 		$this->checkUser();
 		$this->maybeActivateSession();
-		$this->checkRole();
 	}
 
 	function findFriendsWithNetworkMembers()
@@ -43,9 +42,6 @@ class FriendsController extends AppController
 	function findNetworks()
 	{
 		$this->loadModel( 'Network' );
-		$this->Network->bindModel( array(
-			'belongsTo' => array( 'NetworkName' )
-		));
 		$networks = $this->Network->find( 'all', array( 
 			'conditions' => array( 'user_id' => $this->USER_ID ),
 			'order' => 'NetworkName.id' 

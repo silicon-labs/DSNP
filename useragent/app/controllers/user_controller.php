@@ -11,14 +11,6 @@ class UserController extends AppController
 		$this->maybeActivateSession();
 	}
 
-	function foo()
-	{
-		echo "<pre>";
-		print_r( isset($this->FOO) );
-		echo "</pre>";
-		exit;
-	}
-
 	function indexOwner()
 	{
 		if ( isset( $_GET['start'] ) )
@@ -393,9 +385,6 @@ class UserController extends AppController
 		$this->requireOwner();
 
 		$this->loadModel( 'Network' );
-		$this->Network->bindModel( array(
-			'belongsTo' => array( 'NetworkName' )
-		));
 		$networks = $this->Network->find( 'all', array( 
 			'conditions' => array( 
 				'Network.user_id' => $this->USER_ID ),

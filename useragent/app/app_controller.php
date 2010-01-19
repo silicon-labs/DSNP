@@ -91,6 +91,28 @@ class AppController extends Controller
 		$this->set( 'USER', $this->USER );
 	}
 
+	function storeUser()
+	{
+		$this->Session->write( 'USER_NAME', $this->USER_NAME );
+		$this->Session->write( 'USER_URI', $this->USER_URI );
+		$this->Session->write( 'USER_ID', $this->USER_ID );
+		$this->Session->write( 'USER', $this->USER );
+		$this->Session->write( 'VALID_USER', true );
+	}
+
+	function readUser()
+	{
+		$this->USER_NAME = $this->Session->read( 'USER_NAME' );
+		$this->USER_URI = $this->Session->read( 'USER_URI' );
+		$this->USER_ID = $this->Session->read( 'USER_ID' );
+		$this->USER = $this->Session->read( 'USER' );
+
+		$this->set( 'USER_ID', $this->USER_ID );
+		$this->set( 'USER_NAME', $this->USER_NAME );
+		$this->set( 'USER_URI', $this->USER_URI );
+		$this->set( 'USER', $this->USER );
+	}
+
 	function activateSession()
 	{
 		$this->Session->activate( Router::url( "/$this->USER_NAME/" ) );
@@ -130,6 +152,35 @@ class AppController extends Controller
 				$this->set('NETWORK_ID', $this->NETWORK_ID );
 			}
 		}
+	}
+
+	function checkUserMaybeActivateSession()
+	{
+		$userCheckComplete = false;
+
+		/* Look for valid user indicator stored in the session. */
+		if ( isset( $_COOKIE['CAKEPHP'] ) ) {
+			$this->activateSession();
+			if ( $this->Session->valid() ) {
+				/* Have a valid session. Maybe we can skip checking the user. */
+				$this->VALID_USER = $this->Session->read('VALID_USER');
+				if ( isset( $this->VALID_USER ) && $this->VALID_USER ) {
+					$this->readUser();
+					$userCheckComplete = true;
+				}
+			}
+		}
+
+		/* If we were not able to validate the user from the sssion, then do
+		 * the costly check against the database. */
+		if ( ! $userCheckComplete )
+			$this->checkUser();
+
+		/* Now activate the session if it is present. */
+		$this->maybeActivateSession();
+
+		if ( $this->Session->valid() )
+			$this->storeUser();
 	}
 
 	function requireOwner()

@@ -7,8 +7,7 @@ class FriendsController extends AppController
 
 	function beforeFilter()
 	{
-		$this->checkUser();
-		$this->maybeActivateSession();
+		$this->checkUserMaybeActivateSession();
 	}
 
 	function findFriendsWithNetworkMembers()

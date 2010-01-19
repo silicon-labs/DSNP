@@ -5,8 +5,7 @@ class ImageController extends AppController
 
 	function beforeFilter()
 	{
-		$this->checkUser();
-		$this->maybeActivateSession();
+		$this->checkUserMaybeActivateSession();
 	}
 
 	function view( $file )

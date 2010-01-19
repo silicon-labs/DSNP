@@ -7,8 +7,7 @@ class UserController extends AppController
 
 	function beforeFilter()
 	{
-		$this->checkUser();
-		$this->maybeActivateSession();
+		$this->checkUserMaybeActivateSession();
 	}
 
 	function indexOwner()

@@ -7,8 +7,7 @@ class FreqController extends AppController
 
 	function beforeFilter()
 	{
-		$this->checkUser();
-		$this->maybeActivateSession();
+		$this->checkUserMaybeActivateSession();
 	}
 
 	function index()

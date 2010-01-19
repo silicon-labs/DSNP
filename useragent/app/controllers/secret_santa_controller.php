@@ -6,8 +6,7 @@ class SecretSantaController extends AppController
 
 	function beforeFilter()
 	{
-		$this->checkUser();
-		$this->maybeActivateSession();
+		$this->checkUserMaybeActivateSession();
 	}
 
 	function ssOwner()

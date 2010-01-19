@@ -80,7 +80,7 @@ class DATABASE_CONFIG
 {
 	var $default = array(
 		'driver' => 'mysql',
-		'persistent' => false,
+		'persistent' => true,
 		'host' => CFG_DB_HOST,
 		'login' => CFG_DB_USER,
 		'password' => CFG_ADMIN_PASS,

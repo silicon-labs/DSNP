@@ -21,6 +21,7 @@ $size = $stat['size'];
 
 header("Content-Type: image/jpeg");
 header("Content-Size: $size");
+header("Cache-Control: max-age=2419200");
 readfile($path);
 exit;
 ?>

@@ -345,7 +345,7 @@ struct BroadcastParser
 	};
 
 	Type type;
-	String date, hash, group, identity;
+	String date, hash, network, identity;
 	long long generation, seq_num;
 	long length;
 	const char *embeddedMsg;
@@ -359,6 +359,7 @@ struct MessageParser
 	{
 		Unknown = 1,
 		BroadcastKey,
+		BkProof,
 		ForwardTo,
 		EncryptRemoteBroadcast,
 		ReturnRemoteBroadcast,
@@ -371,7 +372,7 @@ struct MessageParser
 
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
-	String date, group, sym1, sym2;
+	String date, network, sym1, sym2;
 	long length, number;
 	long long seq_num, generation;
 	const char *embeddedMsg;

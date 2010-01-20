@@ -47,8 +47,7 @@ bool gblKeySubmitted = false;
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
 	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
-	group = [a-zA-Z0-9_.]+    >{mark=p;} %{group.set(mark, p);};
-	network = [a-zA-Z0-9_.]+  >{mark=p;} %{network.set(mark, p);};
+	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -291,9 +290,9 @@ bool gblKeySubmitted = false;
 		#
 		# Broadcasting
 		#
-		'submit_broadcast'i ' ' user ' ' group ' ' length 
+		'submit_broadcast'i ' ' user ' ' network ' ' length 
 			M_EOL @check_key @{
-				submitBroadcast( mysql, user, group, message_buffer.data, length );
+				submitBroadcast( mysql, user, network, message_buffer.data, length );
 			} |
 
 		#
@@ -355,13 +354,13 @@ bool gblKeySubmitted = false;
 		# Testing
 		#
 
-		'send_all'i ' ' user ' ' group ' ' identity EOL @check_key @{
-				//sendAllProofs( mysql, user, group, identity );
-				//sendAllProofs2( mysql, user, group, identity );
+		'send_all'i ' ' user ' ' network ' ' identity EOL @check_key @{
+				//sendAllProofs( mysql, user, network, identity );
+				//sendAllProofs2( mysql, user, network, identity );
 				BIO_printf( bioOut, "OK\r\n" );
 			} |
-		'forward_tree_reset'i ' ' user ' ' group EOL @check_key @{
-				forwardTreeReset( mysql, user, group );
+		'forward_tree_reset'i ' ' user ' ' network EOL @check_key @{
+				forwardTreeReset( mysql, user, network );
 				BIO_printf( bioOut, "OK\r\n" );
 			} |
 
@@ -386,7 +385,7 @@ int serverParseLoop()
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
-	String gen_str, seq_str, group, network;
+	String gen_str, seq_str, network;
 	String tree_gen_low_str, tree_gen_high_str;
 	long length;
 	long long generation, tree_gen_low, tree_gen_high;
@@ -538,15 +537,19 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' group ' ' generation ' ' key ' ' sym1 ' ' sym2
+		'broadcast_key'i ' ' network ' ' generation ' ' key
 			EOL @{
 				type = BroadcastKey;
+			} |
+		'bk_proof'i ' ' network ' ' generation ' ' key ' ' sym1 ' ' sym2
+			EOL @{
+				type = BkProof;
 			} |
 		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
 			EOL @{
 				type = ForwardTo;
 			} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' group ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' network ' ' length 
 			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;
 			} |
@@ -554,7 +557,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @{
 				type = ReturnRemoteBroadcast;
 			} |
-		'friend_proof'i ' ' hash ' ' group ' ' generation ' ' sym
+		'friend_proof'i ' ' hash ' ' network ' ' generation ' ' sym
 			EOL @{
 				type = FriendProof;
 			} |
@@ -606,11 +609,11 @@ int MessageParser::parse( const char *msg, long len )
 			EOL @skip_message EOL @{
 				type = Direct;
 			} |
-		'remote_broadcast'i ' ' hash ' ' group ' ' generation ' ' seq_num ' ' length 
+		'remote_broadcast'i ' ' hash ' ' network ' ' generation ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
 				type = Remote;
 			} |
-		'group_member_revocation'i ' ' group ' ' generation ' ' identity
+		'group_member_revocation'i ' ' network ' ' generation ' ' identity
 			EOL @{
 				type = GroupMemberRevocation;
 			};
@@ -1046,7 +1049,7 @@ long Identity::parse()
 }%%
 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
-		const char *group, long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		const char *network, long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen )
 {
 	static char buf[8192];
@@ -1081,12 +1084,12 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	if ( forward ) {
 		BIO_printf( tlsConnect.sbio, 
 			"broadcast_forward %s %lld %lld %lld %ld\r\n", 
-			group, keyGen, treeGenLow, treeGenHigh, mLen );
+			network, keyGen, treeGenLow, treeGenHigh, mLen );
 	}
 	else {
 		BIO_printf( tlsConnect.sbio, 
 			"broadcast %s %lld %ld\r\n", 
-			group, keyGen, mLen );
+			network, keyGen, mLen );
 	}
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );

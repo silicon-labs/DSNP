@@ -254,11 +254,11 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 				break;
 			case BroadcastParser::Remote:
 				remoteBroadcast( mysql, user, friendId, bp.hash, 
-						bp.group, networkId, bp.generation, bp.embeddedMsg, bp.length );
+						bp.network, networkId, bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::GroupMemberRevocation:
 				groupMemberRevocation( mysql, user, friendId,
-						bp.group, networkId, bp.generation, bp.identity );
+						bp.network, networkId, bp.generation, bp.identity );
 			default:
 				break;
 		}

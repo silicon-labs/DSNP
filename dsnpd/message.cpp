@@ -65,20 +65,24 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 			"WHERE friend_claim_id = %L AND network_id = %L AND generation = %L",
 			broadcastKey, friendProof1, friendProof2, friendClaimId, networkId, generation );
 
-	/* Broadcast the friend proof that we just received. */
-	message( "broadcasting in-proof for user %s network %s <- %s\n", user, network, friendId );
-	sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof1 );
+	if ( friendProof1 != 0 ) {
+		/* Broadcast the friend proof that we just received. */
+		message( "broadcasting in-proof for user %s network %s <- %s\n", user, network, friendId );
+		sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof1 );
+	}
 
-	/* If we have them in this group then broadcast the reverse as well. */
-	DbQuery haveReverse( mysql,
-		"SELECT id FROM network_member "
-		"WHERE network_id = %L AND friend_claim_id = %L",
-		networkId, friendClaimId );
+	if ( friendProof2 != 0 ) {
+		/* If we have them in this group then broadcast the reverse as well. */
+		DbQuery haveReverse( mysql,
+			"SELECT id FROM network_member "
+			"WHERE network_id = %L AND friend_claim_id = %L",
+			networkId, friendClaimId );
 
-	if ( haveReverse.rows() ) {
-		/* Sending friend */
-		message( "broadcasting out-proof for user %s network %s -> %s\n", user, network, friendId );
-		sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
+		if ( haveReverse.rows() ) {
+			/* Sending friend */
+			message( "broadcasting out-proof for user %s network %s -> %s\n", user, network, friendId );
+			sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
+		}
 	}
 
 	BIO_printf( bioOut, "OK\n" );
@@ -151,7 +155,11 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
 			storeBroadcastKey( mysql, id, user, userId, friendId, friendHash,
-					mp.group, mp.generation, mp.key, mp.sym1, mp.sym2 );
+					mp.network, mp.generation, mp.key, 0, 0 );
+			break;
+		case MessageParser::BkProof:
+			storeBroadcastKey( mysql, id, user, userId, friendId, friendHash,
+					mp.network, mp.generation, mp.key, mp.sym1, mp.sym2 );
 			break;
 		case MessageParser::ForwardTo: 
 			forwardTo( mysql, id, user, friendId, mp.number,
@@ -159,14 +167,14 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
 			encryptRemoteBroadcast( mysql, user, friendId, mp.token,
-					mp.seq_num, mp.group, mp.embeddedMsg, mp.length );
+					mp.seq_num, mp.network, mp.embeddedMsg, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			return_remote_broadcast( mysql, user, friendId, mp.reqid,
 					mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProof:
-			friendProofMessage( mysql, user, userId, friendId, mp.hash, mp.group, mp.generation, mp.sym );
+			friendProofMessage( mysql, user, userId, friendId, mp.hash, mp.network, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
 			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );

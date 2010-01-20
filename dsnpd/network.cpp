@@ -1,6 +1,7 @@
 #include "dsnp.h"
 #include "disttree.h"
 #include "encrypt.h"
+#include <string.h>
 
 long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId )
 {
@@ -98,16 +99,13 @@ void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 }
 
 /*
- * To make group del and friend del instantaneous we need to destroy the tree.
+ * Send the current broadcast key and the friend_proof. To make group del and
+ * friend del instantaneous we need to destroy the tree.
  */
-
 void sendBkProof( MYSQL *mysql, const char *user, 
 		const char *network, long long networkId, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
-	/*
-	 * Send the current broadcast key and the friend_proof.
-	 */
 	CurrentPutKey put( mysql, user, network );
 
 	/* Get the current time. */
@@ -135,7 +133,7 @@ void sendBkProof( MYSQL *mysql, const char *user,
 	}
 
 	/* Notify the requester. */
-	String registered( "broadcast_key %s %lld %s %s %s\r\n", 
+	String registered( "bk_proof %s %lld %s %s %s\r\n", 
 			network, put.keyGen, put.broadcastKey.data, encrypt1.sym, encrypt2.sym );
 
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
@@ -143,6 +141,24 @@ void sendBkProof( MYSQL *mysql, const char *user,
 
 	sendAllInProofs( mysql, user, network, networkId, friendId );
 	sendAllOutProofs( mysql, user, network, networkId, friendId );
+}
+
+/*
+ * To make group del and friend del instantaneous we need to destroy the tree.
+ */
+
+void sendBroadcastKey( MYSQL *mysql, const char *user, 
+		const char *network, long long networkId, const char *friendId,
+		long long friendClaimId, const char *putRelid )
+{
+	CurrentPutKey put( mysql, user, network );
+
+	/* Notify the requester. */
+	String registered( "broadcast_key %s %lld %s\r\n", 
+			network, put.keyGen, put.broadcastKey.data );
+
+	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
+	putTreeAdd( mysql, user, network, networkId, friendId, putRelid );
 }
 
 void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
@@ -203,9 +219,19 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 		return;
 	}
 
-	sendBkProof( mysql, user, network, networkId, identity, friendClaimId, putRelid );
+	if ( strcmp( network, "-" ) == 0 )
+		sendBroadcastKey( mysql, user, network, networkId, identity, friendClaimId, putRelid );
+	else
+		sendBkProof( mysql, user, network, networkId, identity, friendClaimId, putRelid );
 
 	BIO_printf( bioOut, "OK\n" );
+}
+
+void invalidateBroadcastKey( MYSQL *mysql, const char *user, long long userId,
+		const char *network, long long networkId, const char *friendId,
+		long long friendClaimId, const char *putRelid )
+{
+	putTreeDel( mysql, user, userId, network, networkId, friendId, putRelid );
 }
 
 void invalidateBkProof( MYSQL *mysql, const char *user, long long userId,
@@ -214,9 +240,6 @@ void invalidateBkProof( MYSQL *mysql, const char *user, long long userId,
 {
 	putTreeDel( mysql, user, userId, network, networkId, friendId, putRelid );
 
-	/*
-	 * Send the current broadcast key and the friend_proof.
-	 */
 	CurrentPutKey put( mysql, user, network );
 
 	String command( "group_member_revocation %s %lld %s\r\n", 
@@ -280,8 +303,15 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 		return;
 	}
 
-	invalidateBkProof( mysql, user, userId, network, networkId,
-			identity, friendClaimId, putRelid );
+	if ( strcmp( network, "-" ) == 0 ) {
+		invalidateBroadcastKey( mysql, user, userId, network, networkId,
+				identity, friendClaimId, putRelid );
+	}
+	else {
+		invalidateBkProof( mysql, user, userId, network, networkId,
+				identity, friendClaimId, putRelid );
+	}
+
 	BIO_printf( bioOut, "OK\n" );
 }
 

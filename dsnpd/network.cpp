@@ -3,6 +3,20 @@
 #include "encrypt.h"
 #include <string.h>
 
+long long findNetworkName( MYSQL *mysql, const char *network )
+{
+	/* Query the network. */
+	DbQuery findNetworkName( mysql, 
+		"SELECT id FROM network_name WHERE name = %e", network );
+
+	if ( findNetworkName.rows() == 0 )
+		return -1;
+
+	MYSQL_ROW row = findNetworkName.fetchRow();
+	long long networkNameId = strtoll( row[0], 0, 10 );
+	return networkNameId;
+}
+
 long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId )
 {
 	/* Always, try to insert. Ignore failures. */

@@ -138,15 +138,16 @@ BIGNUM *base64ToBn( const char *base64 )
 	return bn;
 }
 
-AllocString pass_hash( const u_char *pass_salt, const char *pass )
+AllocString passHash( const u_char *salt, const char *pass )
 {
-	unsigned char pass_hash[SHA_DIGEST_LENGTH];
+	unsigned char hash[SHA_DIGEST_LENGTH];
 	u_char *pass_comb = new u_char[SALT_SIZE + strlen(pass)];
-	memcpy( pass_comb, pass_salt, SALT_SIZE );
+	memcpy( pass_comb, salt, SALT_SIZE );
 	memcpy( pass_comb + SALT_SIZE, pass, strlen(pass) );
-	SHA1( pass_comb, SALT_SIZE+strlen(pass), pass_hash );
-	return binToBase64( pass_hash, SHA_DIGEST_LENGTH );
+	SHA1( pass_comb, SALT_SIZE+strlen(pass), hash );
+	return binToBase64( hash, SHA_DIGEST_LENGTH );
 }
+
 
 CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group )
 {
@@ -190,66 +191,6 @@ void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 		"( network_id, generation, broadcast_key ) "
 		"VALUES ( %L, %L, %e ) ",
 		networkId, generation, bk );
-}
-
-void createNewUser( MYSQL *mysql, long long id, const char *user, const char *pass )
-{
-	u_char passSalt[SALT_SIZE];
-	RAND_bytes( passSalt, SALT_SIZE );
-	char *passSaltStr = binToBase64( passSalt, SALT_SIZE );
-
-	u_char idSalt[SALT_SIZE];
-	RAND_bytes( idSalt, SALT_SIZE );
-	char *idSaltStr = binToBase64( idSalt, SALT_SIZE );
-
-	/* Generate a new key. */
-	RSA *rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
-	if ( rsa == 0 ) {
-		BIO_printf( bioOut, "ERROR key generation failed\r\n");
-		return;
-	}
-
-	/* Extract the components to hex strings. */
-	String n = bnToBase64( rsa->n );
-	String e = bnToBase64( rsa->e );
-	String d = bnToBase64( rsa->d );
-	String p = bnToBase64( rsa->p );
-	String q = bnToBase64( rsa->q );
-	String dmp1 = bnToBase64( rsa->dmp1 );
-	String dmq1 = bnToBase64( rsa->dmq1 );
-	String iqmp = bnToBase64( rsa->iqmp );
-
-	/* Hash the password. */
-	char *passHashed = pass_hash( passSalt, pass );
-
-	DbQuery( mysql,
-		"UPDATE user "
-		"SET "
-		"	pass_salt = %e, pass = %e, id_salt = %e, "
-		"	rsa_n = %e, rsa_e = %e, rsa_d = %e, rsa_p = %e, "
-		"	rsa_q = %e, rsa_dmp1 = %e, rsa_dmq1 = %e, rsa_iqmp = %e "
-		"WHERE "
-		"	id = %L ",
-		passSaltStr, passHashed, idSaltStr,
-		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, id );
-
-	RSA_free( rsa );
-}
-
-void newUser( MYSQL *mysql, const char *user, const char *pass )
-{
-	/* First try to make the new user. */
-	DbQuery insert( mysql, "INSERT IGNORE INTO user ( user) VALUES ( %e ) ", user );
-	if ( insert.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user exists\r\n" );
-		return;
-	}
-
-	long long id = lastInsertId( mysql );
-
-	createNewUser( mysql, id, user, pass );
-
-	BIO_printf( bioOut, "OK\r\n" );
 }
 
 void publicKey( MYSQL *mysql, const char *user )
@@ -1235,7 +1176,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	/* Hash the password using the sale found in the DB. */
 	u_char pass_salt[SALT_SIZE];
 	base64ToBin( pass_salt, salt_str, strlen(salt_str) );
-	String pass_hashed = pass_hash( pass_salt, pass );
+	String pass_hashed = passHash( pass_salt, pass );
 
 	/* Check the login. */
 	if ( strcmp( pass_hashed, pass_str ) != 0 ) {

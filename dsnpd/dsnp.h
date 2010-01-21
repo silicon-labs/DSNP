@@ -454,4 +454,8 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		const char *msg, long mLen );
 
 long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId );
+
+AllocString passHash( const u_char *pass_salt, const char *pass );
+long long findNetworkName( MYSQL *mysql, const char *network );
+
 #endif

@@ -111,7 +111,35 @@ long registered( MYSQL *mysql, const char *forUser, const char *from_id,
 	String args( "sent_friend_request_accepted %s %s", forUser, from_id );
 	appNotification( args, 0, 0 );
 
+	addToNetwork( mysql, forUser, "-", from_id );
+
 	return 0;
+}
+
+void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *user_reqid, 
+		const char *from_id, const char *requested_relid, 
+		const char *returned_relid, const char *returned_id_salt )
+{
+	message( "accept_friend received: %s\n", returned_id_salt );
+
+	/* The friendship has been accepted. Store the claim. */
+	storeFriendClaim( mysql, user, from_id, 
+			returned_id_salt, requested_relid, returned_relid );
+
+	/* Notify the requester. */
+	String registered( "registered %s %s\r\n", 
+			requested_relid, returned_relid );
+	sendMessageNow( mysql, true, user, from_id, requested_relid, registered.data, 0 );
+
+	/* Remove the user friend request. */
+	deleteFriendRequest( mysql, user, user_reqid );
+
+	String args( "friend_request_accepted %s %s", user, from_id );
+	appNotification( args, 0, 0 );
+
+	addToNetwork( mysql, user, "-", from_id );
+
+	BIO_printf( bioOut, "OK\r\n" );
 }
 
 void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
@@ -156,30 +184,6 @@ void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 		default:
 			break;
 	}
-}
-
-void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *user_reqid, 
-		const char *from_id, const char *requested_relid, 
-		const char *returned_relid, const char *returned_id_salt )
-{
-	message( "accept_friend received: %s\n", returned_id_salt );
-
-	/* The friendship has been accepted. Store the claim. */
-	storeFriendClaim( mysql, user, from_id, 
-			returned_id_salt, requested_relid, returned_relid );
-
-	/* Notify the requester. */
-	String registered( "registered %s %s\r\n", 
-			requested_relid, returned_relid );
-	sendMessageNow( mysql, true, user, from_id, requested_relid, registered.data, 0 );
-
-	/* Remove the user friend request. */
-	deleteFriendRequest( mysql, user, user_reqid );
-
-	String args( "friend_request_accepted %s %s", user, from_id );
-	appNotification( args, 0, 0 );
-
-	BIO_printf( bioOut, "OK\r\n" );
 }
 
 void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid )

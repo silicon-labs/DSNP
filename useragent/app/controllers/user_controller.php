@@ -87,10 +87,13 @@ class UserController extends AppController
 
 		$networkId = $this->findNetworkId( $this->NETWORK_NAME );
 
-		# Load the friend list.
-		$this->loadModel( 'FriendClaim' );
-		$friendClaims = $this->FriendClaim->find('all', 
-				array( 
+		if( $this->NETWORK_NAME == '-' ) {
+			$friendClaims = array();
+		}
+		else {
+			# Load the friend list.
+			$this->loadModel( 'FriendClaim' );
+			$friendClaims = $this->FriendClaim->find('all', array( 
 					'fields' => array(
 						'FriendClaim.*',
 						'NetworkMember.*',
@@ -117,11 +120,12 @@ class UserController extends AppController
 								'FriendClaim.id = FriendLink.from_fc_id', 
 								'FriendLink.network_id' => $networkId,
 								'FriendLink.to_fc_id' => $BROWSER['id']
-							) 
+							)
 						)
 					)
 				)
 			);
+		}
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.

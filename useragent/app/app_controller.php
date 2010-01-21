@@ -1,5 +1,13 @@
 <?php
 
+function dprint( $a1 )
+{
+	echo '<pre>';
+	print_r( $a1 );
+	echo '</pre>';
+	exit;
+}
+
 class AppController extends Controller
 {
 	var $uses = array('User');

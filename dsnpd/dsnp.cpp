@@ -695,6 +695,8 @@ void submitFtoken( MYSQL *mysql, const char *token )
 	row = findNetworkName.fetchRow();
 	const char *networkName = row[0];
 
+	message( "ftoken submission is successful, network: %s\n", networkName );
+
 	BIO_printf( bioOut, "OK %s %s %ld %s\r\n", networkName, hash, lasts, from_id );
 }
 
@@ -842,7 +844,7 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 }
 
 
-long check_friend_claim( Identity &identity, MYSQL *mysql, const char *user, 
+long checkFriendClaim( Identity &identity, MYSQL *mysql, const char *user, 
 		const char *friend_hash )
 {
 	long result = 0;
@@ -916,7 +918,7 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const c
 	Encrypt encrypt;
 
 	/* Check if this identity is our friend. */
-	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
+	friend_claim = checkFriendClaim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
 		message("ftoken_request: hash %s for user %s is not valid\n", hash, user );
 
@@ -991,7 +993,7 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const c
 		"VALUES ( %e, %L, %e, %e, %e, %e ) ",
 		user, networkId, friend_id.identity, flogin_token_str, reqid_str, encrypt.sym );
 
-	message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
+	message("ftoken_request: %s %s %s\n", reqid_str, network, friend_id.identity );
 
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str,
@@ -1047,7 +1049,7 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	Encrypt encrypt;
 
 	/* Check if this identity is our friend. */
-	friend_claim = check_friend_claim( friend_id, mysql, user, hash );
+	friend_claim = checkFriendClaim( friend_id, mysql, user, hash );
 	if ( friend_claim <= 0 ) {
 		/* No friend claim ... we can reveal this since ftoken_response requires
 		 * that the user be logged in. */

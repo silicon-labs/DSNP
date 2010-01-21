@@ -103,6 +103,7 @@ class CredController extends AppController
 			
 		/* See if we have this network. */
 		$this->loadModel('Network');
+
 		$first = $this->Network->find('first', array(
 			'conditions' => array ( 
 				'user_id' => $this->USER_ID,
@@ -135,17 +136,6 @@ class CredController extends AppController
 				));
 
 			if ( !isset( $friendClaim['FriendClaim'] ) )
-				$networkName = '-';
-		}
-
-		if ( $networkName === '-' ) {
-			/* Cannot login as the requested login name. Pick one. */
-			$first = $this->Network->find('first', array(
-				'conditions' => array ( 'user_id' => $this->USER_ID ) ));
-
-			if ( isset( $first['Network'] ) )
-				$networkName = $first['NetworkName']['name'];
-			else
 				$networkName = '-';
 		}
 
@@ -259,7 +249,7 @@ class CredController extends AppController
 		$res = fgets($fp);
 
 		# If there is a result then the login is successful. 
-		if ( ereg("^OK ([A-Za-z]+) ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+		if ( ereg("^OK ([-A-Za-z]+) ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
 			# Login successful.
 			$this->Session->write( 'ROLE', 'friend' );
 			$this->Session->write( 'NETWORK_NAME', $regs[1] );

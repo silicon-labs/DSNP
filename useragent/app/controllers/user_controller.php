@@ -371,12 +371,16 @@ class UserController extends AppController
 
 		$res = fgets($fp);
 
-		if ( ereg("^OK", $res, $regs) )
-			$this->redirect( "/$this->USER_NAME/" );
-		else
-			echo $res;
+				$this->VALID_USER = $this->Session->read('VALID_USER');
 
-		header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
+		if ( ! ereg("^OK", $res, $regs) )
+			die( $res );
+
+		/* Invalidate the user data in the session so it is reloaded on the
+		 * next page load. */
+		$this->Session->write( 'VALID_USER', false );
+
+		$this->redirect( "/$this->USER_NAME/" );
 	}
 
 	function cnet()

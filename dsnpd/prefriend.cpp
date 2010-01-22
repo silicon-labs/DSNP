@@ -73,8 +73,8 @@ long notifyAccept( MYSQL *mysql, const char *forUser, const char *from_id,
 	RSA *id_pub = fetch_public_key( mysql, from_id );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
-	const char *putRelid = returned_relid;
-	const char *getRelid = requested_relid;
+	const char *putRelid = requested_relid;
+	const char *getRelid = returned_relid;
 	storeFriendClaim( mysql, forUser, from_id, id_salt, putRelid, getRelid );
 
 	/* Clear the sent_freind_request. */
@@ -124,8 +124,8 @@ void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *use
 	message( "accept_friend received: %s\n", returned_id_salt );
 
 	/* The friendship has been accepted. Store the claim. */
-	const char *putRelid = requested_relid;
-	const char *getRelid = returned_relid;
+	const char *putRelid = returned_relid;
+	const char *getRelid = requested_relid;
 	storeFriendClaim( mysql, user, from_id, returned_id_salt, putRelid, getRelid );
 
 	/* Notify the requester. */

@@ -12,12 +12,19 @@
 
 <?php 
 
+function networkNameChoice( $name )
+{
+	if ( $name == '-' )
+		$name = 'No Network';
+	return $name;
+}
+
 echo $form->create( null, array( 'url' => "/$USER_NAME/cred/nnet"));
 
 $options = array();
 
 foreach ( $networks as $net ) {
-	$options[ $net['NetworkName']['name'] ] = $net['NetworkName']['name'];
+	$options[ $net['NetworkName']['name'] ] = networkNameChoice( $net['NetworkName']['name'] );
 }
 
 echo $form->radio( 'network', $options );

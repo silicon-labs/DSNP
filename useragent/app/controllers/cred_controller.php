@@ -288,21 +288,36 @@ class CredController extends AppController
 	
 	function nnet()
 	{
-		$this->requireOwner();
+		$this->requireOwnerOrFriend();
 
-		$this->loadModel('LoginState');
-		$loginState = $this->LoginState->find('first', array(
-			'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
+		if ( $this->ROLE == 'owner' ) {
+			$this->loadModel('LoginState');
+			$loginState = $this->LoginState->find('first', array(
+				'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
 
-		#echo "<pre>";
-		#print_r( $this->data );
-		#echo "</pre>";
-		#exit;
+			$newNetwork = $this->data['User']['network'];
+			$loginState['LoginState']['network_name'] = $newNetwork;
+			$loginState = $this->LoginState->save( $loginState );
+			$this->Session->write('NETWORK_NAME', $newNetwork );
+		}
+		else {
+			$newNetwork = $this->data['User']['network'];
+			$networkId = $this->findNetworkId( $newNetwork );
+			$BROWSER = $this->Session->read('BROWSER');
+			$this->loadModel('NetworkMember');
+			$networks = $this->NetworkMember->find( 'first', array( 
+				'conditions' => array( 
+					'network_id' => $networkId,
+					'friend_claim_id' => $BROWSER['id']
+				)
+			));
 
-		$newNetwork = $this->data['User']['network'];
-		$loginState['LoginState']['network_name'] = $newNetwork;
-		$loginState = $this->LoginState->save( $loginState );
-		$this->Session->write('NETWORK_NAME', $newNetwork );
+			if ( !isset( $networks['NetworkMember'] ) )
+				die('bad network');
+
+			$this->Session->write('NETWORK_NAME', $newNetwork );
+		}
+
 		$this->redirect( "/" . $this->USER_NAME . "/" );
 	}
 }

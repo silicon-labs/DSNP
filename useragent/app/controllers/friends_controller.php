@@ -42,7 +42,9 @@ class FriendsController extends AppController
 	{
 		$this->loadModel( 'Network' );
 		$networks = $this->Network->find( 'all', array( 
-			'conditions' => array( 'user_id' => $this->USER_ID ),
+			'conditions' => array( 
+				'user_id' => $this->USER_ID,
+				'NetworkName.name !=' => '-' ),
 			'order' => 'NetworkName.id' 
 		));
 		return $networks;
@@ -197,7 +199,9 @@ class FriendsController extends AppController
 
 		$this->loadModel( 'NetworkName' );
 		$networkNames = $this->NetworkName->find( 'all', array( 
-			'order' => 'NetworkName.id' 
+			'order' => 'NetworkName.id',
+			'conditions' => array (
+				'name' != '-' )
 		));
 
 		echo "<pre>";

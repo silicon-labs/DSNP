@@ -103,7 +103,7 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity );
+	id_pub = fetchPublicKey( mysql, identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\n", ERROR_PUBLIC_KEY );
 		return;
@@ -209,7 +209,7 @@ void relidResponse( MYSQL *mysql, const char *user,
 	id.parse();
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, id.identity );
+	id_pub = fetchPublicKey( mysql, id.identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		return;
@@ -361,7 +361,7 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 	id.parse();
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, identity );
+	id_pub = fetchPublicKey( mysql, identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		return;

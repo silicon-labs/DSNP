@@ -137,7 +137,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	long long userId = strtoll(row[4], 0, 10);
 
 	RSA *user_priv = load_key( mysql, user );
-	RSA *id_pub = fetch_public_key( mysql, friendId );
+	RSA *id_pub = fetchPublicKey( mysql, friendId );
 
 	Encrypt encrypt( id_pub, user_priv );
 	int decryptRes = encrypt.decryptVerify( msg );

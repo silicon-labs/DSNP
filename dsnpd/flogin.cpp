@@ -99,7 +99,7 @@ query_fail:
 }
 
 
-void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const char *hash )
+void ftokenRequest( MYSQL *mysql, const char *user, const char *hash )
 {
 	int sigRes;
 	RSA *user_priv, *id_pub;
@@ -126,7 +126,7 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const c
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, friend_id.identity );
+	id_pub = fetchPublicKey( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		return;
@@ -152,40 +152,13 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const c
 	flogin_token_str = binToBase64( flogin_token, TOKEN_SIZE );
 	reqid_str = binToBase64( reqid, REQID_SIZE );
 
-	/* Find the user. */
-	DbQuery findUser( mysql, 
-		"SELECT id FROM user WHERE user = %e", user );
-
-	if ( findUser.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		return;
-	}
-
-	MYSQL_ROW row = findUser.fetchRow();
-	long long userId = strtoll( row[0], 0, 10 );
-
-	/* Try to find the network. */
-	DbQuery findNetwork( mysql, 
-		"SELECT network.id FROM network "
-		"JOIN network_name ON network.network_name_id = network_name.id "
-		"WHERE user_id = %L AND network_name.name = %e", 
-		userId, network );
-
-	if ( findNetwork.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return;
-	}
-
-	row = findNetwork.fetchRow();
-	long long networkId = strtoll( row[0], 0, 10 );
-
 	DbQuery( mysql,
 		"INSERT INTO ftoken_request "
-		"( user, network_id, from_id, token, reqid, msg_sym ) "
-		"VALUES ( %e, %L, %e, %e, %e, %e ) ",
-		user, networkId, friend_id.identity, flogin_token_str, reqid_str, encrypt.sym );
+		"( user, from_id, token, reqid, msg_sym ) "
+		"VALUES ( %e, %e, %e, %e, %e ) ",
+		user, friend_id.identity, flogin_token_str, reqid_str, encrypt.sym );
 
-	message("ftoken_request: %s %s %s\n", reqid_str, network, friend_id.identity );
+	message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
 
 	/* Return the request id for the requester to use. */
 	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str,
@@ -250,7 +223,7 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	}
 
 	/* Get the public key for the identity. */
-	id_pub = fetch_public_key( mysql, friend_id.identity );
+	id_pub = fetchPublicKey( mysql, friend_id.identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		return;
@@ -307,7 +280,7 @@ void submitFtoken( MYSQL *mysql, const char *token )
 	char *user, *from_id, *hash;
 
 	exec_query( mysql,
-		"SELECT user, from_id, network_id FROM ftoken_request WHERE token = %e",
+		"SELECT user, from_id FROM ftoken_request WHERE token = %e",
 		token );
 
 	result = mysql_store_result( mysql );
@@ -318,12 +291,11 @@ void submitFtoken( MYSQL *mysql, const char *token )
 	}
 	user = row[0];
 	from_id = row[1];
-	long long networkId = strtoll( row[2], 0, 10 );
 
 	exec_query( mysql, 
-		"INSERT INTO flogin_token ( user, network_id, identity, login_token, expires ) "
-		"VALUES ( %e, %L, %e, %e, date_add( now(), interval %l second ) )", 
-		user, networkId, from_id, token, lasts );
+		"INSERT INTO flogin_token ( user, identity, login_token, expires ) "
+		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
+		user, from_id, token, lasts );
 
 	exec_query( mysql,
 		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", from_id );
@@ -336,24 +308,7 @@ void submitFtoken( MYSQL *mysql, const char *token )
 	}
 	hash = row[0];
 
-	DbQuery findNetworkName( mysql,
-		"SELECT network_name.name "
-		"FROM network_name "
-		"JOIN network "
-		"ON network_name.id = network.network_name_id "
-		"WHERE network.id = %L",
-		networkId );
-
-	if ( findNetworkName.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return;
-	}
-	row = findNetworkName.fetchRow();
-	const char *networkName = row[0];
-
-	message( "ftoken submission is successful, network: %s\n", networkName );
-
-	BIO_printf( bioOut, "OK %s %s %ld %s\r\n", networkName, hash, lasts, from_id );
+	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash, lasts, from_id );
 }
 
 

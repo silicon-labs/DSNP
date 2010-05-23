@@ -93,7 +93,7 @@ void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str, co
 void fetchResponseRelid( MYSQL *mysql, const char *reqid );
 void friendFinal( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
 void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid );
-void ftokenRequest( MYSQL *mysql, const char *user, const char *network, const char *hash );
+void ftokenRequest( MYSQL *mysql, const char *user, const char *hash );
 void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 
 		const char *flogin_reqid_str );
 void submitFtoken( MYSQL *mysql, const char *token );
@@ -412,7 +412,7 @@ struct NotifyAcceptResultParser
 };
 
 
-RSA *fetch_public_key( MYSQL *mysql, const char *identity );
+RSA *fetchPublicKey( MYSQL *mysql, const char *identity );
 RSA *load_key( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,

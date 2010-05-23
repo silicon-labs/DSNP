@@ -131,7 +131,7 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		const char *broadcastKey = row[2];
 
 		/* Do the decryption. */
-		RSA *id_pub = fetch_public_key( mysql, authorId );
+		RSA *id_pub = fetchPublicKey( mysql, authorId );
 		Encrypt encrypt( id_pub, 0 );
 		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
 
@@ -225,7 +225,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 	message( "receive broadcast: key is %s\n", broadcastKey );
 
 	/* Do the decryption. */
-	RSA *id_pub = fetch_public_key( mysql, friendId );
+	RSA *id_pub = fetchPublicKey( mysql, friendId );
 	Encrypt encrypt( id_pub, 0 );
 	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted, strlen(encrypted) );
 
@@ -529,7 +529,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	long long seqNum = strtoll( row[0], 0, 10 );
 
 	user_priv = load_key( mysql, toUser );
-	id_pub = fetch_public_key( mysql, authorId );
+	id_pub = fetchPublicKey( mysql, authorId );
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
@@ -680,7 +680,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	String timeStr = timeNow();
 
 	user_priv = load_key( mysql, user );
-	id_pub = fetch_public_key( mysql, subjectId );
+	id_pub = fetchPublicKey( mysql, subjectId );
 
 	/* Notifiy the frontend. */
 	String args( "remote_publication %s %s %s %ld", 

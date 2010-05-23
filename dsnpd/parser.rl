@@ -267,9 +267,9 @@ bool gblKeySubmitted = false;
 		#
 		# Friend login. 
 		#
-		'ftoken_request'i ' ' user ' ' network ' ' hash
+		'ftoken_request'i ' ' user ' ' hash
 			EOL @check_key @{
-				ftokenRequest( mysql, user, network, hash );
+				ftokenRequest( mysql, user, hash );
 			} |
 
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid

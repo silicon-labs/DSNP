@@ -169,7 +169,7 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 	MYSQL_ROW row = claim.fetchRow();
 	const char *relid = row[0];
 
-	RSA *id_pub = fetch_public_key( mysql, to_identity );
+	RSA *id_pub = fetchPublicKey( mysql, to_identity );
 	RSA *user_priv = load_key( mysql, from_user );
 
 	Encrypt encrypt( id_pub, user_priv );

@@ -128,7 +128,7 @@ void sendBkProof( MYSQL *mysql, const char *user,
 	String proof2( "friend_proof %s %s%s/ %s\r\n", friendId, c->CFG_URI, user, timeStr.data );
 
 	RSA *user_priv = load_key( mysql, user );
-	RSA *id_pub = fetch_public_key( mysql, friendId );
+	RSA *id_pub = fetchPublicKey( mysql, friendId );
 
 	Encrypt encrypt1( id_pub, user_priv );
 	int sigRes = encrypt1.bkSignEncrypt( put.broadcastKey.data,

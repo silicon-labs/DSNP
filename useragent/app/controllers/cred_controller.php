@@ -168,7 +168,7 @@ class CredController extends AppController
 			$send = 
 				"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
 				"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
-				"ftoken_request " . $this->USER_NAME . " $networkName $hash\r\n";
+				"ftoken_request " . $this->USER_NAME . " $hash\r\n";
 			fwrite($fp, $send);
 
 			$res = fgets($fp);
@@ -249,19 +249,22 @@ class CredController extends AppController
 		$res = fgets($fp);
 
 		# If there is a result then the login is successful. 
-		if ( ereg("^OK ([-A-Za-z]+) ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+		if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)", $res, $regs) ) {
+			$hash = $regs[1];
+			$identity = $regs[3];
+
 			# Login successful.
 			$this->Session->write( 'ROLE', 'friend' );
-			$this->Session->write( 'NETWORK_NAME', $regs[1] );
+			$this->Session->write( 'NETWORK_NAME', '-' );
 			$this->Session->write( 'token', $ftoken );
-			$this->Session->write( 'hash', $regs[2] );
+			$this->Session->write( 'hash', $hash );
 
 			/* Find the friend claim data and store in the session. */
 			$this->loadModel('FriendClaim');
 			$BROWSER = $this->FriendClaim->find('first', array(
 				'conditions' => array (
 					'user_id' => $this->USER_ID,
-					'identity' => $regs[4]
+					'identity' => $identity
 				)
 			));
 

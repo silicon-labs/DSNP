@@ -294,7 +294,7 @@ query_fail:
 	return result;
 }
 
-RSA *fetch_public_key( MYSQL *mysql, const char *identity )
+RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 {
 	PublicKey pub;
 	RSA *rsa;
@@ -374,7 +374,7 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 	Encrypt encrypt;
 	int encrypt_res;
 
-	id_pub = fetch_public_key( mysql, to_identity );
+	id_pub = fetchPublicKey( mysql, to_identity );
 	user_priv = load_key( mysql, from_user );
 
 	encrypt.load( id_pub, user_priv );
@@ -508,7 +508,7 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	::message( "decrypting result %s %s %s\n", from_user, to_identity, user_message );
 
 	user_priv = load_key( mysql, from_user );
-	id_pub = fetch_public_key( mysql, to_identity );
+	id_pub = fetchPublicKey( mysql, to_identity );
 
 	encrypt.load( id_pub, user_priv );
 	message( "about to\n");

@@ -299,4 +299,62 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	free( flogin_token_str );
 }
 
+void submitFtoken( MYSQL *mysql, const char *token )
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+	long lasts = LOGIN_TOKEN_LASTS;
+	char *user, *from_id, *hash;
+
+	exec_query( mysql,
+		"SELECT user, from_id, network_id FROM ftoken_request WHERE token = %e",
+		token );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
+	}
+	user = row[0];
+	from_id = row[1];
+	long long networkId = strtoll( row[2], 0, 10 );
+
+	exec_query( mysql, 
+		"INSERT INTO flogin_token ( user, network_id, identity, login_token, expires ) "
+		"VALUES ( %e, %L, %e, %e, date_add( now(), interval %l second ) )", 
+		user, networkId, from_id, token, lasts );
+
+	exec_query( mysql,
+		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", from_id );
+
+	result = mysql_store_result( mysql );
+	row = mysql_fetch_row( result );
+	if ( row == 0 ) {
+		BIO_printf( bioOut, "ERROR\r\n" );
+		return;
+	}
+	hash = row[0];
+
+	DbQuery findNetworkName( mysql,
+		"SELECT network_name.name "
+		"FROM network_name "
+		"JOIN network "
+		"ON network_name.id = network.network_name_id "
+		"WHERE network.id = %L",
+		networkId );
+
+	if ( findNetworkName.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR invalid network\r\n" );
+		return;
+	}
+	row = findNetworkName.fetchRow();
+	const char *networkName = row[0];
+
+	message( "ftoken submission is successful, network: %s\n", networkName );
+
+	BIO_printf( bioOut, "OK %s %s %ld %s\r\n", networkName, hash, lasts, from_id );
+}
+
+
 

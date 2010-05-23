@@ -458,4 +458,6 @@ long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId );
 AllocString passHash( const u_char *pass_salt, const char *pass );
 long long findNetworkName( MYSQL *mysql, const char *network );
 
+#define LOGIN_TOKEN_LASTS 86400
+
 #endif

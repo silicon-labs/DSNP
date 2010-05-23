@@ -105,7 +105,7 @@ ALTER TABLE broadcast_message CHANGE group_name network_name TEXT;
 ALTER TABLE pending_remote_broadcast CHANGE group_name network_name TEXT;
 
 -- ALTER TABLE get_tree ADD COLUMN network_id BIGINT;
---UPDATE get_tree, network 
+-- UPDATE get_tree, network 
 --	SET get_tree.network_id = network.id
 --	WHERE get_tree.group_name = network.name;
 --

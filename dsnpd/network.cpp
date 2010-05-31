@@ -17,14 +17,14 @@ long long findNetworkName( MYSQL *mysql, const char *network )
 	return networkNameId;
 }
 
-long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId )
+long long addNetwork( MYSQL *mysql, long long userId, const char *privateName, long long networkNameId )
 {
 	/* Always, try to insert. Ignore failures. */
 	DbQuery insert( mysql, 
 		"INSERT IGNORE INTO network "
-		"( user_id, network_name_id, key_gen, tree_gen_low, tree_gen_high ) "
-		"VALUES ( %L, %L, 1, 1, 1 )",
-		userId, networkNameId
+		"( user_id, private_name, network_name_id, key_gen, tree_gen_low, tree_gen_high ) "
+		"VALUES ( %L, %e, %L, 1, 1, 1 )",
+		userId, privateName, networkNameId
 	);
 
 	long long networkId = 0;
@@ -35,8 +35,8 @@ long long addNetwork( MYSQL *mysql, long long userId, long long networkNameId )
 	}
 	else {
 		DbQuery findNetwork( mysql,
-			"SELECT id from network WHERE user_id = %L and network_name_id = %L",
-			userId, networkNameId );
+			"SELECT id FROM network WHERE user_id = %L and privateName = %e",
+			userId, privateName );
 		if ( findNetwork.rows() == 0 ) {
 			fatal("could not insert or find network for user_id "
 					"%lld and network_name_id %lld\n", userId, networkNameId );
@@ -204,7 +204,7 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 	long long networkNameId = strtoll( row[0], 0, 10 );
 
 	/* Make sure we have the network parameters for this user. */
-	long long networkId = addNetwork( mysql, userId, networkNameId );
+	long long networkId = addNetwork( mysql, userId, network, networkNameId );
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
@@ -358,7 +358,7 @@ void showNetwork( MYSQL *mysql, const char *user, const char *network )
 	long long networkNameId = strtoll( row[0], 0, 10 );
 
 	/* Make sure we have the network parameters for this user. */
-	addNetwork( mysql, userId, networkNameId );
+	addNetwork( mysql, userId, network, networkNameId );
 
 	BIO_printf( bioOut, "OK\n" );
 }

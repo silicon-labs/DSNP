@@ -55,7 +55,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 	long long networkNameId = strtoll( row[0], 0, 10 );
 
 	/* Make sure we have the network for the user. */
-	long long networkId = addNetwork( mysql, userId, networkNameId );
+	long long networkId = addNetwork( mysql, userId, network, networkNameId );
 
 	/* Store the key. */
 	addGetBroadcastKey( mysql, friendClaimId, networkId, generation );
@@ -104,7 +104,7 @@ int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const 
 	MYSQL_ROW row = findNetworkName.fetchRow();
 	long long networkNameId = strtoll( row[0], 0, 10 );
 
-	long long networkId = addNetwork( mysql, userId, networkNameId );
+	long long networkId = addNetwork( mysql, userId, network, networkNameId );
 
 	remoteBroadcast( mysql, user, friend_id, hash, network, networkId, generation, sym, strlen(sym) );
 	BIO_printf( bioOut, "OK\r\n" );

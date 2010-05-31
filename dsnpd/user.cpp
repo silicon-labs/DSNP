@@ -87,7 +87,7 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	
 	/* Add the - network for the new user. */
 	long long networkNameId = findNetworkName( mysql, "-" );
-	addNetwork( mysql, userId, networkNameId );
+	addNetwork( mysql, userId, "-", networkNameId );
 
 	RSA_free( rsa );
 

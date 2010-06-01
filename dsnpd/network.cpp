@@ -19,12 +19,16 @@ long long findNetworkName( MYSQL *mysql, const char *network )
 
 long long addNetwork( MYSQL *mysql, long long userId, const char *privateName, long long networkNameId )
 {
-	/* Always, try to insert. Ignore failures. */
+	unsigned char distName[RELID_SIZE];
+	RAND_bytes( distName, RELID_SIZE );
+	String distNameStr = binToBase64( distName, RELID_SIZE );
+
+	/* Always, try to insert. Ignore failures. FIXME: need to loop on the random selection here. */
 	DbQuery insert( mysql, 
 		"INSERT IGNORE INTO network "
-		"( user_id, private_name, network_name_id, key_gen, tree_gen_low, tree_gen_high ) "
-		"VALUES ( %L, %e, %L, 1, 1, 1 )",
-		userId, privateName, networkNameId
+		"( user_id, private_name, dist_name, network_name_id, key_gen, tree_gen_low, tree_gen_high ) "
+		"VALUES ( %L, %e, %e, %L, 1, 1, 1 )",
+		userId, privateName, distNameStr.data, networkNameId
 	);
 
 	long long networkId = 0;

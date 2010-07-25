@@ -79,7 +79,7 @@ foreach ( $friendClaims as $row ) {
 	$dest_id = $row['FriendClaim']['identity'];
 
 	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
-		urlencode( $_SESSION['hash'] ) . "&n=$NETWORK_NAME\">";
+		urlencode( $_SESSION['hash'] ) . "\">";
 
 	if ( isset( $name ) )
 		echo $name;

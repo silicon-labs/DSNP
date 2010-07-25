@@ -32,8 +32,6 @@ class AppController extends Controller
 	var $USER_NAME = null;
 	var $USER_URI = null;
 	var $ROLE = null;
-	var $NETWORK_NAME = null;
-	var $NETWORK_ID = null;
 	var $BROWSWER = null;
 
 	function hereFull()
@@ -152,12 +150,6 @@ class AppController extends Controller
 					$this->USER['display_long'] = $this->USER['name'];
 					$this->set( 'USER', $this->USER );
 				}
-
-				/* Network. */
-				$this->NETWORK_NAME = $this->Session->read('NETWORK_NAME');
-				$this->NETWORK_ID = $this->Session->read('NETWORK_ID');
-				$this->set('NETWORK_NAME', $this->NETWORK_NAME );
-				$this->set('NETWORK_ID', $this->NETWORK_ID );
 			}
 		}
 	}

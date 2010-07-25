@@ -145,21 +145,17 @@ class CredController extends AppController
 	function sflogin()
 	{
 		$hash = $_REQUEST['h'];
-		$networkName = $_REQUEST['n'];
 
 		if ( !$hash )
 			die('no hash given');
 
 		/* Maybe we are already logged in as this friend. */
 		if ( isset( $this->ROLE ) && $this->ROLE === 'friend' && 
-				isset( $this->NETWORK_NAME ) && $this->NETWORK_NAME === $networkName &&
 				isset( $_SESSION['hash'] ) && $_SESSION['hash'] === $hash )
 		{
 			header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
 		}
 		else {
-			$networkName = $this->friendNetwork( $networkName, $hash );
-
 			/* Not logged in as the hashed user. */
 			$fp = fsockopen( 'localhost', $this->CFG_PORT );
 			if ( !$fp )

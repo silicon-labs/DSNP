@@ -76,15 +76,11 @@ function networkNameDisplay( $name )
 			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
 					$BROWSER['identity'], $BROWSER['identity'] );
 			echo " - ";
-			echo $html->link( networkNameDisplay( $NETWORK_NAME ), "/$USER_NAME/user/cnet" );
-			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}
 		else if ( isset( $ROLE ) && $ROLE == 'owner' )
 		{
 			echo $html->link( $USER['name'], $USER['identity'] );
-			echo " - ";
-			echo $html->link( networkNameDisplay( $NETWORK_NAME ), "/$USER_NAME/user/cnet" );
 			echo " - ";
 			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
 		}

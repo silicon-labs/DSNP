@@ -34,53 +34,51 @@ include('functions.php');
 
 <?php
 
-if ( $NETWORK_NAME != '-' ) {
-	echo '<h3>Friend List</h3>';
+echo '<h3>Friend List</h3>';
 
-	foreach ( $friendClaims as $row ) {
-		$name = $row['FriendClaim']['name'];
-		$dest_id = $row['FriendClaim']['identity'];
-		$from_fc_id = $row['FriendLink']['from_fc_id'];
+foreach ( $friendClaims as $row ) {
+	$name = $row['FriendClaim']['name'];
+	$dest_id = $row['FriendClaim']['identity'];
+	$from_fc_id = $row['FriendLink']['from_fc_id'];
 
-		if ( $dest_id == $BROWSER['identity'] ) {
-			echo "* <a href=\"${dest_id}\">";
-			if ( isset( $name ) )
-				echo $name;
-			else
-				echo $dest_id;
-			echo "</a> <br>\n";
-		}
+	if ( $dest_id == $BROWSER['identity'] ) {
+		echo "* <a href=\"${dest_id}\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $dest_id;
+		echo "</a> <br>\n";
 	}
+}
 
-	foreach ( $friendClaims as $row ) {
-		$name = $row['FriendClaim']['name'];
-		$dest_id = $row['FriendClaim']['identity'];
-		$from_fc_id = $row['FriendLink']['from_fc_id'];
+foreach ( $friendClaims as $row ) {
+	$name = $row['FriendClaim']['name'];
+	$dest_id = $row['FriendClaim']['identity'];
+	$from_fc_id = $row['FriendLink']['from_fc_id'];
 
-		if ( isset( $from_fc_id ) ) {
-			echo "+ <a href=\"${dest_id}cred/sflogin?h=" . 
-				urlencode( $_SESSION['hash'] ) . "&n=$NETWORK_NAME\">";
-			if ( isset( $name ) )
-				echo $name;
-			else
-				echo $dest_id;
-			echo "</a> <br>\n";
-		}
+	if ( isset( $from_fc_id ) ) {
+		echo "+ <a href=\"${dest_id}cred/sflogin?h=" . 
+			urlencode( $_SESSION['hash'] ) . "&n=$NETWORK_NAME\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $dest_id;
+		echo "</a> <br>\n";
 	}
+}
 
-	foreach ( $friendClaims as $row ) {
-		$name = $row['FriendClaim']['name'];
-		$dest_id = $row['FriendClaim']['identity'];
-		$from_fc_id = $row['FriendLink']['from_fc_id'];
+foreach ( $friendClaims as $row ) {
+	$name = $row['FriendClaim']['name'];
+	$dest_id = $row['FriendClaim']['identity'];
+	$from_fc_id = $row['FriendLink']['from_fc_id'];
 
-		if ( $dest_id != $BROWSER['identity'] && !isset( $from_fc_id ) ) {
-			echo "&nbsp;&nbsp;<a href=\"${dest_id}\">";
-			if ( isset( $name ) )
-				echo $name;
-			else
-				echo $dest_id;
-			echo "</a> <br>\n";
-		}
+	if ( $dest_id != $BROWSER['identity'] && !isset( $from_fc_id ) ) {
+		echo "&nbsp;&nbsp;<a href=\"${dest_id}\">";
+		if ( isset( $name ) )
+			echo $name;
+		else
+			echo $dest_id;
+		echo "</a> <br>\n";
 	}
 }
 

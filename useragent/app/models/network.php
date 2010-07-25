@@ -3,6 +3,5 @@
 	{
 		var $useTable = 'network';
 		var $name = 'Network';
-		var $belongsTo = 'NetworkName';
 	}
 ?>

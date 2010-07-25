@@ -239,8 +239,8 @@ class AppController extends Controller
 		$networks = $this->Network->find( 'first', array( 
 			'conditions' => array( 
 				'Network.user_id' => $this->USER_ID,
-				'NetworkName.name' => $networkName ),
-			'order' => 'NetworkName.id' 
+				'Network.name' => $networkName ),
+			'order' => 'Network.id' 
 		));
 
 		return $networks['Network']['id'];

@@ -396,7 +396,7 @@ class UserController extends AppController
 			$networks = $this->Network->find( 'all', array( 
 				'conditions' => array( 
 					'Network.user_id' => $this->USER_ID ),
-				'order' => 'NetworkName.id' 
+				'order' => 'Network.id' 
 			));
 		}
 		else {
@@ -404,13 +404,12 @@ class UserController extends AppController
 			$BROWSER = $this->Session->read('BROWSER');
 			$networks = $this->Network->find( 'all', array( 
 				'fields' => array(
-					'NetworkName.*',
 					'Network.*',
 					'NetworkMember.*'
 				),
 				'conditions' => array( 
 					'Network.user_id' => $this->USER_ID ),
-				'order' => 'NetworkName.id',
+				'order' => 'Network.id',
 				'joins' => array (
 					array(
 						'table' => 'network_member',

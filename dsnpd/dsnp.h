@@ -453,10 +453,9 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen );
 
-long long addNetwork( MYSQL *mysql, long long userId, const char *privateName, long long networkNameId );
+long long addNetwork( MYSQL *mysql, long long userId, const char *privateName );
 
 AllocString passHash( const u_char *pass_salt, const char *pass );
-long long findNetworkName( MYSQL *mysql, const char *network );
 
 #define LOGIN_TOKEN_LASTS 86400
 

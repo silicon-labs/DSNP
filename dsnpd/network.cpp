@@ -3,32 +3,19 @@
 #include "encrypt.h"
 #include <string.h>
 
-long long findNetworkName( MYSQL *mysql, const char *network )
-{
-	/* Query the network. */
-	DbQuery findNetworkName( mysql, 
-		"SELECT id FROM network_name WHERE name = %e", network );
-
-	if ( findNetworkName.rows() == 0 )
-		return -1;
-
-	MYSQL_ROW row = findNetworkName.fetchRow();
-	long long networkNameId = strtoll( row[0], 0, 10 );
-	return networkNameId;
-}
-
-long long addNetwork( MYSQL *mysql, long long userId, const char *privateName, long long networkNameId )
+long long addNetwork( MYSQL *mysql, long long userId, const char *name )
 {
 	unsigned char distName[RELID_SIZE];
 	RAND_bytes( distName, RELID_SIZE );
 	String distNameStr = binToBase64( distName, RELID_SIZE );
 
-	/* Always, try to insert. Ignore failures. FIXME: need to loop on the random selection here. */
+	/* Always, try to insert. Ignore failures. FIXME: need to loop on the
+	 * random selection here. */
 	DbQuery insert( mysql, 
 		"INSERT IGNORE INTO network "
-		"( user_id, private_name, dist_name, network_name_id, key_gen, tree_gen_low, tree_gen_high ) "
-		"VALUES ( %L, %e, %e, %L, 1, 1, 1 )",
-		userId, privateName, distNameStr.data, networkNameId
+		"( user_id, name, dist_name, key_gen, tree_gen_low, tree_gen_high ) "
+		"VALUES ( %L, %e, %e, 1, 1, 1 )",
+		userId, name, distNameStr.data
 	);
 
 	long long networkId = 0;
@@ -39,11 +26,11 @@ long long addNetwork( MYSQL *mysql, long long userId, const char *privateName, l
 	}
 	else {
 		DbQuery findNetwork( mysql,
-			"SELECT id FROM network WHERE user_id = %L and privateName = %e",
-			userId, privateName );
+			"SELECT id FROM network WHERE user_id = %L and name = %e",
+			userId, name );
 		if ( findNetwork.rows() == 0 ) {
 			fatal("could not insert or find network for user_id "
-					"%lld and network_name_id %lld\n", userId, networkNameId );
+					"%lld and network name %s\n", userId, name );
 		}
 		else {
 			MYSQL_ROW row = findNetwork.fetchRow();
@@ -82,8 +69,6 @@ void sendAllInProofs( MYSQL *mysql, const char *user, const char *network, long 
 		}
 	}
 }
-
-
 
 void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 		long long networkId, const char *friendId )
@@ -195,20 +180,8 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 	MYSQL_ROW row = findUser.fetchRow();
 	long long userId = strtoll( row[0], 0, 10 );
 
-	/* Query the network. */
-	DbQuery findNetworkName( mysql, 
-		"SELECT id FROM network_name WHERE name = %e", network );
-
-	if ( findNetworkName.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return;
-	}
-
-	row = findNetworkName.fetchRow();
-	long long networkNameId = strtoll( row[0], 0, 10 );
-
 	/* Make sure we have the network parameters for this user. */
-	long long networkId = addNetwork( mysql, userId, network, networkNameId );
+	long long networkId = addNetwork( mysql, userId, network );
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
@@ -284,8 +257,7 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 	/* Query the network. */
 	DbQuery findNetwork( mysql, 
 		"SELECT network.id FROM network "
-		"JOIN network_name ON network.network_name_id = network_name.id "
-		"WHERE user_id = %L AND network_name.name = %e", 
+		"WHERE user_id = %L AND network.name = %e", 
 		userId, network );
 
 	if ( findNetwork.rows() == 0 ) {
@@ -349,20 +321,8 @@ void showNetwork( MYSQL *mysql, const char *user, const char *network )
 	MYSQL_ROW row = findUser.fetchRow();
 	long long userId = strtoll( row[0], 0, 10 );
 
-	/* Query the network. */
-	DbQuery findNetworkName( mysql, 
-		"SELECT id FROM network_name WHERE name = %e", network );
-
-	if ( findNetworkName.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return;
-	}
-
-	row = findNetworkName.fetchRow();
-	long long networkNameId = strtoll( row[0], 0, 10 );
-
 	/* Make sure we have the network parameters for this user. */
-	addNetwork( mysql, userId, network, networkNameId );
+	addNetwork( mysql, userId, network );
 
 	BIO_printf( bioOut, "OK\n" );
 }

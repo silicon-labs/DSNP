@@ -93,9 +93,8 @@ function findUserId( $user )
 function findNetworkId( $userId, $networkName )
 {
 	$query = sprintf(
-		"SELECT network.id AS id FROM network JOIN network_name " .
-		"ON network_name.id = network.network_name_id " .
-		"WHERE network.user_id = %ld AND network_name.name = '%s'",
+		"SELECT network.id AS id FROM network " .
+		"WHERE network.user_id = %ld AND network.name = '%s'",
 		$userId,
 		mysql_real_escape_string($networkName)
 	);

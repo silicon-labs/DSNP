@@ -42,20 +42,8 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		long long generation, const char *broadcastKey, const char *friendProof1, 
 		const char *friendProof2 )
 {
-	/* Query the network. */
-	DbQuery findNetworkName( mysql, 
-		"SELECT id FROM network_name WHERE name = %e", network );
-
-	if ( findNetworkName.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return;
-	}
-
-	MYSQL_ROW row = findNetworkName.fetchRow();
-	long long networkNameId = strtoll( row[0], 0, 10 );
-
 	/* Make sure we have the network for the user. */
-	long long networkId = addNetwork( mysql, userId, network, networkNameId );
+	long long networkId = addNetwork( mysql, userId, network );
 
 	/* Store the key. */
 	addGetBroadcastKey( mysql, friendClaimId, networkId, generation );
@@ -93,18 +81,7 @@ int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const 
 {
 	message("calling remote broadcast from friend proof symLen %d sym %s\n", strlen(sym), sym );
 
-	DbQuery findNetworkName( mysql, 
-		"SELECT id FROM network_name WHERE name = %e", network );
-
-	if ( findNetworkName.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return -1;
-	}
-
-	MYSQL_ROW row = findNetworkName.fetchRow();
-	long long networkNameId = strtoll( row[0], 0, 10 );
-
-	long long networkId = addNetwork( mysql, userId, network, networkNameId );
+	long long networkId = addNetwork( mysql, userId, network );
 
 	remoteBroadcast( mysql, user, friend_id, hash, network, networkId, generation, sym, strlen(sym) );
 	BIO_printf( bioOut, "OK\r\n" );

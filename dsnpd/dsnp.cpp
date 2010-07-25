@@ -157,13 +157,12 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 		"	network.tree_gen_high, "
 		"	put_broadcast_key.broadcast_key "
 		"FROM user "
-		"JOIN network_name "
 		"JOIN network "
-		"ON user.id = network.user_id AND network_name.id = network.network_name_id "
+		"ON user.id = network.user_id "
 		"JOIN put_broadcast_key "
 		"ON network.id = put_broadcast_key.network_id "
 		"WHERE user.user = %e AND "
-		"	network_name.name = %e AND "
+		"	network.name = %e AND "
 		"	network.key_gen = put_broadcast_key.generation ", 
 		user, group );
 	

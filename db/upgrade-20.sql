@@ -7,10 +7,8 @@ CREATE TABLE network
 
 	user_id BIGINT,
 
-	private_name VARCHAR(48),
+	name VARCHAR(48),
 	dist_name VARCHAR(48),
-
-	network_name_id BIGINT,
 
 	key_gen BIGINT,
 	tree_gen_low BIGINT,
@@ -18,5 +16,7 @@ CREATE TABLE network
 
 	PRIMARY KEY ( id ),
 
-	UNIQUE ( user_id, private_name )
+	UNIQUE ( user_id, name )
 );
+
+DROP TABLE network_name;

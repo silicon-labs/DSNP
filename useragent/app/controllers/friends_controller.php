@@ -44,8 +44,8 @@ class FriendsController extends AppController
 		$networks = $this->Network->find( 'all', array( 
 			'conditions' => array( 
 				'user_id' => $this->USER_ID,
-				'NetworkName.name !=' => '-' ),
-			'order' => 'NetworkName.id' 
+				'Network.name !=' => '-' ),
+			'order' => 'Network.id' 
 		));
 		return $networks;
 	}

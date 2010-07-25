@@ -199,13 +199,11 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 		"FROM friend_claim "
 		"JOIN network "
 		"ON friend_claim.user_id = network.user_id "
-		"JOIN network_name "
-		"ON network.network_name_id = network_name.id "
 		"JOIN get_broadcast_key "
 		"ON friend_claim.id = get_broadcast_key.friend_claim_id AND "
 		"	network.id = get_broadcast_key.network_id "
 		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L AND "
-		"	network_name.name = %e "
+		"	network.name = %e "
 		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
 		relid, keyGen, network );
 

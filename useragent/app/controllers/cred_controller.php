@@ -43,7 +43,7 @@ class CredController extends AppController
 				'conditions' => array ( 'user_id' => $this->USER_ID ) ));
 
 			if ( isset( $first['Network'] ) ) {
-				$networkName = $first['NetworkName']['name'];
+				$networkName = $first['Network']['name'];
 				$networkId = $first['Network']['id'];
 			}
 			else {
@@ -107,12 +107,12 @@ class CredController extends AppController
 		$first = $this->Network->find('first', array(
 			'conditions' => array ( 
 				'user_id' => $this->USER_ID,
-				'NetworkName.name' => $networkName )));
+				'name' => $networkName )));
 
-		if ( !isset( $first['NetworkName'] ) )
+		if ( !isset( $first['Network'] ) )
 			$networkName = '-';
 		else {
-			$networkName = $first['NetworkName']['name'];
+			$networkName = $first['Network']['name'];
 
 			/* Is the user a member of the network. */
 			$this->loadModel( 'FriendClaim' );

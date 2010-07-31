@@ -79,12 +79,9 @@ class ImageController extends AppController
 			'message' => "thm-$id.jpg"
 		));
 
-		$networkId = $this->findNetworkId( $this->NETWORK_NAME );
-
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
 			'user_id' => $this->USER_ID,
-			'network_id' => $networkId,
 			'published' => 'true',
 			'type' => 'PHT',
 			'message' => "thm-$id.jpg",
@@ -110,7 +107,7 @@ class ImageController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"submit_broadcast $this->USER_NAME $this->NETWORK_NAME $len\r\n";
+			"submit_broadcast $this->USER_NAME - $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

@@ -231,12 +231,9 @@ class UserController extends AppController
 			'message' => $message,
 		));
 
-		$networkId = $this->findNetworkId( $this->NETWORK_NAME );
-
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
 			'user_id'  => $this->USER_ID,
-			'network_id' => $networkId,
 			'author_id' => $BROWSER['id'],
 			'published' => 'true',
 			'type' => 'BRD',

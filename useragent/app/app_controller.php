@@ -73,7 +73,7 @@ class AppController extends Controller
 		$this->cakeError( $error, $params );
 	}
 
-	function checkUser()
+	function checkUserDb()
 	{
 		$user = $this->User->find( 'first', array('conditions' => 
 				array('user' => $this->params['user'])));
@@ -127,60 +127,58 @@ class AppController extends Controller
 	/* Try to activate the session if a session variable has been provided. If
 	 * activation is successful then load authorization/identity data from the
 	 * session. */
-	function maybeActivateSession()
+	function loadRole()
 	{
-		if ( isset( $_COOKIE['CAKEPHP'] ) ) {
-			$this->activateSession();
-			if ( $this->Session->valid() ) {
-				/* Role. */
-				$this->ROLE = $this->Session->read('ROLE');
-				$this->set('ROLE', $this->ROLE );
+		/* Role. */
+		$this->ROLE = $this->Session->read('ROLE');
+		$this->set('ROLE', $this->ROLE );
 
-				/* Browser if this is a friend. */
-				if ( $this->ROLE === 'friend' ) {
-					$this->BROWSER = $this->Session->read('BROWSER');
-					$this->set( 'BROWSER', $this->BROWSER );
-				}
+		/* Browser if this is a friend. */
+		if ( $this->ROLE === 'friend' ) {
+			$this->BROWSER = $this->Session->read('BROWSER');
+			$this->set( 'BROWSER', $this->BROWSER );
+		}
 
-				/* Upgrade the display names if trusted. */
-				if ( ( $this->ROLE === 'owner' || $this->ROLE === 'friend' ) && 
-						isset( $this->USER['name'] ) )
-				{
-					$this->USER['display_short'] = $this->USER['name'];
-					$this->USER['display_long'] = $this->USER['name'];
-					$this->set( 'USER', $this->USER );
-				}
-			}
+		/* Upgrade the display names if trusted. */
+		if ( ( $this->ROLE === 'owner' || $this->ROLE === 'friend' ) && 
+				isset( $this->USER['name'] ) )
+		{
+			$this->USER['display_short'] = $this->USER['name'];
+			$this->USER['display_long'] = $this->USER['name'];
+			$this->set( 'USER', $this->USER );
 		}
 	}
 
 	function checkUserMaybeActivateSession()
 	{
-		$userCheckComplete = false;
+		if ( isset( $_COOKIE['CAKEPHP'] ) )
+			$this->activateSession();
 
 		/* Look for valid user indicator stored in the session. */
-		if ( isset( $_COOKIE['CAKEPHP'] ) ) {
-			$this->activateSession();
-			if ( $this->Session->valid() ) {
-				/* Have a valid session. Maybe we can skip checking the user. */
-				$this->VALID_USER = $this->Session->read('VALID_USER');
-				if ( isset( $this->VALID_USER ) && $this->VALID_USER ) {
-					$this->readUser();
-					$userCheckComplete = true;
-				}
+		if ( $this->Session->valid() ) {
+			/* Have a valid session. Maybe we can skip checking the user. */
+			$this->VALID_USER = $this->Session->read('VALID_USER');
+			if ( isset( $this->VALID_USER ) && $this->VALID_USER ) {
+				$this->readUser();
+				$userCheckComplete = true;
 			}
+			else {
+				/* THere is a valid session, but no valid user data. Check VIA
+				 * the DB. */
+				$this->checkUserDb();
+				$this->storeUser();
+			}
+
+			/* Now load any role data. */
+			$this->loadRole();
 		}
+		else {
+			/* No user data from the session. */
+			$this->checkUserDb();
 
-		/* If we were not able to validate the user from the sssion, then do
-		 * the costly check against the database. */
-		if ( ! $userCheckComplete )
-			$this->checkUser();
-
-		/* Now activate the session if it is present. */
-		$this->maybeActivateSession();
-
-		if ( $this->Session->valid() )
-			$this->storeUser();
+			/* There was no session. We do not create one. Sessions get made
+			 * only when logging in. */
+		}
 	}
 
 	function requireOwner()

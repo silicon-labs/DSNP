@@ -51,7 +51,7 @@ long long lastInsertId( MYSQL *mysql )
  */
 
 /* Format and execute a query. */
-int execQueryVa( MYSQL *mysql, const char *fmt, va_list vls )
+int execQueryVa( MYSQL *mysql, bool log, const char *fmt, va_list vls )
 {
 	long len = 0;
 	const char *src = fmt;
@@ -182,6 +182,9 @@ int execQueryVa( MYSQL *mysql, const char *fmt, va_list vls )
 		error( "mysql_query failed: %s\r\n      error message: %s\n", query, mysql_error( mysql ) );
 		exit(1);
 	}
+	else if ( log ) {
+		message("query log: %s\n", query );
+	}
 
 	free( query );
 	return query_res;
@@ -191,7 +194,7 @@ int exec_query( MYSQL *mysql, const char *fmt, ... )
 {
 	va_list args;
 	va_start( args, fmt );
-	int res = execQueryVa( mysql, fmt, args );
+	int res = execQueryVa( mysql, false, fmt, args );
 	va_end( args );
 	return res;
 }
@@ -203,7 +206,20 @@ DbQuery::DbQuery( MYSQL *mysql, const char *fmt, ... )
 {
 	va_list args;
 	va_start( args, fmt );
-	execQueryVa( mysql, fmt, args );
+	execQueryVa( mysql, false, fmt, args );
+	va_end( args );
+
+	result = mysql_store_result( mysql );
+}
+
+DbQuery::DbQuery( DbQuery::Log, MYSQL *mysql, const char *fmt, ... )
+:
+	mysql(mysql),
+	result(0)
+{
+	va_list args;
+	va_start( args, fmt );
+	execQueryVa( mysql, true, fmt, args );
 	va_end( args );
 
 	result = mysql_store_result( mysql );

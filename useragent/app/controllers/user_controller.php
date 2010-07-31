@@ -194,7 +194,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"submit_broadcast $this->USER_NAME NETWORK_NAME $len\r\n";
+			"submit_broadcast $this->USER_NAME - $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );
@@ -206,7 +206,7 @@ class UserController extends AppController
 		if ( ereg("^OK", $res, $regs) )
 			$this->redirect( "/$this->USER_NAME/" );
 		else
-			echo $res;
+			die( "submit_broadcast failed with $res" );
 	}
 
 	function board()
@@ -254,7 +254,7 @@ class UserController extends AppController
 		$send = 
 			"SPP/0.1 $this->CFG_URI\r\n" . 
 			"comm_key $this->CFG_COMM_KEY\r\n" .
-			"remote_broadcast_request $this->USER_NAME $identity $hash $token NETWORK_NAME $len\r\n";
+			"remote_broadcast_request $this->USER_NAME $identity $hash $token - $len\r\n";
 
 		fwrite( $fp, $send );
 		fwrite( $fp, $headers, strlen($headers) );

@@ -281,7 +281,7 @@ class CredController extends AppController
 
 	function logout()
 	{
-		$this->Session->destroy();
+		$_SESSION = array();
 		$this->redirect( "/" . $this->USER_NAME . "/" );
 	}
 	

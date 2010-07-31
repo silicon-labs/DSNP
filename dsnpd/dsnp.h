@@ -255,7 +255,10 @@ AllocString bnToBase64( const BIGNUM *n );
 
 struct DbQuery
 {
+	struct Log {};
+
 	DbQuery( MYSQL *mysql, const char *fmt, ... );
+	DbQuery( Log, MYSQL *mysql, const char *fmt, ... );
 	~DbQuery();
 
 	MYSQL_ROW fetchRow()

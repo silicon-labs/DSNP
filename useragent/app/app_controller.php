@@ -24,7 +24,6 @@ class AppController extends Controller
 	var $CFG_USE_RECAPTCHA = null;
 	var $CFG_RC_PUBLIC_KEY = null;
 	var $CFG_RC_PRIVATE_KEY = null;
-	var $CFG_PHOTO_DIR = null;
 	var $CFG_IM_CONVERT = null;
 
 	var $USER = NULL;
@@ -56,7 +55,6 @@ class AppController extends Controller
 		$this->CFG_USE_RECAPTCHA = Configure::read('CFG_USE_RECAPTCHA');
 		$this->CFG_RC_PUBLIC_KEY = Configure::read('CFG_RC_PUBLIC_KEY');
 		$this->CFG_RC_PRIVATE_KEY = Configure::read('CFG_RC_PRIVATE_KEY');
-		$this->CFG_PHOTO_DIR = Configure::read('CFG_PHOTO_DIR');
 		$this->CFG_IM_CONVERT = Configure::read('CFG_IM_CONVERT');
 
 		$this->set('CFG_URI', $this->CFG_URI);

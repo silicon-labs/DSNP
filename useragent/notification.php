@@ -1,5 +1,6 @@
 <?php
 
+$PREFIX = dirname(dirname(dirname(dirname(__FILE__))));
 printf( "NOTIFICATION ARRIVED:\n" );
 print_r( $argv );
 
@@ -13,7 +14,11 @@ $type = $argv[2];
 # Simlate the server environment so that the right installation can be selected.
 $_SERVER['HTTP_HOST'] = $argv[1];
 $_SERVER['REQUEST_URI'] = $argv[2];
-include(dirname(dirname(dirname(dirname(__FILE__)))) . '/etc/config.php');
+
+include($PREFIX . '/etc/install.php');
+include($PREFIX . '/etc/config.php');
+
+$DATA_DIR = "$PREFIX/var/lib/dsnp/$CFG_NAME/data";
 
 $notification_type = $argv[3];
 $b = 4;
@@ -109,7 +114,7 @@ function findNetworkId( $userId, $networkName )
 
 function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type )
 {
-	global $CFG_PHOTO_DIR;
+	global $DATA_DIR;
 
 	/* Need a resource id. */
 	if ( !isset( $msg[0]['resource-id'] ) )
@@ -125,7 +130,7 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 	print( "message is a photo, capturing\n" );
 
 	/* The message body is photo data. Write the photo to disk. */
-	$path = sprintf( "%s/%s/pub-%ld.jpg", $CFG_PHOTO_DIR, $for_user, $seq_num );
+	$path = sprintf( "%s/%s/pub-%ld.jpg", $DATA_DIR, $for_user, $seq_num );
 
 	$length = strlen( $msg[1] );
 	$f = fopen( $path, "wb" );

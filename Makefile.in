@@ -22,6 +22,8 @@ ALL_SUBDIRS = $(BUILD_SUBDIRS)
 # Programs
 CXX = @CXX@
 
+prefix = @prefix@
+
 # build targets
 all: $(BUILD_SUBDIRS)
 
@@ -62,6 +64,7 @@ INSTALL_SUBDIRS = $(BUILD_SUBDIRS:%=%-install)
 
 $(INSTALL_SUBDIRS):
 	@cd $(@:%-install=%) && $(MAKE) install
+	echo '$$PREFIX = "$(prefix)";' > $(DESTDIR)$(prefix)/etc/install.php
 
 install: $(INSTALL_SUBDIRS)
 

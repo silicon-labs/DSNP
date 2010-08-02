@@ -68,8 +68,6 @@ if ( count( $sentFriendRequests ) > 0 ) {
 
 <div class="content">
 
-<a id="manage" href="<?php echo $html->url( "/$USER_NAME/friends/manage" );?>">manage</a>
-
 <h3>Friend List</h3>
 
 <?php

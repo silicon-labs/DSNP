@@ -32,6 +32,7 @@
 #include <sys/wait.h>
 
 #define NOTIF_LOG_FILE LOGDIR "/notification.log"
+
 int maxArgs( const char *src )
 {
 	/* Assume at least one. */
@@ -63,10 +64,10 @@ void parseArgs( char **argv, long &dst, const char *args )
 
 char *const*makeNotifiyArgv( const char *args )
 {
-	int n = maxArgs(c->CFG_NOTIFICATION) + 2 + maxArgs(args) + 1;
+	int n = maxArgs(NOTIFICATION) + 2 + maxArgs(args) + 1;
 	char **argv = new char*[n];
 	long dst = 0;
-	parseArgs( argv, dst, c->CFG_NOTIFICATION );
+	parseArgs( argv, dst, NOTIFICATION );
 	argv[dst++] = strdup(c->CFG_HOST);
 	argv[dst++] = strdup(c->CFG_PATH);
 	parseArgs( argv, dst, args );

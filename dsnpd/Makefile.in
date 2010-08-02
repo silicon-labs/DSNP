@@ -29,7 +29,10 @@ LIBS = -lssl -lcrypto -ldl -lmysqlclient
 
 #*************************************
 
-DEFS += -DSYSCONFDIR='"@prefix@/etc"' -DLOGDIR='"@prefix@/var/log"'
+DEFS += \
+	-DSYSCONFDIR='"@prefix@/etc"' \
+	-DLOGDIR='"@prefix@/var/log"' \
+	-DNOTIFICATION='"php @prefix@/share/dsnp/web/notification.php"'
 
 prefix = @prefix@
 BUILD_PARSERS = @BUILD_PARSERS@

@@ -62,6 +62,7 @@ void sslInitClient()
 		fatal("failed to load %s\n", c->CFG_TLS_CA_CERTS );
 }
 
+
 BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 {
 	/* Create the SSL object an set it in the secure BIO. */
@@ -79,9 +80,8 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	if ( verifyResult != X509_V_OK )
 		fatal( "SSL_get_verify_result\n" );
 
-	/* Check the cert chain. The chain length
-	 * is automatically checked by OpenSSL when we set the verify depth in the
-	 (ctx */
+	/* Check the cert chain. The chain length is automatically checked by
+	 * OpenSSL when we set the verify depth in the CTX */
 
 	/* Check the common name. */
 	X509 *peer = SSL_get_peer_certificate( ssl );
@@ -89,7 +89,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	X509_NAME_get_text_by_NID( X509_get_subject_name(peer), NID_commonName, peer_CN, 256);
 
 	if ( strcasecmp( peer_CN, host ) != 0 )
-		fatal("common name doesn't match host name\n");
+		fatal( "common name %s, doesn't match host name %s\n", peer_CN, host );
 
 	/* Create a BIO for the ssl wrapper. */
 	BIO *sbio = BIO_new( BIO_f_ssl() );

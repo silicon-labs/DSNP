@@ -13,16 +13,22 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-all: init.sh
+all: init.sh new-site
+
+prefix = @prefix@
 
 sedsubst = \
 	-e 's,\@prefix\@,@prefix@,g;' \
-	-e 's,\@sysconfdir\@,@sysconfdir@,g;'
+	-e 's,\@sysconfdir\@,@sysconfdir@,g;' \
+	-e 's,\@localstatedir\@,@localstatedir@,g;'
 
-init.sh: init.sh.in
+init: init.sh
 	sed $(sedsubst) init.sh.in > init.sh
 	chmod +x init.sh
 
+new-site: new-site.sh
+	sed $(sedsubst) $< > $@
+	chmod +x $@
 
 install:
 	install -d @prefix@/lib/dsnp

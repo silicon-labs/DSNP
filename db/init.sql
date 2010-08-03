@@ -1,13 +1,15 @@
 
 CREATE TABLE user
 ( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20), 
 	pass_salt CHAR(24),
 	pass VARCHAR(40), 
 
 	email VARCHAR(50),
 	id_salt CHAR(24),
-	put_generation BIGINT,
+	key_gen BIGINT,
 
 	rsa_n TEXT,
 	rsa_e TEXT,
@@ -16,8 +18,16 @@ CREATE TABLE user
 	rsa_q TEXT,
 	rsa_dmp1 TEXT,
 	rsa_dmq1 TEXT,
-	rsa_iqmp TEXT
+	rsa_iqmp TEXT,
+
+	tree_gen_low BIGINT,
+	tree_gen_high BIGINT,
+
+	UNIQUE(user),
+	PRIMARY KEY(id)
 );
+
+
 
 CREATE TABLE public_key
 (
@@ -65,41 +75,58 @@ CREATE TABLE put_broadcast_key
 (
 	user VARCHAR(20), 
 	generation BIGINT,
-	broadcast_key VARCHAR(48)
+	broadcast_key VARCHAR(48),
+	group_name TEXT
 );
 
 CREATE TABLE friend_claim
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20), 
 	friend_id TEXT,
 	friend_salt VARCHAR(48),
 	friend_hash VARCHAR(48),
 	put_relid VARCHAR(48),
-	get_relid VARCHAR(48)
+	get_relid VARCHAR(48),
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE put_tree
 (
-	user VARCHAR(20),
-	friend_id TEXT,
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	friend_claim_id BIGINT,
+
 	generation BIGINT,
 	root BOOL,
 	forward1 TEXT,
-	forward2 TEXT
+	forward2 TEXT,
+	active BOOL,
+	state INT,
+	group_name TEXT,
+
+	PRIMARY KEY(id)
 );
+
 
 CREATE TABLE get_tree
 (
-	user VARCHAR(20),
-	friend_id TEXT,
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	friend_claim_id BIGINT,
+
 	generation BIGINT,
-	broadcast_key VARCHAR(48),
 	site1 TEXT,
 	site2 TEXT,
 	site_ret TEXT,
 	relid1 VARCHAR(48),
 	relid2 VARCHAR(48),
-	relid_ret VARCHAR(48)
+	relid_ret VARCHAR(48),
+	group_name TEXT,
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE ftoken_request
@@ -111,20 +138,51 @@ CREATE TABLE ftoken_request
 	msg_sym TEXT
 );
 
+CREATE TABLE broadcast_message
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	key_gen BIGINT,
+	tree_gen_low BIGINT,
+	tree_gen_high BIGINT,
+	message TEXT,
+	
+	PRIMARY KEY(id)
+);
+
 CREATE TABLE broadcast_queue
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	message_id BIGINT,
+	send_after DATETIME,
 	to_site TEXT,
+	forward BOOLEAN,
+
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE broadcast_recipient
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	queue_id BIGINT,
 	relid VARCHAR(48),
-	generation BIGINT,
-	message TEXT
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE message_queue
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+	send_after DATETIME,
+
 	from_user VARCHAR(20),
 	to_id TEXT,
 	relid VARCHAR(48),
-	message TEXT
+	message TEXT,
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE broadcasted
@@ -170,7 +228,6 @@ CREATE TABLE pending_remote_broadcast
 	reqid VARCHAR(48),
 	reqid_final VARCHAR(48),
 	seq_num BIGINT,
-	message BLOB,
 	generation BIGINT,
 	sym TEXT
 );
@@ -182,4 +239,41 @@ CREATE TABLE remote_broadcast_request
 	reqid VARCHAR(48),
 	generation BIGINT,
 	sym TEXT
+);
+
+CREATE TABLE get_broadcast_key
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	friend_claim_id BIGINT,
+	generation BIGINT,
+	broadcast_key VARCHAR(48),
+	friend_proof TEXT,
+	group_name TEXT,
+
+	PRIMARY KEY(id)
+);
+
+CREATE TABLE friend_group
+( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	user_id BIGINT,
+	name VARCHAR(20), 
+
+	PRIMARY KEY(id),
+
+	UNIQUE ( user_id, name )
+);
+
+CREATE TABLE group_member
+( 
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	friend_group_id BIGINT,
+	friend_claim_id BIGINT,
+
+	PRIMARY KEY(id),
+
+	UNIQUE ( friend_group_id, friend_claim_id )
 );

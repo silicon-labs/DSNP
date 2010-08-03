@@ -1,16 +1,4 @@
 
-ALTER TABLE put_broadcast_key ADD COLUMN group_name TEXT;
-UPDATE put_broadcast_key set group_name = 'friend';
-
-ALTER TABLE get_broadcast_key ADD COLUMN group_name TEXT;
-UPDATE get_broadcast_key set group_name = 'friend';
-
-ALTER TABLE put_tree ADD COLUMN group_name TEXT;
-UPDATE put_tree set group_name = 'friend';
-
-ALTER TABLE get_tree ADD COLUMN group_name TEXT;
-UPDATE get_tree set group_name = 'friend';
-
 
 ALTER TABLE friend_group ADD COLUMN key_gen BIGINT;
 ALTER TABLE friend_group ADD COLUMN tree_gen_low BIGINT;

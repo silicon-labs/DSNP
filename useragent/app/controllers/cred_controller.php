@@ -24,39 +24,6 @@ class CredController extends AppController
 			$this->set('dest', $_REQUEST['d'] );
 	}
 
-	function ownerNetwork()
-	{
-		/* Load the most recent login state. */
-		$this->loadModel('LoginState');
-		$loginState = $this->LoginState->find('first', array(
-			'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
-
-		if ( isset( $loginState['LoginState'] ) > 0 ) {
-			/* Use the stored login state. */
-			$networkName = $loginState['LoginState']['network_name'];
-			$networkId = $this->findNetworkId( $networkName );
-		}
-		else {
-			/* No previous login state. Find a network. */
-			$this->loadModel('Network');
-			$first = $this->Network->find('first', array(
-				'conditions' => array ( 'user_id' => $this->USER_ID ) ));
-
-			if ( isset( $first['Network'] ) ) {
-				$networkName = $first['Network']['name'];
-				$networkId = $first['Network']['id'];
-			}
-			else {
-				/* No network. */
-				$networkName = null;
-				$networkId = null;
-			}
-		}
-
-		$this->NETWORK_NAME = $networkName;
-		$this->NETWORK_ID = $networkId;
-	}
-
 	function slogin()
 	{
 		$this->activateSession();
@@ -80,8 +47,6 @@ class CredController extends AppController
 				'details' => 'Please press the back button to try again.'
 			));
 		}
-
-		$this->ownerNetwork();
 
 		# Login successful.
 		$this->Session->write( 'ROLE', 'owner' );
@@ -282,41 +247,6 @@ class CredController extends AppController
 	function logout()
 	{
 		$_SESSION = array();
-		$this->redirect( "/" . $this->USER_NAME . "/" );
-	}
-	
-	function nnet()
-	{
-		$this->requireOwnerOrFriend();
-
-		if ( $this->ROLE == 'owner' ) {
-			$this->loadModel('LoginState');
-			$loginState = $this->LoginState->find('first', array(
-				'conditions' => array ( 'user_id' => $this->USER_ID ) ) );
-
-			$newNetwork = $this->data['User']['network'];
-			$loginState['LoginState']['network_name'] = $newNetwork;
-			$loginState = $this->LoginState->save( $loginState );
-			$this->Session->write('NETWORK_NAME', $newNetwork );
-		}
-		else {
-			$newNetwork = $this->data['User']['network'];
-			$networkId = $this->findNetworkId( $newNetwork );
-			$BROWSER = $this->Session->read('BROWSER');
-			$this->loadModel('NetworkMember');
-			$networks = $this->NetworkMember->find( 'first', array( 
-				'conditions' => array( 
-					'network_id' => $networkId,
-					'friend_claim_id' => $BROWSER['id']
-				)
-			));
-
-			if ( !isset( $networks['NetworkMember'] ) )
-				die('bad network');
-
-			$this->Session->write('NETWORK_NAME', $newNetwork );
-		}
-
 		$this->redirect( "/" . $this->USER_NAME . "/" );
 	}
 }

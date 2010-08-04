@@ -158,17 +158,6 @@ void test_current_put_bk()
 	//printf( "%lld %s\n", generation, broadcastKey.data );
 }
 
-
-void update( MYSQL *mysql )
-{
-	DbQuery update( mysql,
-		"UPDATE get_tree "
-		"SET broadcast_key = 'aaa' "
-		"WHERE user = 'foo' AND friend_id = 'bar' AND generation = 66" );
-
-	printf( "affected rows: %ld\n", update.affectedRows() );
-}
-
 void tree_load()
 {
 	setConfigByName( "spp" );

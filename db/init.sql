@@ -89,24 +89,6 @@ CREATE TABLE friend_claim
 	PRIMARY KEY(id)
 );
 
-CREATE TABLE get_tree
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	friend_claim_id BIGINT,
-
-	generation BIGINT,
-	site1 TEXT,
-	site2 TEXT,
-	site_ret TEXT,
-	relid1 VARCHAR(48) BINARY,
-	relid2 VARCHAR(48) BINARY,
-	relid_ret VARCHAR(48) BINARY,
-	group_name TEXT,
-
-	PRIMARY KEY(id)
-);
-
 CREATE TABLE ftoken_request
 (
 	user VARCHAR(20), 
@@ -348,14 +330,6 @@ CREATE TABLE get_broadcast_key
 
 	UNIQUE KEY ( network_id, friend_claim_id, generation ),
 	PRIMARY KEY (id)
-);
-
-CREATE TABLE login_state
-(
-	user_id BIGINT,
-	network_name TEXT,
-
-	PRIMARY KEY( user_id )
 );
 
 CREATE TABLE network

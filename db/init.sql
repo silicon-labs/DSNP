@@ -4,19 +4,19 @@ CREATE TABLE user
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
 	user VARCHAR(20), 
-	pass_salt CHAR(24),
-	pass VARCHAR(40), 
+	pass_salt CHAR(24) BINARY,
+	pass VARCHAR(40) BINARY, 
 
-	id_salt CHAR(24),
+	id_salt CHAR(24) BINARY,
 
-	rsa_n TEXT,
-	rsa_e TEXT,
-	rsa_d TEXT,
-	rsa_p TEXT,
-	rsa_q TEXT,
-	rsa_dmp1 TEXT,
-	rsa_dmq1 TEXT,
-	rsa_iqmp TEXT,
+	rsa_n TEXT BINARY,
+	rsa_e TEXT BINARY,
+	rsa_d TEXT BINARY,
+	rsa_p TEXT BINARY,
+	rsa_q TEXT BINARY,
+	rsa_dmp1 TEXT BINARY,
+	rsa_dmq1 TEXT BINARY,
+	rsa_iqmp TEXT BINARY,
 
 	identity TEXT,
 	name VARCHAR(50),
@@ -39,17 +39,17 @@ CREATE TABLE relid_request
 (
 	for_user VARCHAR(20),
 	from_id TEXT,
-	requested_relid VARCHAR(48),
-	reqid VARCHAR(48),
+	requested_relid VARCHAR(48) BINARY,
+	reqid VARCHAR(48) BINARY,
 	msg_sym TEXT
 );
 
 CREATE TABLE relid_response
 (
 	from_id TEXT,
-	requested_relid VARCHAR(48),
-	returned_relid VARCHAR(48),
-	reqid VARCHAR(48),
+	requested_relid VARCHAR(48) BINARY,
+	returned_relid VARCHAR(48) BINARY,
+	reqid VARCHAR(48) BINARY,
 	msg_sym TEXT
 );
 
@@ -57,17 +57,17 @@ CREATE TABLE friend_request
 (
 	for_user VARCHAR(20), 
 	from_id TEXT,
-	reqid VARCHAR(48),
-	requested_relid VARCHAR(48),
-	returned_relid VARCHAR(48)
+	reqid VARCHAR(48) BINARY,
+	requested_relid VARCHAR(48) BINARY,
+	returned_relid VARCHAR(48) BINARY
 );
 
 CREATE TABLE sent_friend_request
 (
 	from_user VARCHAR(20),
 	for_id TEXT,
-	requested_relid VARCHAR(48),
-	returned_relid VARCHAR(48)
+	requested_relid VARCHAR(48) BINARY,
+	returned_relid VARCHAR(48) BINARY
 );
 
 CREATE TABLE friend_claim
@@ -76,10 +76,10 @@ CREATE TABLE friend_claim
 
 	user VARCHAR(20), 
 	friend_id TEXT,
-	friend_salt VARCHAR(48),
-	friend_hash VARCHAR(48),
-	put_relid VARCHAR(48),
-	get_relid VARCHAR(48),
+	friend_salt VARCHAR(48) BINARY,
+	friend_hash VARCHAR(48) BINARY,
+	put_relid VARCHAR(48) BINARY,
+	get_relid VARCHAR(48) BINARY,
 
 	user_id BIGINT,
 	identity TEXT,
@@ -99,9 +99,9 @@ CREATE TABLE get_tree
 	site1 TEXT,
 	site2 TEXT,
 	site_ret TEXT,
-	relid1 VARCHAR(48),
-	relid2 VARCHAR(48),
-	relid_ret VARCHAR(48),
+	relid1 VARCHAR(48) BINARY,
+	relid2 VARCHAR(48) BINARY,
+	relid_ret VARCHAR(48) BINARY,
 	group_name TEXT,
 
 	PRIMARY KEY(id)
@@ -111,8 +111,8 @@ CREATE TABLE ftoken_request
 (
 	user VARCHAR(20), 
 	from_id TEXT,
-	token VARCHAR(48),
-	reqid VARCHAR(48),
+	token VARCHAR(48) BINARY,
+	reqid VARCHAR(48) BINARY,
 	msg_sym TEXT,
 	network_id BIGINT
 );
@@ -148,7 +148,7 @@ CREATE TABLE broadcast_recipient
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
 	queue_id BIGINT,
-	relid VARCHAR(48),
+	relid VARCHAR(48) BINARY,
 
 	PRIMARY KEY(id)
 );
@@ -160,7 +160,7 @@ CREATE TABLE message_queue
 
 	from_user VARCHAR(20),
 	to_id TEXT,
-	relid VARCHAR(48),
+	relid VARCHAR(48) BINARY,
 	message TEXT,
 
 	PRIMARY KEY(id)
@@ -182,7 +182,7 @@ CREATE TABLE broadcasted
 CREATE TABLE login_token
 (
 	user VARCHAR(20),
-	login_token VARCHAR(48),
+	login_token VARCHAR(48) BINARY,
 	expires TIMESTAMP
 );
 
@@ -190,7 +190,7 @@ CREATE TABLE flogin_token
 (
 	user VARCHAR(20),
 	identity TEXT,
-	login_token VARCHAR(48),
+	login_token VARCHAR(48) BINARY,
 	expires TIMESTAMP
 );
 
@@ -198,7 +198,7 @@ CREATE TABLE remote_flogin_token
 (
 	user VARCHAR(20),
 	identity TEXT,
-	login_token VARCHAR(48)
+	login_token VARCHAR(48) BINARY
 );
 
 CREATE TABLE pending_remote_broadcast
@@ -206,8 +206,8 @@ CREATE TABLE pending_remote_broadcast
 	user VARCHAR(20),
 	identity TEXT,
 	hash TEXT,
-	reqid VARCHAR(48),
-	reqid_final VARCHAR(48),
+	reqid VARCHAR(48) BINARY,
+	reqid_final VARCHAR(48) BINARY,
 	seq_num BIGINT,
 	generation BIGINT,
 	sym TEXT,
@@ -218,7 +218,7 @@ CREATE TABLE remote_broadcast_request
 (
 	user VARCHAR(20),
 	identity TEXT,
-	reqid VARCHAR(48),
+	reqid VARCHAR(48) BINARY,
 	generation BIGINT,
 	sym TEXT
 );
@@ -310,7 +310,7 @@ CREATE TABLE put_broadcast_key
 	network_id BIGINT,
 
 	generation BIGINT,
-	broadcast_key VARCHAR(48),
+	broadcast_key VARCHAR(48) BINARY,
 
 	PRIMARY KEY ( id )
 );
@@ -349,7 +349,7 @@ CREATE TABLE get_broadcast_key
 	network_id BIGINT,
 	generation BIGINT,
 
-	broadcast_key VARCHAR(48),
+	broadcast_key VARCHAR(48) BINARY,
 	friend_proof TEXT,
 	reverse_proof TEXT,
 
@@ -371,8 +371,8 @@ CREATE TABLE network
 
 	user_id BIGINT,
 
-	name VARCHAR(48),
-	dist_name VARCHAR(48),
+	name VARCHAR(20),
+	dist_name VARCHAR(48) BINARY,
 
 	key_gen BIGINT,
 	tree_gen_low BIGINT,

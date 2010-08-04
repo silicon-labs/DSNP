@@ -411,7 +411,7 @@ struct NotifyAcceptResultParser
 
 
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity );
-RSA *load_key( MYSQL *mysql, const char *user );
+RSA *loadKey( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );
@@ -434,10 +434,10 @@ typedef std::list<std::string> RecipientList;
 
 void broadcastReceipient( MYSQL *mysql, RecipientList &recipientList, const char *relid );
 void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, const char *group,
-		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		long long keyGen, long long treeGenLow, long long treeGenHigh,
 		const char *encrypted ); 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients, const char *group,
-		long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		long long keyGen, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen );
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );
 

@@ -71,20 +71,6 @@ bool gblKeySubmitted = false;
 			generation = strtoll( gen_str, 0, 10 );
 		};
 
-	tree_gen_low = [0-9]+       
-		>{mark=p;} 
-		%{
-			tree_gen_low_str.set(mark, p);
-			tree_gen_low = strtoll( tree_gen_low_str, 0, 10 );
-		};
-
-	tree_gen_high = [0-9]+       
-		>{mark=p;} 
-		%{
-			tree_gen_high_str.set(mark, p);
-			tree_gen_high = strtoll( tree_gen_high_str, 0, 10 );
-		};
-
 	number = [0-9]+           
 		>{mark=p;}
 		%{
@@ -335,16 +321,9 @@ bool gblKeySubmitted = false;
 				broadcastReceipient( mysql, recipients, relid );
 			} |
 
-		'broadcast_forward'i ' ' network ' ' generation ' ' tree_gen_low ' ' tree_gen_high ' ' length
-			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, network, generation, true, 
-						tree_gen_low, tree_gen_high, message_buffer.data );
-				recipients.clear();
-			} |
-
 		'broadcast'i ' ' network ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, network, generation, false, 
+				receiveBroadcast( mysql, recipients, network, generation,
 						0, 0, message_buffer.data );
 				recipients.clear();
 			} |
@@ -357,10 +336,6 @@ bool gblKeySubmitted = false;
 		'send_all'i ' ' user ' ' network ' ' identity EOL @check_key @{
 				//sendAllProofs( mysql, user, network, identity );
 				//sendAllProofs2( mysql, user, network, identity );
-				BIO_printf( bioOut, "OK\r\n" );
-			} |
-		'forward_tree_reset'i ' ' user ' ' network EOL @check_key @{
-				forwardTreeReset( mysql, user, network );
 				BIO_printf( bioOut, "OK\r\n" );
 			} |
 
@@ -386,9 +361,8 @@ int serverParseLoop()
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
 	String gen_str, seq_str, network;
-	String tree_gen_low_str, tree_gen_high_str;
 	long length;
-	long long generation, tree_gen_low, tree_gen_high;
+	long long generation;
 	String message_buffer;
 	message_buffer.allocate( MAX_MSG_LEN + 2 );
 	int retVal = 0;
@@ -1045,7 +1019,7 @@ long Identity::parse()
 }%%
 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
-		const char *network, long long keyGen, bool forward, long long treeGenLow, long long treeGenHigh,
+		const char *network, long long keyGen, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen )
 {
 	static char buf[8192];
@@ -1077,16 +1051,8 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	}
 
 	/* Send the request. */
-	if ( forward ) {
-		BIO_printf( tlsConnect.sbio, 
-			"broadcast_forward %s %lld %lld %lld %ld\r\n", 
-			network, keyGen, treeGenLow, treeGenHigh, mLen );
-	}
-	else {
-		BIO_printf( tlsConnect.sbio, 
-			"broadcast %s %lld %ld\r\n", 
+	BIO_printf( tlsConnect.sbio, "broadcast %s %lld %ld\r\n", 
 			network, keyGen, mLen );
-	}
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
 	BIO_flush( tlsConnect.sbio );

@@ -174,7 +174,6 @@ CREATE TABLE broadcasted
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	type CHAR(4),
-	remote_resid BIGINT,
 	message BLOB,
 	PRIMARY KEY(user, seq_num)
 );
@@ -270,7 +269,7 @@ CREATE TABLE activity
 	published BOOL,
 	seq_num BIGINT,
 	type CHAR(4),
-	resource_id BIGINT,
+	remote_resid BIGINT,
 	message BLOB,
 	local_resid BIGINT,
 	time_published TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -321,13 +320,7 @@ CREATE TABLE put_tree
 
 	network_id BIGINT,
 	friend_claim_id BIGINT,
-
 	generation BIGINT,
-	root BOOLEAN,
-	forward1 TEXT,
-	forward2 TEXT,
-	active BOOLEAN,
-	state INT,
 
 	PRIMARY KEY ( id )
 );

@@ -40,7 +40,7 @@ bool sendBroadcastMessage()
 
 	/* Try to find a message. */
 	DbQuery queue( mysql, 
-		"SELECT id, message_id, to_site, forward "
+		"SELECT id, message_id, to_site "
 		"FROM broadcast_queue "
 		"WHERE now() >= send_after ORDER by id LIMIT 1"
 	);
@@ -52,7 +52,6 @@ bool sendBroadcastMessage()
 	long long queueId = strtoll( row[0], 0, 10 );
 	long long messageId = strtoll( row[1], 0, 10 );
 	char *toSite = row[2];
-	int forward = atoi( row[3] );
 
 	/* Remove it. */
 	DbQuery remove( mysql, "DELETE FROM broadcast_queue WHERE id = %L", queueId );
@@ -111,16 +110,16 @@ bool sendBroadcastMessage()
 
 	/* If failed. */
 	long sendRes = sendBroadcastNet( mysql, toSite, recipientList, group,
-			keyGen, forward, treeGenLow, treeGenHigh, msg, strlen(msg) );
+			keyGen, treeGenLow, treeGenHigh, msg, strlen(msg) );
 
 	if ( sendRes < 0 ) {
 		MYSQL *mysql = dbConnect();
 
 		DbQuery( mysql,
 			"INSERT INTO broadcast_queue "
-			"( message_id, send_after, to_site, forward ) "
-			"VALUES ( %L, DATE_ADD( NOW(), INTERVAL 10 MINUTE ), %e, %b ) ",
-			messageId, toSite, forward );
+			"( message_id, send_after, to_site ) "
+			"VALUES ( %L, DATE_ADD( NOW(), INTERVAL 10 MINUTE ), %e ) ",
+			messageId, toSite );
 
 		long long newQueueId = lastInsertId( mysql );
 
@@ -170,7 +169,7 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 	const char *relid = row[0];
 
 	RSA *id_pub = fetchPublicKey( mysql, to_identity );
-	RSA *user_priv = load_key( mysql, from_user );
+	RSA *user_priv = loadKey( mysql, from_user );
 
 	Encrypt encrypt( id_pub, user_priv );
 

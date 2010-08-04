@@ -133,7 +133,7 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *hash )
 	}
 
 	/* Load the private key for the user. */
-	user_priv = load_key( mysql, user );
+	user_priv = loadKey( mysql, user );
 
 	/* Generate the login request id and relationship and request ids. */
 	RAND_bytes( flogin_token, TOKEN_SIZE );
@@ -239,7 +239,7 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	}
 
 	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
+	user_priv = loadKey( mysql, user );
 
 	encrypt.load( id_pub, user_priv );
 

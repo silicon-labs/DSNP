@@ -110,7 +110,7 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	}
 
 	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
+	user_priv = loadKey( mysql, user );
 
 	/* Generate the relationship and request ids. */
 	RAND_bytes( requested_relid, RELID_SIZE );
@@ -223,7 +223,7 @@ void relidResponse( MYSQL *mysql, const char *user,
 	}
 
 	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
+	user_priv = loadKey( mysql, user );
 
 	/* Decrypt and verify the requested_relid. */
 	encrypt.load( id_pub, user_priv );
@@ -375,7 +375,7 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 	}
 	
 	/* Load the private key for the user the request is for. */
-	user_priv = load_key( mysql, user );
+	user_priv = loadKey( mysql, user );
 
 	encrypt.load( id_pub, user_priv );
 

@@ -397,57 +397,6 @@ AllocString make_id_hash( const char *salt, const char *identity )
 	return binToBase64( friend_hash, SHA_DIGEST_LENGTH );
 }
 
-void addGetTree( MYSQL *mysql, long long friend_claim_id, long long generation )
-{
-	/* FIXME: not atomic. */
-	DbQuery check( mysql,
-		"SELECT friend_claim_id FROM get_tree "
-		"WHERE friend_claim_id = %L AND generation = %L",
-		friend_claim_id, generation );
-	
-	if ( check.rows() == 0 ) {
-		/* Insert an entry for this relationship. */
-		DbQuery( mysql, 
-			"INSERT INTO get_tree "
-			"( friend_claim_id, generation )"
-			"VALUES ( %L, %L )", 
-			friend_claim_id, generation );
-	}
-}
-
-void forwardTo( MYSQL *mysql, long long friend_claim_id, const char *user,
-		const char *friend_id, int child_num, long long generation,
-		const char *to_site, const char *relid )
-{
-	addGetTree( mysql, friend_claim_id, generation );
-
-	switch ( child_num ) {
-	case 0:
-		exec_query( mysql, 
-			"UPDATE get_tree "
-			"SET site_ret = %e, relid_ret = %e "
-			"WHERE friend_claim_id = %L AND generation = %L",
-			to_site, relid, friend_claim_id, generation );
-		break;
-	case 1:
-		exec_query( mysql, 
-			"UPDATE get_tree "
-			"SET site1 = %e, relid1 = %e "
-			"WHERE friend_claim_id = %L AND generation = %L",
-			to_site, relid, friend_claim_id, generation );
-		break;
-	case 2:
-		exec_query( mysql, 
-			"UPDATE get_tree "
-			"SET site2 = %e, relid2 = %e "
-			"WHERE friend_claim_id = %L AND generation = %L",
-			to_site, relid, friend_claim_id, generation );
-		break;
-	}
-
-	BIO_printf( bioOut, "OK\n" );
-}
-
 void login( MYSQL *mysql, const char *user, const char *pass )
 {
 	const long lasts = LOGIN_TOKEN_LASTS;

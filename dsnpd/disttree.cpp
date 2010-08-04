@@ -177,103 +177,6 @@ void print_node( FriendNode *node, int level )
 	}
 }
 
-void execWorklist( MYSQL *mysql, const char *user, long long generation,
-		const char *broadcast_key, WorkList &workList )
-{
-	long long active_generation = -1;
-	for ( WorkList::iterator i = workList.begin(); i != workList.end(); i++ ) {
-		GetTreeWork *w = *i;
-		debug("%s %s %s\n", w->identity, w->left, w->right );
-
-		DbQuery localInsert( mysql,
-			"INSERT INTO put_tree "
-			"( friend_claim_id, generation, root, forward1, forward2, active )"
-			"VALUES ( %L, %L, %l, %e, %e, %b )",
-			w->friendClaimId, w->generation,
-			w->isRoot, w->left, w->right, w->active );
-
-		if ( !w->active ) {
-			/* If not active, we do do not send it any messages. We just leave
-			 * it alone. This can happen if a friend has been removed from
-			 * friend_claim, but it's still in the put tree and old generations
-			 * have yet to be deleted. */
-			message( "inactive put tree node for %s, not contacting\n", w->identity );
-		}
-		else {
-			String parent, left, right;
-			parent.set("");
-			left.set("");
-			right.set("");
-
-			if ( w->parent != 0 ) {
-				Identity parentId( w->parent );
-				parentId.parse();
-				DbQuery relid( mysql,
-					"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-					user, w->parent );
-
-				if ( relid.rows() == 0 ) {
-					error( "could not find friend claim for parent "
-							"put_tree node %s %s", user, w->parent );
-				}
-				else {
-					parent.format( 
-						"forward_to 0 %lld %s %s\r\n", 
-						w->generation, parentId.site, relid.fetchRow()[0] );
-				}
-			}
-
-			if ( w->left != 0 ) {
-				Identity leftId( w->left );
-				leftId.parse();
-				DbQuery relid( mysql,
-					"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-					user, w->left );
-
-				if ( relid.rows() == 0 ) {
-					error( "could not find friend claim for left "
-							"put_tree node %s %s", user, w->left );
-				}
-				else {
-					left.format( 
-						"forward_to 1 %lld %s %s\r\n", 
-						w->generation, leftId.site, relid.fetchRow()[0] );
-				}
-			}
-
-			if ( w->right != 0 ) {
-				Identity rightId( w->right );
-				rightId.parse();
-				DbQuery relid( mysql,
-					"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
-					user, w->right );
-
-				if ( relid.rows() == 0 ) {
-					error( "could not find friend claim for right "
-							"put_tree node %s %s", user, w->right );
-				}
-				else {
-					right.format( 
-						"forward_to 2 %lld %s %s\r\n", 
-						w->generation, rightId.site, relid.fetchRow()[0] );
-				}
-			}
-
-			String msg( "%s%s%s", parent.data, left.data, right.data );
-			if ( msg.length > 0 )
-				queueMessage( mysql, user, w->identity, msg.data, msg.length );
-		}
-
-		active_generation = w->generation;
-	}
-
-	if ( active_generation >= 0 ) {
-		DbQuery updateGen( mysql,
-			"UPDATE user SET tree_gen_high = %L WHERE user = %e",
-			active_generation, user );
-	}
-}
-
 void insertIntoTree( WorkList &workList, NodeList &roots, long long friendClaimId, 
 		const char *user, const char *identity, const char *relid, long long generation,
 		const char *broadcast_key )
@@ -343,35 +246,6 @@ void insertIntoTree( WorkList &workList, NodeList &roots, long long friendClaimI
 		}
 	}
 }
-
-/* FIXME: add group. */
-#if 0
-int forwardTreeInsert( MYSQL *mysql, const char *user, const char *group,
-		const char *identity, const char *relid )
-{
-	DbQuery claim( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
-		user, identity );
-
-	if ( claim.rows() > 0 ) {
-		MYSQL_ROW row = claim.fetchRow();
-		long long friendClaimId = strtoll( row[0], 0, 10 );
-
-		/* Need the current broadcast key. */
-		CurrentPutKey put( mysql, user, group );
-
-		put.treeGenHigh += 1;
-		WorkList workList;
-		NodeList roots;
-
-		loadTree( mysql, user, put.treeGenHigh, roots );
-		insertIntoTree( workList, roots, friendClaimId, user, identity, relid, 
-				put.treeGenHigh, put.broadcastKey );
-		execWorklist( mysql, user, put.treeGenHigh, put.broadcastKey, workList );
-	}
-	return 0;
-}
-#endif
 
 void putTreeAdd( MYSQL *mysql, const char *user, const char *network,
 		long long networkId, const char *identity, const char *relid )

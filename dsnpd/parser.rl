@@ -545,10 +545,6 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @{
 				type = BkProof;
 			} |
-		'forward_to'i ' ' number ' ' generation ' ' identity ' ' relid
-			EOL @{
-				type = ForwardTo;
-			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' network ' ' length 
 			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;

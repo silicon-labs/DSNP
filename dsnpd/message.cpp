@@ -138,10 +138,6 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			storeBroadcastKey( mysql, id, user, userId, friendId, friendHash,
 					mp.network, mp.generation, mp.key, mp.sym1, mp.sym2 );
 			break;
-		case MessageParser::ForwardTo: 
-			forwardTo( mysql, id, user, friendId, mp.number,
-					mp.generation, mp.identity, mp.relid );
-			break;
 		case MessageParser::EncryptRemoteBroadcast: 
 			encryptRemoteBroadcast( mysql, user, friendId, mp.token,
 					mp.seq_num, mp.network, mp.embeddedMsg, mp.length );

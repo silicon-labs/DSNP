@@ -140,7 +140,6 @@ void sendBkProof( MYSQL *mysql, const char *user,
 			network, put.keyGen, put.broadcastKey.data, encrypt1.sym, encrypt2.sym );
 
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
-	putTreeAdd( mysql, user, network, networkId, friendId, putRelid );
 
 	sendAllInProofs( mysql, user, network, networkId, friendId );
 	sendAllOutProofs( mysql, user, network, networkId, friendId );
@@ -161,7 +160,6 @@ void sendBroadcastKey( MYSQL *mysql, const char *user,
 			network, put.keyGen, put.broadcastKey.data );
 
 	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
-	putTreeAdd( mysql, user, network, networkId, friendId, putRelid );
 }
 
 void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
@@ -222,15 +220,12 @@ void invalidateBroadcastKey( MYSQL *mysql, const char *user, long long userId,
 		const char *network, long long networkId, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
-	putTreeDel( mysql, user, userId, network, networkId, friendId, putRelid );
 }
 
 void invalidateBkProof( MYSQL *mysql, const char *user, long long userId,
 		const char *network, long long networkId, const char *friendId,
 		long long friendClaimId, const char *putRelid )
 {
-	putTreeDel( mysql, user, userId, network, networkId, friendId, putRelid );
-
 	CurrentPutKey put( mysql, user, network );
 
 	String command( "group_member_revocation %s %lld %s\r\n", 

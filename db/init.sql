@@ -204,18 +204,12 @@ CREATE TABLE remote_broadcast_request
 	sym TEXT
 );
 
-CREATE TABLE received
-( 
-	for_user VARCHAR(20),
-	author_id BIGINT,
-	subject_id BIGINT,
-	seq_num BIGINT,
-	time_published TIMESTAMP,
-	time_received TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB
-);
+--
+-- Should have three tables:
+--   opublished: owner's view of what's published
+--   fpublished: friend's view of what's published
+--   activity: what's going on with the user's friends.
+--
 
 CREATE TABLE published
 (
@@ -261,6 +255,24 @@ CREATE TABLE activity
 	PRIMARY KEY(id)
 );
 
+CREATE TABLE received
+( 
+	for_user VARCHAR(20),
+	author_id BIGINT,
+	subject_id BIGINT,
+	seq_num BIGINT,
+	time_published TIMESTAMP,
+	time_received TIMESTAMP,
+	type CHAR(4),
+	resource_id BIGINT,
+	message BLOB
+);
+
+--
+-- END ACTIVITY
+--
+
+
 CREATE TABLE image
 (
 	user VARCHAR(20),
@@ -270,18 +282,6 @@ CREATE TABLE image
 	mime_type VARCHAR(32),
 
 	PRIMARY KEY(user, seq_num)
-);
-
-CREATE TABLE network_member
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	network_id BIGINT,
-	friend_claim_id BIGINT,
-
-	PRIMARY KEY ( id ),
-
-	UNIQUE ( network_id, friend_claim_id )
 );
 
 CREATE TABLE put_broadcast_key
@@ -294,26 +294,6 @@ CREATE TABLE put_broadcast_key
 	broadcast_key VARCHAR(48) BINARY,
 
 	PRIMARY KEY ( id )
-);
-
-CREATE TABLE put_tree
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	network_id BIGINT,
-	friend_claim_id BIGINT,
-	generation BIGINT,
-
-	PRIMARY KEY ( id )
-);
-
-CREATE TABLE friend_link
-(
-	network_id BIGINT,
-	from_fc_id BIGINT,
-	to_fc_id BIGINT,
-
-	PRIMARY KEY ( network_id, from_fc_id, to_fc_id )
 );
 
 CREATE TABLE get_broadcast_key
@@ -332,6 +312,10 @@ CREATE TABLE get_broadcast_key
 	PRIMARY KEY (id)
 );
 
+--
+-- Groups of friends.
+-- 
+
 CREATE TABLE network
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -348,6 +332,31 @@ CREATE TABLE network
 	PRIMARY KEY ( id ),
 
 	UNIQUE ( user_id, name )
+);
+
+CREATE TABLE network_member
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	network_id BIGINT,
+	friend_claim_id BIGINT,
+
+	PRIMARY KEY ( id ),
+
+	UNIQUE ( network_id, friend_claim_id )
+);
+
+--
+-- We received proof that from_fc_id considers to_fc_id a friend.
+--
+
+CREATE TABLE friend_link
+(
+	network_id BIGINT,
+	from_fc_id BIGINT,
+	to_fc_id BIGINT,
+
+	PRIMARY KEY ( network_id, from_fc_id, to_fc_id )
 );
 
 

@@ -343,12 +343,11 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	DbQuery outOfTree( mysql,
 		"SELECT friend_claim.friend_id, friend_claim.put_relid "
 		"FROM friend_claim "
-		"JOIN put_tree "
-		"ON friend_claim.id = put_tree.friend_claim_id "
-		"WHERE friend_claim.user = %e AND put_tree.network_id = %L AND "
-		"	%L <= put_tree.generation AND put_tree.generation <= %L "
+		"JOIN network_member "
+		"ON friend_claim.id = network_member.friend_claim_id "
+		"WHERE friend_claim.user = %e AND network_member.network_id = %L "
 		"ORDER BY friend_claim.friend_id",
-		user, put.networkId, put.treeGenLow, put.treeGenHigh );
+		user, put.networkId );
 	
 	storeBroadcastRecipients( mysql, user, messageId, outOfTree );
 	

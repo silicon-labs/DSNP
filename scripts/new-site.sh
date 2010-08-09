@@ -18,6 +18,7 @@ DSNPD_CONF=@sysconfdir@/dsnpd.conf
 PHP_CONF=@sysconfdir@/config.php
 DATADIR=@datadir@
 LOCALSTATEDIR=@localstatedir@
+SYSCONFDIR=@sysconfdir@
 
 #
 # Config for all sites
@@ -27,7 +28,7 @@ LOCALSTATEDIR=@localstatedir@
 CFG_PORT=7085
 
 # Start the config file.
-{ echo '<?php'; echo; } #>> $PHP_CONF
+#{ echo '<?php'; echo; } #>> $PHP_CONF
 
 echo
 echo "Please give a short name for the site. It should contain only letters and"
@@ -93,16 +94,20 @@ while true; do
 	break;
 done
 
+CN=$CFG_HOST
+CERT_LOC=$SYSCONFDIR/dsnpd-certs
 
-	#
-	# Init the database.
-	#
 
-	#
-	# Add the site to the dsnpd config file.
-	#
 
-	cat >> $DSNPD_CONF << EOF
+#
+# Init the database.
+#
+
+#
+# Add the site to the dsnpd config file.
+#
+
+cat >> $DSNPD_CONF << EOF
 
 ===== $NAME =====
 CFG_URI = $CFG_URI
@@ -115,8 +120,8 @@ CFG_ADMIN_PASS = $CFG_ADMIN_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
 CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
-CFG_TLS_CRT = SET_THIS
-CFG_TLS_KEY = SET_THIS
+CFG_TLS_CRT = $CERT_LOC/${CN}.crt
+CFG_TLS_KEY = $CERT_LOC/${CN}.key
 EOF
 
 #CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
@@ -168,3 +173,15 @@ mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp/sessions
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp/tests
 
 chown -R www-data:www-data $LOCALSTATEDIR/lib/dsnp/$NAME
+
+#
+# Generate a self-signed cert
+#
+
+openssl genrsa -out $CERT_LOC/$CN.key 1024
+openssl req -new \
+	-subj "/CN=$CN" \
+	-key $CERT_LOC/$CN.key -out $CERT_LOC/$CN.csr
+openssl x509 -req -days 365 \
+	-in $CERT_LOC/$CN.csr -signkey $CERT_LOC/$CN.key -out $CERT_LOC/$CN.crt
+

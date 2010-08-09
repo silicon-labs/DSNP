@@ -20,6 +20,7 @@ prefix = @prefix@
 sedsubst = \
 	-e 's,\@prefix\@,@prefix@,g;' \
 	-e 's,\@sysconfdir\@,@sysconfdir@,g;' \
+	-e 's,\@datadir\@,@datadir@,g;' \
 	-e 's,\@localstatedir\@,@localstatedir@,g;'
 
 init: init.sh

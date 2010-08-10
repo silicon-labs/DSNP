@@ -140,22 +140,6 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 	$name = sprintf( "pub-%ld.jpg", $seq_num );
 
 	$query = sprintf(
-		"INSERT INTO received " .
-		"	( for_user, author_id, seq_num, time_published, " . 
-		"		time_received, type, resource_id, message ) " .
-		"VALUES ( '%s', '%s', %ld, '%s', now(), '%s', %ld, '%s' )",
-		mysql_real_escape_string($for_user), 
-		mysql_real_escape_string($author_id), 
-		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string('PHT'),
-		$remote_resid, 
-		mysql_real_escape_string($name)
-	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-	$query = sprintf(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, local_resid, remote_resid, message ) " .
@@ -207,22 +191,6 @@ function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, 
 	$author_id = findFriendClaimId( $for_user, $author );
 
 	$query = sprintf(
-		"INSERT INTO received " .
-		"	( for_user, author_id, subject_id, seq_num, time_published, " . 
-		"		time_received, type, message ) " .
-		"VALUES ( '%s', %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
-		mysql_real_escape_string($for_user), 
-		$author_id,
-		$author_id,
-		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string('MSG'),
-		mysql_real_escape_string($msg[1])
-	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-	$query = sprintf(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, message ) " .
@@ -250,22 +218,6 @@ function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $ti
 	printf("board post with subject %ld and author %ld\n", $subject_id, $author_id );
 
 	$query = sprintf(
-		"INSERT INTO received " .
-		"	( for_user, subject_id, author_id, seq_num, time_published, time_received, ".
-		"		type, message ) " .
-		"VALUES ( '%s', %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
-		mysql_real_escape_string($for_user), 
-		$subject_id, 
-		$author_id, 
-		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string('BRD'),
-		mysql_real_escape_string($msg[1])
-	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-	$query = sprintf(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, subject_id, author_id, seq_num, time_published, time_received, ".
 		"		type, message ) " .
@@ -290,18 +242,6 @@ function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 	$subject_id = findFriendClaimId( $user, $subject );
 
 	$query = sprintf(
-		"INSERT INTO remote_published " .
-		"	( user, subject_id, time_published, type, message ) " .
-		"VALUES ( '%s', %ld, now(), '%s', '%s' )",
-		mysql_real_escape_string($user), 
-		$subject_id, 
-		mysql_real_escape_string('BRD'),
-		mysql_real_escape_string($msg[1])
-	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-
-	$query = sprintf(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, subject_id, published, time_published, type, message ) " .
 		"VALUES ( %ld, %ld, %ld, true, now(), '%s', '%s' )",
@@ -311,8 +251,6 @@ function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 		mysql_real_escape_string('BRD'),
 		mysql_real_escape_string($msg[1])
 	);
-
-	echo $query;
 
 	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }

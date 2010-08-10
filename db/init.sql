@@ -206,34 +206,10 @@ CREATE TABLE remote_broadcast_request
 
 --
 -- Should have three tables:
---   opublished: owner's view of what's published
---   fpublished: friend's view of what's published
---   activity: what's going on with the user's friends.
+--   published_owner: owner's view of what's published
+--   published_friend: friend's view of what's published
+--   activity_stream: what's going on with the user's friends.
 --
-
-CREATE TABLE published
-(
-	user VARCHAR(20),
-	author_id BIGINT,
-	subject_id BIGINT,
-	seq_num BIGINT NOT NULL AUTO_INCREMENT,
-	time_published TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB,
-	PRIMARY KEY(user, seq_num)
-);
-
-CREATE TABLE remote_published
-(
-	user VARCHAR(20),
-	author_id BIGINT,
-	subject_id BIGINT,
-	time_published TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB
-);
 
 CREATE TABLE activity
 ( 
@@ -255,18 +231,6 @@ CREATE TABLE activity
 	PRIMARY KEY(id)
 );
 
-CREATE TABLE received
-( 
-	for_user VARCHAR(20),
-	author_id BIGINT,
-	subject_id BIGINT,
-	seq_num BIGINT,
-	time_published TIMESTAMP,
-	time_received TIMESTAMP,
-	type CHAR(4),
-	resource_id BIGINT,
-	message BLOB
-);
 
 --
 -- END ACTIVITY

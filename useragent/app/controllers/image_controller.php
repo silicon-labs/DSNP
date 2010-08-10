@@ -71,14 +71,6 @@ class ImageController extends AppController
 			"+profile '*' " .
 			$thumb );
 
-		$this->loadModel('Published');
-		$this->Published->save( array( 
-			'user' => $this->USER_NAME,
-			'author_id' => $this->CFG_URI . $this->USER_NAME . "/",
-			'type' => "PHT",
-			'message' => "thm-$id.jpg"
-		));
-
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
 			'user_id' => $this->USER_ID,

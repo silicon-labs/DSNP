@@ -171,14 +171,6 @@ class UserController extends AppController
 		$message = trim( $_POST['message'] );
 		$len = strlen( $headers ) + strlen( $message );
 
-		$this->loadModel('Published');
-		$this->Published->save( array( 
-			"user"  => $this->USER_NAME,
-			"author_id" => $this->USER_ID,
-			"type" => "MSG",
-			"message" => $message,
-		));
-
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 
 			"user_id"  => $this->USER_ID,
@@ -221,15 +213,6 @@ class UserController extends AppController
 			"\r\n";
 		$message = trim( $_POST['message'] );
 		$len = strlen( $headers ) + strlen( $message );
-
-		$this->loadModel('Published');
-		$this->Published->save( array( 
-			'user' => $this->USER_NAME,
-			'author_id' => $BROWSER['identity'],
-			'subject_id' => $this->CFG_URI . $this->USER_NAME . "/",
-			'type' => 'BRD',
-			'message' => $message,
-		));
 
 		$this->loadModel('Activity');
 		$this->Activity->save( array( 

@@ -170,7 +170,7 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 		$user = $result[0];
 		dbQuery( 
 			"UPDATE friend_claim SET name = %e " . 
-			"WHERE user_id = %n AND identity = %e",
+			"WHERE user_id = %L AND identity = %e",
 			$msg[1], $user['id'], $author_id );
 	}
 }

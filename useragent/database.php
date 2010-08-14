@@ -24,7 +24,10 @@ function dbQuery()
 			case 'e':
 				$query = $query . "'" . mysql_real_escape_string($args[$nextArg++]) . "'";
 				break;
-			case 'n':
+			case 'l':
+				$query = $query . $args[$nextArg++];
+				break;
+			case 'L':
 				$query = $query . $args[$nextArg++];
 				break;
 		}

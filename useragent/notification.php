@@ -15,8 +15,9 @@ $type = $argv[2];
 $_SERVER['HTTP_HOST'] = $argv[1];
 $_SERVER['REQUEST_URI'] = $argv[2];
 
-include($PREFIX . '/etc/install.php');
-include($PREFIX . '/etc/config.php');
+include( $PREFIX . '/etc/install.php' );
+include( $PREFIX . '/etc/config.php' );
+include( $PREFIX . '/share/dsnp/web/database.php' );
 
 $DATA_DIR = "$PREFIX/var/lib/dsnp/$CFG_NAME/data";
 
@@ -163,20 +164,14 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 	if ( $content_type != 'text/plain' )
 		return;
 
-	$query = sprintf(
-		"SELECT id FROM user WHERE user = '%s'",
-		mysql_real_escape_string($for_user) );
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) ) {
-		$query = sprintf(
-			"UPDATE friend_claim SET name = '%s' " .
-			"WHERE user_id = %ld AND identity = '%s'",
-			mysql_real_escape_string($msg[1]),
-			mysql_real_escape_string($row['id']), 
-			mysql_real_escape_string($author_id) 
-		);
+	$result = dbQuery( "SELECT id FROM user WHERE user = %e", $for_user );
 
-		$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+	if ( count( $result ) === 1 ) {
+		$user = $result[0];
+		dbQuery( 
+			"UPDATE friend_claim SET name = %e " . 
+			"WHERE user_id = %n AND identity = %e",
+			$msg[1], $user['id'], $author_id );
 	}
 }
 

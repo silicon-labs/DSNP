@@ -61,52 +61,6 @@ class CredController extends AppController
 			$this->redirect( "/$this->USER_NAME/" );
 	}
 
-	function friendNetwork( $networkName, $hash )
-	{
-		if ( !isset($networkName) || count($networkName) == 0 )
-			$networkName = '-';
-			
-		/* See if we have this network. */
-		$this->loadModel('Network');
-
-		$first = $this->Network->find('first', array(
-			'conditions' => array ( 
-				'user_id' => $this->USER_ID,
-				'name' => $networkName )));
-
-		if ( !isset( $first['Network'] ) )
-			$networkName = '-';
-		else {
-			$networkName = $first['Network']['name'];
-
-			/* Is the user a member of the network. */
-			$this->loadModel( 'FriendClaim' );
-			$friendClaim = $this->FriendClaim->find('first', array( 
-					'conditions' => array( 
-						'user_id' => $this->USER_ID,
-						'friend_hash' => $hash
-					),
-					'joins' => array (
-						array( 
-							'table' => 'network_member',
-							'alias' => 'NetworkMember',
-							'type' => 'inner',
-							'foreignKey' => false,
-							'conditions'=> array(
-								'FriendClaim.id = NetworkMember.friend_claim_id',
-								'NetworkMember.network_id' => $first['Network']['id']
-							) 
-						)
-					)
-				));
-
-			if ( !isset( $friendClaim['FriendClaim'] ) )
-				$networkName = '-';
-		}
-
-		return $networkName;
-	}
-
 	function sflogin()
 	{
 		$hash = $_REQUEST['h'];
@@ -220,16 +174,18 @@ class CredController extends AppController
 			$this->Session->write( 'token', $ftoken );
 			$this->Session->write( 'hash', $hash );
 
-			/* Find the friend claim data and store in the session. */
-			$this->loadModel('FriendClaim');
-			$BROWSER = $this->FriendClaim->find('first', array(
-				'conditions' => array (
-					'user_id' => $this->USER_ID,
-					'identity' => $identity
-				)
-			));
+			$BROWSER = dbQuery( "
+				SELECT id, user_id, user, friend_id, identity, name
+				FROM friend_claim WHERE user_id = %l AND identity = %e
+				",
+				$this->USER_ID,
+				$identity
+			);
 
-			$this->Session->write( 'BROWSER', $BROWSER['FriendClaim'] );
+			# FIXME: check result
+			$BROWSER = $BROWSER[0];
+
+			$this->Session->write( 'BROWSER', $BROWSER );
 
 			if ( isset( $_GET['d'] ) )
 				$this->redirect( $_GET['d'] );

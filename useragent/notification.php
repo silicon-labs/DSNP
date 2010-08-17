@@ -94,19 +94,6 @@ function findUserId( $user )
 	return -1;
 }
 
-function findNetworkId( $userId, $networkName )
-{
-	$result = dbQuery(
-		"SELECT network.id AS id FROM network " .
-		"WHERE network.user_id = %l AND network.name = %e",
-		$userId, $networkName
-	);
-
-	if ( count( $result ) == 1 )
-		return (int) $result[0]['id'];
-	return -1;
-}
-
 function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	global $DATA_DIR;
@@ -119,10 +106,7 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 	$remote_resid = (int) $msg[0]['resource-id'];
 
 	$user_id = findUserId( $for_user );
-	$network_id = findNetworkId( $user_id, $network );
 	$author_id = findFriendClaimId( $for_user, $author );
-
-	print( "message is a photo, capturing\n" );
 
 	/* The message body is photo data. Write the photo to disk. */
 	$path = sprintf( "%s/%s/pub-%ld.jpg", $DATA_DIR, $for_user, $seq_num );
@@ -136,11 +120,10 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 
 	dbQuery(
 		"INSERT INTO activity " .
-		"	( user_id, network_id, author_id, seq_num, time_published, " . 
+		"	( user_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, local_resid, remote_resid, message ) " .
-		"VALUES ( %l, %l, %l, %l, %e, now(), %e, %l, %l, %e )",
+		"VALUES ( %l, %l, %l, %e, now(), %e, %l, %l, %e )",
 		$user_id,
-		$network_id,
 		$author_id, 
 		$seq_num, 
 		$date . ' ' . $time,
@@ -174,15 +157,14 @@ function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, 
 		return;
 
 	$user_id = findUserId( $for_user );
-	$network_id = findNetworkId( $user_id, $network );
 	$author_id = findFriendClaimId( $for_user, $author );
 
 	dbQuery(
 		"INSERT INTO activity " .
-		"	( user_id, network_id, author_id, seq_num, time_published, " . 
+		"	( user_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, message ) " .
-		"VALUES ( %l, %l, %l, %l, %e, now(), %e, %e )",
-		$user_id, $network_id, $author_id,
+		"VALUES ( %l, %l, %l, %e, now(), %e, %e )",
+		$user_id, $author_id,
 		$seq_num, $date . ' ' . $time,
 		'MSG', $msg[1]
 	);
@@ -192,7 +174,6 @@ function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, 
 function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $time, $msg, $content_type )
 {
 	$user_id = findUserId( $for_user );
-	$network_id = findNetworkId( $user_id, $network );
 	$subject_id = findFriendClaimId( $for_user, $subject );
 	$author_id = findFriendClaimId( $for_user, $author );
 
@@ -200,11 +181,10 @@ function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $ti
 
 	dbQuery(
 		"INSERT INTO activity " .
-		"	( user_id, network_id, subject_id, author_id, seq_num, time_published, time_received, ".
+		"	( user_id, subject_id, author_id, seq_num, time_published, time_received, ".
 		"		type, message ) " .
-		"VALUES ( %l, %l, %l, %l, %l, %e, now(), %e, %e )",
+		"VALUES ( %l, %l, %l, %l, %e, now(), %e, %e )",
 		$user_id,
-		$network_id,
 		$subject_id, 
 		$author_id, 
 		$seq_num, 
@@ -217,15 +197,13 @@ function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $ti
 function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 {
 	$user_id = findUserId( $user );
-	$network_id = findNetworkId( $user_id, $network );
 	$subject_id = findFriendClaimId( $user, $subject );
 
 	dbQuery(
 		"INSERT INTO activity " .
-		"	( user_id, network_id, subject_id, published, time_published, type, message ) " .
+		"	( user_id, subject_id, published, time_published, type, message ) " .
 		"VALUES ( %l, %l, %l, true, now(), %e, %e )",
 		$user_id,
-		$network_id,
 		$subject_id, 
 		'BRD',
 		$msg[1]

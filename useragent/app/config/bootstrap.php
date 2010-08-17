@@ -45,4 +45,6 @@
 
 Configure::write('activity_size', 30);
 
+require( ROOT . DS . "database.php" );
+
 ?>

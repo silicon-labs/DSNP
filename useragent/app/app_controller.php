@@ -73,16 +73,18 @@ class AppController extends Controller
 
 	function checkUserDb()
 	{
-		$user = $this->User->find( 'first', array('conditions' => 
-				array('user' => $this->params['user'])));
+		$user = dbQuery( 
+			"SELECT id, user, identity, name FROM user WHERE user = %e",
+			$this->params['user'] );
 
-		if ( $user == null )
+		if ( count( $user ) != 1 )
 			$this->userError("userNotFound");
+		$user = $user[0];
 
-		$this->USER_NAME = $this->params['user'];
+		$this->USER_NAME = $user['user'];
 		$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";
-		$this->USER_ID = $user['User']['id'];
-		$this->USER = $user['User'];
+		$this->USER_ID = $user['id'];
+		$this->USER = $user;
 
 		/* Default these to something not too revealing. At session activation
 		 * time we will upgrade if the role allows it. */
@@ -219,19 +221,6 @@ class AppController extends Controller
 	{
 		return $this->Session->valid() &&
 			$this->Session->read('ROLE') === 'friend';
-	}
-
-	function findNetworkId( $networkName )
-	{
-		$this->loadModel( 'Network' );
-		$networks = $this->Network->find( 'first', array( 
-			'conditions' => array( 
-				'Network.user_id' => $this->USER_ID,
-				'Network.name' => $networkName ),
-			'order' => 'Network.id' 
-		));
-
-		return $networks['Network']['id'];
 	}
 }
 ?>

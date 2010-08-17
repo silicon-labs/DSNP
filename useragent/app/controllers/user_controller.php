@@ -354,46 +354,5 @@ class UserController extends AppController
 
 		$this->redirect( "/$this->USER_NAME/" );
 	}
-
-	function cnet()
-	{
-		$this->requireOwnerOrFriend();
-		$this->loadModel( 'Network' );
-
-		if ( $this->ROLE === 'owner' ) {
-			$networks = $this->Network->find( 'all', array( 
-				'conditions' => array( 
-					'Network.user_id' => $this->USER_ID ),
-				'order' => 'Network.id' 
-			));
-		}
-		else {
-			$networkId = $this->findNetworkId( $this->NETWORK_NAME );
-			$BROWSER = $this->Session->read('BROWSER');
-			$networks = $this->Network->find( 'all', array( 
-				'fields' => array(
-					'Network.*',
-					'NetworkMember.*'
-				),
-				'conditions' => array( 
-					'Network.user_id' => $this->USER_ID ),
-				'order' => 'Network.id',
-				'joins' => array (
-					array(
-						'table' => 'network_member',
-						'alias' => 'NetworkMember',
-						'type' => 'inner',
-						'foreignKey' => false,
-						'conditions' => array(
-							'NetworkMember.network_id = Network.id',
-							'NetworkMember.friend_claim_id' => $BROWSER['id']
-						)
-					)
-				)
-			));
-		}
-
-		$this->set( 'networks', $networks );	
-	}
 }
 ?>

@@ -69,30 +69,28 @@ function parse( $len )
 
 function findFriendClaimId( $user, $identity )
 {
-	$query = sprintf(
+	$result = dbQuery(
 		"SELECT friend_claim.id FROM friend_claim " .
 		"JOIN user ON user.id = friend_claim.user_id " .
-		"WHERE user.user = '%s' AND friend_claim.identity = '%s'",
-		mysql_real_escape_string($user),
-		mysql_real_escape_string($identity)
+		"WHERE user.user = %e AND friend_claim.identity = %e",
+		$user,
+		$identity
 	);
 
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) )
-		return (int) $row['id'];
+	if ( count( $result ) == 1 )
+		return (int) $row[0]['id'];
 	return -1;
 }
 
 function findUserId( $user )
 {
-	$query = sprintf(
-		"SELECT id FROM user WHERE user.user = '%s'",
-		mysql_real_escape_string($user)
+	$results = dbQuery(
+		"SELECT id FROM user WHERE user.user = %e",
+		$user
 	);
 
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) )
-		return (int) $row['id'];
+	if ( count( $results ) == 1 )
+		return (int) $results[0]['id'];
 	return -1;
 }
 
@@ -104,11 +102,8 @@ function findNetworkId( $userId, $networkName )
 		$userId, $networkName
 	);
 
-	if ( count( $result ) == 1 ) {
-		$ret = (int) $result[0]['id'];
-		echo "findNetworkId: $ret\n";
-		return $ret;
-	}
+	if ( count( $result ) == 1 )
+		return (int) $result[0]['id'];
 	return -1;
 }
 
@@ -203,22 +198,20 @@ function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $ti
 
 	printf("board post with subject %ld and author %ld\n", $subject_id, $author_id );
 
-	$query = sprintf(
+	dbQuery(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, subject_id, author_id, seq_num, time_published, time_received, ".
 		"		type, message ) " .
-		"VALUES ( %ld, %ld, %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
+		"VALUES ( %l, %l, %l, %l, %l, %e, now(), %e, %e )",
 		$user_id,
 		$network_id,
 		$subject_id, 
 		$author_id, 
 		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string('BRD'),
-		mysql_real_escape_string($msg[1])
+		$date . ' ' . $time,
+		'BRD',
+		$msg[1]
 	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
 function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
@@ -227,18 +220,16 @@ function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 	$network_id = findNetworkId( $user_id, $network );
 	$subject_id = findFriendClaimId( $user, $subject );
 
-	$query = sprintf(
+	dbQuery(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, subject_id, published, time_published, type, message ) " .
-		"VALUES ( %ld, %ld, %ld, true, now(), '%s', '%s' )",
+		"VALUES ( %l, %l, %l, true, now(), %e, %e )",
 		$user_id,
 		$network_id,
 		$subject_id, 
-		mysql_real_escape_string('BRD'),
-		mysql_real_escape_string($msg[1])
+		'BRD',
+		$msg[1]
 	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
 function sendRealName( $user, $toIdentity )
@@ -247,13 +238,10 @@ function sendRealName( $user, $toIdentity )
 	global $CFG_PORT;
 	global $CFG_COMM_KEY;
 
-	$query = sprintf(
-		"SELECT name FROM user WHERE user = '%s'",
-		mysql_real_escape_string($user) );
+	$results = dbQuery( "SELECT name FROM user WHERE user = '%s'", $user );
 
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) ) {
-		$name = $row['name'];
+	if ( count( $results ) == 1 ) {
+		$name = $results[0]['name'];
 
 		if ( isset( $name ) && strlen( $name ) > 0 ) {
 			/* User message */

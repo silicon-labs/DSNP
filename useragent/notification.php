@@ -98,18 +98,17 @@ function findUserId( $user )
 
 function findNetworkId( $userId, $networkName )
 {
-	$query = sprintf(
+	$result = dbQuery(
 		"SELECT network.id AS id FROM network " .
-		"WHERE network.user_id = %ld AND network.name = '%s'",
-		$userId,
-		mysql_real_escape_string($networkName)
+		"WHERE network.user_id = %l AND network.name = %e",
+		$userId, $networkName
 	);
 
-	echo "findNetworkId: $query\n";
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-	if ( $row = mysql_fetch_assoc($result) )
-		return (int) $row['id'];
+	if ( count( $result ) == 1 ) {
+		$ret = (int) $result[0]['id'];
+		echo "findNetworkId: $ret\n";
+		return $ret;
+	}
 	return -1;
 }
 
@@ -140,23 +139,21 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 
 	$name = sprintf( "pub-%ld.jpg", $seq_num );
 
-	$query = sprintf(
+	dbQuery(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, local_resid, remote_resid, message ) " .
-		"VALUES ( %ld, %ld, %ld, %ld, '%s', now(), '%s', %ld, %ld, '%s' )",
+		"VALUES ( %l, %l, %l, %l, %e, now(), %e, %l, %l, %e )",
 		$user_id,
 		$network_id,
 		$author_id, 
 		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string('PHT'),
+		$date . ' ' . $time,
+		'PHT',
 		$local_resid, 
 		$remote_resid, 
-		mysql_real_escape_string($name)
+		$name
 	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
 function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type )
@@ -185,21 +182,15 @@ function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, 
 	$network_id = findNetworkId( $user_id, $network );
 	$author_id = findFriendClaimId( $for_user, $author );
 
-	$query = sprintf(
+	dbQuery(
 		"INSERT INTO activity " .
 		"	( user_id, network_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, message ) " .
-		"VALUES ( %ld, %ld, %ld, %ld, '%s', now(), '%s', '%s' )",
-		$user_id,
-		$network_id,
-		$author_id,
-		$seq_num, 
-		mysql_real_escape_string($date . ' ' . $time),
-		mysql_real_escape_string('MSG'),
-		mysql_real_escape_string($msg[1])
+		"VALUES ( %l, %l, %l, %l, %e, now(), %e, %e )",
+		$user_id, $network_id, $author_id,
+		$seq_num, $date . ' ' . $time,
+		'MSG', $msg[1]
 	);
-
-	$result = mysql_query($query) or die('Query failed: ' . mysql_error());
 }
 
 

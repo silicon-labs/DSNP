@@ -34,7 +34,7 @@ global $CFG_PATH;
 
 //while ( $row = mysql_fetch_assoc($result) )
 foreach ( $users as $row ) {
-	$user = $row['User']['user'];
+	$user = $row['user'];
 	echo '<a href="' . $CFG_PATH . $user . '/"/>' . $user . '</a><br>';
 }
 

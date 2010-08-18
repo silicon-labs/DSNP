@@ -60,6 +60,9 @@ class AppController extends Controller
 		$this->set('CFG_URI', $this->CFG_URI);
 		$this->set('CFG_PATH', $this->CFG_PATH);
 		parent::__construct();
+
+		/* Purely to force a database connection. */
+		$this->loadModel('User');
 	}
 
 	function userError( $error, $params = array() )

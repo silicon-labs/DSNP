@@ -10,8 +10,7 @@ class AdminController extends AppController
 	function index()
 	{
 		# Load the user's sent friend requests
-		$this->loadModel('User');
-		$users = $this->User->find('all');
+		$users = dbQuery( "SELECT * from user" );
 		$this->set( 'users', $users );
 	}
 
@@ -22,9 +21,9 @@ class AdminController extends AppController
 
 	function snewuser()
 	{
-		$user = $this->data['user'];
-		$pass1 = $this->data['pass1'];
-		$pass2 = $this->data['pass2'];
+		$user = $this->data['User']['user'];
+		$pass1 = $this->data['User']['pass1'];
+		$pass2 = $this->data['User']['pass2'];
 
 		if ( $pass1 != $pass2 )
 			die("password mismatch");
@@ -43,15 +42,9 @@ class AdminController extends AppController
 		if ( !ereg("^OK", $res) )
 			die( "FAILURE *** New user creation failed with: <br> $res" );
    	
-		# Find the new user and update it with the attributes controlled by the UI.
-		$this->loadModel('User');
-		$newUser = $this->User->find('first', array( 'conditions' => 
-				array ( 'user' => $user ) ) );
-
-		$newUser['User']['name'] = $user;
-		$newUser['User']['identity'] = $this->CFG_URI . $user . '/';
-		$newUser['User']['type'] = 0;
-		$this->User->save( $newUser, true, array( 'name', 'identity', 'type' ) );
+		$identity = $this->CFG_URI . $user . '/';
+		dbQuery( "UPDATE user SET name = %e, identity = %e, type = %l WHERE user = %e ",
+			$user, $identity, 0, $user );
 
 		# Create the photo directory.
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";

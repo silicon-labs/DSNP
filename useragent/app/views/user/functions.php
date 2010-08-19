@@ -51,11 +51,11 @@ function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
 {
 	$USER_NAME = $USER['user'];
 
-	$author_id = $author['identity'];
-	$author_name = $author['name'];
+	$author_id = $author['author_identity'];
+	$author_name = $author['author_name'];
 
-	$subject_id = $subject['identity'];
-	$subject_name = $subject['name'];
+	$subject_id = $subject['subject_identity'];
+	$subject_name = $subject['subject_name'];
 
 	$time_published = $item['time_published'];
 	$type = $item['type'];

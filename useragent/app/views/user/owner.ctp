@@ -36,8 +36,8 @@ if ( count( $friendRequests ) ) {
 	echo '<div class="content">';
 	echo "<h3>Friend Requests</h3>";
 	foreach ( $friendRequests as $row ) {
-		$from_id = $row['FriendRequest']['from_id'];
-		$reqid = $row['FriendRequest']['reqid'];
+		$from_id = $row['from_id'];
+		$reqid = $row['reqid'];
 		echo $html->link( $from_id, $from_id );
 		echo "&nbsp;&nbsp;&nbsp;\n";
 		echo $html->link( 'yes', "/$USER_NAME/freq/answer?reqid=" . urlencode($reqid) . "&a=yes" );
@@ -55,8 +55,7 @@ if ( count( $sentFriendRequests ) > 0 ) {
 	echo '<div class="content">';
 	echo "<h3>Sent Friend Requests</h3>";
 	foreach ( $sentFriendRequests as $row ) {
-		$for_id = $row['SentFriendRequest']['for_id'];
-
+		$for_id = $row['for_id'];
 		//$reqid = $row['reqid'];
 		echo "<a class=\"idlink\" href=\"$for_id\">$for_id</a>&nbsp;&nbsp;&nbsp;\n";
 		echo "<a href=\"abandon.php?reqid=" . /*urlencode($reqid) . */
@@ -73,8 +72,8 @@ if ( count( $sentFriendRequests ) > 0 ) {
 <?php
 
 foreach ( $friendClaims as $row ) {
-	$name = $row['FriendClaim']['name'];
-	$dest_id = $row['FriendClaim']['identity'];
+	$name = $row['name'];
+	$dest_id = $row['identity'];
 
 	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
 		urlencode( $_SESSION['hash'] ) . "\">";
@@ -107,7 +106,7 @@ foreach ( $friendClaims as $row ) {
 <?php
 $count = 0;
 foreach ( $images as $row ) {
-	$seq_num = $row['Image']['seq_num'];
+	$seq_num = $row['seq_num'];
 	if ( $count % 2 == 0 ) {
 		echo "<tr div class=\"photorow\">";
 		echo "<td class=\"photo0\">";
@@ -154,9 +153,9 @@ $limit = $start + $activity_size < count( $activity ) ? $start + $activity_size 
 for ( $i = $start; $i < $limit; $i++ ) {
 	$row = $activity[$i];
 
-	$author = $row['AuthorFC'];
-	$subject = $row['SubjectFC'];
-	$item = $row['Activity'];
+	$author = $row;
+	$subject = $row;
+	$item = $row;
 
 	echo "<p>\n";
 	printMessage( $html, $text, $USER, null, $author, $subject, $item );

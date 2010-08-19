@@ -42,7 +42,8 @@ class UserController extends AppController
 			FROM activity 
 			LEFT OUTER JOIN friend_claim AS author_fc ON activity.author_id = author_fc.id
 			LEFT OUTER JOIN friend_claim AS subject_fc ON activity.subject_id = subject_fc.id
-			WHERE activity.user_id = %l ORDER BY time_published DESC LIMIT %l
+			WHERE activity.user_id = %l
+			ORDER BY time_published DESC LIMIT %l
 			",
 			$this->USER_ID, $start + Configure::read('activity_size') );
 		$this->set( 'start', $start );
@@ -62,60 +63,31 @@ class UserController extends AppController
 		$this->set( 'BROWSER', $BROWSER );
 
 		# Load the friend list.
-		$this->loadModel( 'FriendClaim' );
-		$friendClaims = $this->FriendClaim->find('all', array( 
-				'fields' => array(
-					'FriendClaim.*',
-					'NetworkMember.*',
-					'FriendLink.*'
-				),
-				'conditions' => array( 'user_id' => $this->USER_ID ),
-				'joins' => array (
-					array(
-						'table' => 'network_member',
-						'alias' => 'NetworkMember',
-						'type' => 'inner',
-						'foreignKey' => false,
-						'conditions' => array(
-							'FriendClaim.id = NetworkMember.friend_claim_id'
-						)
-					),
-					array( 
-						'table' => 'friend_link',
-						'alias' => 'FriendLink',
-						'type' => 'left outer',
-						'foreignKey' => false,
-						'conditions'=> array(
-							'FriendClaim.id = FriendLink.from_fc_id', 
-							'FriendLink.to_fc_id' => $BROWSER['id']
-						)
-					)
-				)
-			)
-		);
-
+		$friendClaims = dbQuery( 
+			"SELECT * FROM friend_claim WHERE user_id = %l",
+			$this->USER_ID );
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
-		$this->loadModel('Image');
-		$images = $this->Image->find('all', array( 
-			'conditions' => 
-				array( 'user' => $this->USER_NAME ),
-			'order' => array( 'Image.seq_num DESC' ),
-			'limit' => 30
-		));
+		$images = dbQuery(
+			"SELECT * FROM image WHERE user = %e",
+			$this->USER_NAME );
 		$this->set( 'images', $images );
 
-
-		$this->loadModel('Activity');
-		$activity = $this->Activity->find( 'all', array( 
-				'conditions' => array( 
-					'Activity.user_id' => $this->USER_ID,
-					'Activity.published' => 'true'
-				),
-				'order' => 'time_published DESC',
-				'limit' => $start + Configure::read('activity_size')
-			));
+		$activity = dbQuery( "
+			SELECT 
+				activity.*,
+				author_fc.identity AS author_identity,
+				author_fc.name AS author_name,
+				subject_fc.identity AS subject_identity,
+				subject_fc.name AS subject_name
+			FROM activity 
+			LEFT OUTER JOIN friend_claim AS author_fc ON activity.author_id = author_fc.id
+			LEFT OUTER JOIN friend_claim AS subject_fc ON activity.subject_id = subject_fc.id
+			WHERE activity.user_id = %l
+			ORDER BY time_published LIMIT %l
+			",
+			$this->USER_ID, $start + Configure::read('activity_size') );
 		$this->set( 'start', $start );
 		$this->set( 'activity', $activity );
 

@@ -37,49 +37,15 @@ include('functions.php');
 echo '<h3>Friend List</h3>';
 
 foreach ( $friendClaims as $row ) {
-	$name = $row['FriendClaim']['name'];
-	$dest_id = $row['FriendClaim']['identity'];
-	$from_fc_id = $row['FriendLink']['from_fc_id'];
+	$name = $row['name'];
+	$dest_id = $row['identity'];
 
-	if ( $dest_id == $BROWSER['identity'] ) {
-		echo "* <a href=\"${dest_id}\">";
-		if ( isset( $name ) )
-			echo $name;
-		else
-			echo $dest_id;
-		echo "</a> <br>\n";
-	}
-}
-
-foreach ( $friendClaims as $row ) {
-	$name = $row['FriendClaim']['name'];
-	$dest_id = $row['FriendClaim']['identity'];
-	$from_fc_id = $row['FriendLink']['from_fc_id'];
-
-	if ( isset( $from_fc_id ) ) {
-		echo "+ <a href=\"${dest_id}cred/sflogin?h=" . 
-			urlencode( $_SESSION['hash'] ) . "&n=$NETWORK_NAME\">";
-		if ( isset( $name ) )
-			echo $name;
-		else
-			echo $dest_id;
-		echo "</a> <br>\n";
-	}
-}
-
-foreach ( $friendClaims as $row ) {
-	$name = $row['FriendClaim']['name'];
-	$dest_id = $row['FriendClaim']['identity'];
-	$from_fc_id = $row['FriendLink']['from_fc_id'];
-
-	if ( $dest_id != $BROWSER['identity'] && !isset( $from_fc_id ) ) {
-		echo "&nbsp;&nbsp;<a href=\"${dest_id}\">";
-		if ( isset( $name ) )
-			echo $name;
-		else
-			echo $dest_id;
-		echo "</a> <br>\n";
-	}
+	echo "<a href=\"${dest_id}\">";
+	if ( isset( $name ) )
+		echo $name;
+	else
+		echo $dest_id;
+	echo "</a> <br>\n";
 }
 
 ?>
@@ -94,7 +60,7 @@ foreach ( $friendClaims as $row ) {
 <?php
 $count = 0;
 foreach ( $images as $row ) {
-	$seq_num = $row['Image']['seq_num'];
+	$seq_num = $row['seq_num'];
 	if ( $count % 2 == 0 ) {
 		echo "<tr div class=\"photorow\">";
 		echo "<td class=\"photo0\">";
@@ -142,9 +108,9 @@ $limit = $start + $activity_size < count( $activity ) ? $start + $activity_size 
 for ( $i = $start; $i < $limit; $i++ ) {
 	$row = $activity[$i];
 
-	$author = $row['AuthorFC'];
-	$subject = $row['SubjectFC'];
-	$item = $row['Activity'];
+	$author = $row;
+	$subject = $row;
+	$item = $row;
 
 	echo "<p>\n";
 	printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item );

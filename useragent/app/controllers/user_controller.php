@@ -253,22 +253,25 @@ class UserController extends AppController
 	function edit()
 	{
 		$this->requireOwner();
-		$this->data = $this->User->find('first', 
-				array( 'conditions' => array( 'user' => $this->USER_NAME )));
+		$user = dbQuery( "SELECT * FROM user WHERE user = %e", $this->USER_NAME );
+		$this->set( 'user', $user );
 	}
 
 	function sedit()
 	{
 		$this->requireOwner();
 
-		if ( $this->data['User']['id'] == $this->USER_ID ) {
-			if ( preg_match( '/^[ \t\n]*$/', $this->data['User']['name'] ) )
-				$this->data['User']['name'] = null;
-			if ( preg_match( '/^[ \t\n]*$/', $this->data['User']['email'] ) )
-				$this->data['User']['email'] = null;
-				
-			$this->User->save( $this->data, true, array('name', 'email') );
-		}
+		$id = $_POST['id'];
+		$name = $_POST['name'];
+		$email = $_POST['email'];
+
+		if ( preg_match( '/^[ \t\n]*$/', $name ) )
+			$name = null;
+		if ( preg_match( '/^[ \t\n]*$/', $email ) )
+			$email = null;
+
+		if ( $id === $this->USER_ID )
+			dbQuery( "UPDATE user SET name = %e, email = %e WHERE id = %l", $name, $email, $this->USER_ID );
 
 		/* User message */
 		$headers = 

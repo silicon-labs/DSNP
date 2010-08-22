@@ -1,0 +1,9 @@
+<?
+class Index
+{
+	function index()
+	{
+
+	}
+}
+?>

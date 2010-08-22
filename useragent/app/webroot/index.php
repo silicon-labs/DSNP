@@ -46,6 +46,9 @@ if (!defined('ROOT')) {
 	define('ROOT', dirname(dirname(dirname(__FILE__))));
 }
 
+require( ROOT . DS . 'database.php' );
+require( ROOT . DS . 'route.php' );
+
 define('PREFIX', dirname(dirname(dirname(ROOT))));
 
 /**

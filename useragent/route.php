@@ -27,24 +27,27 @@ if ( !file_exists( $controllerFile ) )
 	die( "invalid URL: controller file '$controllerFile' does not exist" );
 
 # Make sure the controller class does not exist already.
-$controllerClass = $className[$route[0]];
-if ( class_exists( $controllerClass ) )
-	die("internal error: controller '$controllerClass' is prexisting");
+$controllerName = $className[$route[0]];
+if ( class_exists( $controllerName ) )
+	die("internal error: controller '$controllerName' is prexisting");
 
 # Include the file and make sure we have the class now.
 include( $controllerFile );
 
-if ( ! class_exists( $controllerClass ) )
-	die("internal error: controller '$controllerClass' class not defined in $controllerFile");
+if ( ! class_exists( $controllerName ) )
+	die("internal error: controller '$controllerName' class not defined in $controllerFile");
 
 # Allocate controller.
-$controller = new $controllerClass;
+$controller = new $controllerName;
 if ( !is_object( $controller ) )
 	die("internal error: failed to allocate controller");
 
 # Find method
 $methodName = $className[$route[1]];
 if ( !method_exists( $controller, $methodName ) )
-	die("invalid URL: method $methodName not present in $controllerClass");
+	die("invalid URL: method $methodName not present in $controllerName");
+
+$controller->controller = $controllerName;
+$controller->method = $methodName
 
 ?>

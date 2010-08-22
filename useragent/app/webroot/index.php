@@ -1,59 +1,25 @@
 <?php
-/* SVN FILE: $Id$ */
-/**
- * Short description for file.
- *
- * Long description for file
- *
- * PHP versions 4 and 5
- *
- * CakePHP(tm) :  Rapid Development Framework (http://www.cakephp.org)
- * Copyright 2005-2008, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
- *
- * Licensed under The MIT License
- * Redistributions of files must retain the above copyright notice.
- *
- * @filesource
- * @copyright     Copyright 2005-2008, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
- * @link          http://www.cakefoundation.org/projects/info/cakephp CakePHP(tm) Project
- * @package       cake
- * @subpackage    cake.app.webroot
- * @since         CakePHP(tm) v 0.2.9
- * @version       $Revision$
- * @modifiedby    $LastChangedBy$
- * @lastmodified  $Date$
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
- */
-/**
- * Use the DS to separate the directories in other defines
- */
 
-if (!defined('DS')) {
-	define('DS', DIRECTORY_SEPARATOR);
-}
+define( 'DS', DIRECTORY_SEPARATOR );
+define( 'ROOT', dirname(dirname(dirname(__FILE__))) );
+define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
-/**
- * These defines should only be edited if you have cake installed in
- * a directory layout other than the way it is distributed.
- * When using custom settings be sure to use the DS and do not add a trailing DS.
- */
+/* Location of the data files. */
+/* This choose the site to configure for. */
+require( PREFIX . DS . 'etc' . DS . 'config.php' );
 
-/**
- * The full path to the directory which holds "app", WITHOUT a trailing DS.
- *
- */
-if (!defined('ROOT')) {
-	define('ROOT', dirname(dirname(dirname(__FILE__))));
-}
+define( 'CFG_DB_HOST', $CFG_DB_HOST );
+define( 'CFG_DB_USER', $CFG_DB_USER );
+define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
+define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
 
+require( ROOT . DS . 'controller.php' );
 require( ROOT . DS . 'database.php' );
 require( ROOT . DS . 'route.php' );
-
-$controller->$methodName();
+require( ROOT . DS . 'dispatch.php' );
 
 exit;
 
-define('PREFIX', dirname(dirname(dirname(ROOT))));
 
 /**
  * The actual directory name for the "app".
@@ -87,14 +53,6 @@ if (!defined('WWW_ROOT')) {
 	define('WWW_ROOT', dirname(__FILE__) . DS);
 }
 
-/* Location of the data files. */
-/* This choose the site to configure for. */
-include( PREFIX . '/etc/config.php' );
-
-define( 'CFG_DB_HOST', $CFG_DB_HOST );
-define( 'CFG_DB_USER', $CFG_DB_USER );
-define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
-define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
 
 define( 'TMP', PREFIX . '/var/lib/dsnp/' . $CFG_NAME . '/tmp/' );
 define( 'DATA_DIR', PREFIX . '/var/lib/dsnp/' . $CFG_NAME . '/data' );

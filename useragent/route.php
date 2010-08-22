@@ -1,7 +1,5 @@
 <?php
 
-echo "<div>";
-
 if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
@@ -10,7 +8,7 @@ if ( !isset( $url ) )
 
 $route = explode( '/', $url );
 if ( !isset( $route[1] ) )
-	$route[1] = 'index';
+	$route[1] = 'cindex';
 
 foreach ( $route as $component ) {
 	# Validate.
@@ -35,6 +33,7 @@ if ( class_exists( $controllerClass ) )
 
 # Include the file and make sure we have the class now.
 include( $controllerFile );
+
 if ( ! class_exists( $controllerClass ) )
 	die("internal error: controller '$controllerClass' class not defined in $controllerFile");
 
@@ -45,7 +44,7 @@ if ( !is_object( $controller ) )
 
 # Find method
 $methodName = $className[$route[1]];
-if ( !method_exists( $controller, $methodName) )
+if ( !method_exists( $controller, $methodName ) )
 	die("invalid URL: method $methodName not present in $controllerClass");
 
 ?>

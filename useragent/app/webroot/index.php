@@ -49,6 +49,10 @@ if (!defined('ROOT')) {
 require( ROOT . DS . 'database.php' );
 require( ROOT . DS . 'route.php' );
 
+$controller->$methodName();
+
+exit;
+
 define('PREFIX', dirname(dirname(dirname(ROOT))));
 
 /**
@@ -67,6 +71,7 @@ if (!defined('APP_DIR')) {
 if (!defined('CAKE_CORE_INCLUDE_PATH')) {
 	define('CAKE_CORE_INCLUDE_PATH', ROOT);
 }
+
 
 /**
  * Editing below this line should NOT be necessary.

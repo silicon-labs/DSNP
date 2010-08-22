@@ -1,9 +1,9 @@
 <?
 class Index
 {
-	function index()
+	function cindex()
 	{
-
+		print "HI";
 	}
 }
 ?>

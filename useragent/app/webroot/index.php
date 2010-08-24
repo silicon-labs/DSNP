@@ -12,6 +12,8 @@ define( 'CFG_DB_HOST', $CFG_DB_HOST );
 define( 'CFG_DB_USER', $CFG_DB_USER );
 define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
 define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
+define( 'CFG_SITE_NAME', $CFG_SITE_NAME );
+define( 'CFG_URI', $CFG_URI );
 
 require( ROOT . DS . 'controller.php' );
 require( ROOT . DS . 'database.php' );
@@ -19,7 +21,6 @@ require( ROOT . DS . 'route.php' );
 require( ROOT . DS . 'dispatch.php' );
 
 exit;
-
 
 /**
  * The actual directory name for the "app".

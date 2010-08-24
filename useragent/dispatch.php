@@ -8,6 +8,12 @@ $viewFile = ROOT . DS . 'view' . DS . $controller->controller . DS . $controller
 if ( ! file_exists( $viewFile ) )
 	die("internal error: view file $viewFile not found");
 
+foreach ( $controller->vars as $name => $value ) {
+	$GLOBALS[$name] = $value;
+}
+
+require( ROOT . DS . 'header.php' );
 require( $viewFile );
+require( ROOT . DS . 'footer.php' );
 
 ?>

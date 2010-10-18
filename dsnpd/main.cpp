@@ -50,12 +50,18 @@ void read_rcfile( const char *confFile )
 int checkArgs( int argc, char **argv )
 {
 	while ( true ) {
-		int opt = getopt( argc, argv, "q:t" );
+		int opt = getopt( argc, argv, "q:tci" );
 
 		if ( opt < 0 )
 			break;
 
 		switch ( opt ) {
+			case 'c':
+				gbl.runConnect = true;
+				break;
+			case 'i':
+				gbl.runIdConnect = true;
+				break;
 			case 'q':
 				gbl.runQueue = true;
 				gbl.siteName = optarg;
@@ -127,12 +133,14 @@ int serverMain()
 }
 
 
-int run_test();
+int runTest();
+int runConnect();
+int runIdConnect();
 
 int main( int argc, char **argv )
 {
 	if ( checkArgs( argc, argv ) < 0 ) {
-		fprintf( stderr, "expecting: sppd [options] config\n" );
+		fprintf( stderr, "expecting: dsnpd [options] config\n" );
 		fprintf( stderr, "  options: -q<site>    don't listen, run queue\n" );
 		exit(1);
 	}
@@ -148,8 +156,12 @@ int main( int argc, char **argv )
 
 	if ( gbl.runQueue )
 		runQueue( gbl.siteName );
+	else if ( gbl.runConnect )
+		runConnect();
+	else if ( gbl.runIdConnect )
+		runIdConnect();
 	else if ( gbl.test )
-		run_test();
+		runTest();
 	else 
 		serverMain();
 }

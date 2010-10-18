@@ -193,7 +193,7 @@ void broadcastKey()
 	CurrentPutKey put( mysql, "age", "social" );
 }
 
-void run_test()
+void runTest()
 {
 	testBase64();
 }

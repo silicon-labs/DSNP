@@ -146,6 +146,16 @@ bool gblKeySubmitted = false;
 		ssl = true;
 	}
 
+	action start_exchange {
+		startExchange();
+		ssl = true;
+	}
+
+	action start_id_exchange {
+		startIdExchange();
+		ssl = true;
+	}
+
 	# Reads in a message block plus the terminating EOL.
 	action read_message {
 		/* Validate the length. */
@@ -171,6 +181,8 @@ bool gblKeySubmitted = false;
 	commands := (
 		'comm_key'i ' ' key EOL @comm_key |
 		'start_tls'i EOL @start_tls |
+		'start_exchange'i EOL @start_exchange |
+		'start_id_exchange'i EOL @start_id_exchange |
 		'login'i ' ' user ' ' pass 
 			EOL @check_key @{
 				login( mysql, user, pass );

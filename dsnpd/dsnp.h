@@ -71,6 +71,8 @@ struct Global
 		configFile(0),
 		siteName(0),
 		runQueue(false),
+		runConnect(false),
+		runIdConnect(false),
 		test(false),
 		pid(0)
 	{}
@@ -78,6 +80,8 @@ struct Global
 	const char *configFile;
 	const char *siteName;
 	bool runQueue;
+	bool runConnect;
+	bool runIdConnect;
 	bool test;
 	pid_t pid;
 };
@@ -245,6 +249,8 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
 void start_tls();
+void startExchange();
+void startIdExchange();
 long base64ToBin( unsigned char *out, const char *src, long len );
 AllocString binToBase64( const u_char *data, long len );
 AllocString bnToBase64( const BIGNUM *n );
@@ -277,6 +283,8 @@ long long lastInsertId( MYSQL *mysql );
 struct TlsConnect
 {
 	int connect( const char *host, const char *site );
+	int connect2( const char *host, const char *site );
+	int connect3( const char *host, const char *site );
 	BIO *sbio;
 };
 

@@ -13,7 +13,7 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-all: init.sh new-site
+all: init.sh new-site new-user-cert
 
 prefix = @prefix@
 
@@ -31,6 +31,11 @@ new-site: new-site.sh
 	sed $(sedsubst) $< > $@
 	chmod +x $@
 
+new-user-cert: new-user-cert.sh
+	sed $(sedsubst) $< > $@
+	chmod +x $@
+
 install:
 	install -d @prefix@/lib/dsnp
 	install util.php @prefix@/lib/dsnp/util.php
+	install new-user-cert @prefix@/lib/dsnp/new-user-cert

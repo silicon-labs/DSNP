@@ -83,7 +83,8 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 		"WHERE "
 		"	id = %L ",
 		passSaltStr.data, passHashed.data, idSaltStr.data,
-		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, userId );
+		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, 
+		userId );
 	
 	/* Add the - network for the new user. */
 	//long long networkNameId = findNetworkName( mysql, "-" );
@@ -94,68 +95,25 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	/*
 	 * Allocate CERT
 	 */
-	String certDir( "%s/%s/certs", PKGSTATEDIR, c->name );
-	message( "cert dir is %s\n", certDir.data );
+	String certDir( "%s/%s/keys", PKGSTATEDIR, c->name );
+	String certPrefix( "%s/%lld", certDir.data, userId );
+	String command( "%s/new-user-cert %s %s\n", LIBDIR, user, certPrefix.data );
+	String keyFile( "%s.key", certPrefix.data );
+	String crtFile( "%s.crt", certPrefix.data );
 
-	String commands(
-		"mkdir -p %s\n"
-		"rm %s/%s.*\n"
-		"openssl genrsa"
-		"	-out %s/%s.key 1024\n"
-		"openssl req -new"
-		"	-subj \"/CN=%s\""
-		"	-key %s/%s.key -out %s/%s.csr\n"
-		"openssl x509 -req -days 365"
-		"	-in %s/%s.csr"
-		"	-signkey %s/%s.key"
-		"	-out %s/%s.crt\n"
-		"sed -i 's/^--*BEGIN.*$//; s/^--*END.*$//; s,+,-,g; s,/,_,g; s,=,,g;' %s/%s.key %s/%s.csr %s/%s.crt\n"
-		"sed -i ':a;N;$!ba;s/\\n//g' %s/%s.key %s/%s.csr %s/%s.crt\n",
-		certDir.data, 
-		certDir.data, user,
-		certDir.data, user,
-		user,
-		certDir.data, user, certDir.data, user,
-		certDir.data, user,
-		certDir.data, user,
-		certDir.data, user,
-		certDir.data, user, certDir.data, user, certDir.data, user,
-		certDir.data, user, certDir.data, user, certDir.data, user
-	);
-
-	system( commands.data );
-
-	String keyFileName( "%s/%s.key", certDir.data, user );
-	String csrFileName( "%s/%s.csr", certDir.data, user );
-	String crtFileName( "%s/%s.crt", certDir.data, user );
-	FILE *keyFile = fopen( keyFileName.data, "r" );
-	FILE *csrFile = fopen( csrFileName.data, "r" );
-	FILE *crtFile = fopen( crtFileName.data, "r" );
-
-	#define MAX_FL 16384
-
-	char *key = new char[MAX_FL];
-	char *csr = new char[MAX_FL];
-	char *crt = new char[MAX_FL];
-
-	int keyLen = fread( key, 1, MAX_FL, keyFile );
-	int csrLen = fread( csr, 1, MAX_FL, csrFile );
-	int crtLen = fread( crt, 1, MAX_FL, crtFile );
-	key[keyLen-1] = 0;
-	csr[csrLen-1] = 0;
-	crt[crtLen-1] = 0;
+	system( command.data );
 
 	/* Have to reconnect. */
 	mysql = dbConnect();
+
 	DbQuery( mysql,
 		"UPDATE user "
 		"SET "
 		"	x509_key = %e, "
-		"	x509_csr = %e, "
 		"	x509_crt = %e "
 		"WHERE "
 		"	id = %L ",
-		key, csr, crt, userId );
+		keyFile.data, crtFile.data, userId );
 
 	BIO_printf( bioOut, "OK\r\n" );
 }

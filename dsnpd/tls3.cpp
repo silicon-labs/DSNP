@@ -38,8 +38,8 @@ void sslInitServer3()
 	/*
 	 * Our own identity.
 	 */
-	c->CFG_TLS_CRT = "/home/thurston/tmp/tls3/wendy.crt";
-	c->CFG_TLS_KEY = "/home/thurston/tmp/tls3/wendy.key";
+	c->CFG_TLS_CRT = strdup("/home/thurston/tmp/tls3/wendy.crt");
+	c->CFG_TLS_KEY = strdup("/home/thurston/tmp/tls3/wendy.key");
 	if ( c->CFG_TLS_CRT == 0 )
 		fatal("CFG_TLS_CRT is not set\n");
 	if ( c->CFG_TLS_KEY == 0 )
@@ -115,6 +115,9 @@ void sslInitClient3()
 	/* Load the CA certificates that we will use to verify. */
 	if ( c->CFG_TLS_CA_CERTS == 0 )
 		fatal("CFG_TLS_CA_CERTS is not set\n");
+	
+	//DbQuery certQuery( mysql, "SELECT x509_crt FROM user WHERE name = 'foobar'" );
+	//const char *cert = fetchRow()[0];
 
 	const char *CA_CERTS = "/home/thurston/tmp/tls3/foo.pem";
 	int result = SSL_CTX_load_verify_locations( ctx, CA_CERTS, NULL );
@@ -124,8 +127,8 @@ void sslInitClient3()
 	/*
 	 * Our own identity.
 	 */
-	c->CFG_TLS_CRT = "/home/thurston/tmp/tls3/sandra.crt";
-	c->CFG_TLS_KEY = "/home/thurston/tmp/tls3/sandra.key";
+	c->CFG_TLS_CRT = strdup("/home/thurston/tmp/tls3/sandra.crt");
+	c->CFG_TLS_KEY = strdup("/home/thurston/tmp/tls3/sandra.key");
 	if ( c->CFG_TLS_CRT == 0 )
 		fatal("CFG_TLS_CRT is not set\n");
 	if ( c->CFG_TLS_KEY == 0 )
@@ -213,6 +216,13 @@ int TlsConnect::connect3( const char *host, const char *site )
 
 int runIdConnect()
 {
+	MYSQL *mysql = dbConnect();
+
+	fetchCertificate( mysql, "https://localhost/s1/foobar/" );
+	/* There is a fork. */
+	mysql = dbConnect();
+
+
 	setConfigByName( "s1" );
 	message( "CFG_URI %s\n", c->CFG_URI );
 	TlsConnect tlsConnect;

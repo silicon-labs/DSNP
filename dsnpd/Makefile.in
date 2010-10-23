@@ -33,7 +33,8 @@ DEFS += \
 	-DSYSCONFDIR='"@prefix@/etc"' \
 	-DLOGDIR='"@prefix@/var/log"' \
 	-DNOTIFICATION='"php @prefix@/share/dsnp/web/notification.php"' \
-	-DPKGSTATEDIR='"@prefix@/var/lib/dsnp"'
+	-DPKGSTATEDIR='"@prefix@/var/lib/dsnp"' \
+	-DLIBDIR='"@prefix@/lib/dsnp"'
 
 prefix = @prefix@
 BUILD_PARSERS = @BUILD_PARSERS@

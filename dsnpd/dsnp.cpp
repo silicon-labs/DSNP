@@ -216,7 +216,20 @@ void certificate( MYSQL *mysql, const char *user )
 
 	/* Everythings okay. */
 	MYSQL_ROW row = query.fetchRow();
-	BIO_printf( bioOut, "OK %s\n", row[0] );
+
+	struct stat s;
+	stat( row[0], &s );
+	
+	BIO_printf( bioOut, "OK %llu\r\n", (long long unsigned) s.st_size );
+
+	#define MAX_FL 16384
+	FILE *crtFile = fopen( row[0], "r" );
+	char *crt = new char[MAX_FL];
+	int crtLen = fread( crt, 1, MAX_FL-1, crtFile );
+	crt[crtLen] = 0;
+
+	BIO_write( bioOut, crt, crtLen );
+	BIO_printf( bioOut, "\r\n" );
 }
 
 long open_inet_connection( const char *hostname, unsigned short port )
@@ -298,6 +311,57 @@ query_fail:
 	return result;
 }
 
+long fetchCertificateDb( PublicKey &pub, MYSQL *mysql, const char *identity )
+{
+	long result = 0;
+	long query_res;
+	MYSQL_RES *select_res;
+	MYSQL_ROW row;
+
+	query_res = exec_query( mysql, 
+		"SELECT certificate FROM certificate WHERE identity = %e", identity );
+	if ( query_res != 0 ) {
+		result = ERR_QUERY_ERROR;
+		goto query_fail;
+	}
+
+	/* Check for a result. */
+	select_res= mysql_store_result( mysql );
+	row = mysql_fetch_row( select_res );
+	if ( row ) {
+		pub.n = strdup( row[0] );
+		result = 1;
+	}
+
+	/* Done. */
+	mysql_free_result( select_res );
+
+query_fail:
+	return result;
+}
+
+long storeCertificate( MYSQL *mysql, const char *identity, PublicKey &pub )
+{
+	DbQuery( mysql,
+		"INSERT INTO certificate ( identity, certificate ) "
+		"VALUES ( %e, %e ) ", identity, pub.n );
+
+	long long userId = lastInsertId( mysql );
+
+	String certDir( "%s/%s/certs", PKGSTATEDIR, c->name );
+	String certPrefix( "%s/%lld", certDir.data, userId );
+	String crtFile( "%s.crt", certPrefix.data );
+
+	String command( "mkdir -p %s", certDir.data );
+	system( command.data );
+
+	FILE *file = fopen( crtFile.data, "w" );
+	fwrite( pub.n, 1, strlen( pub.n ), file );
+	fclose( file );
+
+	return 0;
+}
+
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 {
 	PublicKey pub;
@@ -320,6 +384,39 @@ RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 
 		/* Store it in the db. */
 		result = store_public_key( mysql, identity, pub );
+		if ( result < 0 )
+			return 0;
+	}
+
+	rsa = RSA_new();
+	rsa->n = base64ToBn( pub.n );
+	rsa->e = base64ToBn( pub.e );
+
+	return rsa;
+}
+
+RSA *fetchCertificate( MYSQL *mysql, const char *identity )
+{
+	PublicKey pub;
+	RSA *rsa;
+
+	Identity id( identity );
+	id.parse();
+
+	/* First try to fetch the public key from the database. */
+	long result = fetchCertificateDb( pub, mysql, identity );
+	if ( result < 0 )
+		return 0;
+
+	/* If the db fetch failed, get the public key off the net. */
+	if ( result == 0 ) {
+		char *site = get_site( identity );
+		result = fetchCertificateNet( pub, site, id.host, id.user );
+		if ( result < 0 )
+			return 0;
+
+		/* Store it in the db. */
+		result = storeCertificate( mysql, identity, pub );
 		if ( result < 0 )
 			return 0;
 	}

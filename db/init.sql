@@ -24,7 +24,6 @@ CREATE TABLE user
 	type INT,
 
 	x509_key TEXT,
-	x509_csr TEXT,
 	x509_crt TEXT,
 
 	UNIQUE(user),
@@ -41,8 +40,12 @@ CREATE TABLE public_key
 
 CREATE TABLE certificate
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	identity TEXT,
-	certificate TEXT
+	certificate TEXT,
+
+	PRIMARY KEY(id)
 );
 
 CREATE TABLE relid_request

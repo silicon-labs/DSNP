@@ -105,6 +105,28 @@ bool gblKeySubmitted = false;
 		p += length;
 	}
 
+	# Reads in a message block plus the terminating EOL.
+	action read_message {
+		/* Validate the length. */
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		/* Read in the message and the mandadory \r\r. */
+		BIO_read( bioIn, message_buffer, length+2 );
+
+		/* Parse just the \r\r. */
+		p = message_buffer.data + length;
+		pe = message_buffer.data + length + 2;
+	}
+
+	action term_data {
+		message_buffer.data[length] = 0;
+	}
+
+	M_EOL = 
+		EOL @read_message 
+		EOL @term_data;
+
 }%%
 
 %%{
@@ -155,28 +177,6 @@ bool gblKeySubmitted = false;
 		startIdExchange();
 		ssl = true;
 	}
-
-	# Reads in a message block plus the terminating EOL.
-	action read_message {
-		/* Validate the length. */
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		/* Read in the message and the mandadory \r\r. */
-		BIO_read( bioIn, message_buffer, length+2 );
-
-		/* Parse just the \r\r. */
-		p = message_buffer.data + length;
-		pe = message_buffer.data + length + 2;
-	}
-
-	action term_data {
-		message_buffer.data[length] = 0;
-	}
-
-	M_EOL = 
-		EOL @read_message 
-		EOL @term_data;
 
 	commands := (
 		'comm_key'i ' ' key EOL @comm_key |
@@ -787,6 +787,75 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	pub.e = e.relinquish();
 
 	message("fetch_public_key_net returning %s %s\n", pub.n, pub.e );
+
+	return 0;
+}
+
+/*
+ * fetchCertificateNet
+ */
+
+%%{
+	machine certificate;
+	write data;
+}%%
+
+long fetchCertificateNet( PublicKey &pub, const char *site, 
+		const char *host, const char *user )
+{
+	static char buf[8192];
+	long cs;
+	const char *p, *pe;
+	bool OK = false;
+	const char *mark;
+	long length;
+	String length_str;
+	String message_buffer;
+	message_buffer.allocate( MAX_MSG_LEN + 2 );
+
+	TlsConnect tlsConnect;
+	int result = tlsConnect.connect( host, site );
+	if ( result < 0 ) 
+		return result;
+
+	message( "fetching certificate for %s from host %s site %s\n", user, host, site );
+
+	BIO_printf( tlsConnect.sbio, "certificate %s\r\n", user );
+	BIO_flush( tlsConnect.sbio );
+
+	/* Read the result. */
+	int readRes = BIO_gets( tlsConnect.sbio, buf, 32000 );
+	message("encrypted return to fetchCertificate is %s", buf );
+
+	/* If there was an error then fail the fetch. */
+	if ( readRes <= 0 )
+		return ERR_READ_ERROR;
+	
+	BIO *bioIn = tlsConnect.sbio;
+
+	/* Parser for response. */
+	%%{
+		include common;
+
+		main := 
+			'OK ' length M_EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	p = buf;
+	pe = buf + strlen(buf);
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
+	
+	if ( ! OK )
+		return ERR_SERVER_ERROR;
+	
+	pub.n = message_buffer.relinquish();
 
 	return 0;
 }

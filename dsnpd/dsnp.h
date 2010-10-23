@@ -418,6 +418,9 @@ struct NotifyAcceptResultParser
 	int parse( const char *msg, long mLen );
 };
 
+RSA *fetchCertificate( MYSQL *mysql, const char *identity );
+long fetchCertificateNet( PublicKey &pub, const char *site,
+		const char *host, const char *user );
 
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity );
 RSA *loadKey( MYSQL *mysql, const char *user );

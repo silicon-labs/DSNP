@@ -91,5 +91,34 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 
 	RSA_free( rsa );
 
+	/*
+	 * Allocate CERT
+	 */
+	String certDir( "%s/%s/certs", PKGSTATEDIR, c->name );
+	message( "cert dir is %s\n", certDir.data );
+
+	String commands(
+		"mkdir -p %s\n"
+		"rm %s/%s.*\n"
+		"openssl genrsa"
+		"	-out %s/%s.key 1024\n"
+		"openssl req -new"
+		"	-subj \"/CN=%s\""
+		"	-key %s/%s.key -out %s/%s.csr\n"
+		"openssl x509 -req -days 365"
+		"	-in %s/%s.csr"
+		"	-signkey %s/%s.key"
+		"	-out %s/%s.crt\n",
+		certDir.data, 
+		certDir.data, user,
+		certDir.data, user,
+		user,
+		certDir.data, user, certDir.data, user,
+		certDir.data, user,
+		certDir.data, user,
+		certDir.data, user
+	);
+	system( commands.data );
+
 	BIO_printf( bioOut, "OK\r\n" );
 }

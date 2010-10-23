@@ -13,7 +13,7 @@ long long addNetwork( MYSQL *mysql, long long userId, const char *name )
 	 * random selection here. */
 	DbQuery insert( mysql, 
 		"INSERT IGNORE INTO network "
-		"( user_id, name, dist_name, key_gen, tree_gen_low, tree_gen_high ) "
+		"( user_id, private_name, dist_name, key_gen, tree_gen_low, tree_gen_high ) "
 		"VALUES ( %L, %e, %e, 1, 1, 1 )",
 		userId, name, distNameStr.data
 	);

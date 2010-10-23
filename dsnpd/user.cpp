@@ -108,7 +108,9 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 		"openssl x509 -req -days 365"
 		"	-in %s/%s.csr"
 		"	-signkey %s/%s.key"
-		"	-out %s/%s.crt\n",
+		"	-out %s/%s.crt\n"
+		"sed -i 's/^--*BEGIN.*$//; s/^--*END.*$//; s,+,-,g; s,/,_,g; s,=,,g;' %s/%s.key %s/%s.csr %s/%s.crt\n"
+		"sed -i ':a;N;$!ba;s/\\n//g' %s/%s.key %s/%s.csr %s/%s.crt\n",
 		certDir.data, 
 		certDir.data, user,
 		certDir.data, user,
@@ -116,7 +118,9 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 		certDir.data, user, certDir.data, user,
 		certDir.data, user,
 		certDir.data, user,
-		certDir.data, user
+		certDir.data, user,
+		certDir.data, user, certDir.data, user, certDir.data, user,
+		certDir.data, user, certDir.data, user, certDir.data, user
 	);
 
 	system( commands.data );
@@ -137,9 +141,9 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	int keyLen = fread( key, 1, MAX_FL, keyFile );
 	int csrLen = fread( csr, 1, MAX_FL, csrFile );
 	int crtLen = fread( crt, 1, MAX_FL, crtFile );
-	key[keyLen] = 0;
-	csr[csrLen] = 0;
-	crt[crtLen] = 0;
+	key[keyLen-1] = 0;
+	csr[csrLen-1] = 0;
+	crt[crtLen-1] = 0;
 
 	/* Have to reconnect. */
 	mysql = dbConnect();

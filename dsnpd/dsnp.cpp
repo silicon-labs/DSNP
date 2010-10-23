@@ -193,25 +193,30 @@ void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 
 void publicKey( MYSQL *mysql, const char *user )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-
 	/* Query the user. */
-	exec_query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
-
-	/* Check for a result. */
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
+	DbQuery query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
+	if ( query.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		goto free_result;
+		return;
 	}
 
 	/* Everythings okay. */
+	MYSQL_ROW row = query.fetchRow();
 	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );
+}
 
-free_result:
-	mysql_free_result( result );
+void certificate( MYSQL *mysql, const char *user )
+{
+	/* Query the user. */
+	DbQuery query( mysql, "SELECT x509_crt FROM user WHERE user = %e", user );
+	if ( query.rows() == 0 ) {
+		BIO_printf( bioOut, "ERROR user not found\r\n" );
+		return;
+	}
+
+	/* Everythings okay. */
+	MYSQL_ROW row = query.fetchRow();
+	BIO_printf( bioOut, "OK %s\n", row[0] );
 }
 
 long open_inet_connection( const char *hostname, unsigned short port )

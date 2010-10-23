@@ -91,6 +91,7 @@ extern Global gbl;
 /* Commands. */
 void newUser( MYSQL *mysql, const char *user, const char *pass );
 void publicKey( MYSQL *mysql, const char *identity );
+void certificate( MYSQL *mysql, const char *identity );
 void relidRequest( MYSQL *mysql, const char *user, const char *identity );
 void fetchRequestedRelid( MYSQL *mysql, const char *reqid );
 void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity );

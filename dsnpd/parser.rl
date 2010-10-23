@@ -200,6 +200,12 @@ bool gblKeySubmitted = false;
 				publicKey( mysql, user );
 			} |
 
+		# Public key sharing.
+		'certificate'i ' ' user
+			EOL @check_ssl @{
+				certificate( mysql, user );
+			} |
+
 		# 
 		# Friend Request.
 		#

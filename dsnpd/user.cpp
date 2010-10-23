@@ -118,7 +118,40 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 		certDir.data, user,
 		certDir.data, user
 	);
+
 	system( commands.data );
+
+	String keyFileName( "%s/%s.key", certDir.data, user );
+	String csrFileName( "%s/%s.csr", certDir.data, user );
+	String crtFileName( "%s/%s.crt", certDir.data, user );
+	FILE *keyFile = fopen( keyFileName.data, "r" );
+	FILE *csrFile = fopen( csrFileName.data, "r" );
+	FILE *crtFile = fopen( crtFileName.data, "r" );
+
+	#define MAX_FL 16384
+
+	char *key = new char[MAX_FL];
+	char *csr = new char[MAX_FL];
+	char *crt = new char[MAX_FL];
+
+	int keyLen = fread( key, 1, MAX_FL, keyFile );
+	int csrLen = fread( csr, 1, MAX_FL, csrFile );
+	int crtLen = fread( crt, 1, MAX_FL, crtFile );
+	key[keyLen] = 0;
+	csr[csrLen] = 0;
+	crt[crtLen] = 0;
+
+	/* Have to reconnect. */
+	mysql = dbConnect();
+	DbQuery( mysql,
+		"UPDATE user "
+		"SET "
+		"	x509_key = %e, "
+		"	x509_csr = %e, "
+		"	x509_crt = %e "
+		"WHERE "
+		"	id = %L ",
+		key, csr, crt, userId );
 
 	BIO_printf( bioOut, "OK\r\n" );
 }

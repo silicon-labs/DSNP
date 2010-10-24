@@ -332,7 +332,7 @@ void makeCertsDir()
 	mkdir( dir2.data, 0777 );
 }
 
-void storeCertificate( MYSQL *mysql, const char *identity, char *cert )
+char *storeCertificate( MYSQL *mysql, const char *identity, char *cert )
 {
 	DbQuery( mysql,
 		"INSERT INTO certificate ( identity ) "
@@ -360,6 +360,8 @@ void storeCertificate( MYSQL *mysql, const char *identity, char *cert )
 	DbQuery( mysql,
 		"UPDATE certificate SET certificate = %e WHERE id = %L",
 		certFile.data, certId );
+
+	return certFile.relinquish();
 }
 
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
@@ -409,10 +411,8 @@ char *fetchCertificate( MYSQL *mysql, const char *identity )
 		cert = fetchCertificateNet( site, id.host, id.user );
 
 		if ( cert != 0 ) {
-			message( "got cert %s\n", cert );
-
 			/* Store it in the db. */
-			storeCertificate( mysql, identity, cert );
+			cert = storeCertificate( mysql, identity, cert );
 		}
 	}
 

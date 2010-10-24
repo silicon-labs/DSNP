@@ -73,6 +73,7 @@ struct Global
 		runQueue(false),
 		runConnect(false),
 		runIdConnect(false),
+		runFtfConnect(false),
 		test(false),
 		pid(0)
 	{}
@@ -82,6 +83,7 @@ struct Global
 	bool runQueue;
 	bool runConnect;
 	bool runIdConnect;
+	bool runFtfConnect;
 	bool test;
 	pid_t pid;
 };
@@ -250,6 +252,7 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
 void start_tls();
+void startFtf( MYSQL *mysql, char *relid );
 void startExchange();
 void startIdExchange();
 long base64ToBin( unsigned char *out, const char *src, long len );
@@ -286,6 +289,8 @@ struct TlsConnect
 	int connect( const char *host, const char *site );
 	int connect2( const char *host, const char *site );
 	int connect3( const char *host, const char *site );
+	int connect4( MYSQL *mysql, const char *host,
+		const char *site, const char *relid );
 	BIO *sbio;
 };
 
@@ -418,9 +423,9 @@ struct NotifyAcceptResultParser
 	int parse( const char *msg, long mLen );
 };
 
-RSA *fetchCertificate( MYSQL *mysql, const char *identity );
-long fetchCertificateNet( PublicKey &pub, const char *site,
-		const char *host, const char *user );
+char *fetchCertificate( MYSQL *mysql, const char *identity );
+char *fetchCertificateNet( const char *site, const char *host,
+		const char *user );
 
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity );
 RSA *loadKey( MYSQL *mysql, const char *user );

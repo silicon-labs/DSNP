@@ -311,55 +311,55 @@ query_fail:
 	return result;
 }
 
-long fetchCertificateDb( PublicKey &pub, MYSQL *mysql, const char *identity )
+char *fetchCertificateDb( MYSQL *mysql, const char *identity )
 {
-	long result = 0;
-	long query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql, 
+	DbQuery query( mysql, 
 		"SELECT certificate FROM certificate WHERE identity = %e", identity );
-	if ( query_res != 0 ) {
-		result = ERR_QUERY_ERROR;
-		goto query_fail;
-	}
+	if ( query.rows() == 0 )
+		return 0;
 
-	/* Check for a result. */
-	select_res= mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row ) {
-		pub.n = strdup( row[0] );
-		result = 1;
-	}
-
-	/* Done. */
-	mysql_free_result( select_res );
-
-query_fail:
-	return result;
+	MYSQL_ROW row = query.fetchRow();
+	return strdup( row[0] );
 }
 
-long storeCertificate( MYSQL *mysql, const char *identity, PublicKey &pub )
+void makeCertsDir()
+{
+	String dir1( "%s/%s", PKGSTATEDIR, c->name );
+	String dir2( "%s/%s/certs", PKGSTATEDIR, c->name );
+
+	/* try each time. */
+	mkdir( dir1.data, 0777 );
+	mkdir( dir2.data, 0777 );
+}
+
+void storeCertificate( MYSQL *mysql, const char *identity, char *cert )
 {
 	DbQuery( mysql,
-		"INSERT INTO certificate ( identity, certificate ) "
-		"VALUES ( %e, %e ) ", identity, pub.n );
+		"INSERT INTO certificate ( identity ) "
+		"VALUES ( %e ) ", identity );
 
-	long long userId = lastInsertId( mysql );
+	long long certId = lastInsertId( mysql );
 
 	String certDir( "%s/%s/certs", PKGSTATEDIR, c->name );
-	String certPrefix( "%s/%lld", certDir.data, userId );
-	String crtFile( "%s.crt", certPrefix.data );
+	String certPrefix( "%s/%lld", certDir.data, certId );
+	String certFile( "%s.crt", certPrefix.data );
+	message( "certPrefix: %s\n", certPrefix.data );
+	message( "certDir: %s\n", certDir.data );
+	message( "certFile: %s\n", certFile.data );
 
-	String command( "mkdir -p %s", certDir.data );
-	system( command.data );
+	makeCertsDir();
 
-	FILE *file = fopen( crtFile.data, "w" );
-	fwrite( pub.n, 1, strlen( pub.n ), file );
+	FILE *file = fopen( certFile.data, "w" );
+	if ( file == 0 ) {
+		fatal( "could not open %s for writing, "
+			"maybe a permissions problem\n", certFile.data );
+	}
+	fwrite( cert, 1, strlen(cert), file );
 	fclose( file );
 
-	return 0;
+	DbQuery( mysql,
+		"UPDATE certificate SET certificate = %e WHERE id = %L",
+		certFile.data, certId );
 }
 
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
@@ -395,37 +395,28 @@ RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 	return rsa;
 }
 
-RSA *fetchCertificate( MYSQL *mysql, const char *identity )
+char *fetchCertificate( MYSQL *mysql, const char *identity )
 {
-	PublicKey pub;
-	RSA *rsa;
-
 	Identity id( identity );
 	id.parse();
 
 	/* First try to fetch the public key from the database. */
-	long result = fetchCertificateDb( pub, mysql, identity );
-	if ( result < 0 )
-		return 0;
+	char *cert = fetchCertificateDb( mysql, identity );
 
-	/* If the db fetch failed, get the public key off the net. */
-	if ( result == 0 ) {
+	/* If the db fetch failed, try to get the cert with a net call. */
+	if ( cert == 0 ) {
 		char *site = get_site( identity );
-		result = fetchCertificateNet( pub, site, id.host, id.user );
-		if ( result < 0 )
-			return 0;
+		cert = fetchCertificateNet( site, id.host, id.user );
 
-		/* Store it in the db. */
-		result = storeCertificate( mysql, identity, pub );
-		if ( result < 0 )
-			return 0;
+		if ( cert != 0 ) {
+			message( "got cert %s\n", cert );
+
+			/* Store it in the db. */
+			storeCertificate( mysql, identity, cert );
+		}
 	}
 
-	rsa = RSA_new();
-	rsa->n = base64ToBn( pub.n );
-	rsa->e = base64ToBn( pub.e );
-
-	return rsa;
+	return cert;
 }
 
 

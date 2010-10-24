@@ -222,7 +222,6 @@ int runIdConnect()
 	/* There is a fork. */
 	mysql = dbConnect();
 
-
 	setConfigByName( "s1" );
 	message( "CFG_URI %s\n", c->CFG_URI );
 	TlsConnect tlsConnect;
@@ -244,3 +243,93 @@ int runIdConnect()
 	return 0;
 }
 
+void startFtf( MYSQL *mysql, char *relid )
+{
+	message("startFtf\n");
+
+	DbQuery friendClaim( mysql, 
+		"SELECT id, user, friend_id FROM friend_claim "
+		"WHERE get_relid = %e", relid );
+	if ( friendClaim.rows() != 1 )
+		fatal( "startFtf: bad relid\n" );
+
+	MYSQL_ROW row = friendClaim.fetchRow();	
+	//char *id = row[0];
+	char *user = row[1];
+	char *friendId = row[2];
+
+	message("starting FTF for %s %s\n", user, friendId );
+
+	DbQuery userQuery( mysql, 
+		"SELECT x509_key, x509_crt FROM user WHERE user = %e",
+		user );
+
+	if ( userQuery.rows() != 1 )
+		fatal( "startFtf: user not found\n" );
+
+	row = userQuery.fetchRow();
+	char *keyFileName = row[0];
+	char *crtFileName = row[0];
+
+	message( "using key %s crt %s\n", keyFileName, crtFileName );
+	
+	char *peerCert = fetchCertificate( mysql, friendId );
+	message( "using peer crt %s\n", peerCert );
+}
+
+int TlsConnect::connect4( MYSQL *mysql, const char *host,
+		const char *site, const char *relid )
+{
+	static char buf[8192];
+
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 ) {
+		error( "failed to connect to %s\n", host );
+		return -1;
+	}
+
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
+	message(
+		"SPP/0.1 %s\r\n"
+		"start_ftf %s\r\n",
+		site, relid );
+
+	/* Send the request. */
+	BIO_printf( buffer,
+		"SPP/0.1 %s\r\n"
+		"start_ftf %s\r\n",
+		site, relid );
+	BIO_flush( buffer );
+
+	/* Read the result. */
+	BIO_gets( buffer, buf, 8192 );
+
+//	/* Verify the result here. */
+//	sslInitClient3();
+//	sbio = sslStartClient3( socketBio, socketBio, host );
+
+	return 0;
+}
+
+int runFtfConnect()
+{
+	MYSQL *mysql = dbConnect();
+
+	setConfigByName( "s1" );
+	message( "CFG_URI %s\n", c->CFG_URI );
+
+	TlsConnect tlsConnect;
+	tlsConnect.connect4( 
+		mysql, 
+		"localhost", 
+		"https://localhost/s2/",
+		"ayqnL0oKgm3M8kn27_kt3w" );
+
+//	if ( result < 0 ) 
+//		return result;
+
+	return 0;
+}

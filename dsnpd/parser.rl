@@ -178,9 +178,15 @@ bool gblKeySubmitted = false;
 		ssl = true;
 	}
 
+	action start_ftf {
+		startFtf( mysql, relid );
+		ftf = true;
+	}
+
 	commands := (
 		'comm_key'i ' ' key EOL @comm_key |
 		'start_tls'i EOL @start_tls |
+		'start_ftf'i ' ' relid EOL @start_ftf |
 		'start_exchange'i EOL @start_exchange |
 		'start_id_exchange'i EOL @start_id_exchange |
 		'login'i ' ' user ' ' pass 
@@ -388,6 +394,7 @@ int serverParseLoop()
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
+	bool ftf = false;
 	bool exit = false;
 
 	%% write init;
@@ -800,7 +807,7 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	write data;
 }%%
 
-long fetchCertificateNet( PublicKey &pub, const char *site, 
+char *fetchCertificateNet( const char *site, 
 		const char *host, const char *user )
 {
 	static char buf[8192];
@@ -816,7 +823,7 @@ long fetchCertificateNet( PublicKey &pub, const char *site,
 	TlsConnect tlsConnect;
 	int result = tlsConnect.connect( host, site );
 	if ( result < 0 ) 
-		return result;
+		return 0;
 
 	message( "fetching certificate for %s from host %s site %s\n", user, host, site );
 
@@ -829,7 +836,7 @@ long fetchCertificateNet( PublicKey &pub, const char *site,
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
+		return 0;
 	
 	BIO *bioIn = tlsConnect.sbio;
 
@@ -850,14 +857,12 @@ long fetchCertificateNet( PublicKey &pub, const char *site,
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
+		return 0;
 	
 	if ( ! OK )
-		return ERR_SERVER_ERROR;
+		return 0;
 	
-	pub.n = message_buffer.relinquish();
-
-	return 0;
+	return message_buffer.relinquish();
 }
 
 /*

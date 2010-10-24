@@ -199,5 +199,3 @@ void start_tls()
 	sslInitServer();
 	bioIn = bioOut = sslStartServer( bioIn, bioOut );
 }
-
-

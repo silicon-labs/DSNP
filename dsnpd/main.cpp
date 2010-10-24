@@ -50,7 +50,7 @@ void read_rcfile( const char *confFile )
 int checkArgs( int argc, char **argv )
 {
 	while ( true ) {
-		int opt = getopt( argc, argv, "q:tcif" );
+		int opt = getopt( argc, argv, "q:tcifp" );
 
 		if ( opt < 0 )
 			break;
@@ -64,6 +64,9 @@ int checkArgs( int argc, char **argv )
 				break;
 			case 'f':
 				gbl.runFtfConnect = true;
+				break;
+			case 'p':
+				gbl.runPreConnect = true;
 				break;
 			case 'q':
 				gbl.runQueue = true;
@@ -139,6 +142,7 @@ int runTest();
 int runConnect();
 int runIdConnect();
 int runFtfConnect();
+int runPreConnect();
 
 int main( int argc, char **argv )
 {
@@ -165,6 +169,8 @@ int main( int argc, char **argv )
 		runIdConnect();
 	else if ( gbl.runFtfConnect )
 		runFtfConnect();
+	else if ( gbl.runPreConnect )
+		runPreConnect();
 	else if ( gbl.test )
 		runTest();
 	else 

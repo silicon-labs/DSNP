@@ -426,6 +426,48 @@ void startFtf( MYSQL *mysql, char *relid )
 
 }
 
+void startPreFriend( MYSQL *mysql, char *reqid )
+{
+	DbQuery relidRequestQuery( mysql, 
+		"SELECT for_user, from_id FROM relid_request "
+		"WHERE reqid = %e", reqid );
+	if ( relidRequestQuery.rows() != 1 )
+		fatal( "startPreFriend: bad reqid\n" );
+
+	MYSQL_ROW row = relidRequestQuery.fetchRow();	
+	char *user = row[0];
+	char *friendId = row[1];
+
+	message("starting FTF for %s %s\n", user, friendId );
+
+	DbQuery userQuery( mysql, 
+		"SELECT x509_key, x509_crt FROM user WHERE user = %e",
+		user );
+
+	if ( userQuery.rows() != 1 )
+		fatal( "startFtf: user not found\n" );
+
+	row = userQuery.fetchRow();
+	char *keyFileName = row[0];
+	char *crtFileName = row[1];
+
+	message( "using key %s\n", keyFileName );
+	message( "using crt %s\n", crtFileName );
+	
+	char *peerCert = fetchCertificate( mysql, friendId );
+	message( "on server using peer crt %s\n", peerCert );
+
+	BIO_printf( bioOut, "OK\r\n" );
+	BIO_flush( bioOut );
+
+	/* Don't need the buffering wrappers anymore. */
+	bioIn = BIO_pop( bioIn );
+	bioOut = BIO_pop( bioOut );
+
+	sslInitServer4( keyFileName, crtFileName, peerCert );
+	bioIn = bioOut = sslStartServer4( bioIn, bioOut );
+}
+
 int TlsConnect::connect4( MYSQL *mysql, const char *host,
 		const char *site, const char *relid, 
 		const char *user, const char *friendId )
@@ -474,6 +516,55 @@ int TlsConnect::connect4( MYSQL *mysql, const char *host,
 	return 0;
 }
 
+int TlsConnect::connect5( MYSQL *mysql, const char *host,
+		const char *site, const char *reqid, 
+		const char *user, const char *friendId )
+{
+	static char buf[8192];
+
+	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
+	if ( socketFd < 0 ) {
+		error( "failed to connect to %s\n", host );
+		return -1;
+	}
+
+	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
+	BIO *buffer = BIO_new( BIO_f_buffer() );
+	BIO_push( buffer, socketBio );
+
+	/* Send the request. */
+	BIO_printf( buffer,
+		"SPP/0.1 %s\r\n"
+		"start_pre %s\r\n",
+		site, reqid );
+	BIO_flush( buffer );
+
+	/* Read the result. */
+	BIO_gets( buffer, buf, 8192 );
+
+	message( "fetching peer crt %s\n", friendId );
+	char *peerCert = fetchCertificate( mysql, friendId );
+	message( "on client using peer crt %s\n", peerCert );
+
+	DbQuery userQuery( mysql,
+		"SELECT x509_key, x509_crt FROM user WHERE user = %e",
+		user );
+	
+	if ( userQuery.rows() == 0 )
+		fatal("connect5: could not find user %s\n", user );
+
+	MYSQL_ROW row = userQuery.fetchRow();
+	const char *keyFile = row[0];
+	const char *crtFile = row[1];
+
+	/* Verify the result here. */
+	sslInitClient4( keyFile, crtFile, peerCert );
+	sbio = sslStartClient4( socketBio, socketBio, host );
+
+	return 0;
+}
+
+
 int runFtfConnect()
 {
 	setConfigByName( "s1" );
@@ -489,8 +580,23 @@ int runFtfConnect()
 		"https://localhost/s2/michelle/"
 	);
 
-//	if ( result < 0 ) 
-//		return result;
+	return 0;
+}
+
+int runPreConnect()
+{
+	setConfigByName( "s1" );
+	MYSQL *mysql = dbConnect();
+
+	TlsConnect tlsConnect;
+	tlsConnect.connect5( 
+		mysql, 
+		"localhost", 
+		"https://localhost/s2/",
+		"Uc19cw81K-U3JR8K-G2D0Q",
+		"age",
+		"https://localhost/s2/michelle/"
+	);
 
 	return 0;
 }

@@ -74,6 +74,7 @@ struct Global
 		runConnect(false),
 		runIdConnect(false),
 		runFtfConnect(false),
+		runPreConnect(false),
 		test(false),
 		pid(0)
 	{}
@@ -84,6 +85,7 @@ struct Global
 	bool runConnect;
 	bool runIdConnect;
 	bool runFtfConnect;
+	bool runPreConnect;
 	bool test;
 	pid_t pid;
 };
@@ -292,6 +294,9 @@ struct TlsConnect
 	int connect4( MYSQL *mysql, const char *host,
 		const char *site, const char *relid, 
 		const char *user, const char *friendId );
+	int connect5( MYSQL *mysql, const char *host,
+		const char *site, const char *relid, 
+		const char *user, const char *friendId );
 	BIO *sbio;
 };
 
@@ -472,6 +477,8 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 long long addNetwork( MYSQL *mysql, long long userId, const char *privateName );
 
 AllocString passHash( const u_char *pass_salt, const char *pass );
+
+void startPreFriend( MYSQL *mysql, char *reqid );
 
 #define LOGIN_TOKEN_LASTS 86400
 

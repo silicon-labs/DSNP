@@ -183,10 +183,16 @@ bool gblKeySubmitted = false;
 		ftf = true;
 	}
 
+	action start_pre {
+		startPreFriend( mysql, relid );
+		ftf = true;
+	}
+
 	commands := (
 		'comm_key'i ' ' key EOL @comm_key |
 		'start_tls'i EOL @start_tls |
 		'start_ftf'i ' ' relid EOL @start_ftf |
+		'start_pre'i ' ' relid EOL @start_pre |
 		'start_exchange'i EOL @start_exchange |
 		'start_id_exchange'i EOL @start_id_exchange |
 		'login'i ' ' user ' ' pass 

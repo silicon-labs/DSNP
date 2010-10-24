@@ -290,7 +290,6 @@ struct TlsConnect
 {
 	int connect( const char *host, const char *site );
 	int connect2( const char *host, const char *site );
-	int connect3( const char *host, const char *site );
 	int connect4( MYSQL *mysql, const char *host,
 		const char *site, const char *relid, 
 		const char *user, const char *friendId );

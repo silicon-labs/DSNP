@@ -59,9 +59,6 @@ int checkArgs( int argc, char **argv )
 			case 'c':
 				gbl.runConnect = true;
 				break;
-			case 'i':
-				gbl.runIdConnect = true;
-				break;
 			case 'f':
 				gbl.runFtfConnect = true;
 				break;
@@ -140,7 +137,6 @@ int serverMain()
 
 int runTest();
 int runConnect();
-int runIdConnect();
 int runFtfConnect();
 int runPreConnect();
 
@@ -165,8 +161,6 @@ int main( int argc, char **argv )
 		runQueue( gbl.siteName );
 	else if ( gbl.runConnect )
 		runConnect();
-	else if ( gbl.runIdConnect )
-		runIdConnect();
 	else if ( gbl.runFtfConnect )
 		runFtfConnect();
 	else if ( gbl.runPreConnect )

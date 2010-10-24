@@ -20,21 +20,33 @@ global $CFG_PATH;
 
 ?>
 
-<h2>SPP: Administration</h2>
+<table><tr>
 
-<p>Installation: <a href="../"><?php print $CFG_URI;?></a>
+<td id="leftcol">
 
-<p>You are logged in as <b>admin</b> (<a href="logout.php">logout</a>)<br>
-<h2>Actions</h2>
-<a href="newuser.php">new user</a>
+<div class="content">
 
+<h3>DSNP User-Agent One</h3>
+
+<p>
+<a href="admin/newuser">create new user</a>
+
+</div>
+</td>
+
+<td id="activity">
+
+<div class="content">
 <h2>Users</h2>
-
+<p>
 <?php
 
 foreach ( $users as $row ) {
 	$user = $row['user'];
 	echo '<a href="' . $CFG_PATH . $user . '/"/>' . $user . '</a><br>';
 }
-
 ?>
+</div>
+</td>
+</tr>
+</table>

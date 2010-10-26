@@ -6,5 +6,10 @@ class Admin extends Controller
 	function newuser()
 	{
 	}
+
+	function snewuser()
+	{
+
+	}
 }
 ?>

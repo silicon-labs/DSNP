@@ -3,18 +3,32 @@
 if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
-if ( !isset( $url ) )
-	$url = 'index';
+if ( !isset( $url ) ) {
+	# If there is no URL then default to index/cindex
+	$route = array( 'main', 'index' );
+}
+else {
+	# Split on '/'.
+	$route = explode( '/', $url );
 
-$route = explode( '/', $url );
-if ( !isset( $route[1] ) )
-	$route[1] = 'cindex';
+	# Validate the component names.
+	foreach ( $route as $component ) {
+		if ( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-]*$/', $component ) )
+			die( "route component $component does not validate" );
+	}
+
+	# If the first element of the route is anything but 'admin', then it is a
+	# user. Shift the array to get the controller at the head.
+	if ( $route[0] !== 'admin' )
+		$user = array_shift( $route );
+
+	# If there is no function then default it to cindex.
+	if ( !isset( $route[1] ) )
+		$route[1] = 'index';
+
+}
 
 foreach ( $route as $component ) {
-	# Validate.
-	if ( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-]*$/', $component ) )
-		die( "route component $component does not validate" );
-
 	# Derive a class name by stripping out underscores and dashes. We can
 	# expect this to be non-empty because the above regex requires alpha as the
 	# first character.

@@ -1,7 +1,7 @@
 <?php
 
 define( 'DS', DIRECTORY_SEPARATOR );
-define( 'ROOT', dirname(dirname(dirname(__FILE__))) );
+define( 'ROOT', dirname(dirname(__FILE__)) );
 define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
 /* Location of the data files. */

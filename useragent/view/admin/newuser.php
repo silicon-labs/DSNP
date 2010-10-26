@@ -37,7 +37,6 @@ global $CFG_PATH;
 
 <h2>Create User</h2>
 
-
 <form method="post" action="<?echo $CFG_PATH;?>admin/snewuser">
 <table>
 <tr>

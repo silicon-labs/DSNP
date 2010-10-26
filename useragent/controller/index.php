@@ -1,5 +1,5 @@
 <?
-class Main extends Controller
+class IndexController extends Controller
 {
 	var $vars = array();
 

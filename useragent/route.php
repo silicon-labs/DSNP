@@ -4,8 +4,8 @@ if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
 if ( !isset( $url ) ) {
-	# If there is no URL then default to index/cindex
-	$route = array( 'main', 'index' );
+	# If there is no URL then default to index/index
+	$route = array( 'index', 'index' );
 }
 else {
 	# Split on '/'.
@@ -22,10 +22,9 @@ else {
 	if ( $route[0] !== 'admin' )
 		$user = array_shift( $route );
 
-	# If there is no function then default it to cindex.
+	# If there is no function then default it to index.
 	if ( !isset( $route[1] ) )
 		$route[1] = 'index';
-
 }
 
 foreach ( $route as $component ) {
@@ -42,24 +41,27 @@ if ( !file_exists( $controllerFile ) )
 
 # Make sure the controller class does not exist already.
 $controllerName = $className[$route[0]];
-if ( class_exists( $controllerName ) )
-	die("internal error: controller '$controllerName' is prexisting");
+$controllerClassName = $controllerName . "Controller";
+if ( class_exists( $controllerClassName ) )
+	die("internal error: controller '$controllerClassName' is prexisting");
 
 # Include the file and make sure we have the class now.
 include( $controllerFile );
 
-if ( ! class_exists( $controllerName ) )
-	die("internal error: controller '$controllerName' class not defined in $controllerFile");
+if ( ! class_exists( $controllerClassName ) ) {
+	die("internal error: controller '$controllerClassName' class " . 
+		"not defined in $controllerFile");
+}
 
 # Allocate controller.
-$controller = new $controllerName;
+$controller = new $controllerClassName;
 if ( !is_object( $controller ) )
 	die("internal error: failed to allocate controller");
 
 # Find method
 $methodName = $className[$route[1]];
 if ( !method_exists( $controller, $methodName ) )
-	die("invalid URL: method $methodName not present in $controllerName");
+	die("invalid URL: method $methodName not present in $controllerClassName");
 
 $controller->controller = $controllerName;
 $controller->method = $methodName

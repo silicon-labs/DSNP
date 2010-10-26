@@ -1,5 +1,5 @@
 <?
-class Admin extends Controller
+class AdminController extends Controller
 {
 	var $vars = array();
 

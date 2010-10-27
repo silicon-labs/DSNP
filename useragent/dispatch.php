@@ -12,8 +12,9 @@ foreach ( $controller->vars as $name => $value ) {
 	$GLOBALS[$name] = $value;
 }
 
-require( ROOT . DS . 'header.php' );
-require( $viewFile );
-require( ROOT . DS . 'footer.php' );
-
+if ( $controller->hasView ) {
+	require( ROOT . DS . 'header.php' );
+	require( $viewFile );
+	require( ROOT . DS . 'footer.php' );
+}
 ?>

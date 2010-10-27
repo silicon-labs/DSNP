@@ -53,7 +53,7 @@ global $CFG_PATH;
 		Password
 	</td>
 	<td>
-	<input name="password1" type="password"/>
+	<input name="pass1" type="password"/>
 	</td>
 </tr>
 
@@ -62,7 +62,7 @@ global $CFG_PATH;
 		Pass Again
 	</td>
 	<td>
-	<input name="password2" type="password"/>
+	<input name="pass2" type="password"/>
 	</td>
 </tr>
 <tr>

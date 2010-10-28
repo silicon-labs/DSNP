@@ -23,13 +23,13 @@ class SiteController extends Controller
 		if ( $pass1 != $pass2 )
 			die("password mismatch");
 
-		$fp = fsockopen( 'localhost', $this->CFG_PORT );
+		$fp = fsockopen( 'localhost', $this->CFG[PORT] );
 		if ( !$fp )
 			exit(1);
 
 		$send = 
-			"SPP/0.1 $this->CFG_URI\r\n" . 
-			"comm_key $this->CFG_COMM_KEY\r\n" .
+			"SPP/0.1 " . $this->CFG[URI] . "\r\n" . 
+			"comm_key " . $this->CFG[COMM_KEY] . "\r\n" .
 			"new_user $user $pass1\r\n";
 		fwrite($fp, $send);
 
@@ -37,7 +37,7 @@ class SiteController extends Controller
 		if ( !ereg("^OK", $res) )
 			die( "FAILURE *** New user creation failed with: <br> $res" );
    	
-		$identity = $this->CFG_URI . $user . '/';
+		$identity = $this->CFG[URI] . $user . '/';
 		dbQuery( "UPDATE user SET name = %e, identity = %e, " .
 			"type = %l WHERE user = %e ",
 			$user, $identity, 0, $user );
@@ -46,7 +46,7 @@ class SiteController extends Controller
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";
 		system( $photoDirCmd );
 
-		$this->redirect( $this->CFG_PATH );
+		$this->redirect( $this->CFG[PATH] );
 	}
 }
 ?>

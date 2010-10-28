@@ -8,24 +8,9 @@ define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 /* This choose the site to configure for. */
 require( PREFIX . DS . 'etc' . DS . 'config.php' );
 
-define( 'CFG_NAME', $CFG_NAME );
-define( 'CFG_URI', $CFG_URI );
-define( 'CFG_HOST', $CFG_HOST );
-define( 'CFG_PATH', $CFG_PATH );
-define( 'CFG_DB_HOST', $CFG_DB_HOST );
-define( 'CFG_DB_USER', $CFG_DB_USER );
-define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
-define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
-define( 'CFG_COMM_KEY', $CFG_COMM_KEY );
-define( 'CFG_PORT', $CFG_PORT );
-define( 'CFG_USE_RECAPTCHA', $CFG_USE_RECAPTCHA );
-define( 'CFG_RC_PUBLIC_KEY', $CFG_RC_PUBLIC_KEY );
-define( 'CFG_RC_PRIVATE_KEY', $CFG_RC_PRIVATE_KEY );
-define( 'CFG_PHOTO_DIR', $CFG_PHOTO_DIR );
-define( 'CFG_IM_CONVERT', $CFG_IM_CONVERT );
-define( 'CFG_SITE_NAME', $CFG_SITE_NAME );
 
 require( ROOT . DS . 'controller.php' );
+require( ROOT . DS . 'view.php' );
 require( ROOT . DS . 'database.php' );
 require( ROOT . DS . 'route.php' );
 require( ROOT . DS . 'dispatch.php' );

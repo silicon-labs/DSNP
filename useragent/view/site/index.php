@@ -15,9 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-global $CFG_URI;
-global $CFG_PATH;
-
 ?>
 
 <table><tr>
@@ -26,10 +23,10 @@ global $CFG_PATH;
 
 <div class="content">
 
-<h3>DSNP User-Agent One</h3>
+<h3>DSNP User-Agent One <?php echo$CFG[SITE];?></h3>
 
 <p>
-<a href="admin/newuser">create new user</a>
+<a href="site/newuser">create new user</a>
 
 </div>
 </td>
@@ -43,7 +40,7 @@ global $CFG_PATH;
 
 foreach ( $users as $row ) {
 	$user = $row['user'];
-	echo '<a href="' . $CFG_PATH . $user . '/"/>' . $user . '</a><br>';
+	echo '<a href="' . $CFG[PATH] . $user . '/"/>' . $user . '</a><br>';
 }
 ?>
 </div>

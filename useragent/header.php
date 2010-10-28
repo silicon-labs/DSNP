@@ -3,19 +3,19 @@
 	<?php /*echo $html->charset(); */?>
 	<title>
 		<?php 
-			echo $CFG_SITE_NAME;
+			echo $CFG[SITE_NAME];
 			if ( isset( $USER_NAME ) )
 				echo ": $USER_NAME";
 		?>
 	</title>
-	<link href="<?echo $CFG_PATH;?>css/duao.css" rel="stylesheet" type="text/css"/>
+	<link href="<?echo $CFG[PATH];?>css/duao.css" rel="stylesheet" type="text/css"/>
 </head>
 <body>
 	<div id="header">
 	<table><tr>
 		<td id="header_left"><div class="header_content">
 		<h1>
-				<a href="<?php echo $CFG_URI?>"><?php echo $CFG_SITE_NAME;?></a>
+				<a href="<?php echo $CFG[URI]?>"><?php echo $CFG[SITE_NAME];?></a>
 		</h1>
 		</div></td>
 

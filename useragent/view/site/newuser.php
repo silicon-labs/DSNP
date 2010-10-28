@@ -15,9 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-global $CFG_URI;
-global $CFG_PATH;
-
 ?>
 
 
@@ -37,7 +34,7 @@ global $CFG_PATH;
 
 <h2>Create User</h2>
 
-<form method="post" action="<?echo $CFG_PATH;?>admin/snewuser">
+<form method="post" action="<?echo $CFG[PATH];?>site/snewuser">
 <table>
 <tr>
 	<td>

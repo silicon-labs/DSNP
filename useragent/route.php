@@ -4,23 +4,34 @@ if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
 if ( !isset( $url ) ) {
-	# If there is no URL then default to index/index
-	$route = array( 'index', 'index' );
+	# If there is no URL then default to site/index
+	$route = array( 'site', 'index' );
 }
 else {
 	# Split on '/'.
 	$route = explode( '/', $url );
 
 	# Validate the component names.
+	$normalizedRoute = array();
 	foreach ( $route as $component ) {
-		if ( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-]*$/', $component ) )
-			die( "route component $component does not validate" );
+		if ( $component === "" )
+			continue;
+		else if	( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-]*$/', $component ) )
+			die( "route component '$component' does not validate" );
+		else {
+			$normalizedRoute[] = $component;
+		}
 	}
+	$route = $normalizedRoute;
 
-	# If the first element of the route is anything but 'admin', then it is a
+	# If the first element of the route is anything but 'site', then it is a
 	# user. Shift the array to get the controller at the head.
-	if ( $route[0] !== 'admin' )
+	if ( $route[0] !== 'site' )
 		$user = array_shift( $route );
+
+	# If there is no function then default it to index.
+	if ( !isset( $route[0] ) )
+		$route[0] = 'index';
 
 	# If there is no function then default it to index.
 	if ( !isset( $route[1] ) )

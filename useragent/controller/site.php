@@ -1,7 +1,14 @@
 <?
-class AdminController extends Controller
+class SiteController extends Controller
 {
 	var $vars = array();
+
+	function index()
+	{
+		# Load the user's sent friend requests
+		$users = dbQuery( "SELECT * from user" );
+		$this->vars['users'] = $users;
+	}
 
 	function newuser()
 	{

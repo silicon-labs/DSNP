@@ -1,5 +1,4 @@
 <?php
-$USER_NAME = null;
 
 if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
@@ -13,6 +12,39 @@ $BROWSER[USER] = null;
 $BROWSER[NAME] = null;
 $BROWSER[ID] = null;
 $BROWSER[URI] = null;
+
+function checkUserDb()
+{
+	global $CFG;
+	global $USER;
+	$result = dbQuery( 
+		"SELECT id, user, identity, name FROM user WHERE user = %e",
+		$USER[USER] );
+
+	if ( count( $result ) != 1 )
+		die("ERROR: user $USER[USER] not found in database");
+
+	# Turn result int first row.
+	$result = $result[0];
+
+	$USER[ID] = $user['id'];
+	$USER[URI] =  "$CFG[URI]$USER[USER]/";
+
+#	$this->USER_NAME = $user['user'];
+#	$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";
+#	$this->USER_ID = $result['id'];
+#	$this->USER = $user;
+#
+#	/* Default these to something not too revealing. At session activation
+#	 * time we will upgrade if the role allows it. */
+#	$this->USER['display_short'] = $this->USER['user'];
+#	$this->USER['display_long'] = $this->USER['identity'];
+}
+
+function checkUser()
+{
+	checkUserDb();
+}
 
 if ( !isset( $url ) ) {
 	# If there is no URL then default to site/index.
@@ -39,7 +71,9 @@ else {
 	# If the first element of the route is anything but 'site', then it is a
 	# user. Shift the array to get the controller at the head.
 	if ( $route[0] !== 'site' )
-		$USER_NAME = array_shift( $route );
+		$USER[USER] = array_shift( $route );
+	
+	checkUser();
 
 	# If there is no function then default it to index.
 	if ( !isset( $route[0] ) )
@@ -49,6 +83,7 @@ else {
 	if ( !isset( $route[1] ) )
 		$route[1] = 'index';
 }
+
 
 foreach ( $route as $component ) {
 	# Derive a class name by stripping out underscores and dashes. We can
@@ -66,25 +101,25 @@ if ( !file_exists( $controllerFile ) )
 $controllerName = $className[$route[0]];
 $controllerClassName = $controllerName . "Controller";
 if ( class_exists( $controllerClassName ) )
-	die("internal error: controller '$controllerClassName' is prexisting");
+	die("ERROR: controller '$controllerClassName' is prexisting");
 
 # Include the file and make sure we have the class now.
 include( $controllerFile );
 
 if ( ! class_exists( $controllerClassName ) ) {
-	die("internal error: controller '$controllerClassName' class " . 
+	die("ERROR: controller '$controllerClassName' class " . 
 		"not defined in $controllerFile");
 }
 
 # Allocate controller.
 $controller = new $controllerClassName;
 if ( !is_object( $controller ) )
-	die("internal error: failed to allocate controller");
+	die("ERROR: failed to allocate controller");
 
 # Find method
 $methodName = $className[$route[1]];
 if ( !method_exists( $controller, $methodName ) )
-	die("invalid URL: method $methodName not present in $controllerClassName");
+	die("ERROR: invalid URL: method $methodName not present in $controllerClassName");
 
 $controller->controller = $controllerName;
 $controller->method = $methodName

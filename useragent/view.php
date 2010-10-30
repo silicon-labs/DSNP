@@ -16,7 +16,7 @@ class View
 			${$name} = $value;
 
 		global $CFG;
-		global $USER_NAME;
+		global $USER;
 
 		require( ROOT . DS . 'header.php' );
 		require( $this->viewFile );

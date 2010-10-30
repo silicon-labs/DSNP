@@ -23,7 +23,7 @@
 <td id="leftcol">
 
 <div id="details">
-<h2><?php print $USER_NAME;?></h2>
+<h2><?php print $USER[USER];?></h2>
 </div>
 
 </td>
@@ -34,7 +34,7 @@
 <h3>Login</h3>
 
 <? 
-echo $this->link( "login as $USER_NAME", "/$USER_NAME/cred/login" );
+echo $this->link( "login as $USER[USER]", "/$USER[USER]/cred/login" );
 ?>
 
 </div>
@@ -42,7 +42,7 @@ echo $this->link( "login as $USER_NAME", "/$USER_NAME/cred/login" );
 <div class="content">
 <h3>Become Friend</h3>
 <? 
-echo $this->link( "become a friend of $USER_NAME", "/$USER_NAME/freq/submit" ); 
+echo $this->link( "become a friend of $USER[USER]", "/$USER[USER]/freq/submit" ); 
 ?>
 </div>
 

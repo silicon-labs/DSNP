@@ -7,9 +7,10 @@ class FreqController extends Controller
 
 	function sbecome()
 	{
+		global $USER;
 		$identity = $_POST['identity'];
 
-		if ( $identity === $this->USER_URI ) {
+		if ( $identity === $this->USER[URI] ) {
 			$this->error(
 				'The identity submitted belongs to this user.',
 				'It is not possible to friend request oneself.'

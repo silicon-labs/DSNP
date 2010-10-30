@@ -47,16 +47,10 @@ class Controller
 	function Controller()
 	{
 		global $CFG;
-		global $USER_NAME;
-
-		# Connect to the database.
-		$conn = mysql_connect( $CFG[DB_HOST], $CFG[DB_USER], $CFG[ADMIN_PASS] )
-			or die ('ERROR: could not connect to database');
-		mysql_select_db( $CFG[DB_DATABASE] ) 
-			or die('ERROR: could not select database ' . $CFG[DB_DATABASE] );
+		global $USER;
 
 		$this->CFG = $CFG;
-		$this->USER_NAME = $USER_NAME;
+		$this->USER = $USER;
 	}
 
 	function redirect( $location )

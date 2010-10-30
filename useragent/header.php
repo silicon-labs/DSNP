@@ -8,7 +8,8 @@
 				echo ": $USER_NAME";
 		?>
 	</title>
-	<link href="<?echo $CFG[PATH];?>css/duao.css" rel="stylesheet" type="text/css"/>
+	<link href="<?echo $CFG[PATH];?>/css/duao.css"
+		rel="stylesheet" type="text/css"/>
 </head>
 <body>
 	<div id="header">

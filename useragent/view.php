@@ -17,10 +17,17 @@ class View
 		}
 
 		global $CFG;
+		global $USER_NAME;
 
 		require( ROOT . DS . 'header.php' );
 		require( $this->viewFile );
 		require( ROOT . DS . 'footer.php' );
+	}
+
+	function link( $text, $location )
+	{
+		global $CFG;
+		print "<a href=" . $CFG[PATH] . $location . ">" . $text . "</a>";
 	}
 }
 ?>

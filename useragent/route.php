@@ -1,4 +1,5 @@
 <?php
+$USER_NAME = null;
 
 if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
@@ -27,7 +28,7 @@ else {
 	# If the first element of the route is anything but 'site', then it is a
 	# user. Shift the array to get the controller at the head.
 	if ( $route[0] !== 'site' )
-		$user = array_shift( $route );
+		$USER_NAME = array_shift( $route );
 
 	# If there is no function then default it to index.
 	if ( !isset( $route[0] ) )

@@ -34,7 +34,7 @@
 <h3>Login</h3>
 
 <? 
-#echo $html->link( "login as $USER_NAME", "/$USER_NAME/cred/login" );
+echo $this->link( "login as $USER_NAME", "/$USER_NAME/cred/login" );
 ?>
 
 </div>
@@ -42,7 +42,7 @@
 <div class="content">
 <h3>Become Friend</h3>
 <? 
-#echo $html->link( "become a friend of $USER_NAME", "/$USER_NAME/freq/submit" ); 
+echo $this->link( "become a friend of $USER_NAME", "/$USER_NAME/freq/submit" ); 
 ?>
 </div>
 

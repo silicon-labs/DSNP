@@ -39,10 +39,12 @@ class Controller
 	var $method = null;
 	var $hasView = true;
 	var $CFG = null;
+	var $USER_NAME = null;
 
 	function Controller()
 	{
 		global $CFG;
+		global $USER_NAME;
 
 		# Connect to the database.
 		$conn = mysql_connect( $CFG[DB_HOST], $CFG[DB_USER], $CFG[ADMIN_PASS] )
@@ -51,6 +53,7 @@ class Controller
 			or die('ERROR: could not select database ' . $CFG[DB_DATABASE] );
 
 		$this->CFG = $CFG;
+		$this->USER_NAME = $USER_NAME;
 	}
 
 	function redirect( $location )

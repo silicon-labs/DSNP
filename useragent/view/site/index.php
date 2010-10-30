@@ -40,7 +40,8 @@
 
 foreach ( $users as $row ) {
 	$user = $row['user'];
-	echo '<a href="' . $CFG[PATH] . $user . '/"/>' . $user . '</a><br>';
+	$this->link( $user, "/$user/" );
+	echo '<br>';
 }
 ?>
 </div>

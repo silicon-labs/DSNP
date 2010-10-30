@@ -4,8 +4,19 @@ $USER_NAME = null;
 if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
+$USER[USER] = null;
+$USER[NAME] = null;
+$USER[ID] = null;
+$USER[URI] = null;
+
+$BROWSER[USER] = null;
+$BROWSER[NAME] = null;
+$BROWSER[ID] = null;
+$BROWSER[URI] = null;
+
 if ( !isset( $url ) ) {
-	# If there is no URL then default to site/index
+	# If there is no URL then default to site/index.
+	# No username.
 	$route = array( 'site', 'index' );
 }
 else {

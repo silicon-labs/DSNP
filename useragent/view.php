@@ -12,9 +12,8 @@ class View
 
 	function dispatch()
 	{
-		foreach ( $this->controller->vars as $name => $value ) {
+		foreach ( $this->controller->vars as $name => $value )
 			${$name} = $value;
-		}
 
 		global $CFG;
 		global $USER_NAME;

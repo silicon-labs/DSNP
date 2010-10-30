@@ -41,6 +41,9 @@ class Controller
 	var $CFG = null;
 	var $USER_NAME = null;
 
+	/* Filled by controllers, made avaialable in views. Each var is defined. */
+	var $vars = array();
+
 	function Controller()
 	{
 		global $CFG;
@@ -60,6 +63,12 @@ class Controller
 	{
 		header("Location: $location");
 		$this->hasView = false;
+	}
+
+	function error( $short, $details )
+	{
+		print $short . "<br>" . $details;
+		exit;
 	}
 }
 ?>

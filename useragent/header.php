@@ -16,7 +16,7 @@
 	<table><tr>
 		<td id="header_left"><div class="header_content">
 		<h1>
-				<a href="<?php echo $CFG[URI]?>"><?php echo $CFG[SITE_NAME];?></a>
+				<?php $this->link( $CFG[SITE_NAME], '/' ); ?>
 		</h1>
 		</div></td>
 

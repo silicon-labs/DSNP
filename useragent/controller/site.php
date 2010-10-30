@@ -1,8 +1,6 @@
 <?
 class SiteController extends Controller
 {
-	var $vars = array();
-
 	function index()
 	{
 		# Load the user's sent friend requests

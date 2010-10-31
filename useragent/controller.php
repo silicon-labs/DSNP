@@ -18,6 +18,14 @@ class Connection
 		fwrite( $this->fp, $send );
 	}
 
+	function openLocalPriv()
+	{
+		global $CFG;
+		$this->openLocal();
+		$send = "comm_key " . $CFG[COMM_KEY] . "\r\n";
+		fwrite( $this->fp, $send );
+	}
+
 	function command( $cmd )
 	{
 		fwrite( $this->fp, $cmd );
@@ -53,9 +61,18 @@ class Controller
 		$this->USER = $USER;
 	}
 
-	function redirect( $location )
+	function siteRedirect( $location )
 	{
-		header("Location: $location");
+		global $CFG;
+		global $USER;
+		header("Location: {$this->CFG[PATH]}$location");
+		$this->hasView = false;
+	}
+	function userRedirect( $location )
+	{
+		global $CFG;
+		global $USER;
+		header("Location: {$this->CFG[PATH]}/{$this->USER[USER]}$location");
 		$this->hasView = false;
 	}
 

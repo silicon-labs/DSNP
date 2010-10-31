@@ -22,7 +22,7 @@ class SiteController extends Controller
 			die("password mismatch");
 
 		$connection = new Connection;
-		$connection->openLocal();
+		$connection->openLocalPriv();
 		$connection->command( "new_user $user $pass1\r\n" );
 		$connection->checkResult( "^OK" );
 
@@ -35,7 +35,7 @@ class SiteController extends Controller
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";
 		system( $photoDirCmd );
 
-		$this->redirect( $this->CFG[PATH] );
+		$this->siteRedirect( "/" );
 	}
 }
 ?>

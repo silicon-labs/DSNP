@@ -70,10 +70,10 @@ else {
 
 	# If the first element of the route is anything but 'site', then it is a
 	# user. Shift the array to get the controller at the head.
-	if ( $route[0] !== 'site' )
+	if ( $route[0] !== 'site' ) {
 		$USER[USER] = array_shift( $route );
-	
-	checkUser();
+		checkUser();
+	}
 
 	# If there is no function then default it to index.
 	if ( !isset( $route[0] ) )

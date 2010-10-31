@@ -34,7 +34,8 @@
 
 <h2>Create User</h2>
 
-<form method="post" action="<?echo $CFG[PATH];?>site/snewuser">
+<form method="post" 
+	action="<?echo $this->siteLoc( '/site/snewuser') ;?>">
 <table>
 <tr>
 	<td>

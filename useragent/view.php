@@ -3,6 +3,8 @@ class View
 {
 	var $viewFile = null;
 	var $controller = null;
+	var $CFG = null;
+	var $USER = null;
 
 	function View($controller, $viewFile)
 	{
@@ -12,11 +14,14 @@ class View
 
 	function dispatch()
 	{
+		global $CFG;
+		global $USER;
+
 		foreach ( $this->controller->vars as $name => $value )
 			${$name} = $value;
 
-		global $CFG;
-		global $USER;
+		$this->CFG = $CFG;
+		$this->USER = $USER;
 
 		require( ROOT . DS . 'header.php' );
 		require( $this->viewFile );
@@ -26,7 +31,17 @@ class View
 	function link( $text, $location )
 	{
 		global $CFG;
-		print "<a href=" . $CFG[PATH] . $location . ">" . $text . "</a>";
+		return "<a href=" . $CFG[PATH] . $location . ">" . $text . "</a>";
+	}
+
+	function siteLoc( $location )
+	{
+		return $this->CFG[PATH] . $location;
+	}
+
+	function userLoc( $location )
+	{
+		return $this->CFG[PATH] . '/' . $this->USER[USER] . $location;
 	}
 }
 ?>

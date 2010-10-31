@@ -40,7 +40,7 @@
 
 foreach ( $users as $row ) {
 	$user = $row['user'];
-	$this->link( $user, "/$user/" );
+	echo $this->link( $user, "/$user/" );
 	echo '<br>';
 }
 ?>

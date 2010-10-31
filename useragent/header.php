@@ -8,7 +8,7 @@
 				echo ": $USER_NAME";
 		?>
 	</title>
-	<link href="<?echo $CFG[PATH];?>/css/duao.css"
+	<link href="<?echo $this->siteLoc( '/css/duao.css' ); ?>"
 		rel="stylesheet" type="text/css"/>
 </head>
 <body>
@@ -16,7 +16,7 @@
 	<table><tr>
 		<td id="header_left"><div class="header_content">
 		<h1>
-				<?php $this->link( $CFG[SITE_NAME], '/' ); ?>
+				<?php echo $this->link( $CFG[SITE_NAME], '/' ); ?>
 		</h1>
 		</div></td>
 

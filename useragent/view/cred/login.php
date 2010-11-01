@@ -27,7 +27,7 @@
 		User
 	</td>
 	<td>
-	<input name="user" type="text"/>
+	<input name="user" type="text" value="<?echo $USER[USER];?>"/>
 	</td>
 </tr>
 

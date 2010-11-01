@@ -81,5 +81,12 @@ class Controller
 		print $short . "<br>" . $details;
 		exit;
 	}
+
+	function startSession()
+	{
+		setCookieParams();
+		if ( !session_start() )
+			die("ERROR: could not start a session\n");
+	}
 }
 ?>

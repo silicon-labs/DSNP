@@ -13,6 +13,7 @@ require( ROOT . DS . 'controller.php' );
 require( ROOT . DS . 'view.php' );
 require( ROOT . DS . 'database.php' );
 require( ROOT . DS . 'route.php' );
+require( ROOT . DS . 'session.php' );
 require( ROOT . DS . 'dispatch.php' );
 
 exit;

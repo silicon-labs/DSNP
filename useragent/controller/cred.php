@@ -25,17 +25,22 @@ class CredController extends Controller
 				'Please press the back button to try again.'
 			);
 		}
-		
-#		# Login successful.
-#		$this->Session->write( 'ROLE', 'owner' );
-#		$this->Session->write( 'NETWORK_NAME', $this->NETWORK_NAME );
-#		$this->Session->write( 'NETWORK_ID', $this->NETWORK_ID );
-#		$this->Session->write( 'hash', $regs[1] );
-#		$this->Session->write( 'token', $regs[2] );
 
+		$this->startSession();
+		$_SESSION[ROLE] = 'owner';
+		$_SESSION[hash] = $regs[1];
+		$_SESSION[token] = $regs[2];
+	
 #		if ( isset( $_POST['d'] ) )
 #			$this->redirect( urldecode($_POST['d']) );
 #		else
 			$this->userRedirect( "/" );
+	}
+
+	function logout()
+	{
+		session_destroy();
+		setcookie("PHPSESSID", "", time() - 3600, "/");
+		$this->userRedirect('/');
 	}
 }

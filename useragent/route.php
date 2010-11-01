@@ -118,8 +118,10 @@ if ( !is_object( $controller ) )
 
 # Find method
 $methodName = $className[$route[1]];
-if ( !method_exists( $controller, $methodName ) )
-	die("ERROR: invalid URL: method $methodName not present in $controllerClassName");
+if ( !method_exists( $controller, $methodName ) ) {
+	die("ERROR: invalid URL: method $methodName not " .
+		"present in $controllerClassName");
+}
 
 $controller->controller = $controllerName;
 $controller->method = $methodName

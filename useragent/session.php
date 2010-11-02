@@ -1,6 +1,5 @@
 <?php
 
-
 function setCookieParams()
 {
 	global $CFG;
@@ -29,5 +28,14 @@ if ( isset( $_COOKIE['PHPSESSID'] ) ) {
 	setCookieParams();
 	session_start();
 }
+
+$ROLE = null;
+if ( $_SESSION[ROLE] == 'owner' )
+	$ROLE = 'owner';
+else if ( $_SESSION[ROLE] == 'friend' )
+	$ROLE = 'friend';
+else
+	$ROLE = 'public';
+
 
 ?>

@@ -1,6 +1,12 @@
 <?php
-class CredController extends Controller
+class PublicCredController extends Controller
 {
+	var $function = array(
+		'login' => array(),
+		'slogin' => array(),
+		'logout' => array()
+	);
+
 	function login()
 	{
 		if ( isset( $_REQUEST['d'] ) )	

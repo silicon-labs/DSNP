@@ -1,5 +1,5 @@
 <?php
-class FreqController extends Controller
+class PublicFreqController extends Controller
 {
 	function submit()
 	{

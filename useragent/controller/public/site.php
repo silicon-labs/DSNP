@@ -1,5 +1,5 @@
 <?
-class SiteController extends Controller
+class PublicSiteController extends Controller
 {
 	function index()
 	{

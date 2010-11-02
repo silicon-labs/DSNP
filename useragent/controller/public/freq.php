@@ -1,6 +1,11 @@
 <?php
 class PublicFreqController extends Controller
 {
+	var $function = array(
+		'submit' => array(),
+		'sbecome' => array(),
+	);
+
 	function submit()
 	{
 	}

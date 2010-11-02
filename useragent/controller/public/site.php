@@ -1,6 +1,12 @@
 <?
 class PublicSiteController extends Controller
 {
+	var $function = array(
+		'index' => array(),
+		'newuser' => array(),
+		'snewuser' => array(),
+	);
+
 	function index()
 	{
 		# Load the user's sent friend requests

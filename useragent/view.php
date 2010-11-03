@@ -16,6 +16,7 @@ class View
 	{
 		global $CFG;
 		global $USER;
+		global $ROLE;
 
 		foreach ( $this->controller->vars as $name => $value )
 			${$name} = $value;
@@ -23,9 +24,11 @@ class View
 		$this->CFG = $CFG;
 		$this->USER = $USER;
 
-		require( ROOT . DS . 'header.php' );
+		$headerFooterPrefix = ROOT . DS . 'view' . DS . $ROLE . DS;
+
+		require( $headerFooterPrefix . DS . 'header.php' );
 		require( $this->viewFile );
-		require( ROOT . DS . 'footer.php' );
+		require( $headerFooterPrefix . DS . 'footer.php' );
 	}
 
 	function link( $text, $location )

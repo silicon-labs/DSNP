@@ -4,7 +4,6 @@ class PublicCredController extends Controller
 	var $function = array(
 		'login' => array(),
 		'slogin' => array(),
-		'logout' => array()
 	);
 
 	function login()
@@ -41,12 +40,5 @@ class PublicCredController extends Controller
 #			$this->redirect( urldecode($_POST['d']) );
 #		else
 			$this->userRedirect( "/" );
-	}
-
-	function logout()
-	{
-		session_destroy();
-		setcookie("PHPSESSID", "", time() - 3600, "/");
-		$this->userRedirect('/');
 	}
 }

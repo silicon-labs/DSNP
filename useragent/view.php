@@ -37,6 +37,14 @@ class View
 		return "<a href=" . $CFG[PATH] . $location . ">" . $text . "</a>";
 	}
 
+	function userLink( $text, $location )
+	{
+		global $CFG;
+		return "<a href=" . $CFG[PATH] . '/' . $this->USER[USER] . 
+				$location . ">" . $text . "</a>";
+	}
+
+
 	function siteLoc( $location )
 	{
 		return $this->CFG[PATH] . $location;

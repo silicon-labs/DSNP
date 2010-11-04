@@ -32,23 +32,23 @@
 		<td id="header_right"><div class="header_content">
 		<h1>
 		<?php 
-		if ( isset( $ROLE ) && $ROLE == 'friend' )
-		{
+//		if ( isset( $ROLE ) && $ROLE == 'friend' )
+//		{
 //			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
 //					$BROWSER['identity'], $BROWSER['identity'] );
 //			echo " - ";
 //			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
-		}
-		else if ( isset( $ROLE ) && $ROLE == 'owner' )
-		{
+//		}
+//		else if ( isset( $ROLE ) && $ROLE == 'owner' )
+//		{
 //			echo $html->link( $USER['name'], $USER['identity'] );
 //			echo " - ";
-//			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
-		}
-		else if ( isset( $USER_NAME ) )
-		{
+			echo $this->userLink( 'logout', "/cred/logout" );
+//		}
+//		else if ( isset( $USER_NAME ) )
+//		{
 //			echo $html->link( 'login', "/$USER_NAME/cred/login" );
-		}
+//		}
 		?>
 		</h1>
 		</div></td>

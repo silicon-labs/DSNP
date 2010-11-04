@@ -1,7 +1,14 @@
 <?php
 
+# Foo.
+$CONTROLLER_TYPE = null;
+if ( isset( $USER[USER] ) )
+	$CONTROLLER_TYPE = $ROLE;
+else
+	$CONTROLLER_TYPE = 'site';
+	
 # Check for the controller file.
-$controllerFile = ROOT . DS . 'controller' . DS . $ROLE . 
+$controllerFile = ROOT . DS . 'controller' . DS . $CONTROLLER_TYPE . 
 		DS . $route[0] . '.php';
 if ( !file_exists( $controllerFile ) )
 	die( "invalid URL: controller file '$controllerFile' does not exist" );
@@ -14,7 +21,7 @@ function upperFirst( $name )
 
 # Make sure the controller class does not exist already.
 $controllerName = $className[$route[0]];
-$controllerClassName = upperFirst($ROLE) . 
+$controllerClassName = upperFirst($CONTROLLER_TYPE) . 
 		upperFirst($controllerName) . "Controller";
 if ( class_exists( $controllerClassName ) )
 	die("ERROR: controller '$controllerClassName' is prexisting");
@@ -46,7 +53,7 @@ if ( !method_exists( $controller, $functionName ) ||
 {
 	die( "ERROR: invalid URL: function $functionName not " .
 		"handled in $controllerClassName " . 
-		"(role is $ROLE)" );
+		"(role is $CONTROLLER_TYPE)" );
 }
 
 # Invoke the controller.
@@ -54,7 +61,7 @@ $controller->$functionName();
 
 # Invoke the view.
 $viewFile = ROOT . DS . 'view' . DS . 
-		$ROLE . DS .
+		$CONTROLLER_TYPE . DS .
 		$controller->controllerName . DS .
 		$controller->functionName . '.php';
 if ( ! file_exists( $viewFile ) )

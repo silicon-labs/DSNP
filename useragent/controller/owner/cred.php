@@ -1,5 +1,5 @@
 <?php
-class PublicCredController extends Controller
+class OwnerCredController extends Controller
 {
 	var $function = array(
 		'login' => array(),

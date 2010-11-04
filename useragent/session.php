@@ -29,13 +29,12 @@ if ( isset( $_COOKIE['PHPSESSID'] ) ) {
 	session_start();
 }
 
-$ROLE = null;
-if ( $_SESSION[ROLE] == 'owner' )
-	$ROLE = 'owner';
-else if ( $_SESSION[ROLE] == 'friend' )
-	$ROLE = 'friend';
-else
-	$ROLE = 'public';
-
+$ROLE = 'public';
+if ( isset( $USER[USER] ) ) {
+	if ( $_SESSION[ROLE] == 'owner' )
+		$ROLE = 'owner';
+	else if ( $_SESSION[ROLE] == 'friend' )
+		$ROLE = 'friend';
+}
 
 ?>

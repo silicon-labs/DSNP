@@ -26,7 +26,9 @@
 <h3>DSNP User-Agent One <?php echo$CFG[SITE];?></h3>
 
 <p>
-<a href="site/newuser">create new user</a>
+<?php
+	echo $this->link( "create new user", "/site/index/newuser" );
+?>
 
 </div>
 </td>

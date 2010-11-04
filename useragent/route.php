@@ -49,7 +49,7 @@ function checkUser()
 if ( !isset( $url ) ) {
 	# If there is no URL then default to site/index.
 	# No username.
-	$route = array( 'site', 'index' );
+	$route = array( 'index', 'index' );
 }
 else {
 	# Split on '/'.
@@ -70,7 +70,11 @@ else {
 
 	# If the first element of the route is anything but 'site', then it is a
 	# user. Shift the array to get the controller at the head.
-	if ( $route[0] !== 'site' ) {
+	if ( $route[0] === 'site' ) {
+		# Controller is under site.
+		array_shift( $route );
+	}
+	else {
 		$USER[USER] = array_shift( $route );
 		checkUser();
 	}

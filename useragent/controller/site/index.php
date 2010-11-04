@@ -1,5 +1,5 @@
 <?
-class PublicSiteController extends Controller
+class SiteIndexController extends Controller
 {
 	var $function = array(
 		'index' => array(),

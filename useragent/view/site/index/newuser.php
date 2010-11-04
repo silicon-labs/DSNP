@@ -35,7 +35,7 @@
 <h2>Create User</h2>
 
 <form method="post" 
-	action="<?echo $this->siteLoc( '/site/snewuser') ;?>">
+	action="<?echo $this->siteLoc( '/site/index/snewuser') ;?>">
 <table>
 <tr>
 	<td>

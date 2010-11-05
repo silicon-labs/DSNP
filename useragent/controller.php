@@ -61,18 +61,25 @@ class Controller
 		$this->USER = $USER;
 	}
 
-	function siteRedirect( $location )
-	{
-		global $CFG;
-		global $USER;
-		header("Location: {$this->CFG[PATH]}$location");
-		$this->hasView = false;
-	}
 	function userRedirect( $location )
 	{
 		global $CFG;
 		global $USER;
-		header("Location: {$this->CFG[PATH]}/{$this->USER[USER]}$location");
+		header( "Location: {$this->CFG[PATH]}/{$this->USER[USER]}$location" );
+		$this->hasView = false;
+	}
+
+	function siteRedirect( $location )
+	{
+		global $CFG;
+		global $USER;
+		header( "Location: {$this->CFG[PATH]}$location" );
+		$this->hasView = false;
+	}
+
+	function redirect( $location )
+	{
+		header( "Location: $location" );
 		$this->hasView = false;
 	}
 

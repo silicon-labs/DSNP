@@ -52,8 +52,7 @@ if ( !method_exists( $controller, $functionName ) ||
 		!is_array( $functionDef ) )
 {
 	die( "ERROR: invalid URL: function $functionName not " .
-		"handled in $controllerClassName " . 
-		"(role is $CONTROLLER_TYPE)" );
+		"handled in $controllerClassName " );
 }
 
 # Invoke the controller.

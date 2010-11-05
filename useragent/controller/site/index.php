@@ -29,7 +29,7 @@ class SiteIndexController extends Controller
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-		$connection->command( "new_user $user $pass1\r\n" );
+		$connection->newUser( $user, $pass1 );
 		$connection->checkResult( "^OK" );
 
 		$identity = $this->CFG[URI] . $user . '/';

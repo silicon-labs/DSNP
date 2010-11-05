@@ -26,8 +26,7 @@ class PublicFreqController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 
-		$connection->command( 
-			"relid_request {$this->USER[USER]} $identity\r\n" );
+		$connection->relidRequest( $this->USER[USER], $identity );
 
 		if ( ereg("^OK ([-A-Za-z0-9_]+)",
 				$connection->result, $regs ) )
@@ -61,8 +60,7 @@ class PublicFreqController extends Controller
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-		$connection->command( 
-			"friend_final {$this->USER[USER]} $reqid $identity\r\n" );
+		$connection->frFinal( $this->USER[USER], $reqid, $identity );
 
 		if ( ereg("^OK", $connection->result ) ) {
 			$this->redirect( $this->USER[URI] );

@@ -19,8 +19,7 @@ class PublicCredController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 
-		$connection->command( 
-			"login {$this->USER[USER]} $pass\r\n" );
+		$connection->login( $this->USER[USER], $pass );
 
 		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)",
 				$connection->result, $regs) )

@@ -2,7 +2,7 @@
 class OwnerCredController extends Controller
 {
 	var $function = array(
-		'login' => array(),
+		'logout' => array(),
 	);
 
 	function logout()

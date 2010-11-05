@@ -13,8 +13,8 @@ class OwnerFreqController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 
-		$connection->command( 
-			"relid_response {$this->USER[USER]} $fr_reqid $identity\r\n" );
+		$connection->relidResponse( 
+			$this->USER[USER], $fr_reqid, $identity );
 
 		if ( ereg("^OK ([-A-Za-z0-9_]+)", $connection->result, $regs) ) {
 			$arg_identity = 'identity=' . urlencode( $this->USER[URI]);

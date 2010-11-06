@@ -127,6 +127,7 @@ if ( $count % 2 == 1 )
 	echo "</tr>";
 ?>
 </table>
+
 </div>
 </td>
 

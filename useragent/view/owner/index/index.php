@@ -23,18 +23,156 @@
 <td id="leftcol">
 
 <div id="details">
+
+<a id="edit" href="<?php 
+	echo $this->userLoc( "/user/edit" );?>">edit</a>
+
+<!--<h2><?php echo $USER['display_short'];?></h2>-->
 <h2><?php print $USER[USER];?></h2>
+
 </div>
 
+<?php
+if ( count( $friendRequests ) ) {
+	echo '<div class="content">';
+	echo "<h3>Friend Requests</h3>";
+	foreach ( $friendRequests as $row ) {
+		$from_id = $row['from_id'];
+		$reqid = $row['reqid'];
+		echo $this->link( $from_id, $from_id );
+		echo "&nbsp;&nbsp;&nbsp;\n";
+		echo $this->link( 'yes', 
+			"/$USER_NAME/freq/answer?reqid=" . 
+			urlencode($reqid) . "&a=yes" );
+		echo "&nbsp;&nbsp;\n";
+		echo $this->link( 'no',
+			"/$USER_NAME/freq/answer?reqid=" .
+			urlencode($reqid) . "&a=no" );
+		echo "<br>\n";
+	}
+	echo "</div>";
+}
+?>
+
+<?php
+
+if ( count( $sentFriendRequests ) > 0 ) {
+	echo '<div class="content">';
+	echo "<h3>Sent Friend Requests</h3>";
+	foreach ( $sentFriendRequests as $row ) {
+		$for_id = $row['for_id'];
+		//$reqid = $row['reqid'];
+		echo "<a class=\"idlink\" " . "
+			href=\"$for_id\">$for_id</a>&nbsp;&nbsp;&nbsp;\n";
+		echo "<a href=\"abandon.php?reqid=" . /*urlencode($reqid) . */
+				"\">cancel</a><br>\n";
+	}
+	echo "</div>";
+}
+?>
+
+<div class="content">
+
+<h3>Friend List</h3>
+
+<?php
+
+foreach ( $friendClaims as $row ) {
+	$name = $row['name'];
+	$dest_id = $row['identity'];
+
+	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
+		urlencode( $_SESSION['hash'] ) . "\">";
+
+	if ( isset( $name ) )
+		echo $name;
+	else
+		echo $dest_id;
+
+	echo "</a>";
+
+	echo "<br>\n";
+}
+?>
+</div>
+
+<div class="content">
+
+<h3>Photo Stream</h3>
+
+<div id="photo_upload">
+<form method="post" enctype="multipart/form-data" 
+	action="<?php echo $this->userLoc( "/image/upload" ); ?>">
+<input name="photo" type="file"/>
+<input type="submit" value="Upload"/>
+</form> 
+</div>
+
+<table class="photos">
+<?php
+$count = 0;
+foreach ( $images as $row ) {
+	$seq_num = $row['seq_num'];
+	if ( $count % 2 == 0 ) {
+		echo "<tr div class=\"photorow\">";
+		echo "<td class=\"photo0\">";
+	}
+	else
+		echo "<td class=\"photo1\">";
+
+	echo "<a href=\"${USER_URI}image/view/img-$seq_num.jpg\">";
+	echo "<img src=\"${USER_URI}image/view/thm-$seq_num.jpg\" alt=\"$seq_num\"></a>\n";
+	echo "</td>";
+
+	if ( $count % 2 == 1 )
+		echo "</tr>";
+	$count += 1;
+}
+
+if ( $count % 2 == 1 )
+	echo "</tr>";
+?>
+</table>
+</div>
 </td>
 
 <td id="activity">
 
+<?
+#echo '<div>'; print_r( $activity ); echo '</div>';
+?>
+
 <div class="content">
+<form method="post" action="<?echo $this->userLoc( "/$USER_NAME/user/broadcast" ); ?>">
+Broadcast a Message to all Friends
+<textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
+<input value="Submit Message" type="submit">
+</form>
 </div>
 
 <div class="content">
-</div>
+<?
+
+$activity_size = ACTIVITY_SIZE;
+$limit = $start + $activity_size < count( $activity ) ? $start + $activity_size : count( $activity );
+for ( $i = $start; $i < $limit; $i++ ) {
+	$row = $activity[$i];
+
+	$author = $row;
+	$subject = $row;
+	$item = $row;
+
+	echo "<p>\n";
+//  FIXME:
+//	printMessage( $html, $text, $USER, null, $author, $subject, $item );
+}
+
+if ( $start > 0 ) 
+	echo $this->userLink( 'newer', "/user/index?start=" . ( $start - $activity_size ) ) . "&nbsp;&nbsp;";
+
+if ( count( $activity ) == $start + $activity_size )
+	echo $this->userLink( 'older', "/user/index?start=" . ( $start + $activity_size ) );
+?>
 
 </div>
 

@@ -27,7 +27,7 @@ function checkUserDb()
 	# Turn result int first row.
 	$result = $result[0];
 
-	$USER[ID] = $user['id'];
+	$USER[ID] = $result['id'];
 	$USER[URI] =  "$CFG[URI]$USER[USER]/";
 
 #	$this->USER_NAME = $user['user'];

@@ -31,17 +31,29 @@ class View
 		require( $headerFooterPrefix . DS . 'footer.php' );
 	}
 
+	function absLink( $text, $location, $class = null )
+	{
+		$link = "<a";
+		if ( isset( $class ) )
+			$link .= " class=\"$class\"";
+		$link .= " href=\"" . $location . "\">" . $text . "</a>";
+		return $link;
+	}
+
 	function link( $text, $location )
 	{
 		global $CFG;
 		return "<a href=" . $CFG[PATH] . $location . ">" . $text . "</a>";
 	}
 
-	function userLink( $text, $location )
+	function userLink( $text, $location, $class = null )
 	{
-		global $CFG;
-		return "<a href=" . $CFG[PATH] . '/' . $this->USER[USER] . 
+		$link = "<a";
+		if ( isset( $class ) )
+			$link .= "class=\"$class\"";
+		$link .= " href=" . $this->CFG[PATH] . '/' . $this->USER[USER] . 
 				$location . ">" . $text . "</a>";
+		return $link;
 	}
 
 

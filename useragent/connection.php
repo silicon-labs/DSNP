@@ -73,5 +73,11 @@ class Connection
 		$this->command( 
 			"friend_final $user $reqid $identity\r\n" );
 	}
+
+	function acceptFriend( $user, $reqid )
+	{
+		$this->command(
+			"accept_friend $user $reqid\r\n" );
+	}
 };
 ?>

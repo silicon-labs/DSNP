@@ -3,6 +3,7 @@ class OwnerFreqController extends Controller
 {
 	var $function = array(
 		'retrelid' => array(),
+		'answer' => array(),
 	);
 
 	function retrelid()
@@ -25,6 +26,23 @@ class OwnerFreqController extends Controller
 		else {
 			echo $connection->result;
 		}
+	}
+
+	function answer()
+	{
+		$reqid = $_GET['reqid'];
+
+		$connection = new Connection;
+		$connection->openLocalPriv();
+
+		$connection->acceptFriend( 
+			$this->USER[USER], $reqid );
+
+		if ( !ereg("^OK", $connection->result ) )
+			die( "FAILURE *** Friend accept failed with: <br>" . $connection->result );
+
+		$this->userRedirect( "/" );
+		
 	}
 }
 ?>

@@ -162,7 +162,7 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 		"JOIN put_broadcast_key "
 		"ON network.id = put_broadcast_key.network_id "
 		"WHERE user.user = %e AND "
-		"	network.name = %e AND "
+		"	network.private_name = %e AND "
 		"	network.key_gen = put_broadcast_key.generation ", 
 		user, group );
 	

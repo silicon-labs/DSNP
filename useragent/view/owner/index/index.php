@@ -142,7 +142,7 @@ if ( $count % 2 == 1 )
 ?>
 
 <div class="content">
-<form method="post" action="<?echo $this->userLoc( "/$USER_NAME/user/broadcast" ); ?>">
+<form method="post" action="<?echo $this->userLoc( "/user/broadcast" ); ?>">
 Broadcast a Message to all Friends
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 <input value="Submit Message" type="submit">
@@ -153,7 +153,8 @@ Broadcast a Message to all Friends
 <?
 
 $activity_size = ACTIVITY_SIZE;
-$limit = $start + $activity_size < count( $activity ) ? $start + $activity_size : count( $activity );
+$limit = $start + $activity_size < count( $activity ) ? 
+		$start + $activity_size : count( $activity );
 for ( $i = $start; $i < $limit; $i++ ) {
 	$row = $activity[$i];
 

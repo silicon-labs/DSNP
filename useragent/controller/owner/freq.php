@@ -42,7 +42,6 @@ class OwnerFreqController extends Controller
 			die( "FAILURE *** Friend accept failed with: <br>" . $connection->result );
 
 		$this->userRedirect( "/" );
-		
 	}
 }
 ?>

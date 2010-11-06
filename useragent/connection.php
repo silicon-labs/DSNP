@@ -79,5 +79,15 @@ class Connection
 		$this->command(
 			"accept_friend $user $reqid\r\n" );
 	}
+
+	function submitBroadcast( $user, $network, $len, $headers, $message )
+	{
+		$cmd = "submit_broadcast $user $network $len\r\n";
+		fwrite( $this->fp, $cmd );
+		fwrite( $this->fp, $headers, strlen($headers) );
+		fwrite( $this->fp, $message, strlen($message) );
+		fwrite( $this->fp, "\r\n", 2 );
+		$this->result = fgets( $this->fp );
+	}
 };
 ?>

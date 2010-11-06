@@ -203,7 +203,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 		"ON friend_claim.id = get_broadcast_key.friend_claim_id AND "
 		"	network.id = get_broadcast_key.network_id "
 		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L AND "
-		"	network.name = %e "
+		"	network.private_name = %e "
 		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
 		relid, keyGen, network );
 

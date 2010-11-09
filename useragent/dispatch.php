@@ -19,6 +19,67 @@ function upperFirst( $name )
 			substr( $name, 1, strlen($name)-1 );
 }
 
+#
+#      post => name            arg 'name' needs to come from post
+# or   get => name             arg 'name' needs to come from get
+#
+#      regex => '^[a-z]+$'     must match given regex
+#      nonEmpty => true        arg nust not be empty
+#      optional => true        arg is optional
+#      def => value            default value if arg is optional and not given
+#
+# Cleaned arguments get placed in the the 'args' field in the controller
+#
+
+function checkArgs( $functionDef )
+{
+	$clean = array();
+
+	foreach ( $functionDef as $arg ) {
+		# Extract the name and value from either _GET or _POST.
+		if ( isset( $arg[post] ) ) {
+			$name = $arg[post];
+			$value = $_POST[$name];
+		}
+		else if ( isset( $arg[get] ) ) {
+			$name = $arg[get];
+			$value = $_GET[$name];
+		}
+
+		# Deal with the case that it is not set.
+		if ( !isset($value) ) {
+			if ( $arg[optional] ) {
+				# Maybe give it the default value
+				if ( isset( $arg[def] ) )
+					$value = $arg[def];
+
+				$clean[$name] = $value;
+				continue;
+			}
+			else {
+				die( "required argument $name not given" );
+			}
+		}
+
+		if ( isset($arg[regex]) ) {
+			$match = preg_match( $arg[regex], $value );
+			if ( $match === false ) {
+				die("<br><br>there was an error checking " . 
+					"$name against {$arg[regex]}");
+			}
+			else if ( $match === 0 ) {
+				die("arg $name does not validate {$arg[regex]}");
+			}
+		}
+
+		if ( isset($arg[nonEmpty]) && $arg[nonEmpty] && strlen( $value ) == 0 )
+			die("arg $name is not allowed to be empty");
+
+		$clean[$name] = $value;
+	}
+	return $clean;
+}
+
 # Make sure the controller class does not exist already.
 $controllerName = $className[$route[0]];
 $controllerClassName = upperFirst($CONTROLLER_TYPE) . 
@@ -55,7 +116,10 @@ if ( !method_exists( $controller, $functionName ) ||
 		"handled in $controllerClassName " );
 }
 
+$clean = checkArgs( $functionDef );
+
 # Invoke the controller.
+$controller->args = $clean;
 $controller->$functionName();
 
 # Invoke the view.

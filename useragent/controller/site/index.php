@@ -4,7 +4,14 @@ class SiteIndexController extends Controller
 	var $function = array(
 		'index' => array(),
 		'newuser' => array(),
-		'snewuser' => array(),
+		'snewuser' => array(
+			array( 
+				post => 'user', 
+				regex => '/^[a-z]+$/',
+			),
+			array( post => 'pass1', nonEmpty => true ),
+			array( post => 'pass2', nonEmpty => true ),
+		),
 	);
 
 	function index()
@@ -20,9 +27,9 @@ class SiteIndexController extends Controller
 
 	function snewuser()
 	{
-		$user = $_POST['user'];
-		$pass1 = $_POST['pass1'];
-		$pass2 = $_POST['pass2'];
+		$user = $this->args['user'];
+		$pass1 = $this->args['pass1'];
+		$pass2 = $this->args['pass2'];
 
 		if ( $pass1 != $pass2 )
 			die("password mismatch");

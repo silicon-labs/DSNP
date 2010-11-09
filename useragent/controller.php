@@ -1,6 +1,8 @@
 <?php
 class Controller
 {
+	/* Args cleaned according to the function definition. */
+	var $args = null;
 	var $controller = null;
 	var $method = null;
 	var $hasView = true;

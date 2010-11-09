@@ -3,7 +3,9 @@ class PublicCredController extends Controller
 {
 	var $function = array(
 		'login' => array(),
-		'slogin' => array(),
+		'slogin' => array(
+			array( post => 'pass' )
+		),
 	);
 
 	function login()
@@ -14,7 +16,7 @@ class PublicCredController extends Controller
 
 	function slogin()
 	{
-		$pass = $_POST['pass'];
+		$pass = $this->args['pass'];
 
 		$connection = new Connection;
 		$connection->openLocalPriv();

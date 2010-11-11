@@ -4,15 +4,17 @@ class OwnerIndexController extends Controller
 	var $vars = array();
 
 	var $function = array(
-		'index' => array()
+		'index' => array(
+			array(
+				get => 'start', optional => true, 
+				def => 0, type => 'int'
+			),
+		)
 	);
 
 	function index()
 	{
-		if ( isset( $_GET['start'] ) )
-			$start = $_GET['start'];
-		else
-			$start = 0;
+		$start = $this->args[start];
 
 		$sentFriendRequests = dbQuery(
 			"SELECT * FROM sent_friend_request WHERE from_user = %e", 

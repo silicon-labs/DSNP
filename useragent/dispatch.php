@@ -27,6 +27,7 @@ function upperFirst( $name )
 #      nonEmpty => true        arg nust not be empty
 #      optional => true        arg is optional
 #      def => value            default value if arg is optional and not given
+#      type => ( int, )        specify a predetermined type.
 #
 # Cleaned arguments get placed in the the 'args' field in the controller
 #
@@ -74,6 +75,23 @@ function checkArgs( $functionDef )
 
 		if ( isset($arg[nonEmpty]) && $arg[nonEmpty] && strlen( $value ) == 0 )
 			die("arg $name is not allowed to be empty");
+
+		if ( isset($arg[type] ) ) {
+			switch ( $arg[type] ) {
+				case "int": {
+					$match = preg_match( '/[0-9]+/', $value );
+					if ( $match === false ) {
+						die("<br><br>there was an error checking " . 
+							"$name regex for integer");
+					}
+					else if ( $match === 0 ) {
+						die("arg $name is not integer type");
+						$value = (int)$value;
+					}
+					break;
+				}
+			}
+		}
 
 		$clean[$name] = $value;
 	}

@@ -8,27 +8,26 @@ print_r( $argv );
 $dir = str_replace( 'notification.php', '', $argv[0] );
 chdir( $dir );
 
-$config = $argv[1];
-$type = $argv[2];
+$CFG = NULL;
 
 # Simlate the server environment so that the right installation can be selected.
 $_SERVER['HTTP_HOST'] = $argv[1];
-$_SERVER['REQUEST_URI'] = $argv[2];
+$_SERVER['REQUEST_URI'] = $argv[2] . '/';
 
-include( $PREFIX . '/etc/install.php' );
-include( $PREFIX . '/etc/config.php' );
-include( $PREFIX . '/share/dsnp/web/database.php' );
+require( $PREFIX . '/etc/install.php' );
+require( $PREFIX . '/etc/config.php' );
+require( $PREFIX . '/share/dsnp/web/database.php' );
 
-$DATA_DIR = "$PREFIX/var/lib/dsnp/$CFG_NAME/data";
+$DATA_DIR = "$PREFIX/var/lib/dsnp/{$CFG[NAME]}/data";
 
 $notification_type = $argv[3];
 $b = 4;
 
 # Connect to the database.
-$conn = mysql_connect($CFG_DB_HOST, $CFG_DB_USER, $CFG_ADMIN_PASS) or die 
+$conn = mysql_connect($CFG[DB_HOST], $CFG[DB_USER], $CFG[ADMIN_PASS]) or die 
 	('Could not connect to database');
-mysql_select_db($CFG_DB_DATABASE) or die
-	('Could not select database ' . $CFG_DB_DATABASE);
+mysql_select_db($CFG[DB_DATABASE]) or die
+	('Could not select database ' . $CFG[DB_DATABASE]);
 
 function user_name_from_id( $identity )
 {

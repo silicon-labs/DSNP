@@ -66,5 +66,13 @@ class View
 	{
 		return $this->CFG[PATH] . '/' . $this->USER[USER] . $location;
 	}
+
 }
+
+function autoLinkUrls( $text )
+{
+	/* FIXME: implement this */
+	return $text;
+}
+
 ?>

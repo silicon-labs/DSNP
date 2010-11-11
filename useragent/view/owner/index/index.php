@@ -16,6 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+require( ROOT . DS . 'view' . DS . 'functions.php' );
+
 ?>
 
 <table><tr>
@@ -163,8 +165,7 @@ for ( $i = $start; $i < $limit; $i++ ) {
 	$item = $row;
 
 	echo "<p>\n";
-//  FIXME:
-//	printMessage( $html, $text, $USER, null, $author, $subject, $item );
+	printMessage( $html, $text, $USER, null, $author, $subject, $item );
 }
 
 if ( $start > 0 ) 

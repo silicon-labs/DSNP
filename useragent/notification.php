@@ -71,13 +71,13 @@ function findFriendClaimId( $user, $identity )
 	$result = dbQuery(
 		"SELECT friend_claim.id FROM friend_claim " .
 		"JOIN user ON user.id = friend_claim.user_id " .
-		"WHERE user.user = %e AND friend_claim.identity = %e",
+		"WHERE user.user = %e AND friend_claim.friend_id = %e",
 		$user,
 		$identity
 	);
 
 	if ( count( $result ) == 1 )
-		return (int) $row[0]['id'];
+		return (int) $result[0]['id'];
 	return -1;
 }
 
@@ -144,7 +144,7 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 		$user = $result[0];
 		dbQuery( 
 			"UPDATE friend_claim SET name = %e " . 
-			"WHERE user_id = %L AND identity = %e",
+			"WHERE user_id = %L AND friend_id = %e",
 			$msg[1], $user['id'], $author_id );
 	}
 }

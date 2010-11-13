@@ -273,7 +273,8 @@ void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *grou
 	}
 }
 
-long storeBroadcastRecipients( MYSQL *mysql, const char *user, long long messageId, DbQuery &recipients )
+long storeBroadcastRecipients( MYSQL *mysql, const char *user, 
+	long long messageId, DbQuery &recipients )
 {
 	String lastSite;
 	long long lastQueueId = -1;
@@ -340,6 +341,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	/*
 	 * Out-of-tree broadcasts.
 	 */
+	message("finding out-of-tree broadcasts for %s %lld\n", user, put.networkId );
 	DbQuery outOfTree( mysql,
 		"SELECT friend_claim.friend_id, friend_claim.put_relid "
 		"FROM friend_claim "
@@ -348,9 +350,8 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 		"WHERE friend_claim.user = %e AND network_member.network_id = %L "
 		"ORDER BY friend_claim.friend_id",
 		user, put.networkId );
-	
+
 	storeBroadcastRecipients( mysql, user, messageId, outOfTree );
-	
 	return 0;
 }
 

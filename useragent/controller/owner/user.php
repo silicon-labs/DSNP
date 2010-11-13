@@ -15,13 +15,9 @@ class OwnerUserController extends Controller
 		$message = trim( $_POST['message'] );
 		$len = strlen( $headers ) + strlen( $message );
 
-#		$this->loadModel('Activity');
-#		$this->Activity->save( array( 
-#			"user_id"  => $this->USER_ID,
-#			'published' => 'true',
-#			"type" => "MSG",
-#			"message" => $message,
-#		));
+		dbQuery( "
+			INSERT INTO activity ( user_id, published, type, message )
+			VALUES ( %e, true, 'MSG', %e )", $this->USER[ID], $message );
 
 		$connection = new Connection;
 		$connection->openLocalPriv();

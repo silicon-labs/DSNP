@@ -26,7 +26,7 @@ long long addNetwork( MYSQL *mysql, long long userId, const char *name )
 	}
 	else {
 		DbQuery findNetwork( mysql,
-			"SELECT id FROM network WHERE user_id = %L and name = %e",
+			"SELECT id FROM network WHERE user_id = %L and private_name = %e",
 			userId, name );
 		if ( findNetwork.rows() == 0 ) {
 			fatal("could not insert or find network for user_id "

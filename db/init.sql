@@ -299,7 +299,10 @@ CREATE TABLE network
 
 	user_id BIGINT,
 
-	name VARCHAR(20),
+	-- Name visible to the user.
+	private_name VARCHAR(20),
+
+	-- Name distributed to others.
 	dist_name VARCHAR(48) BINARY,
 
 	key_gen BIGINT,
@@ -308,7 +311,7 @@ CREATE TABLE network
 
 	PRIMARY KEY ( id ),
 
-	UNIQUE ( user_id, name )
+	UNIQUE ( user_id, private_name )
 );
 
 CREATE TABLE network_member

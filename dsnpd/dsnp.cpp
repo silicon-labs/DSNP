@@ -168,6 +168,8 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 	
 	if ( query.rows() == 0 )
 		fatal( "failed to get current put broadcast key for user %s and group %s\n", user, group );
+	if ( query.rows() > 1 )
+		fatal( "too many results for current put key user %s and group %s\n", user, group );
 	
 	MYSQL_ROW row = query.fetchRow();
 	networkId = strtoll( row[0], 0, 10 );

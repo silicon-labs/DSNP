@@ -38,7 +38,7 @@
 void newUser( MYSQL *mysql, const char *user, const char *pass )
 {
 	/* First try to make the new user. */
-	DbQuery insert( mysql, "INSERT IGNORE INTO user ( user) VALUES ( %e ) ", user );
+	DbQuery insert( mysql, "INSERT IGNORE INTO user ( user ) VALUES ( %e ) ", user );
 	if ( insert.affectedRows() == 0 ) {
 		BIO_printf( bioOut, "ERROR user exists\r\n" );
 		return;

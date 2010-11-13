@@ -209,7 +209,8 @@ void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid )
 	id_salt = row[0];
 
 	/* Execute the query. */
-	exec_query( mysql, "SELECT from_id, requested_relid, returned_relid "
+	exec_query( mysql, 
+		"SELECT from_id, requested_relid, returned_relid "
 		"FROM friend_request "
 		"WHERE for_user = %e AND reqid = %e;",
 		user, user_reqid );

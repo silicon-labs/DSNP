@@ -68,6 +68,24 @@ class Connection
 			"login $user $pass\r\n" );
 	}
 
+	function ftokenRequest( $user, $hash )
+	{
+		$this->command(
+			"ftoken_request $user $hash\r\n" );
+	}
+
+	function ftokenResponse( $user, $hash, $reqid )
+	{
+		$this->command(
+			"ftoken_response $user $hash $reqid\r\n" );
+	}
+
+	function submitFtoken( $ftoken )
+	{
+		$this->command(
+			"submit_ftoken $ftoken\r\n" );
+	}
+
 	function frFinal( $user, $reqid, $identity )
 	{
 		$this->command( 

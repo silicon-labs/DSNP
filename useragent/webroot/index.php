@@ -5,6 +5,8 @@ define( 'ROOT', dirname(dirname(__FILE__)) );
 define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
 define( 'ACTIVITY_SIZE', 30 );
+define( 'HASH_BASE64_SIZE', 27 );
+define( 'TOKEN_BASE64_SIZE', 22 );
 
 /* This selects the site to configure for. */
 require( PREFIX . DS . 'etc' . DS . 'config.php' );

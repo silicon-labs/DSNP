@@ -27,7 +27,8 @@ function upperFirst( $name )
 #      nonEmpty => true        arg nust not be empty
 #      optional => true        arg is optional
 #      def => value            default value if arg is optional and not given
-#      type => ( int, )        specify a predetermined type.
+#      type => ( int, base64 ) specify a predetermined type.
+#      length => value         specify an exact length required
 #
 # Cleaned arguments get placed in the the 'args' field in the controller
 #
@@ -78,7 +79,19 @@ function checkArgs( $functionDef )
 
 		if ( isset($arg[type] ) ) {
 			switch ( $arg[type] ) {
-				case "int": {
+				case 'base64': {
+					$match = preg_match( '/[0-9a-zA-Z_\-]+/', $value );
+					if ( $match === false ) {
+						die("<br><br>there was an error checking " . 
+							"$name regex for base64 type");
+					}
+					else if ( $match === 0 ) {
+						die("arg $name is not base64 type");
+						$value = (int)$value;
+					}
+					break;
+				}
+				case 'int': {
 					$match = preg_match( '/[0-9]+/', $value );
 					if ( $match === false ) {
 						die("<br><br>there was an error checking " . 
@@ -91,6 +104,11 @@ function checkArgs( $functionDef )
 					break;
 				}
 			}
+		}
+
+		if ( isset($arg[length] ) ) {
+			if ( strlen($value) != $arg[length] )
+				die("arg $name is is not of length {$arg[length]}");
 		}
 
 		$clean[$name] = $value;

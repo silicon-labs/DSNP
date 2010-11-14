@@ -135,7 +135,7 @@ class PublicCredController extends Controller
 			$_SESSION[ROLE] = 'friend';
 			$_SESSION[NETWORK_NAME] = '-';
 			$_SESSION[hash] = $hash;
-			$_SESSION[token] = $token;
+			$_SESSION[token] = $ftoken;
 
 			$BROWSER = dbQuery( "
 				SELECT id, user_id, user, friend_id, identity, name

@@ -17,19 +17,28 @@ class UserController extends AppController
 		else
 			$start = 0;
 
-		$sentFriendRequests = dbQuery( "SELECT * FROM sent_friend_request WHERE from_user = %e", $this->USER_NAME );
+		$sentFriendRequests = dbQuery( 
+			"SELECT * FROM sent_friend_request WHERE from_user = %e", 
+			$this->USER_NAME );
 		$this->set( 'sentFriendRequests', $sentFriendRequests );
 
 		# Load the user's friend requests. 
-		$friendRequests = dbQuery( "SELECT * FROM friend_request WHERE for_user = %e", $this->USER_NAME );
+		$friendRequests = dbQuery( 
+			"SELECT * FROM friend_request WHERE for_user = %e",
+			$this->USER_NAME );
 		$this->set( 'friendRequests', $friendRequests );
 
 		# Load the friend list.
-		$friendClaims = dbQuery( "SELECT * FROM friend_claim WHERE user_id = %l", $this->USER_ID );
+		$friendClaims = dbQuery(
+			"SELECT * FROM friend_claim WHERE user_id = %l",
+			$this->USER_ID );
 		$this->set( 'friendClaims', $friendClaims );
 
 		# Load the user's images.
-		$images = dbQuery( "SELECT * FROM image WHERE user = %e ORDER BY seq_num DESC LIMIT 30", $this->USER_NAME );
+		$images = dbQuery( "
+			SELECT * FROM image WHERE user = %e 
+			ORDER BY seq_num DESC LIMIT 30
+			", $this->USER_NAME );
 		$this->set( 'images', $images );
 
 		$activity = dbQuery( "

@@ -107,5 +107,18 @@ class Connection
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );
 	}
+
+	function remoteBroadcastRequest( $user, $identity, 
+		$hash, $token, $network, $len, $headers, $message )
+	{
+		$cmd = 
+			"remote_broadcast_request $user $identity $hash " . 
+			"$token $network $len\r\n";
+		fwrite( $this->fp, $cmd );
+		fwrite( $this->fp, $headers, strlen($headers) );
+		fwrite( $this->fp, $message, strlen($message) );
+		fwrite( $this->fp, "\r\n", 2 );
+		$this->result = fgets( $this->fp );
+	}
 };
 ?>

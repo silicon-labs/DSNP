@@ -33,8 +33,10 @@ $ROLE = 'public';
 if ( isset( $USER[USER] ) ) {
 	if ( $_SESSION[ROLE] == 'owner' )
 		$ROLE = 'owner';
-	else if ( $_SESSION[ROLE] == 'friend' )
+	else if ( $_SESSION[ROLE] == 'friend' ) {
 		$ROLE = 'friend';
+		$BROWSER = $_SESSION['BROWSER'];
+	}
 }
 
 ?>

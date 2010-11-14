@@ -43,6 +43,7 @@ function checkUserDb()
 
 function checkUser()
 {
+	# FIXME: do the session check first.
 	checkUserDb();
 }
 

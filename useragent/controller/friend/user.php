@@ -5,6 +5,9 @@ class FriendUserController extends Controller
 		'board' => array(
 			array( post => 'message' )
 		),
+		'finish' => array(
+			array( get => 'reqid' )
+		),
 	);
 
 	function board()
@@ -47,6 +50,22 @@ class FriendUserController extends Controller
 		$reqid = $regs[1];
 
 		$this->redirect( "${identity}user/flush?reqid=$reqid&backto=" . 
-			urlencode( $this->USER['identity'] )  );
+			urlencode( $this->USER[URI] )  );
+	}
+
+	function finish()
+	{
+		$reqid = $this->args['reqid'];
+
+		$connection = new Connection;
+		$connection->openLocalPriv();
+
+		$connection->remoteBroadcastFinal(
+			$this->USER[USER], $reqid );
+
+		if ( !ereg("^OK", $connection->result, $regs) )
+			die( "remote_broadcast_final failed with $res" );
+
+		$this->userRedirect( "/" );
 	}
 };

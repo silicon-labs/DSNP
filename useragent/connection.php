@@ -120,5 +120,17 @@ class Connection
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );
 	}
+
+	function remoteBroadcastResponse( $user, $reqid )
+	{
+		$this->command(
+			"remote_broadcast_response $user $reqid\r\n" );
+	}
+
+	function remoteBroadcastFinal( $user, $reqid )
+	{
+		$this->command(
+			"remote_broadcast_final $user $reqid\r\n" );
+	}
 };
 ?>

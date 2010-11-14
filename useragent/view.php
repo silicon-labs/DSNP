@@ -56,7 +56,6 @@ class View
 		return $link;
 	}
 
-
 	function siteLoc( $location )
 	{
 		return $this->CFG[PATH] . $location;

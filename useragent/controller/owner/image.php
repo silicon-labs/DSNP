@@ -75,34 +75,31 @@ class OwnerImageController extends Controller
 				user_id, published, type, message, local_resid )
 			VALUES ( %l, true, 'PHT', %e, %l )",
 			$this->USER[ID], "thm-$id.jpg", $id );
-		
-#		$fp = fsockopen( 'localhost', $this->CFG_PORT );
-#		if ( !$fp )
-#			exit(1);
-#
-#		$MAX_BRD_PHOTO_SIZE = 16384;
-#		$file = fopen( $thumb, "rb" );
-#		$data = fread( $file, $MAX_BRD_PHOTO_SIZE );
-#		fclose( $file );
-#
-#		$headers = 
-#			"Content-Type: image/jpg\r\n" .
-#			"Resource-Id: $id\r\n" .
-#			"Type: photo-upload\r\n" .
-#			"\r\n";
-#		$len = strlen( $headers ) + strlen( $data );
-#
-#		$send = 
-#			"SPP/0.1 $this->CFG_URI\r\n" . 
-#			"comm_key $this->CFG_COMM_KEY\r\n" .
-#			"submit_broadcast $this->USER_NAME - $len\r\n";
-#
-#		fwrite( $fp, $send );
-#		fwrite( $fp, $headers, strlen($headers) );
-#		fwrite( $fp, $data, strlen($data) );
-#		fwrite( $fp, "\r\n", 2 );
-#
-#		$this->redirect( "/$this->USER_NAME/" );
+
+		$connection = new Connection;
+		$connection->openLocalPriv();
+
+		$MAX_BRD_PHOTO_SIZE = 16384;
+		$file = fopen( $thumb, "rb" );
+		$data = fread( $file, $MAX_BRD_PHOTO_SIZE );
+		fclose( $file );
+
+		$headers = 
+			"Content-Type: image/jpg\r\n" .
+			"Resource-Id: $id\r\n" .
+			"Type: photo-upload\r\n" .
+			"\r\n";
+		$len = strlen( $headers ) + strlen( $data );
+
+		$connection->submitBroadcast( 
+			$this->USER[USER], '-', $len, $headers, $data );
+
+		if ( ereg("^OK", $connection->result, $regs) )
+			$this->userRedirect( "/" );
+		else
+			die( "submit_broadcast failed with $connection->result" );
+
+		$this->userRedirect( '/' );
 	}
 }
 ?>

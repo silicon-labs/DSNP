@@ -33,7 +33,7 @@ class OwnerUserController extends Controller
 		$connection->openLocalPriv();
 
 		$connection->submitBroadcast( 
-			$this->USER[USER],  '-', $len, $headers, $message );
+			$this->USER[USER], '-', $len, $headers, $message );
 
 		if ( ereg("^OK", $connection->result, $regs) )
 			$this->userRedirect( "/" );

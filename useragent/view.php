@@ -26,9 +26,13 @@ class View
 
 		$headerFooterPrefix = ROOT . DS . 'view' . DS . $ROLE . DS;
 
-		require( $headerFooterPrefix . DS . 'header.php' );
-		require( $this->viewFile );
-		require( $headerFooterPrefix . DS . 'footer.php' );
+		if ( $this->controller->plainView )
+			require( $this->viewFile );
+		else {
+			require( $headerFooterPrefix . DS . 'header.php' );
+			require( $this->viewFile );
+			require( $headerFooterPrefix . DS . 'footer.php' );
+		}
 	}
 
 	function absLink( $text, $location, $class = null )

@@ -47,7 +47,7 @@ function printName( $USER, $BROWSER, $identity, $name, $possessive )
 	}
 }
 
-function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
+function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 {
 	$USER_NAME = $USER['user'];
 
@@ -79,12 +79,12 @@ function printMessage( $html, $text, $USER, $BROWSER, $author, $subject, $item )
 		if ( isset( $remote_resid ) ) {
 			echo "<a href=\"${author_id}image/view/img-$remote_resid.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
-			echo "<img src=\"" . $html->url( "/$USER_NAME/image/view/pub-$local_resid.jpg" ) . 
+			echo "<img src=\"" . $view->userLoc( "/$USER_NAME/image/view/pub-$local_resid.jpg" ) . 
 				"\" alt=\"$message\"></a>\n";
 		}
 		else {
-			echo "<a href=\"" . $html->url( "/$USER_NAME/image/view/img-$local_resid.jpg" ) . "\">";
-			echo "<img src=\"" . $html->url( "/$USER_NAME/image/view/thm-$local_resid.jpg" ) . 
+			echo "<a href=\"" . $view->userLoc( "/$USER_NAME/image/view/img-$local_resid.jpg" ) . "\">";
+			echo "<img src=\"" . $view->userLoc( "/$USER_NAME/image/view/thm-$local_resid.jpg" ) . 
 					"\" alt=\"$message\"></a>\n";
 		}
 		echo '</div>';

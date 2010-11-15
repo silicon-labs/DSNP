@@ -165,7 +165,7 @@ for ( $i = $start; $i < $limit; $i++ ) {
 	$item = $row;
 
 	echo "<p>\n";
-	printMessage( $html, $text, $USER, null, $author, $subject, $item );
+	printMessage( $this, $text, $USER, null, $author, $subject, $item );
 }
 
 if ( $start > 0 ) 

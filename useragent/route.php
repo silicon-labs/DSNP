@@ -56,12 +56,13 @@ else {
 	# Split on '/'.
 	$route = explode( '/', $url );
 
-	# Validate the component names.
+	# Validate the component names. The first two are strict identifiers. Three
+	# and up can have some symbols.
 	$normalizedRoute = array();
 	foreach ( $route as $component ) {
 		if ( $component === "" )
 			continue;
-		else if	( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-]*$/', $component ) )
+		else if	( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-\.]*$/', $component ) )
 			die( "route component '$component' does not validate" );
 		else {
 			$normalizedRoute[] = $component;
@@ -89,11 +90,12 @@ else {
 		$route[1] = 'index';
 }
 
+
 foreach ( $route as $component ) {
 	# Derive a class name by stripping out underscores and dashes. We can
 	# expect this to be non-empty because the above regex requires alpha as the
 	# first character.
-	$className[$component] = preg_replace( '/[_\-]+/', '', $component );
+	$className[$component] = preg_replace( '/[_\-\.]+/', '', $component );
 }
 
 ?>

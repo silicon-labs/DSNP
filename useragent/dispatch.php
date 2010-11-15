@@ -22,7 +22,10 @@ function upperFirst( $name )
 #
 #      post => name            arg 'name' needs to come from post
 # or   get => name             arg 'name' needs to come from get
+# or   route => name           arg 'name' comes from a component of 
+#                              the route. N must be supplied
 #
+#      N => value              if this is a route arg, it is component N.
 #      regex => '^[a-z]+$'     must match given regex
 #      nonEmpty => true        arg nust not be empty
 #      optional => true        arg is optional
@@ -33,7 +36,7 @@ function upperFirst( $name )
 # Cleaned arguments get placed in the the 'args' field in the controller
 #
 
-function checkArgs( $functionDef )
+function checkArgs( $functionDef, $route )
 {
 	$clean = array();
 
@@ -43,10 +46,15 @@ function checkArgs( $functionDef )
 			$name = $arg[post];
 			$value = $_POST[$name];
 		}
-		else if ( isset( $arg[get] ) ) {
+		elseif ( isset( $arg[get] ) ) {
 			$name = $arg[get];
 			$value = $_GET[$name];
 		}
+		elseif ( isset( $arg[route] ) ) {
+			$name = $arg[route];
+			$value = $route[$arg[N]];
+		}
+		
 
 		# Deal with the case that it is not set.
 		if ( !isset($value) ) {
@@ -152,7 +160,7 @@ if ( !method_exists( $controller, $functionName ) ||
 		"handled in $controllerClassName " );
 }
 
-$clean = checkArgs( $functionDef );
+$clean = checkArgs( $functionDef, $route );
 
 # Invoke the controller.
 $controller->args = $clean;

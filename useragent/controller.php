@@ -8,6 +8,7 @@ class Controller
 	var $hasView = true;
 	var $CFG = null;
 	var $USER_NAME = null;
+	var $plainView = false;
 
 	/* Filled by controllers, made avaialable in views. Each var is defined. */
 	var $vars = array();

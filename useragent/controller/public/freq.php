@@ -28,25 +28,16 @@ class PublicFreqController extends Controller
 
 		$connection->relidRequest( $this->USER[USER], $identity );
 
-		if ( ereg("^OK ([-A-Za-z0-9_]+)",
-				$connection->result, $regs ) )
-		{
+		if ( $connection->success ) {
 			$arg_identity = 'identity=' . urlencode( $this->USER[URI]);
-			$arg_reqid = 'fr_reqid=' . urlencode( $regs[1] );
+			$arg_reqid = 'fr_reqid=' . urlencode( $connection->regs[1] );
 
 			$this->redirect("{$identity}freq/retrelid?{$arg_identity}&{$arg_reqid}" );
 		}
-		else if ( ereg("^ERROR ([0-9]+)", $connection->result, $regs) ) {
-			$this->error(
-				'The DSNP server responded with an error.',
-				'The server responded with error code ' . $regs[1] . '. ' .
-				'Check that the URI you submitted is correct. ' .
-				'If the problem persists contact the system administrator.'
-			);
-		}
 		else {
 			$this->error(
-				'The DSNP server did not responsd.',
+				'The DSNP server responded with an error.',
+				'The server responded with error code ' . $connection->regs[1] . '. ' .
 				'Check that the URI you submitted is correct. ' .
 				'If the problem persists contact the system administrator.'
 			);

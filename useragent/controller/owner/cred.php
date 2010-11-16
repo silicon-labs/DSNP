@@ -2,6 +2,7 @@
 class OwnerCredController extends Controller
 {
 	var $function = array(
+		'login' => array(),
 		'logout' => array(),
 		'retftok' => array(
 			array( 
@@ -16,6 +17,12 @@ class OwnerCredController extends Controller
 			)
 		)
 	);
+
+	function login()
+	{
+		/* Login when already logged in. Most likely because user went back. */
+		$this->userRedirect( '/' );
+	}
 
 	function logout()
 	{
@@ -34,11 +41,9 @@ class OwnerCredController extends Controller
 
 		$connection->ftokenResponse( $this->USER[USER], $hash, $reqid );
 
-		if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\r\n]*)",
-				$connection->result, $regs ) )
-		{
-			$arg_ftoken = 'ftoken=' . urlencode( $regs[1] );
-			$friend_id = $regs[2];
+		if ( $connection->success ) {
+			$arg_ftoken = 'ftoken=' . urlencode( $connection->regs[1] );
+			$friend_id = $connection->regs[2];
 			$dest = "";
 			if ( isset( $_GET['d'] ) )
 				$dest = "&d=" . urlencode($_GET['d']);

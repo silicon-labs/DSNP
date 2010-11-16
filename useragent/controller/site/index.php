@@ -37,7 +37,8 @@ class SiteIndexController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->newUser( $user, $pass1 );
-		$connection->checkResult( "^OK" );
+		if ( !$connection->success )
+			die( "FAILURE *** New user creation failed with: <br> " );
 
 		$identity = $this->CFG[URI] . $user . '/';
 		dbQuery( "UPDATE user SET name = %e, identity = %e, " .

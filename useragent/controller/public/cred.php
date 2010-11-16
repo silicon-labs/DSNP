@@ -37,9 +37,7 @@ class PublicCredController extends Controller
 
 		$connection->login( $this->USER[USER], $pass );
 
-		if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)",
-				$connection->result, $regs) )
-		{
+		if ( !$connection->success ) {
 			$this->error(
 				'Login failed.',
 				'Please press the back button to try again.'
@@ -48,8 +46,8 @@ class PublicCredController extends Controller
 
 		$this->startSession();
 		$_SESSION[ROLE] = 'owner';
-		$_SESSION[hash] = $regs[1];
-		$_SESSION[token] = $regs[2];
+		$_SESSION[hash] = $connection->regs[1];
+		$_SESSION[token] = $connection->regs[2];
 	
 #		if ( isset( $_POST['d'] ) )
 #			$this->redirect( urldecode($_POST['d']) );
@@ -72,38 +70,27 @@ class PublicCredController extends Controller
 #		}
 #		else {
 
-			$connection = new Connection;
-			$connection->openLocalPriv();
+		$connection = new Connection;
+		$connection->openLocalPriv();
 
-			$connection->ftokenRequest( $this->USER[USER], $hash );
+		$connection->ftokenRequest( $this->USER[USER], $hash );
 
-#			if ( !ereg("^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)",
-#					$connection->result, $regs) )
-#			{
-#			$send = 
-#				"SPP/0.1 " . $this->CFG_URI . "\r\n" . 
-#				"comm_key " . $this->CFG_COMM_KEY . "\r\n" .
-#				"ftoken_request " . $this->USER_NAME . " $hash\r\n";
+		if ( $connection->success ) {
+			$arg_h = 'h=' . urlencode( $connection->regs[3] );
+			$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
+			$friend_id = $connection->regs[2];
+			$dest = "";
 
-			if ( ereg("^OK ([-A-Za-z0-9_]+) ([^ \t\n\r]+) ([-A-Za-z0-9_]+)", 
-					$connection->result, $regs) )
-			{
-				$arg_h = 'h=' . urlencode( $regs[3] );
-				$arg_reqid = 'reqid=' . urlencode( $regs[1] );
-				$friend_id = $regs[2];
-				$dest = "";
-
-				# FIXME: put this into the args definition.
-				if ( isset( $_GET['d'] ) )
-					$dest = "&d=" . urlencode($_GET['d']);
-					
-				$this->redirect(
-					"{$friend_id}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
-			}
-			else {
-				$this->userRedirect( "/" );
-			}
-#		}
+			# FIXME: put this into the args definition.
+			if ( isset( $_GET['d'] ) )
+				$dest = "&d=" . urlencode($_GET['d']);
+				
+			$this->redirect(
+				"{$friend_id}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
+		}
+		else {
+			$this->userRedirect( "/" );
+		}
 	}
 
 	function sftoken()

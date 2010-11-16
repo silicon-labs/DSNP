@@ -17,9 +17,9 @@ class OwnerFreqController extends Controller
 		$connection->relidResponse( 
 			$this->USER[USER], $fr_reqid, $identity );
 
-		if ( ereg("^OK ([-A-Za-z0-9_]+)", $connection->result, $regs) ) {
+		if ( $connection->success ) {
 			$arg_identity = 'identity=' . urlencode( $this->USER[URI]);
-			$arg_reqid = 'reqid=' . urlencode( $regs[1] );
+			$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
 
 			$this->redirect("${identity}freq/frfinal?${arg_identity}&${arg_reqid}" );
 		}

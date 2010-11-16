@@ -48,36 +48,60 @@ class Connection
 	{
 		$this->command( 
 			"new_user $user $pass\r\n" );
+
+		$this->success = ereg(
+			"^OK",
+			$this->result );
 	}
 
 	function relidRequest( $user, $identity )
 	{
 		$this->command( 
 			"relid_request $user $identity\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+)",
+			$this->result, $this->regs );
 	}
 
 	function relidResponse( $user, $fr_reqid, $identity )
 	{
 		$this->command( 
 			"relid_response $user $fr_reqid $identity\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+)", 
+			$this->result, $this->regs );
 	}
 
 	function login( $user, $pass )
 	{
 		$this->command( 
 			"login $user $pass\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)",
+			$this->result, $this->regs );
 	}
 
 	function ftokenRequest( $user, $hash )
 	{
 		$this->command(
 			"ftoken_request $user $hash\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+) ([^ \t\n\r]+) ([-A-Za-z0-9_]+)", 
+			$this->result, $this->regs );
 	}
 
 	function ftokenResponse( $user, $hash, $reqid )
 	{
 		$this->command(
 			"ftoken_response $user $hash $reqid\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+) ([^ \t\r\n]*)",
+			$this->result, $this->regs );
 	}
 
 	function submitFtoken( $ftoken )

@@ -137,8 +137,8 @@ class PublicCredController extends Controller
 			$_SESSION[hash] = $hash;
 			$_SESSION[token] = $ftoken;
 
-			$BROWSER = dbQuery( "
-				SELECT id, user_id, user, friend_id, identity, name
+			$friendClaim = dbQuery( "
+				SELECT id, user_id, user, friend_id, name
 				FROM friend_claim WHERE user_id = %l AND friend_id = %e
 				",
 				$this->USER[ID],
@@ -146,9 +146,10 @@ class PublicCredController extends Controller
 			);
 
 			# FIXME: check result
-			$BROWSER = $BROWSER[0];
+			$BROWSER[ID] = $friendClaim[0]['id'];
+			$BROWSER[URI] = $friendClaim[0]['friend_id'];
+
 			$_SESSION[BROWSER] = $BROWSER;
-			#$this->Session->write( 'BROWSER', $BROWSER );
 
 #			if ( isset( $_GET['d'] ) )
 #				$this->redirect( $_GET['d'] );

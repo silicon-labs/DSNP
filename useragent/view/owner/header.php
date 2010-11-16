@@ -1,11 +1,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<?php /*echo $html->charset(); */?>
 	<title>
 		<?php 
 			echo $CFG[SITE_NAME];
-			if ( isset( $USER_NAME ) )
-				echo ": $USER_NAME";
+			echo ": {$USER[NAME]}";
 		?>
 	</title>
 	<link href="<?echo $this->siteLoc( '/css/duao.css' ); ?>"
@@ -23,8 +21,7 @@
 		<td id="header_middle"><div class="header_content">
 		<h1>
 		<?php
-//			if ( isset( $USER['display_long'] ) )
-//				echo $html->link( $USER['display_long'], $USER['identity'] );
+			echo $this->absLink( $USER[NAME], $USER[URI] );
 		?>
 		</h1>
 		</div></td>
@@ -32,23 +29,9 @@
 		<td id="header_right"><div class="header_content">
 		<h1>
 		<?php 
-//		if ( isset( $ROLE ) && $ROLE == 'friend' )
-//		{
-//			echo $html->link( isset( $BROWSER['name'] ) ? $BROWSER['name'] : 
-//					$BROWSER['identity'], $BROWSER['identity'] );
-//			echo " - ";
-//			echo $html->link( 'logout', "/$USER_NAME/cred/logout" );
-//		}
-//		else if ( isset( $ROLE ) && $ROLE == 'owner' )
-//		{
-//			echo $html->link( $USER['name'], $USER['identity'] );
-//			echo " - ";
+			echo $this->link( $USER[NAME], $USER[URI] );
+			echo " - ";
 			echo $this->userLink( 'logout', "/cred/logout" );
-//		}
-//		else if ( isset( $USER_NAME ) )
-//		{
-//			echo $html->link( 'login', "/$USER_NAME/cred/login" );
-//		}
 		?>
 		</h1>
 		</div></td>

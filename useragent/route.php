@@ -8,8 +8,7 @@ $USER[NAME] = null;
 $USER[ID] = null;
 $USER[URI] = null;
 
-$BROWSER[USER] = null;
-$BROWSER[NAME] = null;
+# ID is the id of the friend_claim row.
 $BROWSER[ID] = null;
 $BROWSER[URI] = null;
 
@@ -29,6 +28,7 @@ function checkUserDb()
 
 	$USER[ID] = $result['id'];
 	$USER[URI] =  "$CFG[URI]$USER[USER]/";
+	$USER[NAME] = $result['user'];
 
 #	$this->USER_NAME = $user['user'];
 #	$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";

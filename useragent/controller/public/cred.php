@@ -106,11 +106,9 @@ class PublicCredController extends Controller
 		$connection->submitFtoken( $ftoken );
 
 		# If there is a result then the login is successful. 
-		if ( ereg("^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)",
-				$connection->result, $regs ) )
-		{
-			$hash = $regs[1];
-			$identity = $regs[3];
+		if ( $connection->success ) {
+			$hash = $connection->regs[1];
+			$identity = $connection->regs[3];
 
 #			# Login successful.
 #			$this->Session->write( 'ROLE', 'friend' );

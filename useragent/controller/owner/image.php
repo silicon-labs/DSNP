@@ -94,7 +94,7 @@ class OwnerImageController extends Controller
 		$connection->submitBroadcast( 
 			$this->USER[USER], '-', $len, $headers, $data );
 
-		if ( ereg("^OK", $connection->result, $regs) )
+		if ( $connection->success )
 			$this->userRedirect( "/" );
 		else
 			die( "submit_broadcast failed with $connection->result" );

@@ -37,11 +37,10 @@ class OwnerUserController extends Controller
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-
 		$connection->submitBroadcast( 
 			$this->USER[USER], '-', $len, $headers, $message );
 
-		if ( ereg("^OK", $connection->result, $regs) )
+		if ( $connection->success )
 			$this->userRedirect( "/" );
 		else
 			die( "submit_broadcast failed with $connection->result" );
@@ -58,9 +57,9 @@ class OwnerUserController extends Controller
 		$connection->remoteBroadcastResponse(
 			$this->USER[USER], $reqid );
 
-		if ( !ereg("^OK ([-A-Za-z0-9_]+)", $connection->result, $regs) )
-			die( "remote_broadcast_response failed with $res ");
-		$reqid = $regs[1];
+		if ( !$connection->success )
+			die( "remote_broadcast_response failed with $connection->result");
+		$reqid = $connection->regs[1];
 
 		$this->redirect( "${backto}user/finish?reqid=$reqid" );
 	}
@@ -103,15 +102,12 @@ class OwnerUserController extends Controller
 		$connection->submitBroadcast( 
 			$this->USER[USER], '-', $len, $headers, $message );
 
-		if ( ereg("^OK", $connection->result, $regs) )
+		if ( $connection->success )
 			$this->userRedirect( "/" );
 		else
 			die( "submit_broadcast failed with $connection->result" );
 
 #		$this->VALID_USER = $this->Session->read('VALID_USER');
-
-#		if ( ! ereg("^OK", $res, $regs) )
-#			die( $res );
 
 		/* Invalidate the user data in the session so it is reloaded on the
 		 * next page load. */

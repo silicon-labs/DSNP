@@ -108,18 +108,30 @@ class Connection
 	{
 		$this->command(
 			"submit_ftoken $ftoken\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)",
+			$this->result, $this->regs );
 	}
 
 	function frFinal( $user, $reqid, $identity )
 	{
 		$this->command( 
 			"friend_final $user $reqid $identity\r\n" );
+
+		$this->success = ereg(
+			"^OK",
+			$this->result );
 	}
 
 	function acceptFriend( $user, $reqid )
 	{
 		$this->command(
 			"accept_friend $user $reqid\r\n" );
+
+		$this->success = ereg(
+			"^OK", 
+			$this->result );
 	}
 
 	function submitBroadcast( $user, $network, $len, $headers, $message )
@@ -130,6 +142,10 @@ class Connection
 		fwrite( $this->fp, $message, strlen($message) );
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );
+
+		$this->success = ereg(
+			"^OK", 
+			$this->result );
 	}
 
 	function remoteBroadcastRequest( $user, $identity, 
@@ -143,18 +159,30 @@ class Connection
 		fwrite( $this->fp, $message, strlen($message) );
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+)",
+			$this->result, $this->regs );
 	}
 
 	function remoteBroadcastResponse( $user, $reqid )
 	{
 		$this->command(
 			"remote_broadcast_response $user $reqid\r\n" );
+
+		$this->success = ereg(
+			"^OK ([-A-Za-z0-9_]+)",
+			$this->result, $this->regs );
 	}
 
 	function remoteBroadcastFinal( $user, $reqid )
 	{
 		$this->command(
 			"remote_broadcast_final $user $reqid\r\n" );
+
+		$this->success = ereg(
+			"^OK", 
+			$this->result );
 	}
 };
 ?>

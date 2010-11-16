@@ -53,7 +53,7 @@ class PublicFreqController extends Controller
 		$connection->openLocalPriv();
 		$connection->frFinal( $this->USER[USER], $reqid, $identity );
 
-		if ( ereg("^OK", $connection->result ) ) {
+		if ( $connection->success ) {
 			$this->redirect( $this->USER[URI] );
 		}
 		else {

@@ -33,21 +33,20 @@ class FriendUserController extends Controller
 			$message
 		);
 
-		$identity = $BROWSER['identity'];
+		$identity = $BROWSER[URI];
 		$hash = $_SESSION['hash'];
 		$token = $_SESSION['token'];
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-
 		$connection->remoteBroadcastRequest( 
 			$this->USER[USER], $identity, 
 			$hash, $token, '-', $len,
 			$headers, $message );
 
-		if ( !ereg("^OK ([-A-Za-z0-9_]+)", $connection->result, $regs ) )
+		if ( !$connection->success ) 
 			die( $connection->result );
-		$reqid = $regs[1];
+		$reqid = $connection->regs[1];
 
 		$this->redirect( "${identity}user/flush?reqid=$reqid&backto=" . 
 			urlencode( $this->USER[URI] )  );
@@ -59,12 +58,11 @@ class FriendUserController extends Controller
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-
 		$connection->remoteBroadcastFinal(
 			$this->USER[USER], $reqid );
 
-		if ( !ereg("^OK", $connection->result, $regs) )
-			die( "remote_broadcast_final failed with $res" );
+		if ( !$connection->success )
+			die( "remote_broadcast_final failed with $connection->result" );
 
 		$this->userRedirect( "/" );
 	}

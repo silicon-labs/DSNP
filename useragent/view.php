@@ -17,6 +17,7 @@ class View
 		global $CFG;
 		global $USER;
 		global $ROLE;
+		global $BROWSER;
 
 		foreach ( $this->controller->vars as $name => $value )
 			${$name} = $value;

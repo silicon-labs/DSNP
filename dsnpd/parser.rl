@@ -420,6 +420,8 @@ int serverParseLoop()
 			retVal = ERR_LINE_TOO_LONG;
 		}
 
+		message( "command: %.*s", (int)lineLen, buf );
+
 		const char *p = buf, *pe = buf + lineLen;
 		%% write exec;
 
@@ -735,7 +737,7 @@ long EncryptedBroadcastParser::parse( const char *msg )
 }
 
 /*
- * fetch_public_key_net
+ * fetchPublicKeyNet
  */
 
 %%{
@@ -743,7 +745,7 @@ long EncryptedBroadcastParser::parse( const char *msg )
 	write data;
 }%%
 
-long fetch_public_key_net( PublicKey &pub, const char *site, 
+long fetchPublicKeyNet( PublicKey &pub, const char *site, 
 		const char *host, const char *user )
 {
 	static char buf[8192];
@@ -765,7 +767,7 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-	message("encrypted return to fetch_public_key_net is %s", buf );
+	message("encrypted return to fetchPublicKeyNet is %s", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 )
@@ -799,7 +801,7 @@ long fetch_public_key_net( PublicKey &pub, const char *site,
 	pub.n = n.relinquish();
 	pub.e = e.relinquish();
 
-	message("fetch_public_key_net returning %s %s\n", pub.n, pub.e );
+	message("fetchPublicKeyNet returning %s %s\n", pub.n, pub.e );
 
 	return 0;
 }

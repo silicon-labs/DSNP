@@ -266,7 +266,7 @@ long open_inet_connection( const char *hostname, unsigned short port )
 	return socketFd;
 }
 
-long fetch_public_key_db( PublicKey &pub, MYSQL *mysql, const char *identity )
+long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *identity )
 {
 	long result = 0;
 	long query_res;
@@ -368,6 +368,9 @@ char *storeCertificate( MYSQL *mysql, const char *identity, char *cert )
 
 RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 {
+	/* For the time being, piggyback this on the publickey fetch. */
+	fetchCertificate( mysql, identity );
+
 	PublicKey pub;
 	RSA *rsa;
 
@@ -375,14 +378,14 @@ RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 	id.parse();
 
 	/* First try to fetch the public key from the database. */
-	long result = fetch_public_key_db( pub, mysql, identity );
+	long result = fetchPublicKeyDb( pub, mysql, identity );
 	if ( result < 0 )
 		return 0;
 
 	/* If the db fetch failed, get the public key off the net. */
 	if ( result == 0 ) {
 		char *site = get_site( identity );
-		result = fetch_public_key_net( pub, site, id.host, id.user );
+		result = fetchPublicKeyNet( pub, site, id.host, id.user );
 		if ( result < 0 )
 			return 0;
 

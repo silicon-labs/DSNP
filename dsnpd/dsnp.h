@@ -113,7 +113,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		const char *identity, const char *friendHash, const char *group,
 		long long generation, const char *broadcastKey, const char *friendProof1, const char *friendProof2 );
 
-long fetch_public_key_net( PublicKey &pub, const char *site,
+long fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
 long open_inet_connection( const char *hostname, unsigned short port );
 long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,

@@ -366,7 +366,7 @@ char *storeCertificate( MYSQL *mysql, const char *identity, char *cert )
 	return certFile.relinquish();
 }
 
-RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
+Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 {
 	/* For the time being, piggyback this on the publickey fetch. */
 	fetchCertificate( mysql, identity );
@@ -399,7 +399,10 @@ RSA *fetchPublicKey( MYSQL *mysql, const char *identity )
 	rsa->n = base64ToBn( pub.n );
 	rsa->e = base64ToBn( pub.e );
 
-	return rsa;
+	Keys *keys = new Keys;
+	keys->rsa = rsa;
+
+	return keys;
 }
 
 char *fetchCertificate( MYSQL *mysql, const char *identity )
@@ -425,12 +428,13 @@ char *fetchCertificate( MYSQL *mysql, const char *identity )
 }
 
 
-RSA *loadKey( MYSQL *mysql, const char *user )
+Keys *loadKey( MYSQL *mysql, const char *user )
 {
 	long query_res;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
-	RSA *rsa;
+	Keys *keys = 0;
+	RSA *rsa = 0;
 
 	query_res = exec_query( mysql,
 		"SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
@@ -460,14 +464,19 @@ RSA *loadKey( MYSQL *mysql, const char *user )
 free_result:
 	mysql_free_result( result );
 query_fail:
-	return rsa;
+
+	if ( rsa != 0 ) {
+		keys = new Keys;
+		keys->rsa = rsa;
+	}
+	return keys;
 }
 
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg )
 {
-	RSA *id_pub, *user_priv;
+	Keys *id_pub, *user_priv;
 	Encrypt encrypt;
 	int encrypt_res;
 
@@ -547,7 +556,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message )
 {
-	RSA *id_pub, *user_priv;
+	Keys *id_pub, *user_priv;
 	Encrypt encrypt;
 	int decrypt_res;
 

@@ -102,7 +102,7 @@ query_fail:
 void ftokenRequest( MYSQL *mysql, const char *user, const char *hash )
 {
 	int sigRes;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	unsigned char flogin_token[TOKEN_SIZE], reqid[REQID_SIZE];
 	char *flogin_token_str, *reqid_str;
 	long friend_claim;
@@ -205,7 +205,7 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	 * e) redirects the browser to $FP-URI/submit-token?uri=$URI&token=$TOK
 	 */
 	int verifyRes, fetchRes;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	unsigned char *flogin_token;
 	char *flogin_token_str;
 	long friend_claim;

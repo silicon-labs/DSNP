@@ -69,8 +69,8 @@ long notifyAccept( MYSQL *mysql, const char *forUser, const char *from_id,
 		return 0;
 	}
 
-	RSA *user_priv = loadKey( mysql, forUser );
-	RSA *id_pub = fetchPublicKey( mysql, from_id );
+	Keys *user_priv = loadKey( mysql, forUser );
+	Keys *id_pub = fetchPublicKey( mysql, from_id );
 
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	const char *putRelid = requested_relid;
@@ -161,8 +161,8 @@ void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 	const char *user = row[0];
 	const char *friend_id = row[1];
 
-	RSA *user_priv = loadKey( mysql, user );
-	RSA *id_pub = fetchPublicKey( mysql, friend_id );
+	Keys *user_priv = loadKey( mysql, user );
+	Keys *id_pub = fetchPublicKey( mysql, friend_id );
 
 	Encrypt encrypt( id_pub, user_priv );
 	int decrypt_res = encrypt.decryptVerify( msg );

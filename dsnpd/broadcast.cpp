@@ -131,7 +131,7 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 		const char *broadcastKey = row[2];
 
 		/* Do the decryption. */
-		RSA *id_pub = fetchPublicKey( mysql, authorId );
+		Keys *id_pub = fetchPublicKey( mysql, authorId );
 		Encrypt encrypt( id_pub, 0 );
 		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
 
@@ -222,7 +222,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 	message( "receive broadcast: key is %s\n", broadcastKey );
 
 	/* Do the decryption. */
-	RSA *id_pub = fetchPublicKey( mysql, friendId );
+	Keys *id_pub = fetchPublicKey( mysql, friendId );
 	Encrypt encrypt( id_pub, 0 );
 	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted, strlen(encrypted) );
 
@@ -323,7 +323,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	CurrentPutKey put( mysql, user, network );
 
 	/* Do the encryption. */ 
-	RSA *userPriv = loadKey( mysql, user ); 
+	Keys *userPriv = loadKey( mysql, user ); 
 	Encrypt encrypt( 0, userPriv ); 
 	encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)msg, mLen ); 
 
@@ -419,7 +419,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		const char *token, const char *network, const char *msg, long mLen )
 {
 	int res;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	Encrypt encrypt;
 	MYSQL_RES *result;
 	MYSQL_ROW row;
@@ -588,7 +588,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		long long seqNum, const char *network, const char *msg, long mLen )
 {
 	Encrypt encrypt;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	int sigRes;
 
 	//message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 

@@ -25,6 +25,12 @@
 
 #include "string.h"
 
+/* Wraps up RSA struct and private key/x509. Useful for transition to CMS. */
+struct Keys
+{
+	RSA *rsa;
+};
+
 struct PublicKey
 {
 	char *n;
@@ -432,8 +438,8 @@ char *fetchCertificate( MYSQL *mysql, const char *identity );
 char *fetchCertificateNet( const char *site, const char *host,
 		const char *user );
 
-RSA *fetchPublicKey( MYSQL *mysql, const char *identity );
-RSA *loadKey( MYSQL *mysql, const char *user );
+Keys *fetchPublicKey( MYSQL *mysql, const char *identity );
+Keys *loadKey( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );

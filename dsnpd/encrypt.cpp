@@ -35,19 +35,19 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 
 	/* Need to make a buffer containing both the session key and message so we
 	 * our signature is valid only using this encryption key. */
-	u_char *signData = new u_char[BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e) + mLen];
-	BN_bn2bin( pubEncVer->n, signData );
-	BN_bn2bin( pubEncVer->e, signData+BN_num_bytes(pubEncVer->n) );
-	memcpy( signData + BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e), msg, mLen );
+	u_char *signData = new u_char[BN_num_bytes(pubEncVer->rsa->n) + BN_num_bytes(pubEncVer->rsa->e) + mLen];
+	BN_bn2bin( pubEncVer->rsa->n, signData );
+	BN_bn2bin( pubEncVer->rsa->e, signData+BN_num_bytes(pubEncVer->rsa->n) );
+	memcpy( signData + BN_num_bytes(pubEncVer->rsa->n) + BN_num_bytes(pubEncVer->rsa->e), msg, mLen );
 
 	/* Sign the message. */
 	u_char msg_sha1[SHA_DIGEST_LENGTH];
-	SHA1( signData, BN_num_bytes(pubEncVer->n) + BN_num_bytes(pubEncVer->e) + mLen, msg_sha1 );
+	SHA1( signData, BN_num_bytes(pubEncVer->rsa->n) + BN_num_bytes(pubEncVer->rsa->e) + mLen, msg_sha1 );
 
-	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
+	u_char *signature = (u_char*)malloc( RSA_size(privDecSign->rsa) );
 	unsigned sigLen;
 	int signRes = RSA_sign( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
-			signature, &sigLen, privDecSign );
+			signature, &sigLen, privDecSign->rsa );
 
 	if ( signRes != 1 ) {
 		ERR_error_string( ERR_get_error(), err );
@@ -59,9 +59,9 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	RAND_bytes( new_session_key, SK_SIZE );
 
 	/* Encrypt the session key. */
-	u_char *encrypted = (u_char*)malloc( RSA_size(pubEncVer) );
+	u_char *encrypted = (u_char*)malloc( RSA_size(pubEncVer->rsa) );
 	int encLen = RSA_public_encrypt( SK_SIZE, new_session_key, encrypted, 
-			pubEncVer, RSA_PKCS1_PADDING );
+			pubEncVer->rsa, RSA_PKCS1_PADDING );
 	
 	if ( encLen < 0 ) {
 		ERR_error_string( ERR_get_error(), err );
@@ -121,9 +121,9 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	msgLen -= 2 + encLen;
 
 	/* Decrypt the key. */
-	u_char *session_key = (u_char*) malloc( RSA_size( privDecSign ) );
+	u_char *session_key = (u_char*) malloc( RSA_size( privDecSign->rsa ) );
 	long skLen = RSA_private_decrypt( encLen, encrypted, session_key, 
-			privDecSign, RSA_PKCS1_PADDING );
+			privDecSign->rsa, RSA_PKCS1_PADDING );
 	if ( skLen < 0 ) {
 		sprintf( err, "bad session key");
 		//ERR_error_string( ERR_get_error(), err );
@@ -145,16 +145,16 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	data = signature + sigLen;
 	dataLen = decLen - ( data - decrypted );
 
-	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + dataLen];
-	BN_bn2bin( privDecSign->n, verifyData );
-	BN_bn2bin( privDecSign->e, verifyData+BN_num_bytes(privDecSign->n) );
-	memcpy( verifyData + BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e), data, dataLen );
+	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->rsa->n) + BN_num_bytes(privDecSign->rsa->e) + dataLen];
+	BN_bn2bin( privDecSign->rsa->n, verifyData );
+	BN_bn2bin( privDecSign->rsa->e, verifyData+BN_num_bytes(privDecSign->rsa->n) );
+	memcpy( verifyData + BN_num_bytes(privDecSign->rsa->n) + BN_num_bytes(privDecSign->rsa->e), data, dataLen );
 
 	/* Verify the item. */
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
-	SHA1( verifyData, BN_num_bytes(privDecSign->n) + BN_num_bytes(privDecSign->e) + dataLen, decrypted_sha1 );
+	SHA1( verifyData, BN_num_bytes(privDecSign->rsa->n) + BN_num_bytes(privDecSign->rsa->e) + dataLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
-			signature, sigLen, pubEncVer );
+			signature, sigLen, pubEncVer->rsa );
 	if ( verifyres != 1 ) {
 		ERR_error_string( ERR_get_error(), err );
 		return -1;
@@ -189,10 +189,10 @@ int Encrypt::bkSignEncrypt( const char *srcBk, u_char *msg, long mLen )
 	u_char msg_sha1[SHA_DIGEST_LENGTH];
 	SHA1( signData, SK_SIZE+mLen, msg_sha1 );
 
-	u_char *signature = (u_char*)malloc( RSA_size(privDecSign) );
+	u_char *signature = (u_char*)malloc( RSA_size(privDecSign->rsa) );
 	unsigned sigLen;
 	int signRes = RSA_sign( NID_sha1, msg_sha1, SHA_DIGEST_LENGTH, 
-			signature, &sigLen, privDecSign );
+			signature, &sigLen, privDecSign->rsa );
 
 	if ( signRes != 1 ) {
 		free( signature );
@@ -271,7 +271,7 @@ int Encrypt::bkDecryptVerify( const char *srcBk, const char *srcMsg, long srcMsg
 	u_char decrypted_sha1[SHA_DIGEST_LENGTH];
 	SHA1( verifyData, SK_SIZE+dataLen, decrypted_sha1 );
 	int verifyres = RSA_verify( NID_sha1, decrypted_sha1, SHA_DIGEST_LENGTH, 
-			signature, sigLen, pubEncVer );
+			signature, sigLen, pubEncVer->rsa );
 	if ( verifyres != 1 ) {
 		message("verify failed\n");
 		ERR_error_string( ERR_get_error(), err );

@@ -78,7 +78,7 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	 */
 
 	int sigRes;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
 	char *requested_relid_str, *reqid_str;
 	Encrypt encrypt;
@@ -198,7 +198,7 @@ void relidResponse( MYSQL *mysql, const char *user,
 	 */
 
 	int verifyRes, fetchRes, sigRes;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	unsigned char *requested_relid;
 	unsigned char response_relid[RELID_SIZE], response_reqid[REQID_SIZE];
 	char *requested_relid_str, *response_relid_str, *response_reqid_str;
@@ -350,7 +350,7 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 	 */
 
 	int verifyRes, fetchRes;
-	RSA *user_priv, *id_pub;
+	Keys *user_priv, *id_pub;
 	unsigned char *message;
 	unsigned char requested_relid[RELID_SIZE], returned_relid[RELID_SIZE];
 	char *requested_relid_str, *returned_relid_str;

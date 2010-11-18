@@ -27,6 +27,8 @@
 #include <openssl/rc4.h>
 #include <sys/types.h>
 
+struct Keys;
+
 struct Encrypt
 {
 	Encrypt()
@@ -35,7 +37,7 @@ struct Encrypt
 		sym(0)
 	{}
 
-	Encrypt( RSA *pubEncVer, RSA *privDecSign )
+	Encrypt( Keys *pubEncVer, Keys *privDecSign )
 	:
 		pubEncVer(pubEncVer), privDecSign(privDecSign), 
 		sym(0)
@@ -46,7 +48,7 @@ struct Encrypt
 		clear();
 	}
 
-	void load( RSA *pubEncVer, RSA *privDecSign )
+	void load( Keys *pubEncVer, Keys *privDecSign )
 	{
 		this->pubEncVer = pubEncVer;
 		this->privDecSign = privDecSign;
@@ -68,8 +70,8 @@ struct Encrypt
 		sym = 0;
 	}
 
-	RSA *pubEncVer;
-	RSA *privDecSign;
+	Keys *pubEncVer;
+	Keys *privDecSign;
 
 	/* For encryption. */
 	char *sym;

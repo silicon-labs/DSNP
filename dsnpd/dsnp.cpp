@@ -35,6 +35,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include <openssl/pem.h>
+#include <openssl/cms.h>
+#include <openssl/err.h>
 
 void setConfigByUri( const char *uri )
 {
@@ -368,9 +371,6 @@ char *storeCertificate( MYSQL *mysql, const char *identity, char *cert )
 
 Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 {
-	/* For the time being, piggyback this on the publickey fetch. */
-	fetchCertificate( mysql, identity );
-
 	PublicKey pub;
 	RSA *rsa;
 
@@ -401,6 +401,23 @@ Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 
 	Keys *keys = new Keys;
 	keys->rsa = rsa;
+
+	/* For the time being, piggyback this on the publickey fetch. */
+	char *certFile = fetchCertificate( mysql, identity );
+
+	/* Read in signer certificate and private key */
+	BIO *tbio = BIO_new_file( certFile, "r" );
+
+	if ( tbio == 0 )
+		error( "fetchPublicKey unable to open BIO for certfile %s\n", certFile );
+
+	X509 *cert = PEM_read_bio_X509( tbio, NULL, 0, NULL );
+	if ( cert == 0 )
+		error( "unable to read cert from certfile", certFile );
+
+	message( "have x509 cert %p\n", cert );
+	
+	keys->x509 = cert;
 
 	return keys;
 }
@@ -468,6 +485,39 @@ query_fail:
 	if ( rsa != 0 ) {
 		keys = new Keys;
 		keys->rsa = rsa;
+
+		DbQuery userQuery( mysql, 
+			"SELECT x509_key, x509_crt FROM user WHERE user = %e", user );
+
+		if ( userQuery.rows() != 1 )
+			fatal( "loadKey: user not found\n" );
+
+		row = userQuery.fetchRow();
+		char *keyFileName = row[0];
+		char *crtFileName = row[1];
+
+		/* Read in signer certificate and private key */
+		BIO *tbio = BIO_new_file( crtFileName, "r" );
+
+		if ( tbio == 0 )
+			error( "fetchPublicKey unable to open BIO for certfile %s\n", crtFileName );
+
+		X509 *cert = PEM_read_bio_X509( tbio, NULL, 0, NULL );
+		if ( cert == 0 )
+			error( "unable to read cert from certfile %s\n", crtFileName );
+
+		BIO *pbio = BIO_new_file( keyFileName, "r" );
+		if ( pbio == 0 )
+			error( "fetchPublicKey unable to open BIO for privatekey %s\n", keyFileName );
+
+		EVP_PKEY *pkey = PEM_read_bio_PrivateKey( pbio, NULL, 0, NULL);
+		if ( pkey == 0 )
+			error( "unable to read private key from keyfile %s\n", keyFileName );
+
+		message( "have x509 cert %p and private key %p\n", cert, pkey );
+		
+		keys->x509 = cert;
+		keys->pkey = pkey;
 	}
 	return keys;
 }

@@ -29,6 +29,8 @@
 struct Keys
 {
 	RSA *rsa;
+	X509 *x509;
+	EVP_PKEY *pkey;
 };
 
 struct PublicKey

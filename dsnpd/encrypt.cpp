@@ -70,16 +70,22 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	}
 
 	u_char *encryptData = new u_char[64 + sigLen + mLen];
-	uint16_t *pSigLen = (uint16_t*)encryptData;
-	*pSigLen = htons( sigLen );
-	long lenLen = 2;
-	memcpy( encryptData+lenLen, signature, sigLen );
-	memcpy( encryptData+lenLen+sigLen, msg, mLen );
+	u_char *dest = encryptData;
+
+	*( (uint16_t*)dest ) = htons( sigLen );
+	dest += 2;
+	memcpy( dest, signature, sigLen );
+	dest += sigLen;
+
+	*( (uint16_t*)dest ) = htons( mLen );
+	dest += 2;
+	memcpy( dest, msg, mLen );
+	dest += mLen;
 
 	/* Encrypt the message using the session key. */
-	output = (u_char*)malloc( lenLen+sigLen+mLen );
+	output = (u_char*)malloc( 2 + sigLen + 2 + mLen );
 	RC4_set_key( &rc4_key, SK_SIZE, new_session_key );
-	RC4( &rc4_key, lenLen+sigLen+mLen, encryptData, output );
+	RC4( &rc4_key, 2 + sigLen + 2 + mLen, encryptData, output );
 
 	/* CMS encryption packet */
 	int flags = 0;
@@ -107,9 +113,12 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 		message( "smime: %p %d\n", bptr->data, bptr->length );
 	}
 
-	u_char *fullMessage = new u_char[ 2 + encLen + lenLen + 
-			sigLen + mLen /*+ 2 + bptr->length*/];
-	u_char *dest = fullMessage;
+	u_char *fullMessage = new u_char[
+			2 + encLen + 
+			2 +
+				2 + sigLen + 
+				2 + mLen];
+	dest = fullMessage;
 
 	*((uint16_t*)dest) = htons( encLen );
 	dest += 2;
@@ -117,18 +126,25 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	memcpy( dest, encrypted, encLen );
 	dest += encLen;
 
-	memcpy( dest, output, lenLen + sigLen + mLen );
-	dest += lenLen + sigLen + mLen;
+	*((uint16_t*)dest) = htons( 2 + sigLen + 2 + mLen );
+	dest += 2;
+
+	memcpy( dest, output, 2 + sigLen + 2 + mLen );
+	dest += 2 + sigLen + 2 + mLen;
 
 //	*((uint16_t*)dest) = htons( encLen );
 //	dest += 2;
 //	memcpy( dest, bptr->data, bptr->length );
 //	dest += bptr->length;
 
-
 	/* FIXME: check results here. */
 
-	sym = binToBase64( fullMessage, 2 + encLen + lenLen + sigLen + mLen );
+	sym = binToBase64( fullMessage, 
+		2 + encLen + 
+		2 + 
+			2 + sigLen + 
+			2 + mLen
+	);
 
 	free( encrypted );
 	free( signature );
@@ -160,6 +176,9 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	message += 2 + encLen;
 	msgLen -= 2 + encLen;
 
+	long symLen = ntohs( *((uint16_t*)message) );
+	message += 2;
+
 	/* Decrypt the key. */
 	u_char *session_key = (u_char*) malloc( RSA_size( privDecSign->rsa ) );
 	long skLen = RSA_private_decrypt( encLen, encrypted, session_key, 
@@ -170,22 +189,24 @@ int Encrypt::decryptVerify( const char *srcMsg )
 		return -1;
 	}
 
-	decrypted = (u_char*)malloc( msgLen );
+	decrypted = (u_char*)malloc( symLen );
 	RC4_set_key( &rc4_key, skLen, session_key );
-	RC4( &rc4_key, msgLen, message, decrypted );
-	decLen = msgLen;
+	RC4( &rc4_key, symLen, message, decrypted );
+	decLen = symLen;
 
 	/* Signature length is in the first two bytes. */
-	uint16_t *pSigLen = (uint16_t*)decrypted;
-	sigLen = ntohs( *pSigLen );
-	if ( sigLen >= msgLen )
+	sigLen = ntohs( *( (uint16_t*)decrypted ) );
+	if ( sigLen >= symLen )
 		return -1;
-
 	signature = decrypted + 2;
-	data = signature + sigLen;
-	dataLen = decLen - ( data - decrypted );
+	decrypted += 2 + sigLen;
 
-	u_char *verifyData = new u_char[BN_num_bytes(privDecSign->rsa->n) + BN_num_bytes(privDecSign->rsa->e) + dataLen];
+	dataLen = ntohs( *( (uint16_t*)decrypted ) );
+	data = decrypted + 2;
+
+	u_char *verifyData = new u_char[
+		BN_num_bytes(privDecSign->rsa->n) + BN_num_bytes(privDecSign->rsa->e) 
+		+ dataLen];
 	BN_bn2bin( privDecSign->rsa->n, verifyData );
 	BN_bn2bin( privDecSign->rsa->e, verifyData+BN_num_bytes(privDecSign->rsa->n) );
 	memcpy( verifyData + BN_num_bytes(privDecSign->rsa->n) + BN_num_bytes(privDecSign->rsa->e), data, dataLen );

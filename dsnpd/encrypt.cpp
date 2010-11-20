@@ -90,7 +90,7 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	/* CMS encryption packet */
 	int flags = 0;
 	message( "encrypting hello world\n" );
-	BIO *in = BIO_new_mem_buf( (void*)"hello world", 10 );
+	BIO *in = BIO_new_mem_buf( (void*)"hello world", 11 );
 	STACK_OF( X509 ) *recips = sk_X509_new_null();
 	sk_X509_push( recips, pubEncVer->x509 );
 	CMS_ContentInfo *cms = CMS_encrypt( recips, 
@@ -117,7 +117,8 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 			2 + encLen + 
 			2 +
 				2 + sigLen + 
-				2 + mLen];
+				2 + mLen +
+			2 + bptr->length];
 	dest = fullMessage;
 
 	*((uint16_t*)dest) = htons( encLen );
@@ -132,10 +133,10 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	memcpy( dest, output, 2 + sigLen + 2 + mLen );
 	dest += 2 + sigLen + 2 + mLen;
 
-//	*((uint16_t*)dest) = htons( encLen );
-//	dest += 2;
-//	memcpy( dest, bptr->data, bptr->length );
-//	dest += bptr->length;
+	*((uint16_t*)dest) = htons( bptr->length );
+	dest += 2;
+	memcpy( dest, bptr->data, bptr->length );
+	dest += bptr->length;
 
 	/* FIXME: check results here. */
 
@@ -143,7 +144,8 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 		2 + encLen + 
 		2 + 
 			2 + sigLen + 
-			2 + mLen
+			2 + mLen +
+		2 + bptr->length
 	);
 
 	free( encrypted );
@@ -172,12 +174,15 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	long encLen = ntohs( *pEncSkLen );
 	if ( encLen >= msgLen )
 		return -1;
-	
 	message += 2 + encLen;
-	msgLen -= 2 + encLen;
 
 	long symLen = ntohs( *((uint16_t*)message) );
 	message += 2;
+
+	u_char *cms = message + symLen;
+	long cmsLen = ntohs( *((uint16_t*)cms) );
+	cms += 2;
+	::message("cms %p %d\n", cms, cmsLen );
 
 	/* Decrypt the key. */
 	u_char *session_key = (u_char*) malloc( RSA_size( privDecSign->rsa ) );
@@ -223,6 +228,28 @@ int Encrypt::decryptVerify( const char *srcMsg )
 
 	decrypted = data;
 	decLen = dataLen;
+
+	/* CMS */
+ 	BIO *in = BIO_new_mem_buf( cms, cmsLen );
+	CMS_ContentInfo *ci = SMIME_read_CMS( in, NULL );
+	if ( ci == 0 )
+		error("decrypt: failed to read content info\n");
+
+	/* Decrypt S/MIME message */
+	BIO *out = BIO_new(BIO_s_mem());
+	if ( ! CMS_decrypt( ci,
+			privDecSign->pkey, 
+			privDecSign->x509, 0, out, 0 ) )
+		error("decrypt: failed to decrypt content info\n");
+
+	BUF_MEM *bptr = 0;
+	BIO_get_mem_ptr( out, &bptr );
+
+	if ( bptr == 0 )
+		error( "did not get out memory pointer\n" );
+	else {
+		::message( "CMS decrypted: %.*s\n", (int)bptr->length, bptr->data );
+	}
 
 	return 0;
 }

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <openssl/cms.h>
 
 int Encrypt::signEncrypt( u_char *msg, long mLen )
 {
@@ -80,11 +81,50 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	RC4_set_key( &rc4_key, SK_SIZE, new_session_key );
 	RC4( &rc4_key, lenLen+sigLen+mLen, encryptData, output );
 
-	u_char *fullMessage = new u_char[ 2 + encLen + lenLen + sigLen + mLen ];
-	uint16_t *pEncLen = (uint16_t*)fullMessage;
-	*pEncLen = htons( encLen );
-	memcpy( fullMessage + 2, encrypted, encLen );
-	memcpy( fullMessage + 2 + encLen, output, lenLen + sigLen + mLen );
+	/* CMS encryption packet */
+	int flags = 0;
+	message( "encrypting hello world\n" );
+	BIO *in = BIO_new_mem_buf( (void*)"hello world", 10 );
+	STACK_OF( X509 ) *recips = sk_X509_new_null();
+	sk_X509_push( recips, pubEncVer->x509 );
+	CMS_ContentInfo *cms = CMS_encrypt( recips, 
+			in, EVP_des_ede3_cbc(), flags);
+	/* Encrypt content */
+	if ( !cms )
+		error("failed to encrypt hello world\n");
+
+	/* Write out S/MIME message */
+	BIO *out = BIO_new(BIO_s_mem());
+	if (!SMIME_write_CMS(out, cms, in, flags))
+		error("failed to write SMIME");
+
+	BUF_MEM *bptr = 0;
+	BIO_get_mem_ptr( out, &bptr );
+
+	if ( bptr == 0 )
+		error( "did not get out memory pointer\n" );
+	else {
+		message( "smime: %p %d\n", bptr->data, bptr->length );
+	}
+
+	u_char *fullMessage = new u_char[ 2 + encLen + lenLen + 
+			sigLen + mLen /*+ 2 + bptr->length*/];
+	u_char *dest = fullMessage;
+
+	*((uint16_t*)dest) = htons( encLen );
+	dest += 2;
+
+	memcpy( dest, encrypted, encLen );
+	dest += encLen;
+
+	memcpy( dest, output, lenLen + sigLen + mLen );
+	dest += lenLen + sigLen + mLen;
+
+//	*((uint16_t*)dest) = htons( encLen );
+//	dest += 2;
+//	memcpy( dest, bptr->data, bptr->length );
+//	dest += bptr->length;
+
 
 	/* FIXME: check results here. */
 

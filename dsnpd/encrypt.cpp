@@ -27,7 +27,6 @@
 #include <string.h>
 #include <assert.h>
 #include <arpa/inet.h>
-#include <openssl/cms.h>
 
 int Encrypt::signEncrypt( u_char *msg, long mLen )
 {
@@ -87,38 +86,12 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	RC4_set_key( &rc4_key, SK_SIZE, new_session_key );
 	RC4( &rc4_key, 2 + sigLen + 2 + mLen, encryptData, output );
 
-	/* CMS encryption packet */
-	int flags = 0;
-	message( "encrypting hello world\n" );
-	BIO *in = BIO_new_mem_buf( (void*)"hello world", 11 );
-	STACK_OF( X509 ) *recips = sk_X509_new_null();
-	sk_X509_push( recips, pubEncVer->x509 );
-	CMS_ContentInfo *cms = CMS_encrypt( recips, 
-			in, EVP_des_ede3_cbc(), flags);
-	/* Encrypt content */
-	if ( !cms )
-		error("failed to encrypt hello world\n");
-
-	/* Write out S/MIME message */
-	BIO *out = BIO_new(BIO_s_mem());
-	if (!SMIME_write_CMS(out, cms, in, flags))
-		error("failed to write SMIME");
-
-	BUF_MEM *bptr = 0;
-	BIO_get_mem_ptr( out, &bptr );
-
-	if ( bptr == 0 )
-		error( "did not get out memory pointer\n" );
-	else {
-		message( "smime: %p %d\n", bptr->data, bptr->length );
-	}
-
 	u_char *fullMessage = new u_char[
 			2 + encLen + 
 			2 +
 				2 + sigLen + 
 				2 + mLen +
-			2 + bptr->length];
+			2 + 0];
 	dest = fullMessage;
 
 	*((uint16_t*)dest) = htons( encLen );
@@ -133,10 +106,8 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 	memcpy( dest, output, 2 + sigLen + 2 + mLen );
 	dest += 2 + sigLen + 2 + mLen;
 
-	*((uint16_t*)dest) = htons( bptr->length );
+	*((uint16_t*)dest) = htons( 0 );
 	dest += 2;
-	memcpy( dest, bptr->data, bptr->length );
-	dest += bptr->length;
 
 	/* FIXME: check results here. */
 
@@ -145,7 +116,7 @@ int Encrypt::signEncrypt( u_char *msg, long mLen )
 		2 + 
 			2 + sigLen + 
 			2 + mLen +
-		2 + bptr->length
+		2 + 0
 	);
 
 	free( encrypted );
@@ -228,28 +199,6 @@ int Encrypt::decryptVerify( const char *srcMsg )
 
 	decrypted = data;
 	decLen = dataLen;
-
-	/* CMS */
- 	BIO *in = BIO_new_mem_buf( cms, cmsLen );
-	CMS_ContentInfo *ci = SMIME_read_CMS( in, NULL );
-	if ( ci == 0 )
-		error("decrypt: failed to read content info\n");
-
-	/* Decrypt S/MIME message */
-	BIO *out = BIO_new(BIO_s_mem());
-	if ( ! CMS_decrypt( ci,
-			privDecSign->pkey, 
-			privDecSign->x509, 0, out, 0 ) )
-		error("decrypt: failed to decrypt content info\n");
-
-	BUF_MEM *bptr = 0;
-	BIO_get_mem_ptr( out, &bptr );
-
-	if ( bptr == 0 )
-		error( "did not get out memory pointer\n" );
-	else {
-		::message( "CMS decrypted: %.*s\n", (int)bptr->length, bptr->data );
-	}
 
 	return 0;
 }

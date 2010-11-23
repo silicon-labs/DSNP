@@ -36,7 +36,6 @@
 #include <sys/wait.h>
 
 #include <openssl/pem.h>
-#include <openssl/cms.h>
 #include <openssl/err.h>
 
 void setConfigByUri( const char *uri )

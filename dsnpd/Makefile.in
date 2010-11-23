@@ -13,10 +13,10 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-INCS += -I/opt/ssl/include -I../aapl -I/usr/include/mysql
-DEFS +=
+INCS += -I/usr/include/mysql
 
 LDFLAGS = @LDFLAGS@
+
 
 CXXFLAGS += -g -Wall
 LDFLAGS += -L/usr/lib/mysql

@@ -21,7 +21,8 @@ sedsubst = \
 	-e 's,\@prefix\@,@prefix@,g;' \
 	-e 's,\@sysconfdir\@,@sysconfdir@,g;' \
 	-e 's,\@datadir\@,@datadir@,g;' \
-	-e 's,\@localstatedir\@,@localstatedir@,g;'
+	-e 's,\@localstatedir\@,@localstatedir@,g;' \
+	-e 's,\@datarootdir\@,@datarootdir@,g;'
 
 init: init.sh
 	sed $(sedsubst) init.sh.in > init.sh

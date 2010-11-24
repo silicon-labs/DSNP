@@ -56,15 +56,6 @@ int checkArgs( int argc, char **argv )
 			break;
 
 		switch ( opt ) {
-			case 'c':
-				gbl.runConnect = true;
-				break;
-			case 'f':
-				gbl.runFtfConnect = true;
-				break;
-			case 'p':
-				gbl.runPreConnect = true;
-				break;
 			case 'q':
 				gbl.runQueue = true;
 				gbl.siteName = optarg;
@@ -136,9 +127,6 @@ int serverMain()
 }
 
 int runTest();
-int runConnect();
-int runFtfConnect();
-int runPreConnect();
 
 int main( int argc, char **argv )
 {
@@ -159,12 +147,6 @@ int main( int argc, char **argv )
 
 	if ( gbl.runQueue )
 		runQueue( gbl.siteName );
-	else if ( gbl.runConnect )
-		runConnect();
-	else if ( gbl.runFtfConnect )
-		runFtfConnect();
-	else if ( gbl.runPreConnect )
-		runPreConnect();
 	else if ( gbl.test )
 		runTest();
 	else 

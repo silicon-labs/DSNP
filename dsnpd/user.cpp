@@ -92,28 +92,5 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 
 	RSA_free( rsa );
 
-	/*
-	 * Allocate CERT
-	 */
-	String certDir( "%s/%s/keys", PKGSTATEDIR, c->name );
-	String certPrefix( "%s/%lld", certDir.data, userId );
-	String command( "%s/new-user-cert %s %s\n", LIBDIR, user, certPrefix.data );
-	String keyFile( "%s.key", certPrefix.data );
-	String crtFile( "%s.crt", certPrefix.data );
-
-	system( command.data );
-
-	/* Have to reconnect. */
-	mysql = dbConnect();
-
-	DbQuery( mysql,
-		"UPDATE user "
-		"SET "
-		"	x509_key = %e, "
-		"	x509_crt = %e "
-		"WHERE "
-		"	id = %L ",
-		keyFile.data, crtFile.data, userId );
-
 	BIO_printf( bioOut, "OK\r\n" );
 }

@@ -18,16 +18,10 @@ AC_CONFIG_HEADER(dsnpd/config.h)
 dnl Checks for programs.
 AC_PROG_CXX
 
-AC_ARG_WITH(ssl,
-	[  --with-ssl=/path/to/ssl],
-	[LDFLAGS="$LDFLAGS -L$withval/lib"; CPPFLAGS="$CXXFLAGS -I$withval/include"]
-)
-AC_CHECK_LIB(dl, dlopen)
-AC_CHECK_LIB(crypto, CMS_sign, [], 
-	[AC_ERROR(libcrypt does not have CMS[,] recompile openssl with enable-cms)])
-
 dnl Check for definition of MAKE.
 AC_PROG_MAKE_SET
+
+AC_CHECK_LIB(mysqlclient, mysql_connect)
 
 dnl write output files
 AC_OUTPUT( Makefile dsnpd/Makefile db/Makefile 

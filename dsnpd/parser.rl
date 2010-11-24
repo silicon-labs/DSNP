@@ -164,37 +164,13 @@ bool gblKeySubmitted = false;
 	}
 
 	action start_tls {
-		start_tls();
+		startTls();
 		ssl = true;
-	}
-
-	action start_exchange {
-		startExchange();
-		ssl = true;
-	}
-
-	action start_id_exchange {
-		startIdExchange();
-		ssl = true;
-	}
-
-	action start_ftf {
-		startFtf( mysql, relid );
-		ftf = true;
-	}
-
-	action start_pre {
-		startPreFriend( mysql, relid );
-		ftf = true;
 	}
 
 	commands := (
 		'comm_key'i ' ' key EOL @comm_key |
 		'start_tls'i EOL @start_tls |
-		'start_ftf'i ' ' relid EOL @start_ftf |
-		'start_pre'i ' ' relid EOL @start_pre |
-		'start_exchange'i EOL @start_exchange |
-		'start_id_exchange'i EOL @start_id_exchange |
 		'login'i ' ' user ' ' pass 
 			EOL @check_key @{
 				login( mysql, user, pass );
@@ -210,12 +186,6 @@ bool gblKeySubmitted = false;
 		'public_key'i ' ' user
 			EOL @check_ssl @{
 				publicKey( mysql, user );
-			} |
-
-		# Public key sharing.
-		'certificate'i ' ' user
-			EOL @check_ssl @{
-				certificate( mysql, user );
 			} |
 
 		# 
@@ -400,7 +370,6 @@ int serverParseLoop()
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
-	bool ftf = false;
 	bool exit = false;
 
 	%% write init;
@@ -804,73 +773,6 @@ long fetchPublicKeyNet( PublicKey &pub, const char *site,
 	message("fetchPublicKeyNet returning %s %s\n", pub.n, pub.e );
 
 	return 0;
-}
-
-/*
- * fetchCertificateNet
- */
-
-%%{
-	machine certificate;
-	write data;
-}%%
-
-char *fetchCertificateNet( const char *site, 
-		const char *host, const char *user )
-{
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	const char *mark;
-	long length;
-	String length_str;
-	String message_buffer;
-	message_buffer.allocate( MAX_MSG_LEN + 2 );
-
-	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( host, site );
-	if ( result < 0 ) 
-		return 0;
-
-	message( "fetching certificate for %s from host %s site %s\n", user, host, site );
-
-	BIO_printf( tlsConnect.sbio, "certificate %s\r\n", user );
-	BIO_flush( tlsConnect.sbio );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 32000 );
-	message("encrypted return to fetchCertificate is %s", buf );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return 0;
-	
-	BIO *bioIn = tlsConnect.sbio;
-
-	/* Parser for response. */
-	%%{
-		include common;
-
-		main := 
-			'OK ' length M_EOL @{ OK = true; } |
-			'ERROR' EOL;
-	}%%
-
-	p = buf;
-	pe = buf + strlen(buf);
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return 0;
-	
-	if ( ! OK )
-		return 0;
-	
-	return message_buffer.relinquish();
 }
 
 /*

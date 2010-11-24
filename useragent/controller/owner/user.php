@@ -2,7 +2,11 @@
 class OwnerUserController extends Controller
 {
 	var $function = array(
-		'broadcast' => array(),
+		'broadcast' => array(
+			array(
+				post => 'message'
+			),
+		),
 		'flush' => array(
 			array( 
 				get => 'reqid', 
@@ -28,7 +32,7 @@ class OwnerUserController extends Controller
 			"Content-Type: text/plain\r\n" .
 			"Type: broadcast\r\n" .
 			"\r\n";
-		$message = trim( $_POST['message'] );
+		$message = trim( $this->args['message'] );
 		$len = strlen( $headers ) + strlen( $message );
 
 		dbQuery( "

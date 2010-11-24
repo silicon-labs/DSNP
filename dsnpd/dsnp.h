@@ -29,8 +29,6 @@
 struct Keys
 {
 	RSA *rsa;
-	X509 *x509;
-	EVP_PKEY *pkey;
 };
 
 struct PublicKey
@@ -79,10 +77,6 @@ struct Global
 		configFile(0),
 		siteName(0),
 		runQueue(false),
-		runConnect(false),
-		runIdConnect(false),
-		runFtfConnect(false),
-		runPreConnect(false),
 		test(false),
 		pid(0)
 	{}
@@ -90,10 +84,6 @@ struct Global
 	const char *configFile;
 	const char *siteName;
 	bool runQueue;
-	bool runConnect;
-	bool runIdConnect;
-	bool runFtfConnect;
-	bool runPreConnect;
 	bool test;
 	pid_t pid;
 };
@@ -261,10 +251,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host );
 BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
-void start_tls();
-void startFtf( MYSQL *mysql, char *relid );
-void startExchange();
-void startIdExchange();
+void startTls();
 long base64ToBin( unsigned char *out, const char *src, long len );
 AllocString binToBase64( const u_char *data, long len );
 AllocString bnToBase64( const BIGNUM *n );
@@ -435,10 +422,6 @@ struct NotifyAcceptResultParser
 
 	int parse( const char *msg, long mLen );
 };
-
-char *fetchCertificate( MYSQL *mysql, const char *identity );
-char *fetchCertificateNet( const char *site, const char *host,
-		const char *user );
 
 Keys *fetchPublicKey( MYSQL *mysql, const char *identity );
 Keys *loadKey( MYSQL *mysql, const char *user );

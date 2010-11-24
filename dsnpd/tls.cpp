@@ -101,7 +101,6 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	return bio;
 }
 
-
 void sslInitServer()
 {
 	/* Global initialization. */
@@ -187,7 +186,7 @@ int TlsConnect::connect( const char *host, const char *site )
 	return 0;
 }
 
-void start_tls()
+void startTls()
 {
 	BIO_printf( bioOut, "OK\r\n" );
 	BIO_flush( bioOut );

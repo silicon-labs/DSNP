@@ -23,9 +23,6 @@ CREATE TABLE user
 	email VARCHAR(50),
 	type INT,
 
-	x509_key TEXT,
-	x509_crt TEXT,
-
 	UNIQUE(user),
 	PRIMARY KEY(id)
 );
@@ -36,16 +33,6 @@ CREATE TABLE public_key
 	identity TEXT,
 	rsa_n TEXT,
 	rsa_e TEXT
-);
-
-CREATE TABLE certificate
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	identity TEXT,
-	certificate TEXT,
-
-	PRIMARY KEY(id)
 );
 
 CREATE TABLE relid_request

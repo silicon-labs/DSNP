@@ -209,33 +209,6 @@ void publicKey( MYSQL *mysql, const char *user )
 	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );
 }
 
-void certificate( MYSQL *mysql, const char *user )
-{
-	/* Query the user. */
-	DbQuery query( mysql, "SELECT x509_crt FROM user WHERE user = %e", user );
-	if ( query.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		return;
-	}
-
-	/* Everythings okay. */
-	MYSQL_ROW row = query.fetchRow();
-
-	struct stat s;
-	stat( row[0], &s );
-	
-	BIO_printf( bioOut, "OK %llu\r\n", (long long unsigned) s.st_size );
-
-	#define MAX_FL 16384
-	FILE *crtFile = fopen( row[0], "r" );
-	char *crt = new char[MAX_FL];
-	int crtLen = fread( crt, 1, MAX_FL-1, crtFile );
-	crt[crtLen] = 0;
-
-	BIO_write( bioOut, crt, crtLen );
-	BIO_printf( bioOut, "\r\n" );
-}
-
 long open_inet_connection( const char *hostname, unsigned short port )
 {
 	sockaddr_in servername;
@@ -315,17 +288,6 @@ query_fail:
 	return result;
 }
 
-char *fetchCertificateDb( MYSQL *mysql, const char *identity )
-{
-	DbQuery query( mysql, 
-		"SELECT certificate FROM certificate WHERE identity = %e", identity );
-	if ( query.rows() == 0 )
-		return 0;
-
-	MYSQL_ROW row = query.fetchRow();
-	return strdup( row[0] );
-}
-
 void makeCertsDir()
 {
 	String dir1( "%s/%s", PKGSTATEDIR, c->name );
@@ -334,38 +296,6 @@ void makeCertsDir()
 	/* try each time. */
 	mkdir( dir1.data, 0777 );
 	mkdir( dir2.data, 0777 );
-}
-
-char *storeCertificate( MYSQL *mysql, const char *identity, char *cert )
-{
-	DbQuery( mysql,
-		"INSERT INTO certificate ( identity ) "
-		"VALUES ( %e ) ", identity );
-
-	long long certId = lastInsertId( mysql );
-
-	String certDir( "%s/%s/certs", PKGSTATEDIR, c->name );
-	String certPrefix( "%s/%lld", certDir.data, certId );
-	String certFile( "%s.crt", certPrefix.data );
-	message( "certPrefix: %s\n", certPrefix.data );
-	message( "certDir: %s\n", certDir.data );
-	message( "certFile: %s\n", certFile.data );
-
-	makeCertsDir();
-
-	FILE *file = fopen( certFile.data, "w" );
-	if ( file == 0 ) {
-		fatal( "could not open %s for writing, "
-			"maybe a permissions problem\n", certFile.data );
-	}
-	fwrite( cert, 1, strlen(cert), file );
-	fclose( file );
-
-	DbQuery( mysql,
-		"UPDATE certificate SET certificate = %e WHERE id = %L",
-		certFile.data, certId );
-
-	return certFile.relinquish();
 }
 
 Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
@@ -401,48 +331,8 @@ Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 	Keys *keys = new Keys;
 	keys->rsa = rsa;
 
-	/* For the time being, piggyback this on the publickey fetch. */
-	char *certFile = fetchCertificate( mysql, identity );
-
-	/* Read in signer certificate and private key */
-	BIO *tbio = BIO_new_file( certFile, "r" );
-
-	if ( tbio == 0 )
-		error( "fetchPublicKey unable to open BIO for certfile %s\n", certFile );
-
-	X509 *cert = PEM_read_bio_X509( tbio, NULL, 0, NULL );
-	if ( cert == 0 )
-		error( "unable to read cert from certfile", certFile );
-
-	message( "have x509 cert %p\n", cert );
-	
-	keys->x509 = cert;
-
 	return keys;
 }
-
-char *fetchCertificate( MYSQL *mysql, const char *identity )
-{
-	Identity id( identity );
-	id.parse();
-
-	/* First try to fetch the public key from the database. */
-	char *cert = fetchCertificateDb( mysql, identity );
-
-	/* If the db fetch failed, try to get the cert with a net call. */
-	if ( cert == 0 ) {
-		char *site = get_site( identity );
-		cert = fetchCertificateNet( site, id.host, id.user );
-
-		if ( cert != 0 ) {
-			/* Store it in the db. */
-			cert = storeCertificate( mysql, identity, cert );
-		}
-	}
-
-	return cert;
-}
-
 
 Keys *loadKey( MYSQL *mysql, const char *user )
 {
@@ -484,39 +374,6 @@ query_fail:
 	if ( rsa != 0 ) {
 		keys = new Keys;
 		keys->rsa = rsa;
-
-		DbQuery userQuery( mysql, 
-			"SELECT x509_key, x509_crt FROM user WHERE user = %e", user );
-
-		if ( userQuery.rows() != 1 )
-			fatal( "loadKey: user not found\n" );
-
-		row = userQuery.fetchRow();
-		char *keyFileName = row[0];
-		char *crtFileName = row[1];
-
-		/* Read in signer certificate and private key */
-		BIO *tbio = BIO_new_file( crtFileName, "r" );
-
-		if ( tbio == 0 )
-			error( "fetchPublicKey unable to open BIO for certfile %s\n", crtFileName );
-
-		X509 *cert = PEM_read_bio_X509( tbio, NULL, 0, NULL );
-		if ( cert == 0 )
-			error( "unable to read cert from certfile %s\n", crtFileName );
-
-		BIO *pbio = BIO_new_file( keyFileName, "r" );
-		if ( pbio == 0 )
-			error( "fetchPublicKey unable to open BIO for privatekey %s\n", keyFileName );
-
-		EVP_PKEY *pkey = PEM_read_bio_PrivateKey( pbio, NULL, 0, NULL);
-		if ( pkey == 0 )
-			error( "unable to read private key from keyfile %s\n", keyFileName );
-
-		message( "have x509 cert %p and private key %p\n", cert, pkey );
-		
-		keys->x509 = cert;
-		keys->pkey = pkey;
 	}
 	return keys;
 }

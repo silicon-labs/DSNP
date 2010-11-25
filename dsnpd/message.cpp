@@ -91,7 +91,7 @@ int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const 
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
-	exec_query( mysql, 
+	DbQuery claim( mysql, 
 		"SELECT friend_claim.id, friend_claim.user, friend_claim.friend_id, "
 		"	friend_claim.friend_hash, user.id "
 		"FROM friend_claim "
@@ -99,14 +99,12 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 		"WHERE get_relid = %e",
 		relid );
 
-	MYSQL_RES *result = mysql_store_result( mysql );
-	MYSQL_ROW row = mysql_fetch_row( result );
-	if ( row == 0 ) {
+	if ( claim.rows() == 0 ) {
 		message("message receipt: no friend claim for %s\n", relid );
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
 		return;
 	}
-
+	MYSQL_ROW row = claim.fetchRow();
 	long long id = strtoll(row[0], 0, 10);
 	const char *user = row[1];
 	const char *friendId = row[2];
@@ -147,7 +145,8 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 					mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProof:
-			friendProofMessage( mysql, user, userId, friendId, mp.hash, mp.network, mp.generation, mp.sym );
+			friendProofMessage( mysql, user, userId, friendId, mp.hash,
+					mp.network, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
 			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );

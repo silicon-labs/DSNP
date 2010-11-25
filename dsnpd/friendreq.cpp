@@ -37,15 +37,12 @@
 
 bool friendClaimExists( MYSQL *mysql, const char *user, const char *identity )
 {
-	MYSQL_RES *select_res;
-
 	/* Check to see if there is already a friend claim. */
-	exec_query( mysql, "SELECT user, friend_id FROM friend_claim "
+	DbQuery claim( mysql, "SELECT user, friend_id FROM friend_claim "
 		"WHERE user = %e AND friend_id = %e",
 		user, identity );
 
-	select_res = mysql_store_result( mysql );
-	if ( mysql_num_rows( select_res ) != 0 )
+	if ( claim.rows() != 0 )
 		return true;
 
 	return false;
@@ -130,7 +127,7 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 
 	message("allocated requested_relid %s for user %s\n", requested_relid_str, user );
 
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO relid_request "
 		"( for_user, from_id, requested_relid, reqid, msg_sym ) "
 		"VALUES( %e, %e, %e, %e, %e )",

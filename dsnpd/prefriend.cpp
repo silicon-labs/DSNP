@@ -190,47 +190,44 @@ void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 
 void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	char buf[2048], *result_message = 0;
+	char *result_message = 0;
 	char *from_id, *requested_relid, *returned_relid;
 	char *id_salt;
 
-	/* Execute the query. */
-	exec_query( mysql, "SELECT id_salt FROM user WHERE user = %e", user );
+	/* Find the salt for the user. */
+	DbQuery salt( mysql, "SELECT id_salt FROM user WHERE user = %e", user );
 
 	/* Check for a result. */
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
+	if ( salt.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR request not found\r\n" );
 		return;
 	}
+	MYSQL_ROW row = salt.fetchRow();
 	id_salt = row[0];
 
-	/* Execute the query. */
-	exec_query( mysql, 
+	/* Find the friend request. */
+	DbQuery friendRequest( mysql, 
 		"SELECT from_id, requested_relid, returned_relid "
 		"FROM friend_request "
 		"WHERE for_user = %e AND reqid = %e;",
 		user, user_reqid );
 
 	/* Check for a result. */
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
+	if ( friendRequest.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR request not found\r\n" );
 		return;
 	}
 
+	row = friendRequest.fetchRow();
 	from_id = row[0];
 	requested_relid = row[1];
 	returned_relid = row[2];
 
 	/* Notify the requester. */
-	sprintf( buf, "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
-	message( "accept_friend sending: %s to %s from %s\n", buf, from_id, user  );
-	int nfa = sendMessageNow( mysql, true, user, from_id, requested_relid, buf, &result_message );
+	String buf( "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
+	message( "accept_friend sending: %s to %s from %s\n", buf.data, from_id, user  );
+	int nfa = sendMessageNow( mysql, true, user, from_id, 
+			requested_relid, buf.data, &result_message );
 
 	if ( nfa < 0 ) {
 		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );

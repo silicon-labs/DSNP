@@ -213,7 +213,7 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	flogin_token = encrypt.decrypted;
 	flogin_token_str = binToBase64( flogin_token, RELID_SIZE );
 
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO remote_flogin_token "
 		"( user, identity, login_token ) "
 		"VALUES ( %e, %e, %e )",
@@ -227,41 +227,36 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 
 void submitFtoken( MYSQL *mysql, const char *token )
 {
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	long lasts = LOGIN_TOKEN_LASTS;
-	char *user, *from_id, *hash;
 
-	exec_query( mysql,
+	DbQuery request( mysql,
 		"SELECT user, from_id FROM ftoken_request WHERE token = %e",
 		token );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
+	if ( request.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
-	user = row[0];
-	from_id = row[1];
+	MYSQL_ROW row = request.fetchRow();
+	char *user = row[0];
+	char *fromId = row[1];
 
-	exec_query( mysql, 
+	DbQuery( mysql, 
 		"INSERT INTO flogin_token ( user, identity, login_token, expires ) "
 		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
-		user, from_id, token, lasts );
+		user, fromId, token, lasts );
 
-	exec_query( mysql,
-		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", from_id );
+	DbQuery hashQuery( mysql,
+		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", fromId );
 
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( row == 0 ) {
+	if ( hashQuery.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
-	hash = row[0];
+	row = hashQuery.fetchRow();
+	char *hash = row[0];
 
-	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash, lasts, from_id );
+	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash, lasts, fromId );
 }
 
 

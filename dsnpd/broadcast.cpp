@@ -363,7 +363,7 @@ long submitBroadcast( MYSQL *mysql, const char *user, const char *group,
 	String authorId( "%s%s/", c->CFG_URI, user );
 
 	/* insert the broadcast message into the published table. */
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO broadcasted "
 		"( user, author_id, time_published ) "
 		"VALUES ( %e, %e, %e )",
@@ -418,13 +418,6 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		const char *authorId, const char *authorHash, 
 		const char *token, const char *network, const char *msg, long mLen )
 {
-	int res;
-	Keys *user_priv, *id_pub;
-	Encrypt encrypt;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-	char *result_message;
-
 	/* Get the current time. */
 	String timeStr = timeNow();
 
@@ -442,23 +435,24 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	String subjectId( "%s%s/", c->CFG_URI, toUser );
 
 	/* Insert the broadcast message into the published table. */
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO broadcasted "
 		"( user, author_id, subject_id, time_published, message ) "
 		"VALUES ( %e, %e, %e, %e, %d )",
 		toUser, authorId, subjectId.data, timeStr.data, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
-	exec_query( mysql, "SELECT LAST_INSERT_ID()" );
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row )
+	DbQuery idQuery( mysql, "SELECT LAST_INSERT_ID()" );
+	if ( idQuery.rows() == 0 )
 		return -1;
 
+	MYSQL_ROW row = idQuery.fetchRow();
 	long long seqNum = strtoll( row[0], 0, 10 );
 
-	user_priv = loadKey( mysql, toUser );
-	id_pub = fetchPublicKey( mysql, authorId );
+	Keys *user_priv = loadKey( mysql, toUser );
+	Keys *id_pub = fetchPublicKey( mysql, authorId );
+
+	Encrypt encrypt;
 	encrypt.load( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
@@ -466,7 +460,8 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		"encrypt_remote_broadcast %s %lld %s %ld\r\n%s\r\n", 
 		token, seqNum, network, mLen, msg );
 
-	res = sendMessageNow( mysql, false, toUser, authorId, putRelid.data,
+	char *result_message;
+	int res = sendMessageNow( mysql, false, toUser, authorId, putRelid.data,
 			remotePublishCmd.data, &result_message );
 	if ( res < 0 ) {
 		message("encrypt_remote_broadcast message failed\n");
@@ -476,7 +471,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 
 	//returned_reqid_parser( mysql, to_user, result_message );
 
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO pending_remote_broadcast "
 		"( user, identity, hash, reqid, seq_num, network_name ) "
 		"VALUES ( %e, %e, %e, %e, %L, %e )",
@@ -637,7 +632,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	RAND_bytes( reqid, REQID_SIZE );
 	const char *reqid_str = binToBase64( reqid, REQID_SIZE );
 
-	exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO remote_broadcast_request "
 		"	( user, identity, reqid, generation, sym ) "
 		"VALUES ( %e, %e, %e, %L, %e )",

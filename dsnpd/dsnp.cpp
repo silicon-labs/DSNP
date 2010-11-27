@@ -399,14 +399,12 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 			strlen(encrypt.sym), result_msg );
 }
 
-AllocString make_id_hash( const char *salt, const char *identity )
+AllocString makeIdHash( const char *salt, const char *identity )
 {
 	/* Make a hash for the identity. */
-	long len = strlen(salt) + strlen(identity) + 1;
-	char *total = new char[len];
-	sprintf( total, "%s%s", salt, identity );
+	String total( "%s%s", salt, identity );
 	unsigned char friend_hash[SHA_DIGEST_LENGTH];
-	SHA1( (unsigned char*)total, len, friend_hash );
+	SHA1( (unsigned char*)total.data, total.length+1, friend_hash );
 	return binToBase64( friend_hash, SHA_DIGEST_LENGTH );
 }
 
@@ -452,7 +450,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 		user, token_str.data, lasts );
 
 	String identity( "%s%s/", c->CFG_URI, user );
-	String id_hash_str = make_id_hash( id_salt_str, identity );
+	String id_hash_str = makeIdHash( id_salt_str, identity );
 
 	BIO_printf( bioOut, "OK %s %s %ld\r\n", id_hash_str.data, token_str.data, lasts );
 

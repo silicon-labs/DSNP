@@ -32,7 +32,7 @@ void deleteFriendRequest( MYSQL *mysql, const char *user, const char *user_reqid
 long long storeFriendClaim( MYSQL *mysql, const char *user, 
 		const char *identity, const char *idSalt, const char *putRelid, const char *getRelid )
 {
-	char *friendHashStr = make_id_hash( idSalt, identity );
+	char *friendHashStr = makeIdHash( idSalt, identity );
 	Identity fr(identity);
 	fr.parse();
 

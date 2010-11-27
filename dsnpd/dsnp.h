@@ -435,7 +435,7 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 		const char *identity, const char *id_salt, const char *put_relid, 
 		const char *get_relid );
 
-AllocString make_id_hash( const char *salt, const char *identity );
+AllocString makeIdHash( const char *salt, const char *identity );
 long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen );
 
 void showNetwork( MYSQL *mysql, const char *user, const char *network );

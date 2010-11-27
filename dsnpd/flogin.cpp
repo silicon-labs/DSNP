@@ -36,66 +36,34 @@
 #include <sys/wait.h>
 
 long checkFriendClaim( Identity &identity, MYSQL *mysql, const char *user, 
-		const char *friend_hash )
+		const char *friendHash )
 {
-	long result = 0;
-	long query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql,
+	DbQuery check( mysql,
 		"SELECT friend_id FROM friend_claim WHERE user = %e AND friend_hash = %e",
-		user, friend_hash );
+		user, friendHash );
 
-	if ( query_res != 0 ) {
-		result = ERR_QUERY_ERROR;
-		goto query_fail;
-	}
-
-	select_res = mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row ) {
+	if ( check.rows() != 0 ) {
+		MYSQL_ROW row = check.fetchRow();
 		identity.identity = strdup( row[0] );
 		identity.parse();
-		result = 1;
+		return 1;
 	}
 
-	/* Done. */
-	mysql_free_result( select_res );
-
-query_fail:
-	return result;
+	return 0;
 }
 
 char *userIdentityHash( MYSQL *mysql, const char *user )
 {
-	long result = 0;
-	long query_res;
-	char *identity, *id_hash_str = 0;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql,
+	DbQuery salt( mysql,
 		"SELECT id_salt FROM user WHERE user = %e", user );
 
-	if ( query_res != 0 ) {
-		result = ERR_QUERY_ERROR;
-		goto query_fail;
+	if ( salt.rows() > 0  ) {
+		MYSQL_ROW row = salt.fetchRow();
+		String identity( "%s%s/", c->CFG_URI, user );
+		return makeIdHash( row[0], identity.data );
 	}
 
-	select_res = mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row ) {
-		identity = new char[strlen(c->CFG_URI) + strlen(user) + 2];
-		sprintf( identity, "%s%s/", c->CFG_URI, user );
-		id_hash_str = make_id_hash( row[0], identity );
-	}
-
-	/* Done. */
-	mysql_free_result( select_res );
-
-query_fail:
-	return id_hash_str;
+	return 0;
 }
 
 
@@ -167,31 +135,16 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *hash )
 
 void fetchFtoken( MYSQL *mysql, const char *reqid )
 {
-	long query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql,
+	DbQuery ftoken( mysql,
 		"SELECT msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
 
-	/* Execute the query. */
-	if ( query_res != 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DB_ERROR );
-		return;
-	}
-
-	/* Check for a result. */
-	select_res = mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row )
+	if ( ftoken.rows() > 0 ) {
+		MYSQL_ROW row = ftoken.fetchRow();
 		BIO_printf( bioOut, "OK %s\r\n", row[0] );
-	else
+	}
+	else {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NO_FTOKEN );
-
-	/* Done. */
-	mysql_free_result( select_res );
-
-	message("fetch_ftoken finished\n");
+	}
 }
 
 void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 

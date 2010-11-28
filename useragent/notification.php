@@ -277,13 +277,16 @@ case "user_message": {
 
 		switch ( $type ) {
 			case 'name-change':
-				nameChange( $for_user, $author, $seq_num, $date, $time, $msg, $content_type );
+				nameChange( $for_user, $author, $seq_num, 
+						$date, $time, $msg, $content_type );
 				break;
 			case 'photo-upload':
-				photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type );
+				photoUpload( $for_user, $network, $author,
+						$seq_num, $date, $time, $msg, $content_type );
 				break;
 			case 'broadcast':
-				broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type );
+				broadcast( $for_user, $network, $author,
+						$seq_num, $date, $time, $msg, $content_type );
 				break;
 			case 'board-post':
 				boardPost( $for_user, $network, $subject, $author, $seq_num,

@@ -137,9 +137,10 @@ class Connection
 	function submitBroadcast( $user, $network, $message )
 	{
 		$len = strlen( $message );
+
 		$cmd = "submit_broadcast $user $network $len\r\n";
 		fwrite( $this->fp, $cmd );
-		fwrite( $this->fp, $message, strlen($message) );
+		fwrite( $this->fp, $message, $len );
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );
 

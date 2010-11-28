@@ -92,17 +92,14 @@ class OwnerUserController extends Controller
 				$name, $email, $this->USER[ID] );
 		}
 
-		/* User message */
-		$headers = 
-			"Content-Type: text/plain\r\n" .
-			"Type: name-change\r\n" .
-			"\r\n";
-		$message = $this->data['User']['name'];
+		/* User Message */
+		$message = new Message;
+		$message->nameChange( $name );
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $headers . $message );
+		$connection->submitBroadcast( $this->USER[USER],
+				'-', $message->message );
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );

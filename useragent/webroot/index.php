@@ -13,6 +13,7 @@ require( PREFIX . DS . 'etc' . DS . 'config.php' );
 
 require( ROOT . DS . 'connection.php' );
 require( ROOT . DS . 'controller.php' );
+require( ROOT . DS . 'message.php' );
 require( ROOT . DS . 'view.php' );
 require( ROOT . DS . 'database.php' );
 require( ROOT . DS . 'route.php' );

@@ -1,5 +1,8 @@
 <?php
-class OwnerCredController extends Controller
+
+require( ROOT . DS . 'controller/cred.php' );
+
+class OwnerCredController extends CredController
 {
 	var $function = array(
 		'login' => array(),
@@ -15,7 +18,14 @@ class OwnerCredController extends Controller
 				type => 'base64', 
 				length => TOKEN_BASE64_SIZE
 			)
-		)
+		),
+		'sflogin' => array(
+			array( 
+				get => 'h',
+				type => 'base64', 
+				length => HASH_BASE64_SIZE 
+			)
+		),
 	);
 
 	function login()
@@ -26,8 +36,7 @@ class OwnerCredController extends Controller
 
 	function logout()
 	{
-		session_destroy();
-		setcookie("PHPSESSID", "", time() - 3600, "/");
+		destroySession();
 		$this->userRedirect('/');
 	}
 
@@ -53,4 +62,16 @@ class OwnerCredController extends Controller
 			die ("ftoken response failed: {$connection->result}");
 		}
 	}
+
+	function sflogin()
+	{
+		/* Currently logged in as an owner, and the user is attempting to login
+		 * as a friend. Destroy the current session, then initiate the friend
+		 * login. */
+		$hash = $this->args[h];
+		
+		$this->destroySession();
+		$this->submitFriendLogin( $hash );
+	}
 }
+?>

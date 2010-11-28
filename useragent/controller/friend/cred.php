@@ -1,5 +1,8 @@
 <?php
-class FriendCredController extends Controller
+
+require( ROOT . DS . 'controller/cred.php' );
+
+class FriendCredController extends CredController
 {
 	var $function = array(
 		'logout' => array(),

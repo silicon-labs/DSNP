@@ -1,5 +1,8 @@
 <?php
-class PublicCredController extends Controller
+
+require( ROOT . DS . 'controller/cred.php' );
+
+class PublicCredController extends CredController
 {
 	var $function = array(
 		'login' => array(),
@@ -57,40 +60,9 @@ class PublicCredController extends Controller
 
 	function sflogin()
 	{
+		/* Initiate the friend login process. */
 		$hash = $this->args[h];
-
-		/* Since this is the the public cred controller, we are not logged in
-		 * as anyone. */
-
-#		/* Maybe we are already logged in as this friend. */
-#		if ( isset( $this->ROLE ) && $this->ROLE === 'friend' && 
-#				isset( $_SESSION['hash'] ) && $_SESSION['hash'] === $hash )
-#		{
-#			header( "Location: " . Router::url( "/$this->USER_NAME/" ) );
-#		}
-#		else {
-
-		$connection = new Connection;
-		$connection->openLocalPriv();
-
-		$connection->ftokenRequest( $this->USER[USER], $hash );
-
-		if ( $connection->success ) {
-			$arg_h = 'h=' . urlencode( $connection->regs[3] );
-			$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
-			$friend_id = $connection->regs[2];
-			$dest = "";
-
-			# FIXME: put this into the args definition.
-			if ( isset( $_GET['d'] ) )
-				$dest = "&d=" . urlencode($_GET['d']);
-				
-			$this->redirect(
-				"{$friend_id}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
-		}
-		else {
-			$this->userRedirect( "/" );
-		}
+		$this->submitFriendLogin( $hash );
 	}
 
 	function sftoken()

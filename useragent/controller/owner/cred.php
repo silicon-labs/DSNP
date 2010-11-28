@@ -69,7 +69,6 @@ class OwnerCredController extends CredController
 		 * as a friend. Destroy the current session, then initiate the friend
 		 * login. */
 		$hash = $this->args[h];
-		
 		$this->destroySession();
 		$this->submitFriendLogin( $hash );
 	}

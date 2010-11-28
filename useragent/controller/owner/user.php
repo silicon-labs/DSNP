@@ -33,7 +33,6 @@ class OwnerUserController extends Controller
 			"Type: broadcast\r\n" .
 			"\r\n";
 		$message = trim( $this->args['message'] );
-		$len = strlen( $headers ) + strlen( $message );
 
 		dbQuery( "
 			INSERT INTO activity ( user_id, published, type, message )
@@ -42,7 +41,7 @@ class OwnerUserController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $len, $headers, $message );
+			$this->USER[USER], '-', $headers . $message );
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );
@@ -99,25 +98,16 @@ class OwnerUserController extends Controller
 			"Type: name-change\r\n" .
 			"\r\n";
 		$message = $this->data['User']['name'];
-		$len = strlen( $headers ) + strlen( $message );
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $len, $headers, $message );
+			$this->USER[USER], '-', $headers . $message );
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );
 		else
 			die( "submit_broadcast failed with $connection->result" );
-
-#		$this->VALID_USER = $this->Session->read('VALID_USER');
-
-		/* Invalidate the user data in the session so it is reloaded on the
-		 * next page load. */
-		#$this->Session->write( 'VALID_USER', false );
-
-		$this->userRedirect( "/" );
 	}
 }
 ?>

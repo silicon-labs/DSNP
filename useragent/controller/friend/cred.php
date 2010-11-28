@@ -25,11 +25,9 @@ class FriendCredController extends CredController
 	function sflogin()
 	{
 		/* Already logged in as a friend. If it is the same friend we can keep
-		 * the login active. If not we need to restart the whole login again.
-		 * */
+		 * the login active. If not we need to restart the whole login again. */
 		$hash = $this->args[h];
 		if ( isset( $_SESSION['hash'] ) && $_SESSION['hash'] === $hash ) {
-			#//die("HELLO THERE");
 			$this->userRedirect( "/" );
 		}
 		else {

@@ -41,8 +41,8 @@ class FriendUserController extends Controller
 		$connection->openLocalPriv();
 		$connection->remoteBroadcastRequest( 
 			$this->USER[USER], $identity, 
-			$hash, $token, '-', $len,
-			$headers, $message );
+			$hash, $token, '-',
+			$headers . $message );
 
 		if ( !$connection->success ) 
 			die( $connection->result );

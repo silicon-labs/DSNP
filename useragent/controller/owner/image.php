@@ -89,10 +89,9 @@ class OwnerImageController extends Controller
 			"Resource-Id: $id\r\n" .
 			"Type: photo-upload\r\n" .
 			"\r\n";
-		$len = strlen( $headers ) + strlen( $data );
 
 		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $len, $headers, $data );
+			$this->USER[USER], '-', $headers . $data );
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );

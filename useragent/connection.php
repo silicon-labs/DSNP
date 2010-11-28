@@ -134,11 +134,11 @@ class Connection
 			$this->result );
 	}
 
-	function submitBroadcast( $user, $network, $len, $headers, $message )
+	function submitBroadcast( $user, $network, $message )
 	{
+		$len = strlen( $message );
 		$cmd = "submit_broadcast $user $network $len\r\n";
 		fwrite( $this->fp, $cmd );
-		fwrite( $this->fp, $headers, strlen($headers) );
 		fwrite( $this->fp, $message, strlen($message) );
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );
@@ -149,13 +149,13 @@ class Connection
 	}
 
 	function remoteBroadcastRequest( $user, $identity, 
-		$hash, $token, $network, $len, $headers, $message )
+		$hash, $token, $network, $message )
 	{
+		$len = strlen( $message );
 		$cmd = 
 			"remote_broadcast_request $user $identity $hash " . 
 			"$token $network $len\r\n";
 		fwrite( $this->fp, $cmd );
-		fwrite( $this->fp, $headers, strlen($headers) );
 		fwrite( $this->fp, $message, strlen($message) );
 		fwrite( $this->fp, "\r\n", 2 );
 		$this->result = fgets( $this->fp );

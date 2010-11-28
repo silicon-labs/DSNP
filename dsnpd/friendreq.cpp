@@ -50,13 +50,11 @@ bool friendClaimExists( MYSQL *mysql, const char *user, const char *identity )
 
 bool friendRequestExists( MYSQL *mysql, const char *user, const char *identity )
 {
-	MYSQL_RES *select_res;
-
-	exec_query( mysql, "SELECT for_user, from_id FROM friend_request "
+	DbQuery exists( mysql, "SELECT for_user, from_id FROM friend_request "
 		"WHERE for_user = %e AND from_id = %e",
 		user, identity );
-	select_res = mysql_store_result( mysql );
-	if ( mysql_num_rows( select_res ) != 0 )
+
+	if ( exists.rows() > 0 )
 		return true;
 
 	return false;
@@ -142,42 +140,31 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 
 void fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 {
-	long query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql,
+	DbQuery request( mysql,
 		"SELECT msg_sym FROM relid_request WHERE reqid = %e", reqid );
 
-	if ( query_res != 0 ) {
-		BIO_printf( bioOut, "ERR\r\n" );
-		return;
-	}
-
 	/* Check for a result. */
-	select_res = mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row )
+	if ( request.rows() > 0 ) {
+		MYSQL_ROW row = request.fetchRow();
 		BIO_printf( bioOut, "OK %s\r\n", row[0] );
-	else
+	}
+	else {
 		BIO_printf( bioOut, "ERROR\r\n" );
-
-	/* Done. */
-	mysql_free_result( select_res );
+	}
 }
 
 long storeRelidResponse( MYSQL *mysql, const char *identity, const char *fr_relid_str,
 		const char *fr_reqid_str, const char *relid_str, const char *reqid_str, 
 		const char *sym )
 {
-	int result = exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO relid_response "
 		"( from_id, requested_relid, returned_relid, reqid, msg_sym ) "
 		"VALUES ( %e, %e, %e, %e, %e )",
 		identity, fr_relid_str, relid_str, 
 		reqid_str, sym );
 	
-	return result;
+	return 0;
 }
 
 void relidResponse( MYSQL *mysql, const char *user, 
@@ -266,7 +253,7 @@ void relidResponse( MYSQL *mysql, const char *user,
 			response_relid_str, response_reqid_str, encrypt.sym );
 
 	/* Insert the friend claim. */
-	exec_query( mysql, "INSERT INTO sent_friend_request "
+	DbQuery( mysql, "INSERT INTO sent_friend_request "
 		"( from_user, for_id, requested_relid, returned_relid ) "
 		"VALUES ( %e, %e, %e, %e );",
 		user, identity, requested_relid_str, response_relid_str );
@@ -284,59 +271,32 @@ void relidResponse( MYSQL *mysql, const char *user,
 
 void fetchResponseRelid( MYSQL *mysql, const char *reqid )
 {
-	long query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
 	/* Execute the query. */
-	query_res = exec_query( mysql,
+	DbQuery response( mysql,
 		"SELECT msg_sym FROM relid_response WHERE reqid = %e;", reqid );
 	
-	if ( query_res != 0 ) {
-		BIO_printf( bioOut, "ERR\r\n" );
-		return;
-	}
-
 	/* Check for a result. */
-	select_res = mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row )
+	if ( response.rows() ) {
+		MYSQL_ROW row = response.fetchRow();
 		BIO_printf( bioOut, "OK %s\r\n", row[0] );
-	else
+	}
+	else {
 		BIO_printf( bioOut, "ERR\r\n" );
-
-	/* Done. */
-	mysql_free_result( select_res );
+	}
 }
 
 long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 {
-	long result = 0;
 	char *requested_relid_str = binToBase64( fr_relid, RELID_SIZE );
-	int query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql,
+	DbQuery request( mysql,
 		"SELECT from_id FROM relid_request WHERE requested_relid = %e", 
 		requested_relid_str );
 
-	/* Execute the query. */
-	if ( query_res != 0 ) {
-		result = -1;
-		goto query_fail;
-	}
-
 	/* Check for a result. */
-	select_res = mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row )
-		result = 1;
+	if ( request.rows() )
+		return 1;
 
-	mysql_free_result( select_res );
-
-query_fail:
-	return result;
+	return 0;
 }
 
 void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity )
@@ -407,7 +367,7 @@ void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const c
 	RAND_bytes( user_reqid, REQID_SIZE );
 	user_reqid_str = binToBase64( user_reqid, REQID_SIZE );
 
-	exec_query( mysql, 
+	DbQuery( mysql, 
 		"INSERT INTO friend_request "
 		" ( for_user, from_id, reqid, requested_relid, returned_relid ) "
 		" VALUES ( %e, %e, %e, %e, %e ) ",

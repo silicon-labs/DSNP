@@ -243,49 +243,27 @@ long open_inet_connection( const char *hostname, unsigned short port )
 
 long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *identity )
 {
-	long result = 0;
-	long query_res;
-	MYSQL_RES *select_res;
-	MYSQL_ROW row;
-
-	query_res = exec_query( mysql, 
-		"SELECT rsa_n, rsa_e FROM public_key WHERE identity = %e", identity );
-	if ( query_res != 0 ) {
-		result = ERR_QUERY_ERROR;
-		goto query_fail;
-	}
+	DbQuery keys( mysql, 
+		"SELECT rsa_n, rsa_e FROM public_key WHERE identity = %e",
+		identity );
 
 	/* Check for a result. */
-	select_res= mysql_store_result( mysql );
-	row = mysql_fetch_row( select_res );
-	if ( row ) {
+	if ( keys.rows() > 0 ) {
+		MYSQL_ROW row = keys.fetchRow();
 		pub.n = strdup( row[0] );
 		pub.e = strdup( row[1] );
-		result = 1;
+		return 1;
 	}
 
-	/* Done. */
-	mysql_free_result( select_res );
-
-query_fail:
-	return result;
+	return 0;
 }
 
 long store_public_key( MYSQL *mysql, const char *identity, PublicKey &pub )
 {
-	long result = 0, query_res;
-
-	query_res = exec_query( mysql,
+	DbQuery( mysql,
 		"INSERT INTO public_key ( identity, rsa_n, rsa_e ) "
 		"VALUES ( %e, %e, %e ) ", identity, pub.n, pub.e );
-
-	if ( query_res != 0 ) {
-		result = ERR_QUERY_ERROR;
-		goto query_fail;
-	}
-
-query_fail:
-	return result;
+	return 0;
 }
 
 void makeCertsDir()
@@ -319,9 +297,7 @@ Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 			return 0;
 
 		/* Store it in the db. */
-		result = store_public_key( mysql, identity, pub );
-		if ( result < 0 )
-			return 0;
+		store_public_key( mysql, identity, pub );
 	}
 
 	rsa = RSA_new();
@@ -336,45 +312,29 @@ Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 
 Keys *loadKey( MYSQL *mysql, const char *user )
 {
-	long query_res;
-	MYSQL_RES *result;
-	MYSQL_ROW row;
 	Keys *keys = 0;
-	RSA *rsa = 0;
 
-	query_res = exec_query( mysql,
+	DbQuery keyQuery( mysql,
 		"SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
 		"FROM user WHERE user = %e", user );
 
-	if ( query_res != 0 )
-		goto query_fail;
+	if ( keyQuery.rows() > 0 ) {
+		MYSQL_ROW row = keyQuery.fetchRow();
 
-	/* Check for a result. */
-	result = mysql_store_result( mysql );
-	row = mysql_fetch_row( result );
-	if ( !row ) {
-		goto free_result;
-	}
+		RSA *rsa = RSA_new();
+		rsa->n =    base64ToBn( row[0] );
+		rsa->e =    base64ToBn( row[1] );
+		rsa->d =    base64ToBn( row[2] );
+		rsa->p =    base64ToBn( row[3] );
+		rsa->q =    base64ToBn( row[4] );
+		rsa->dmp1 = base64ToBn( row[5] );
+		rsa->dmq1 = base64ToBn( row[6] );
+		rsa->iqmp = base64ToBn( row[7] );
 
-	/* Everythings okay. */
-	rsa = RSA_new();
-	rsa->n =    base64ToBn( row[0] );
-	rsa->e =    base64ToBn( row[1] );
-	rsa->d =    base64ToBn( row[2] );
-	rsa->p =    base64ToBn( row[3] );
-	rsa->q =    base64ToBn( row[4] );
-	rsa->dmp1 = base64ToBn( row[5] );
-	rsa->dmq1 = base64ToBn( row[6] );
-	rsa->iqmp = base64ToBn( row[7] );
-
-free_result:
-	mysql_free_result( result );
-query_fail:
-
-	if ( rsa != 0 ) {
 		keys = new Keys;
 		keys->rsa = rsa;
 	}
+
 	return keys;
 }
 

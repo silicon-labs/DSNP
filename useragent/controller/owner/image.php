@@ -76,22 +76,14 @@ class OwnerImageController extends Controller
 			VALUES ( %l, true, 'PHT', %e, %l )",
 			$this->USER[ID], "thm-$id.jpg", $id );
 
+		$message = new Message;
+		$message->photoUpload( $id, $thumb );
+
 		$connection = new Connection;
 		$connection->openLocalPriv();
 
-		$MAX_BRD_PHOTO_SIZE = 16384;
-		$file = fopen( $thumb, "rb" );
-		$data = fread( $file, $MAX_BRD_PHOTO_SIZE );
-		fclose( $file );
-
-		$headers = 
-			"Content-Type: image/jpg\r\n" .
-			"Resource-Id: $id\r\n" .
-			"Type: photo-upload\r\n" .
-			"\r\n";
-
 		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $headers . $data );
+			$this->USER[USER], '-', $message->message );
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );

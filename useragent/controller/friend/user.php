@@ -13,15 +13,7 @@ class FriendUserController extends Controller
 	function board()
 	{
 		$BROWSER = $_SESSION['BROWSER'];
-
-		/* User message. */
-		$headers = 
-			"Content-Type: text/plain\r\n" .
-			"Type: board-post\r\n" .
-			"\r\n";
-
-		$message = trim( $this->args['message'] );
-		$len = strlen( $headers ) + strlen( $message );
+		$text = trim( $this->args['message'] );
 
 		dbQuery( "
 			INSERT INTO activity ( 
@@ -30,19 +22,22 @@ class FriendUserController extends Controller
 			VALUES ( %l, %e, true, 'BRD', %e )",
 			$this->USER[ID],
 			$BROWSER['id'],
-			$message
+			$text
 		);
 
 		$identity = $BROWSER[URI];
 		$hash = $_SESSION['hash'];
 		$token = $_SESSION['token'];
 
+		$message = new Message;
+		$message->boardPost( $text );
+
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->remoteBroadcastRequest( 
 			$this->USER[USER], $identity, 
 			$hash, $token, '-',
-			$headers . $message );
+			$message->message );
 
 		if ( !$connection->success ) 
 			die( $connection->result );

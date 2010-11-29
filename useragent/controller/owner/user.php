@@ -27,21 +27,19 @@ class OwnerUserController extends Controller
 
 	function broadcast()
 	{
-		/* User message */
-		$headers = 
-			"Content-Type: text/plain\r\n" .
-			"Type: broadcast\r\n" .
-			"\r\n";
-		$message = trim( $this->args['message'] );
+		$text = trim( $this->args['message'] );
 
 		dbQuery( "
 			INSERT INTO activity ( user_id, published, type, message )
-			VALUES ( %e, true, 'MSG', %e )", $this->USER[ID], $message );
+			VALUES ( %e, true, 'MSG', %e )", $this->USER[ID], $text );
+
+		$message = new Message;
+		$message->broadcast( $text );
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $headers . $message );
+			$this->USER[USER], '-', $message->message );
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );

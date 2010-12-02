@@ -1,5 +1,4 @@
 #include "dsnp.h"
-#include "disttree.h"
 #include "encrypt.h"
 #include <string.h>
 

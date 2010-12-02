@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <openssl/bio.h>
 #include "dsnp.h"
-#include "disttree.h"
 #include "string.h"
 
 #define MAX_MSG_LEN 16384

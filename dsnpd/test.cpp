@@ -17,7 +17,6 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
-#include "disttree.h"
 
 #include <stdio.h>
 #include <string.h>

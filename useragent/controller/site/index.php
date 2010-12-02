@@ -38,7 +38,7 @@ class SiteIndexController extends Controller
 		$connection->openLocalPriv();
 		$connection->newUser( $user, $pass1 );
 		if ( !$connection->success ) {
-			$this->userError( "FAILURE *** New user creation "
+			$this->userError( "FAILURE *** New user creation " .
 					"failed with: <br> ", "" );
 		}
 

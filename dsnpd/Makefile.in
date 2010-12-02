@@ -21,7 +21,7 @@ LDFLAGS = @LDFLAGS@
 CXXFLAGS += -g -Wall
 LDFLAGS += -L/usr/lib/mysql
 
-CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp disttree.cpp \
+CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp \
 	log.cpp db.cpp dsnp.cpp tls.cpp base64.cpp test.cpp broadcast.cpp queue.cpp \
 	friendreq.cpp prefriend.cpp message.cpp network.cpp notification.cpp user.cpp \
 	flogin.cpp 

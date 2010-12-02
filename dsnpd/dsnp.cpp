@@ -154,8 +154,6 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 	DbQuery query( mysql, 
 		"SELECT network.id, "
 		"	network.key_gen, "
-		"	network.tree_gen_low, "
-		"	network.tree_gen_high, "
 		"	put_broadcast_key.broadcast_key "
 		"FROM user "
 		"JOIN network "
@@ -175,8 +173,6 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 	MYSQL_ROW row = query.fetchRow();
 	networkId = strtoll( row[0], 0, 10 );
 	keyGen = strtoll( row[1], 0, 10 );
-	treeGenLow = strtoll( row[2], 0, 10 );
-	treeGenHigh = strtoll( row[3], 0, 10 );
 	broadcastKey.set( row[4] );
 }
 

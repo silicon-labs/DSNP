@@ -96,7 +96,8 @@ void publicKey( MYSQL *mysql, const char *identity );
 void certificate( MYSQL *mysql, const char *identity );
 void relidRequest( MYSQL *mysql, const char *user, const char *identity );
 void fetchRequestedRelid( MYSQL *mysql, const char *reqid );
-void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str, const char *identity );
+void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str,
+		const char *identity );
 void fetchResponseRelid( MYSQL *mysql, const char *reqid );
 void friendFinal( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
 void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid );
@@ -109,7 +110,8 @@ void setConfigByUri( const char *uri );
 void setConfigByName( const char *name );
 void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		const char *identity, const char *friendHash, const char *group,
-		long long generation, const char *broadcastKey, const char *friendProof1, const char *friendProof2 );
+		long long generation, const char *broadcastKey, const char *friendProof1,
+		const char *friendProof2 );
 
 long fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
@@ -129,8 +131,6 @@ struct CurrentPutKey
 	long long networkId;
 	long long keyGen;
 	String broadcastKey;
-	long long treeGenLow;
-	long long treeGenHigh;
 };
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
@@ -448,9 +448,8 @@ typedef std::list<std::string> RecipientList;
 void broadcastReceipient( MYSQL *mysql, RecipientList &recipientList, const char *relid );
 void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, const char *group,
 		long long keyGen, const char *encrypted ); 
-long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients, const char *group,
-		long long keyGen, long long treeGenLow, long long treeGenHigh,
-		const char *msg, long mLen );
+long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
+		const char *group, long long keyGen, const char *msg, long mLen );
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );
 
 long sendRemoteBroadcast( MYSQL *mysql, const char *user,

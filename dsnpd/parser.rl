@@ -1020,8 +1020,7 @@ long Identity::parse()
 }%%
 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
-		const char *network, long long keyGen, long long treeGenLow, long long treeGenHigh,
-		const char *msg, long mLen )
+		const char *network, long long keyGen, const char *msg, long mLen )
 {
 	static char buf[8192];
 	long cs;

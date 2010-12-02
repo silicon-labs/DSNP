@@ -329,9 +329,9 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	/* Stroe the message. */
 	DbQuery( mysql,
 		"INSERT INTO broadcast_message "
-		"( network_name, key_gen, tree_gen_low, tree_gen_high, message ) "
+		"( network_name, key_gen, message ) "
 		"VALUES ( %e, %L, %L, %L, %e ) ",
-		network, put.keyGen, put.treeGenLow, put.treeGenHigh, encrypt.sym );
+		network, put.keyGen, encrypt.sym );
 
 	long long messageId = lastInsertId( mysql );
 
@@ -610,7 +610,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 
 	/* Find current generation and youngest broadcast key */
 	CurrentPutKey put( mysql, user, network );
-	message("current put_bk: %lld %s\n", put.treeGenHigh, put.broadcastKey.data );
+	message("current put_bk: %lld %s\n", put.keyGen, put.broadcastKey.data );
 
 	/* Make the full message. */
 	String command( "remote_inner %lld %s %ld\r\n", seqNum, timeStr.data, mLen );
@@ -633,7 +633,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		"INSERT INTO remote_broadcast_request "
 		"	( user, identity, reqid, generation, sym ) "
 		"VALUES ( %e, %e, %e, %L, %e )",
-		user, subjectId, reqid_str, put.treeGenHigh, encrypt.sym );
+		user, subjectId, reqid_str, put.keyGen, encrypt.sym );
 
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
 }

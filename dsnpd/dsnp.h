@@ -447,8 +447,7 @@ typedef std::list<std::string> RecipientList;
 
 void broadcastReceipient( MYSQL *mysql, RecipientList &recipientList, const char *relid );
 void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, const char *group,
-		long long keyGen, long long treeGenLow, long long treeGenHigh,
-		const char *encrypted ); 
+		long long keyGen, const char *encrypted ); 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients, const char *group,
 		long long keyGen, long long treeGenLow, long long treeGenHigh,
 		const char *msg, long mLen );

@@ -185,8 +185,8 @@ long long forwardBroadcast( MYSQL *mysql, long long messageId,
 	return lastQueueId;
 }
 
-void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, long long keyGen,
-		long long treeGenLow, long long treeGenHigh, const char *encrypted )
+void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
+		long long keyGen, const char *encrypted )
 {
 	/* Find the recipient. */
 	DbQuery recipient( mysql, 
@@ -264,12 +264,10 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, lon
 }
 
 void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group,
-		long long keyGen, long long treeGenLow, 
-		long long treeGenHigh, const char *encrypted )
+		long long keyGen, const char *encrypted )
 {
-	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ ) {
-		receiveBroadcast( mysql, r->c_str(), group, keyGen, treeGenLow, treeGenHigh, encrypted );
-	}
+	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ )
+		receiveBroadcast( mysql, r->c_str(), group, keyGen, encrypted );
 }
 
 long storeBroadcastRecipients( MYSQL *mysql, const char *user, 

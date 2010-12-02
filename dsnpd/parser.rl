@@ -323,7 +323,7 @@ bool gblKeySubmitted = false;
 		'broadcast'i ' ' network ' ' generation ' ' length
 			M_EOL @check_ssl @{
 				receiveBroadcast( mysql, recipients, network, generation,
-						0, 0, message_buffer.data );
+						message_buffer.data );
 				recipients.clear();
 			} |
 

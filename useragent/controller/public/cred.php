@@ -5,9 +5,18 @@ require( ROOT . DS . 'controller/cred.php' );
 class PublicCredController extends CredController
 {
 	var $function = array(
-		'login' => array(),
+		'login' => array(
+			array( 
+				get => 'd',
+				optional => true
+			),
+		),
 		'slogin' => array(
-			array( post => 'pass' )
+			array( post => 'pass' ),
+			array( 
+				post => 'd',
+				optional => true
+			),
 		),
 		'sflogin' => array(
 			array( 
@@ -27,13 +36,14 @@ class PublicCredController extends CredController
 
 	function login()
 	{
-		if ( isset( $_REQUEST['d'] ) )	
-			$this->set('dest', $_REQUEST['d'] );
+		if ( isset( $this->args['d'] ) )	
+			$this->vars['dest'] = $this->args['d'];
 	}
 
 	function slogin()
 	{
 		$pass = $this->args['pass'];
+		$dest = $this->args['d'];
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
@@ -41,7 +51,7 @@ class PublicCredController extends CredController
 		$connection->login( $this->USER[USER], $pass );
 
 		if ( !$connection->success ) {
-			$this->error(
+			$this->userError(
 				'Login failed.',
 				'Please press the back button to try again.'
 			);
@@ -52,9 +62,9 @@ class PublicCredController extends CredController
 		$_SESSION[hash] = $connection->regs[1];
 		$_SESSION[token] = $connection->regs[2];
 	
-#		if ( isset( $_POST['d'] ) )
-#			$this->redirect( urldecode($_POST['d']) );
-#		else
+		if ( isset( $dest ) ) 
+			$this->redirect( $dest );
+		else
 			$this->userRedirect( "/" );
 	}
 

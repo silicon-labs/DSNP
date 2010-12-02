@@ -36,7 +36,7 @@ class OwnerCredController extends CredController
 
 	function logout()
 	{
-		destroySession();
+		$this->destroySession();
 		$this->userRedirect('/');
 	}
 

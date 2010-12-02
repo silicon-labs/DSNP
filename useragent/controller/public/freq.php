@@ -17,7 +17,7 @@ class PublicFreqController extends Controller
 		$identity = $_POST['identity'];
 
 		if ( $identity === $this->USER[URI] ) {
-			$this->error(
+			$this->userError(
 				'The identity submitted belongs to this user.',
 				'It is not possible to friend request oneself.'
 			);
@@ -35,7 +35,7 @@ class PublicFreqController extends Controller
 			$this->redirect("{$identity}freq/retrelid?{$arg_identity}&{$arg_reqid}" );
 		}
 		else {
-			$this->error(
+			$this->userError(
 				'The DSNP server responded with an error.',
 				'The server responded with error code ' . $connection->regs[1] . '. ' .
 				'Check that the URI you submitted is correct. ' .

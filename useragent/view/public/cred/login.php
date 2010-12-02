@@ -12,14 +12,6 @@
 <div class="content">
 <h3>Login</h3>
 
-<?php 
-#echo $form->create( null, array( 'url' => "/$USER_NAME/cred/slogin"));
-#
-#echo $form->input('user', array( 'value' => $USER_NAME));
-#echo $form->input('pass', array( 'type' => 'password'));
-#
-#echo $form->end('Login');
-?>
 <form method="post" action="<?echo $this->userLoc( '/cred/slogin' );?>">
 <table>
 <tr>
@@ -50,6 +42,12 @@
 	</td>
 </tr>
 </table>
+
+<?php
+	if ( isset( $dest ) )
+		echo '<input type="hidden" name="d" value="' . $dest . '">';
+?>
+
 </form>
 
 <?php

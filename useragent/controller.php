@@ -44,9 +44,15 @@ class Controller
 		$this->hasView = false;
 	}
 
-	function error( $short, $details )
+	function internalError( $short, $details )
 	{
-		print $short . "<br>" . $details;
+		print "FIF ERROR <br> $short <br> $details";
+		exit;
+	}
+
+	function userError( $short, $details )
+	{
+		print "FIF USER ERROR <br> $short <br> $details";
 		exit;
 	}
 

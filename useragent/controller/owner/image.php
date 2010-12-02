@@ -28,12 +28,12 @@ class OwnerImageController extends Controller
 		$max_image_size = 10485760;
 
 		if ( $_FILES['photo']['size'] > $max_image_size )
-			die("image excedes max size of $max_image_size bytes");
+			$this->userError( "image excedes max size of $max_image_size bytes", "" );
 
 		# Validate it as an image.
 		$image_size = @getimagesize( $_FILES['photo']['tmp_name'] );
 		if ( ! $image_size )
-			die( "file doesn't appear to be a valid image" );
+			$this->userError( "file doesn't appear to be a valid image", "" );
 
 		# Make a row in the db ofor the image.
 		dbQuery( "
@@ -59,7 +59,7 @@ class OwnerImageController extends Controller
 		$thumb = "$dir/thm-$id.jpg";
 
 		if ( ! @move_uploaded_file( $_FILES['photo']['tmp_name'], $path ) )
-			die( "unable to move image file");
+			$this->userError( "unable to move image file", "" );
 
 		# FIXME: check results.
 		system($this->CFG[IM_CONVERT] . " " .
@@ -87,8 +87,10 @@ class OwnerImageController extends Controller
 
 		if ( $connection->success )
 			$this->userRedirect( "/" );
-		else
-			die( "submit_broadcast failed with $connection->result" );
+		else {
+			$this->userError( "submit_broadcast failed " .
+					"with $connection->result", "" );
+		}
 
 		$this->userRedirect( '/' );
 	}

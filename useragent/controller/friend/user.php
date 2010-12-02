@@ -40,7 +40,7 @@ class FriendUserController extends Controller
 			$message->message );
 
 		if ( !$connection->success ) 
-			die( $connection->result );
+			$this->userError( $connection->result, "" );
 		$reqid = $connection->regs[1];
 
 		$this->redirect( "${identity}user/flush?reqid=$reqid&backto=" . 
@@ -56,8 +56,10 @@ class FriendUserController extends Controller
 		$connection->remoteBroadcastFinal(
 			$this->USER[USER], $reqid );
 
-		if ( !$connection->success )
-			die( "remote_broadcast_final failed with $connection->result" );
+		if ( !$connection->success ) {
+			$this->userError( "remote_broadcast_final " .
+				"failed with $connection->result", "" );
+		}
 
 		$this->userRedirect( "/" );
 	}

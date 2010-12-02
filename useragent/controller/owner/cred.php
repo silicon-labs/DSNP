@@ -59,7 +59,7 @@ class OwnerCredController extends CredController
 			$this->redirect("{$friend_id}cred/sftoken?{$arg_ftoken}{$dest}" );
 		}
 		else {
-			die ("ftoken response failed: {$connection->result}");
+			$this->userError("ftoken response failed: {$connection->result}", "");
 		}
 	}
 

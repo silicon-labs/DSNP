@@ -32,13 +32,15 @@ class SiteIndexController extends Controller
 		$pass2 = $this->args['pass2'];
 
 		if ( $pass1 != $pass2 )
-			die("password mismatch");
+			$this->userError( "password mismatch", "" );
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->newUser( $user, $pass1 );
-		if ( !$connection->success )
-			die( "FAILURE *** New user creation failed with: <br> " );
+		if ( !$connection->success ) {
+			$this->userError( "FAILURE *** New user creation "
+					"failed with: <br> ", "" );
+		}
 
 		$identity = $this->CFG[URI] . $user . '/';
 		dbQuery( "UPDATE user SET name = %e, identity = %e, " .

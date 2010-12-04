@@ -62,7 +62,7 @@ void remoteInner( MYSQL *mysql, const char *user, const char *network, const cha
 		const char *authorId, long long seqNum, const char *date,
 		const char *msg, long mLen )
 {
-	String args( "user_message %s %s %s %s %lld %s %ld", 
+	String args( "user_message_double %s %s %s %s %lld %s %ld", 
 			user, network, subjectId, authorId, seqNum, date, mLen );
 	appNotification( args, msg, mLen );
 }

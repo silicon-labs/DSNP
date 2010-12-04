@@ -227,6 +227,38 @@ case "user_message": {
 				broadcast( $for_user, $network, $author,
 						$seq_num, $date, $time, $msg, $content_type );
 				break;
+		}
+	}
+	break;
+}
+
+case "user_message_double": {
+	# Collect the args.
+	$for_user = $argv[$b+0];
+	$network = $argv[$b+1];
+	$subject = $argv[$b+2];
+	$author = $argv[$b+3];
+	$seq_num = $argv[$b+4];
+	$date = $argv[$b+5];
+	$time = $argv[$b+6];
+	$length = $argv[$b+7];
+
+	if ( $network === '-' )
+		$network = null;
+	if ( $subject === '-' )
+		$subject = null;
+
+	# Read the message from stdin.
+	$message = new Message;
+	$msg = $message->parse( STDIN, $length );
+
+	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
+		$type = $msg[0]['type'];
+		$content_type = $msg[0]['content-type'];
+		print("type: $type\n" );
+		print("content-type: $content_type\n" );
+
+		switch ( $type ) {
 			case 'board-post':
 				boardPost( $for_user, $network, $subject, $author, $seq_num,
 						$date, $time, $msg, $content_type );

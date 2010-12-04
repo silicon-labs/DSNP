@@ -51,5 +51,37 @@ class Message
 
 		$this->message = $headers . $text;
 	}
+
+	function parse( $file, $len )
+	{
+		$headers = array();
+		$left = $len;
+		while ( true ) {
+			$line = fgets( STDIN );
+			if ( $line === "\r\n" ) {
+				$left -= 2;
+				break;
+			}
+			$left -= strlen( $line );
+
+			/* Parse headers. */
+			$replaced = preg_replace( '/Content-Type:[\t ]*/i', '', $line );
+			if ( $replaced !== $line )
+				$headers['content-type'] = trim($replaced);
+
+			$replaced = preg_replace( '/Resource-Id:[\t ]*/i', '', $line );
+			if ( $replaced !== $line )
+				$headers['resource-id'] = trim($replaced);
+
+			$replaced = preg_replace( '/Type:[\t ]*/i', '', $line );
+			if ( $replaced !== $line )
+				$headers['type'] = trim($replaced);
+
+			if ( $left <= 0 )
+				break;
+		}
+		$msg = fread( STDIN, $left );
+		return array( $headers, $msg );
+	}
 };
 ?>

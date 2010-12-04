@@ -165,15 +165,19 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 		"	network.key_gen = put_broadcast_key.generation ", 
 		user, group );
 	
-	if ( query.rows() == 0 )
-		fatal( "failed to get current put broadcast key for user %s and group %s\n", user, group );
-	if ( query.rows() > 1 )
-		fatal( "too many results for current put key user %s and group %s\n", user, group );
+	if ( query.rows() == 0 ) {
+		fatal( "failed to get current put broadcast key for "
+			"user %s and group %s\n", user, group );
+	}
+	if ( query.rows() > 1 ) {
+		fatal( "too many results for current put key "
+				"user %s and group %s\n", user, group );
+	}
 	
 	MYSQL_ROW row = query.fetchRow();
 	networkId = strtoll( row[0], 0, 10 );
 	keyGen = strtoll( row[1], 0, 10 );
-	broadcastKey.set( row[4] );
+	broadcastKey.set( row[2] );
 }
 
 void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )

@@ -330,7 +330,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	DbQuery( mysql,
 		"INSERT INTO broadcast_message "
 		"( network_name, key_gen, message ) "
-		"VALUES ( %e, %L, %L, %L, %e ) ",
+		"VALUES ( %e, %L, %e ) ",
 		network, put.keyGen, encrypt.sym );
 
 	long long messageId = lastInsertId( mysql );

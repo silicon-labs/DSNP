@@ -1,6 +1,11 @@
 <?php
 
-$PREFIX = dirname(dirname(dirname(dirname(__FILE__))));
+define( 'DS', DIRECTORY_SEPARATOR );
+define( 'ROOT', dirname(__FILE__) );
+define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
+
+require( ROOT . "/message.php" );
+
 printf( "NOTIFICATION ARRIVED:\n" );
 print_r( $argv );
 
@@ -14,11 +19,11 @@ $CFG = NULL;
 $_SERVER['HTTP_HOST'] = $argv[1];
 $_SERVER['REQUEST_URI'] = $argv[2] . '/';
 
-require( $PREFIX . '/etc/install.php' );
-require( $PREFIX . '/etc/config.php' );
-require( $PREFIX . '/share/dsnp/web/database.php' );
+require( PREFIX . '/etc/install.php' );
+require( PREFIX . '/etc/config.php' );
+require( PREFIX . '/share/dsnp/web/database.php' );
 
-$DATA_DIR = "$PREFIX/var/lib/dsnp/{$CFG[NAME]}/data";
+$DATA_DIR = PREFIX . "/var/lib/dsnp/{$CFG[NAME]}/data";
 
 $notification_type = $argv[3];
 $b = 4;
@@ -32,38 +37,6 @@ mysql_select_db($CFG[DB_DATABASE]) or die
 function user_name_from_id( $identity )
 {
 	return preg_replace( '/https:\/\/.*\/([^\/]*)\//', '$1', $identity );
-}
-
-function parse( $len )
-{
-	$headers = array();
-	$left = $len;
-	while ( true ) {
-		$line = fgets( STDIN );
-		if ( $line === "\r\n" ) {
-			$left -= 2;
-			break;
-		}
-		$left -= strlen( $line );
-
-		/* Parse headers. */
-		$replaced = preg_replace( '/Content-Type:[\t ]*/i', '', $line );
-		if ( $replaced !== $line )
-			$headers['content-type'] = trim($replaced);
-
-		$replaced = preg_replace( '/Resource-Id:[\t ]*/i', '', $line );
-		if ( $replaced !== $line )
-			$headers['resource-id'] = trim($replaced);
-
-		$replaced = preg_replace( '/Type:[\t ]*/i', '', $line );
-		if ( $replaced !== $line )
-			$headers['type'] = trim($replaced);
-
-		if ( $left <= 0 )
-			break;
-	}
-	$msg = fread( STDIN, $left );
-	return array( $headers, $msg );
 }
 
 function findFriendClaimId( $user, $identity )
@@ -170,13 +143,15 @@ function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, 
 }
 
 
-function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $time, $msg, $content_type )
+function boardPost( $for_user, $network, $subject, $author,
+		$seq_num, $date, $time, $msg, $content_type )
 {
 	$user_id = findUserId( $for_user );
 	$subject_id = findFriendClaimId( $for_user, $subject );
 	$author_id = findFriendClaimId( $for_user, $author );
 
-	printf("board post with subject %ld and author %ld\n", $subject_id, $author_id );
+	printf("boardPost( $for_user, $network, $subject, " .
+			"$author, $seq_num, $date, $time, $msg, $content_type )\n" );
 
 	dbQuery(
 		"INSERT INTO activity " .
@@ -195,6 +170,9 @@ function boardPost( $for_user, $network, $subject, $author, $seq_num, $date, $ti
 
 function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 {
+	printf( "function remoteBoardPost( $user, $network, " .
+			"$subject, $msg, $content_type )\n" );
+
 	$user_id = findUserId( $user );
 	$subject_id = findFriendClaimId( $user, $subject );
 
@@ -207,46 +185,6 @@ function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 		'BRD',
 		$msg[1]
 	);
-}
-
-function sendRealName( $user, $toIdentity )
-{
-	global $CFG_URI;
-	global $CFG_PORT;
-	global $CFG_COMM_KEY;
-
-	$results = dbQuery( "SELECT name FROM user WHERE user = '%s'", $user );
-
-	if ( count( $results ) == 1 ) {
-		$name = $results[0]['name'];
-
-		if ( isset( $name ) && strlen( $name ) > 0 ) {
-			/* User message */
-			$headers = 
-				"Content-Type: text/plain\r\n" .
-				"Type: name-change\r\n" .
-				"\r\n";
-			$message = $name;
-			$len = strlen( $headers ) + strlen( $message );
-
-			$fp = fsockopen( 'localhost', $CFG_PORT );
-			if ( !$fp )
-				exit(1);
-
-			$send = 
-				"SPP/0.1 $CFG_URI\r\n" . 
-				"comm_key $CFG_COMM_KEY\r\n" .
-				"submit_message $user $toIdentity $len\r\n";
-
-			fwrite( $fp, $send );
-			fwrite( $fp, $headers, strlen($headers) );
-			fwrite( $fp, $message, strlen($message) );
-			fwrite( $fp, "\r\n", 2 );
-
-			$res = fgets($fp);
-			echo "send real name result: $res";
-		}
-	}
 }
 
 switch ( $notification_type ) {
@@ -267,7 +205,8 @@ case "user_message": {
 		$subject = null;
 
 	# Read the message from stdin.
-	$msg = parse( $length );
+	$message = new Message;
+	$msg = $message->parse( STDIN, $length );
 
 	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 		$type = $msg[0]['type'];
@@ -305,7 +244,8 @@ case "remote_publication": {
 	$length = $argv[$b+3];
 
 	# Read the message from stdin.
-	$msg = parse( $length );
+	$message = new Message;
+	$msg = $message->parse( STDIN, $length );
 
 	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 		$type = $msg[0]['type'];

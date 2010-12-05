@@ -32,9 +32,9 @@ CFG_PORT=7085
 
 echo
 echo "Please give a short name for the site. It should contain only letters and"
-echo "numbers and should begin with a letter. This name will be used internally to"
-echo "identify the installation. It will not be visible to the user. If you are"
-echo "finished giving installations just press enter."
+echo "numbers. It should begin with a letter. This name will be used internally to"
+echo "identify the installation. It will also be used the MYSQL user and database"
+echo "names. It will not be visible to any user of the site."
 echo
 
 while true; do 
@@ -73,10 +73,9 @@ CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
 # Make a key for communication from the frontend to backend.
 CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
 
-cat << EOF
-Please choose a password to protect the new database user with. 
-
-EOF
+echo
+echo Please choose a password to protect the new database user with. 
+echo
 
 while true; do
 	read -s -p 'password: ' CFG_DB_PASS; echo
@@ -98,7 +97,6 @@ CN=$CFG_HOST
 CERT_LOC=$SYSCONFDIR/dsnpd-certs
 
 
-
 #
 # Init the database.
 #
@@ -107,34 +105,34 @@ CERT_LOC=$SYSCONFDIR/dsnpd-certs
 # Add the site to the dsnpd config file.
 #
 
-cat >> $DSNPD_CONF << EOF
+cat << EOF
 
 ===== $NAME =====
 CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
-CFG_DB_USER = ${NAME}_dsnp
+CFG_DB_USER = ${NAME}
 CFG_DB_DATABASE = ${NAME}
 CFG_DB_PASS = $CFG_DB_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
-CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
-CFG_TLS_CRT = $CERT_LOC/${CN}.crt
-CFG_TLS_KEY = $CERT_LOC/${CN}.key
+CFG_TLS_CA_CERTS = SET_THIS
+CFG_TLS_CRT = SET_THIS
+CFG_TLS_KEY = SET_THIS
 EOF
 
 #CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
 #CFG_TLS_CRT = /etc/ssl/local/yoho.crt
 #CFG_TLS_KEY = /etc/ssl/local/yoho.key
 
-	#
-	# Add the site to the PHP config file.
-	#
+#
+# Add the site to the PHP config file.
+#
 
-grep -v '^\?>' $PHP_CONF > $PHP_CONF.new
+#grep -v '^\?>' $PHP_CONF > $PHP_CONF.new
 
-	cat >> $PHP_CONF.new << EOF
+cat << EOF
 
 if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
 	\$CFG[SITE_NAME] = '$NAME DSNP';
@@ -143,21 +141,23 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG[HOST] = '$CFG_HOST';
 	\$CFG[PATH] = '$CFG_PATH';
 	\$CFG[DB_HOST] = 'localhost';
-	\$CFG[DB_USER] = '${NAME}_ua';
-	\$CFG[DB_DATABASE] = '${NAME}_ua';
+	\$CFG[DB_USER] = '${NAME}';
+	\$CFG[DB_DATABASE] = '${NAME}';
 	\$CFG[DB_PASS] = '$CFG_DB_PASS';
 	\$CFG[COMM_KEY] = '$CFG_COMM_KEY';
 	\$CFG[PORT] = $CFG_PORT;
+
 	\$CFG[IM_CONVERT] = 'gm convert';
 	\$CFG[USE_RECAPTCHA] = 'unused';
 	\$CFG[RC_PUBLIC_KEY] = 'unused';
 	\$CFG[RC_PRIVATE_KEY] = 'unused';
 }
-?>
 EOF
 
-cat $PHP_CONF.new > $PHP_CONF
-rm $PHP_CONF.new
+exit;
+
+#cat $PHP_CONF.new > $PHP_CONF
+#rm $PHP_CONF.new
 
 echo
 echo "Thank you, now initializing the database. Please login as root@localhost."

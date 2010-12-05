@@ -1,0 +1,35 @@
+SITE INSTALL INSTRUCTIONS
+=========================
+
+1. Configure, make and install. 
+
+$ prefix=/opt/dsnp
+$ ./configure --prefix=$prefix
+$ make
+$ make install
+
+2. Ensure that the data directory is writable by the user that the webserver
+runs as.
+
+$ chown www-data:www-data $prefix/var/lib/dsnp
+
+3. Add an entry for DSNP to /etc/services. 
+
+# Local services
+dsnp            7085/tcp
+
+4. Install xinetd. Add a config fragment for DSNPd. You may wish to adjust the
+parameters. The user should also be able to write to the data directory. 
+
+service dsnp
+{
+	disable		= no
+	socket_type	= stream
+	protocol	= tcp
+	wait		= no
+	user		= www-data
+	instances	= UNLIMITED
+	per_source	= UNLIMITED
+	cps		= 10000 1
+	server		= /opt/dsnp/bin/dsnpd
+}

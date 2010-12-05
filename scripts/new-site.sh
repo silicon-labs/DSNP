@@ -79,15 +79,15 @@ Please choose a password to protect the new database user with.
 EOF
 
 while true; do
-	read -s -p 'password: ' CFG_ADMIN_PASS; echo
+	read -s -p 'password: ' CFG_DB_PASS; echo
 	read -s -p '   again: ' AGAIN; echo
 
-	if [ "$CFG_ADMIN_PASS" != "$AGAIN" ]; then
+	if [ "$CFG_DB_PASS" != "$AGAIN" ]; then
 		echo; echo error: passwords do not match; echo
 		continue
 	fi
 
-	if [ -z "$CFG_ADMIN_PASS" ]; then
+	if [ -z "$CFG_DB_PASS" ]; then
 		echo; echo error: password must not be empty; echo 
 		continue
 	fi
@@ -116,7 +116,7 @@ CFG_PATH = $CFG_PATH
 CFG_DB_HOST = localhost
 CFG_DB_USER = ${NAME}_dsnp
 CFG_DB_DATABASE = ${NAME}
-CFG_ADMIN_PASS = $CFG_ADMIN_PASS
+CFG_DB_PASS = $CFG_DB_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
 CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
@@ -137,21 +137,21 @@ grep -v '^\?>' $PHP_CONF > $PHP_CONF.new
 	cat >> $PHP_CONF.new << EOF
 
 if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
-	\$CFG_SITE_NAME = '$NAME DSNP';
-	\$CFG_NAME = '$NAME';
-	\$CFG_URI = '$CFG_URI';
-	\$CFG_HOST = '$CFG_HOST';
-	\$CFG_PATH = '$CFG_PATH';
-	\$CFG_DB_HOST = 'localhost';
-	\$CFG_DB_USER = '${NAME}_ua';
-	\$CFG_DB_DATABASE = '${NAME}_ua';
-	\$CFG_ADMIN_PASS = '$CFG_ADMIN_PASS';
-	\$CFG_COMM_KEY = '$CFG_COMM_KEY';
-	\$CFG_PORT = $CFG_PORT;
-	\$CFG_IM_CONVERT = 'gm convert';
-	\$CFG_USE_RECAPTCHA = 'unused';
-	\$CFG_RC_PUBLIC_KEY = 'unused';
-	\$CFG_RC_PRIVATE_KEY = 'unused';
+	\$CFG[SITE_NAME] = '$NAME DSNP';
+	\$CFG[NAME] = '$NAME';
+	\$CFG[URI] = '$CFG_URI';
+	\$CFG[HOST] = '$CFG_HOST';
+	\$CFG[PATH] = '$CFG_PATH';
+	\$CFG[DB_HOST] = 'localhost';
+	\$CFG[DB_USER] = '${NAME}_ua';
+	\$CFG[DB_DATABASE] = '${NAME}_ua';
+	\$CFG[DB_PASS] = '$CFG_DB_PASS';
+	\$CFG[COMM_KEY] = '$CFG_COMM_KEY';
+	\$CFG[PORT] = $CFG_PORT;
+	\$CFG[IM_CONVERT] = 'gm convert';
+	\$CFG[USE_RECAPTCHA] = 'unused';
+	\$CFG[RC_PUBLIC_KEY] = 'unused';
+	\$CFG[RC_PRIVATE_KEY] = 'unused';
 }
 ?>
 EOF
@@ -166,11 +166,6 @@ echo
 
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/data
-mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp
-mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp/cache
-mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp/logs
-mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp/sessions
-mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/tmp/tests
 
 chown -R www-data:www-data $LOCALSTATEDIR/lib/dsnp/$NAME
 

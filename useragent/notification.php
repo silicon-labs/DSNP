@@ -29,7 +29,7 @@ $notification_type = $argv[3];
 $b = 4;
 
 # Connect to the database.
-$conn = mysql_connect($CFG[DB_HOST], $CFG[DB_USER], $CFG[ADMIN_PASS]) or die 
+$conn = mysql_connect($CFG[DB_HOST], $CFG[DB_USER], $CFG[DB_PASS]) or die 
 	('Could not connect to database');
 mysql_select_db($CFG[DB_DATABASE]) or die
 	('Could not select database ' . $CFG[DB_DATABASE]);

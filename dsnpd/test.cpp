@@ -41,7 +41,7 @@ void test_tls()
 	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+			c->CFG_DB_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
 	if ( connect_res == 0 )
 		fatal( "ERROR failed to connect to the database\r\n");
@@ -151,7 +151,7 @@ void test_current_put_bk()
 	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+			c->CFG_DB_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
 	//currentPutBk( mysql, "age", generation, broadcastKey );
 	//printf( "%lld %s\n", generation, broadcastKey.data );
@@ -165,7 +165,7 @@ void tree_load()
 	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+			c->CFG_DB_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 }
 
 void friendProof()
@@ -176,7 +176,7 @@ void friendProof()
 	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+			c->CFG_DB_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 }
 
 void broadcastKey()
@@ -187,7 +187,7 @@ void broadcastKey()
 	/* Open the database connection. */
 	mysql = mysql_init(0);
 	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_ADMIN_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
+			c->CFG_DB_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
 
 	CurrentPutKey put( mysql, "age", "social" );
 }

@@ -29,7 +29,7 @@ const char *cfgVals[] = {
 	"CFG_DB_HOST",
 	"CFG_DB_DATABASE",
 	"CFG_DB_USER",
-	"CFG_ADMIN_PASS",
+	"CFG_DB_PASS",
 	"CFG_COMM_KEY",
 	"CFG_PORT",
 	"CFG_TLS_CRT",

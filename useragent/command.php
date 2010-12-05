@@ -86,7 +86,7 @@ include( PREFIX . '/etc/config.php' );
 define( 'CFG_DB_HOST', $CFG_DB_HOST );
 define( 'CFG_DB_USER', $CFG_DB_USER );
 define( 'CFG_DB_DATABASE', $CFG_DB_DATABASE );
-define( 'CFG_ADMIN_PASS', $CFG_ADMIN_PASS );
+define( 'CFG_DB_PASS', $CFG_DB_PASS );
 
 define( 'TMP', PREFIX . '/var/lib/dsnp/' . $CFG_NAME . '/tmp/' );
 define( 'DATA_DIR', PREFIX . '/var/lib/dsnp/' . $CFG_NAME . '/data' );

@@ -176,7 +176,7 @@ struct Config
 	char *CFG_DB_HOST;
 	char *CFG_DB_DATABASE;
 	char *CFG_DB_USER;
-	char *CFG_ADMIN_PASS;
+	char *CFG_DB_PASS;
 	char *CFG_COMM_KEY;
 	char *CFG_PORT;
 	char *CFG_TLS_CRT;

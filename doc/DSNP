@@ -201,3 +201,11 @@ their own identity on their own server. Perhaps a more difficult problem is
 that the user must trust the server that is hosting their friend's identities.
 However, this is not a problem unique to DSNP. This is true of email as well.
 
+NOTIFICATIONS
+=============
+
+notification_broadcast          (user message to a group)
+notification_message            (user message direct)
+notification_remote_message     (author-subject message to a group)
+notification_remote_publication (author-subject message to the author)
+

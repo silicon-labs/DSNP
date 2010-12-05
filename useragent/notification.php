@@ -188,7 +188,7 @@ function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 }
 
 switch ( $notification_type ) {
-case "user_message": {
+case "notification_broadcast": {
 	# Collect the args.
 	$for_user = $argv[$b+0];
 	$network = $argv[$b+1];
@@ -232,7 +232,7 @@ case "user_message": {
 	break;
 }
 
-case "direct_message": {
+case "notification_message": {
 	# Collect the args.
 	$for_user = $argv[$b+0];
 	$network = $argv[$b+1];
@@ -266,7 +266,7 @@ case "direct_message": {
 	break;
 }
 
-case "user_message_double": {
+case "notification_remote_message": {
 	# Collect the args.
 	$for_user = $argv[$b+0];
 	$network = $argv[$b+1];
@@ -302,7 +302,7 @@ case "user_message_double": {
 	break;
 }
 
-case "remote_publication": {
+case "notification_remote_publication": {
 	# Collect the args.
 	$user = $argv[$b+0];
 	$network = $argv[$b+1];

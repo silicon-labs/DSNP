@@ -30,7 +30,7 @@ void directBroadcast( MYSQL *mysql, const char *relid, const char *user, const c
 		const char *author_id, long long seq_num, const char *date,
 		const char *msg, long mLen )
 {
-	String args( "user_message %s %s - %s %lld %s %ld", 
+	String args( "notification_broadcast %s %s - %s %lld %s %ld", 
 			user, network, author_id, seq_num, date, mLen );
 	appNotification( args, msg, mLen );
 }
@@ -62,7 +62,7 @@ void remoteInner( MYSQL *mysql, const char *user, const char *network, const cha
 		const char *authorId, long long seqNum, const char *date,
 		const char *msg, long mLen )
 {
-	String args( "user_message_double %s %s %s %s %lld %s %ld", 
+	String args( "notification_remote_message %s %s %s %s %lld %s %ld", 
 			user, network, subjectId, authorId, seqNum, date, mLen );
 	appNotification( args, msg, mLen );
 }
@@ -604,7 +604,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	id_pub = fetchPublicKey( mysql, subjectId );
 
 	/* Notifiy the frontend. */
-	String args( "remote_publication %s %s %s %ld", 
+	String args( "notification_remote_publication %s %s %s %ld", 
 			user, network, subjectId, mLen );
 	appNotification( args, msg, mLen );
 

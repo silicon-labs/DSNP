@@ -26,12 +26,12 @@ void broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *r
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-void directBroadcast( MYSQL *mysql, const char *relid, const char *user, const char *network,
-		const char *author_id, long long seq_num, const char *date,
-		const char *msg, long mLen )
+void directBroadcast( MYSQL *mysql, const char *relid, const char *user, 
+		const char *network, const char *authorId, long long seqNum,
+		const char *date, const char *msg, long mLen )
 {
-	String args( "notification_broadcast %s %s - %s %lld %s %ld", 
-			user, network, author_id, seq_num, date, mLen );
+	String args( "notification_broadcast %s %s %lld %s %ld", 
+			user, authorId, seqNum, date, mLen );
 	appNotification( args, msg, mLen );
 }
 
@@ -579,12 +579,9 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *subjectId, const char *token,
 		long long seqNum, const char *network, const char *msg, long mLen )
 {
-	Encrypt encrypt;
-	Keys *user_priv, *id_pub;
-	int sigRes;
 
-	//message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %s)\n", 
-	//	user, subjectId, token, seqNum, msg );
+	message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %.*s)\n", 
+		user, subjectId, token, seqNum, (int)mLen, msg );
 
 	DbQuery flogin( mysql,
 		"SELECT user FROM remote_flogin_token "
@@ -600,30 +597,30 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	/* Get the current time. */
 	String timeStr = timeNow();
 
-	user_priv = loadKey( mysql, user );
-	id_pub = fetchPublicKey( mysql, subjectId );
+	Keys *userPriv = loadKey( mysql, user );
+	Keys *idPub = fetchPublicKey( mysql, subjectId );
 
 	/* Notifiy the frontend. */
-	String args( "notification_remote_publication %s %s %s %ld", 
-			user, network, subjectId, mLen );
+	String args( "notification_remote_publication %s %s %ld", 
+			user, subjectId, mLen );
 	appNotification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */
 	CurrentPutKey put( mysql, user, network );
-	message("current put_bk: %lld %s\n", put.keyGen, put.broadcastKey.data );
 
 	/* Make the full message. */
-	String command( "remote_inner %lld %s %ld\r\n", seqNum, timeStr.data, mLen );
+	String command( "remote_inner %lld %s %ld\r\n",
+		seqNum, timeStr.data, mLen );
 	String full = addMessageData( command, msg, mLen );
 
-	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)full.data, full.length );
+	Encrypt encrypt;
+	encrypt.load( idPub, userPriv );
+	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey, 
+			(u_char*)full.data, full.length );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
-
-	message( "encrypt_remote_broadcast enc: %s\n", encrypt.sym );
 
 	u_char reqid[REQID_SIZE];
 	RAND_bytes( reqid, REQID_SIZE );

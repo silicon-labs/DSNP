@@ -66,7 +66,8 @@ function findUserId( $user )
 	return -1;
 }
 
-function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type )
+function photoUpload( $forUser, $author, $seqNum,
+		$date, $time, $msg, $contextType )
 {
 	global $DATA_DIR;
 
@@ -74,21 +75,21 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 	if ( !isset( $msg[0]['resource-id'] ) )
 		return;
 
-	$local_resid = $seq_num;
+	$local_resid = $seqNum;
 	$remote_resid = (int) $msg[0]['resource-id'];
 
-	$user_id = findUserId( $for_user );
-	$author_id = findFriendClaimId( $for_user, $author );
+	$user_id = findUserId( $forUser );
+	$author_id = findFriendClaimId( $forUser, $author );
 
 	/* The message body is photo data. Write the photo to disk. */
-	$path = sprintf( "%s/%s/pub-%ld.jpg", $DATA_DIR, $for_user, $seq_num );
+	$path = sprintf( "%s/%s/pub-%ld.jpg", $DATA_DIR, $forUser, $seqNum );
 
 	$length = strlen( $msg[1] );
 	$f = fopen( $path, "wb" );
 	fwrite( $f, $msg[1], $length );
 	fclose( $f );
 
-	$name = sprintf( "pub-%ld.jpg", $seq_num );
+	$name = sprintf( "pub-%ld.jpg", $seqNum );
 
 	dbQuery(
 		"INSERT INTO activity " .
@@ -97,7 +98,7 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 		"VALUES ( %l, %l, %l, %e, now(), %e, %l, %l, %e )",
 		$user_id,
 		$author_id, 
-		$seq_num, 
+		$seqNum, 
 		$date . ' ' . $time,
 		'PHT',
 		$local_resid, 
@@ -106,12 +107,13 @@ function photoUpload( $for_user, $network, $author, $seq_num, $date, $time, $msg
 	);
 }
 
-function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $content_type )
+function nameChange( $forUser, $author_id, $seqNum, 
+		$date, $time, $msg, $contextType )
 {
-	if ( $content_type != 'text/plain' )
+	if ( $contextType != 'text/plain' )
 		return;
 
-	$result = dbQuery( "SELECT id FROM user WHERE user = %e", $for_user );
+	$result = dbQuery( "SELECT id FROM user WHERE user = %e", $forUser );
 
 	if ( count( $result ) === 1 ) {
 		$user = $result[0];
@@ -122,56 +124,61 @@ function nameChange( $for_user, $author_id, $seq_num, $date, $time, $msg, $conte
 	}
 }
 
-function broadcast( $for_user, $network, $author, $seq_num, $date, $time, $msg, $content_type )
+function broadcast( $forUser, $author, $seqNum,
+		$date, $time, $msg, $contextType )
 {
 	/* Need a resource id. */
-	if ( $content_type != 'text/plain' )
+	if ( $contextType != 'text/plain' )
 		return;
 
-	$user_id = findUserId( $for_user );
-	$author_id = findFriendClaimId( $for_user, $author );
+	$userId = findUserId( $forUser );
+	$authorId = findFriendClaimId( $forUser, $author );
+
+	print "broadcast $userId $authorId\n";
 
 	dbQuery(
 		"INSERT INTO activity " .
 		"	( user_id, author_id, seq_num, time_published, " . 
 		"		time_received, type, message ) " .
 		"VALUES ( %l, %l, %l, %e, now(), %e, %e )",
-		$user_id, $author_id,
-		$seq_num, $date . ' ' . $time,
+		$userId, $authorId,
+		$seqNum, $date . ' ' . $time,
 		'MSG', $msg[1]
 	);
 }
 
 
-function boardPost( $for_user, $network, $subject, $author,
-		$seq_num, $date, $time, $msg, $content_type )
+function boardPost( $forUser, $network, $subject, $author,
+		$seqNum, $date, $time, $msg, $contextType )
 {
-	$user_id = findUserId( $for_user );
-	$subject_id = findFriendClaimId( $for_user, $subject );
-	$author_id = findFriendClaimId( $for_user, $author );
+	$user_id = findUserId( $forUser );
+	$subject_id = findFriendClaimId( $forUser, $subject );
+	$author_id = findFriendClaimId( $forUser, $author );
 
-	printf("boardPost( $for_user, $network, $subject, " .
-			"$author, $seq_num, $date, $time, $msg, $content_type )\n" );
+	printf("boardPost( $forUser, $network, $subject, " .
+			"$author, $seqNum, $date, $time, $msg, $contextType )\n" );
 
 	dbQuery(
 		"INSERT INTO activity " .
-		"	( user_id, subject_id, author_id, seq_num, time_published, time_received, ".
-		"		type, message ) " .
+		"	( " .
+		"		user_id, subject_id, author_id, seq_num, time_published, " .
+		"		time_received, type, message " .
+		"	) " .
 		"VALUES ( %l, %l, %l, %l, %e, now(), %e, %e )",
 		$user_id,
 		$subject_id, 
 		$author_id, 
-		$seq_num, 
+		$seqNum, 
 		$date . ' ' . $time,
 		'BRD',
 		$msg[1]
 	);
 }
 
-function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
+function remoteBoardPost( $user, $network, $subject, $msg, $contextType )
 {
 	printf( "function remoteBoardPost( $user, $network, " .
-			"$subject, $msg, $content_type )\n" );
+			"$subject, $msg, $contextType )\n" );
 
 	$user_id = findUserId( $user );
 	$subject_id = findFriendClaimId( $user, $subject );
@@ -190,19 +197,12 @@ function remoteBoardPost( $user, $network, $subject, $msg, $content_type )
 switch ( $notification_type ) {
 case "notification_broadcast": {
 	# Collect the args.
-	$for_user = $argv[$b+0];
-	$network = $argv[$b+1];
-	$subject = $argv[$b+2];
-	$author = $argv[$b+3];
-	$seq_num = $argv[$b+4];
-	$date = $argv[$b+5];
-	$time = $argv[$b+6];
-	$length = $argv[$b+7];
-
-	if ( $network === '-' )
-		$network = null;
-	if ( $subject === '-' )
-		$subject = null;
+	$forUser = $argv[$b+0];
+	$author = $argv[$b+1];
+	$seqNum = $argv[$b+2];
+	$date = $argv[$b+3];
+	$time = $argv[$b+4];
+	$length = $argv[$b+5];
 
 	# Read the message from stdin.
 	$message = new Message;
@@ -210,22 +210,22 @@ case "notification_broadcast": {
 
 	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 		$type = $msg[0]['type'];
-		$content_type = $msg[0]['content-type'];
+		$contextType = $msg[0]['content-type'];
 		print("type: $type\n" );
-		print("content-type: $content_type\n" );
+		print("content-type: $contextType\n" );
 
 		switch ( $type ) {
 			case 'name-change':
-				nameChange( $for_user, $author, $seq_num, 
-						$date, $time, $msg, $content_type );
+				nameChange( $forUser, $author, $seqNum, 
+						$date, $time, $msg, $contextType );
 				break;
 			case 'photo-upload':
-				photoUpload( $for_user, $network, $author,
-						$seq_num, $date, $time, $msg, $content_type );
+				photoUpload( $forUser, $author, $seqNum,
+						$date, $time, $msg, $contextType );
 				break;
 			case 'broadcast':
-				broadcast( $for_user, $network, $author,
-						$seq_num, $date, $time, $msg, $content_type );
+				broadcast( $forUser, $author, $seqNum,
+						$date, $time, $msg, $contextType );
 				break;
 		}
 	}
@@ -234,14 +234,11 @@ case "notification_broadcast": {
 
 case "notification_message": {
 	# Collect the args.
-	$for_user = $argv[$b+0];
-	$network = $argv[$b+1];
-	$subject = $argv[$b+2];
-	$author = $argv[$b+3];
-	$seq_num = $argv[$b+4];
-	$date = $argv[$b+5];
-	$time = $argv[$b+6];
-	$length = $argv[$b+7];
+	$forUser = $argv[$b+0];
+	$author = $argv[$b+1];
+	$date = $argv[$b+2];
+	$time = $argv[$b+3];
+	$length = $argv[$b+4];
 
 	if ( $network === '-' )
 		$network = null;
@@ -254,9 +251,9 @@ case "notification_message": {
 
 	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 		$type = $msg[0]['type'];
-		$content_type = $msg[0]['content-type'];
+		$contextType = $msg[0]['content-type'];
 		print("type: $type\n" );
-		print("content-type: $content_type\n" );
+		print("content-type: $contextType\n" );
 
 		switch ( $type ) {
 			default:
@@ -268,11 +265,11 @@ case "notification_message": {
 
 case "notification_remote_message": {
 	# Collect the args.
-	$for_user = $argv[$b+0];
+	$forUser = $argv[$b+0];
 	$network = $argv[$b+1];
 	$subject = $argv[$b+2];
 	$author = $argv[$b+3];
-	$seq_num = $argv[$b+4];
+	$seqNum = $argv[$b+4];
 	$date = $argv[$b+5];
 	$time = $argv[$b+6];
 	$length = $argv[$b+7];
@@ -288,14 +285,14 @@ case "notification_remote_message": {
 
 	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 		$type = $msg[0]['type'];
-		$content_type = $msg[0]['content-type'];
+		$contextType = $msg[0]['content-type'];
 		print("type: $type\n" );
-		print("content-type: $content_type\n" );
+		print("content-type: $contextType\n" );
 
 		switch ( $type ) {
 			case 'board-post':
-				boardPost( $for_user, $network, $subject, $author, $seq_num,
-						$date, $time, $msg, $content_type );
+				boardPost( $forUser, $network, $subject, $author, $seqNum,
+						$date, $time, $msg, $contextType );
 				break;
 		}
 	}
@@ -305,7 +302,6 @@ case "notification_remote_message": {
 case "notification_remote_publication": {
 	# Collect the args.
 	$user = $argv[$b+0];
-	$network = $argv[$b+1];
 	$subject = $argv[$b+2];
 	$length = $argv[$b+3];
 
@@ -315,13 +311,13 @@ case "notification_remote_publication": {
 
 	if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 		$type = $msg[0]['type'];
-		$content_type = $msg[0]['content-type'];
+		$contextType = $msg[0]['content-type'];
 		print("type: $type\n" );
-		print("content-type: $content_type\n" );
+		print("content-type: $contextType\n" );
 
 		switch ( $type ) {
 			case 'board-post':
-				remoteBoardPost( $user, $network, $subject, $msg, $content_type );
+				remoteBoardPost( $user, $network, $subject, $msg, $contextType );
 				break;
 		}
 	}

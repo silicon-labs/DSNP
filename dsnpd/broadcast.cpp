@@ -58,12 +58,12 @@ void groupMemberRevocation( MYSQL *mysql, const char *user,
 	}
 }
 
-void remoteInner( MYSQL *mysql, const char *user, const char *network, const char *subjectId,
-		const char *authorId, long long seqNum, const char *date,
-		const char *msg, long mLen )
+void remoteInner( MYSQL *mysql, const char *user, const char *network,
+		const char *subjectId, const char *authorId, long long seqNum,
+		const char *date, const char *msg, long mLen )
 {
-	String args( "notification_remote_message %s %s %s %s %lld %s %ld", 
-			user, network, subjectId, authorId, seqNum, date, mLen );
+	String args( "notification_remote_message %s %s %s %lld %s %ld", 
+			user, subjectId, authorId, seqNum, date, mLen );
 	appNotification( args, msg, mLen );
 }
 
@@ -579,10 +579,6 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 		const char *subjectId, const char *token,
 		long long seqNum, const char *network, const char *msg, long mLen )
 {
-
-	message( "entering encrypt remote broadcast( %s, %s, %s, %lld, %.*s)\n", 
-		user, subjectId, token, seqNum, (int)mLen, msg );
-
 	DbQuery flogin( mysql,
 		"SELECT user FROM remote_flogin_token "
 		"WHERE user = %e AND identity = %e AND login_token = %e",

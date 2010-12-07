@@ -5,7 +5,6 @@ class Message
 	var $message;
 
 	# Incoming message envelope.
-	var $deliveryType;
 	var $user;
 	var $subject;
 	var $author;
@@ -152,8 +151,6 @@ class Message
 		$userId = $this->findUserId( $forUser );
 		$authorId = $this->findFriendClaimId( $forUser, $author );
 
-		print "broadcast $userId $authorId\n";
-
 		dbQuery(
 			"INSERT INTO activity " .
 			"	( user_id, author_id, seq_num, time_published, " . 
@@ -184,9 +181,6 @@ class Message
 		$subject_id = $this->findFriendClaimId( $forUser, $subject );
 		$author_id = $this->findFriendClaimId( $forUser, $author );
 
-		printf("boardPost( $forUser, $network, $subject, " .
-				"$author, $seqNum, $date, $time, $msg, $contextType )\n" );
-
 		dbQuery(
 			"INSERT INTO activity " .
 			"	( " .
@@ -207,9 +201,6 @@ class Message
 
 	function recvRemoteBoardPost( $user, $network, $subject, $msg, $contextType )
 	{
-		printf( "function remoteBoardPost( $user, $network, " .
-				"$subject, $msg, $contextType )\n" );
-
 		$user_id = $this->findUserId( $user );
 		$subject_id = $this->findFriendClaimId( $user, $subject );
 
@@ -257,60 +248,41 @@ class Message
 		return array( $headers, $msg );
 	}
 
-	function parseBroadcast( $argv, $file )
+	function parseBroadcast( $file )
 	{
-		# Collect the args.
-		$deliveryType = "broadcast";
-		$user = $argv[0];
-		$author = $argv[1];
-		$seqNum = $argv[2];
-		$date = $argv[3];
-		$time = $argv[4];
-		$length = $argv[5];
-
-		$msg = $this->parse( $file, $length );
+		$msg = $this->parse( $file, $this->length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
 			$contextType = $msg[0]['content-type'];
-			print("type: $type\n" );
-			print("content-type: $contextType\n" );
 
 			switch ( $type ) {
 				case 'name-change':
-					$this->recvNameChange( $user, $author, $seqNum, 
-							$date, $time, $msg, $contextType );
+					$this->recvNameChange( $this->user, $this->author,
+							$this->seqNum, $this->date, $this->time,
+							$msg, $contextType );
 					break;
 				case 'photo-upload':
-					$this->recvPhotoUpload( $user, $author, $seqNum,
-							$date, $time, $msg, $contextType );
+					$this->recvPhotoUpload( $this->user, $this->author,
+							$this->seqNum, $this->date, $this->time,
+							$msg, $contextType );
 					break;
 				case 'broadcast':
-					$this->recvBroadcast( $user, $author, $seqNum,
-							$date, $time, $msg, $contextType );
+					$this->recvBroadcast( $this->user, $this->author,
+							$this->seqNum, $this->date, $this->time,
+							$msg, $contextType );
 					break;
 			}
 		}
 	}
 
-	function parseMessage( $argv, $file )
+	function parseMessage( $file )
 	{
-		# Collect the args.
-		$deliveryType = "message";
-		$user = $argv[0];
-		$author = $argv[1];
-		$date = $argv[2];
-		$time = $argv[3];
-		$length = $argv[4];
-
-		# Read the message from stdin.
-		$msg = $this->parse( $file, $length );
+		$msg = $this->parse( $file, $this->length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
 			$contextType = $msg[0]['content-type'];
-			print("type: $type\n" );
-			print("content-type: $contextType\n" );
 
 			switch ( $type ) {
 				default:
@@ -319,57 +291,38 @@ class Message
 		}
 	}
 
-	function parseRemoteMessage( $argv, $file )
+	function parseRemoteMessage( $file )
 	{
-		# Collect the args.
-		$deliveryType = "remote_message";
-		$user = $argv[0];
-		$subject = $argv[1];
-		$author = $argv[2];
-		$seqNum = $argv[3];
-		$date = $argv[4];
-		$time = $argv[5];
-		$length = $argv[6];
-
 		# Read the message from stdin.
-		$msg = $this->parse( $file, $length );
+		$msg = $this->parse( $file, $this->length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
 			$contextType = $msg[0]['content-type'];
-			print("type: $type\n" );
-			print("content-type: $contextType\n" );
 
 			switch ( $type ) {
 				case 'board-post':
-					$this->recvBoardPost( $user, $network, $subject, $author, 
-							$seqNum, $date, $time, $msg, $contextType );
+					$this->recvBoardPost( $this->user, $this->network, 
+							$this->subject, $this->author, $this->seqNum,
+							$this->date, $this->time, $msg, $contextType );
 					break;
 			}
 		}
 	}
 
-	function parseRemotePublication( $argv, $file )
+	function parseRemotePublication( $file )
 	{
-		# Collect the args.
-		$deliveryType = "remote_publication";
-		$user = $argv[0];
-		$subject = $argv[1];
-		$length = $argv[2];
-
 		# Read the message from stdin.
-		$msg = $this->parse( $file, $length );
+		$msg = $this->parse( $file, $this->length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
 			$contextType = $msg[0]['content-type'];
-			print("type: $type\n" );
-			print("content-type: $contextType\n" );
 
 			switch ( $type ) {
 				case 'board-post':
-					$this->recvRemoteBoardPost( $user, $network, $subject, 
-							$msg, $contextType );
+					$this->recvRemoteBoardPost( $this->user, $this->network,
+							$this->subject, $msg, $contextType );
 					break;
 			}
 		}

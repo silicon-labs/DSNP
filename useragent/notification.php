@@ -19,7 +19,6 @@ $CFG = NULL;
 $_SERVER['HTTP_HOST'] = array_shift( $argv );
 $_SERVER['REQUEST_URI'] = array_shift( $argv ) . '/';
 
-require( PREFIX . '/etc/install.php' );
 require( PREFIX . '/etc/config.php' );
 require( PREFIX . '/share/dsnp/web/database.php' );
 
@@ -37,25 +36,47 @@ switch ( $notification_type ) {
 	case "notification_broadcast": {
 		# Read the message from stdin.
 		$m = new Message;
-		$m->parseBroadcast( $argv, STDIN );
+		$m->user = $argv[0];
+		$m->author = $argv[1];
+		$m->seqNum = $argv[2];
+		$m->date = $argv[3];
+		$m->time = $argv[4];
+		$m->length = $argv[5];
+		$m->parseBroadcast( STDIN );
 		break;
 	}
 
 	case "notification_message": {
 		$m = new Message;
-		$m->parseMessage( $argv, STDIN );
+		$m->user = $argv[0];
+		$m->author = $argv[1];
+		$m->date = $argv[2];
+		$m->time = $argv[3];
+		$m->length = $argv[4];
+		$m->parseMessage( STDIN );
 		break;
 	}
 
 	case "notification_remote_message": {
 		$m = new Message;
-		$m->parseRemoteMessage( $argv, STDIN );
+		$m->user = $argv[0];
+		$m->subject = $argv[1];
+		$m->author = $argv[2];
+		$m->seqNum = $argv[3];
+		$m->date = $argv[4];
+		$m->time = $argv[5];
+		$m->length = $argv[6];
+
+		$m->parseRemoteMessage( STDIN );
 		break;
 	}
 
 	case "notification_remote_publication": {
 		$m = new Message;
-		$m->parseRemotePublication( $argv, STDIN );
+		$m->user = $argv[0];
+		$m->subject = $argv[1];
+		$m->length = $argv[2];
+		$m->parseRemotePublication( STDIN );
 		break;
 	}
 }

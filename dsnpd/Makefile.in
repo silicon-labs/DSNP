@@ -86,7 +86,6 @@ install: all
 	install -d $(DESTDIR)$(prefix)/var/lib
 	install -d $(DESTDIR)$(prefix)/var/lib/dsnp
 	install -d $(DESTDIR)$(prefix)/etc/
-	install -d $(DESTDIR)$(prefix)/etc/dsnpd-certs
 	install dsnpd $(DESTDIR)$(prefix)/bin/dsnpd
 
 -include $(DEPS)

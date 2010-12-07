@@ -1,5 +1,8 @@
 <?php
-class OwnerImageController extends Controller
+
+require( ROOT . DS . 'controller/image.php' );
+
+class OwnerImageController extends ImageController
 {
 	var $function = array(
 		'upload' => array(),
@@ -15,12 +18,7 @@ class OwnerImageController extends Controller
 	function view()
 	{
 		$file = $this->args['file'];
-
-		/* Find the image in the database. */
-		$path = "{$this->CFG[PHOTO_DIR]}/{$this->USER[USER]}/$file";
-
-		$this->vars[path] = $path;
-		$this->plainView = true;
+		$this->viewImage( $file );
 	}
 
 	function upload()

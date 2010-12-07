@@ -64,7 +64,6 @@ INSTALL_SUBDIRS = $(BUILD_SUBDIRS:%=%-install)
 
 $(INSTALL_SUBDIRS):
 	@cd $(@:%-install=%) && $(MAKE) install
-	echo '$$PREFIX = "$(prefix)";' > $(DESTDIR)$(prefix)/etc/install.php
 
 install: $(INSTALL_SUBDIRS)
 

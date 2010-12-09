@@ -32,15 +32,57 @@ $conn = mysql_connect($CFG[DB_HOST], $CFG[DB_USER], $CFG[DB_PASS]) or die
 mysql_select_db($CFG[DB_DATABASE]) or die
 	('Could not select database ' . $CFG[DB_DATABASE]);
 
+function argUser( $user )
+{
+	if ( ! preg_match( '/^.*$/', $user ) )
+		die( "user '$user' does not validate" );
+	return $user;
+}
+
+function argId( $id )
+{
+	if ( ! preg_match( '/^.*$/', $id ) )
+		die( "id '$id' does not validate" );
+	return $id;
+}
+
+function argNum( $num )
+{
+	if ( ! preg_match( '/^.*$/', $num ) )
+		die( "number '$num' does not validate" );
+	return $num;
+}
+
+function argDate( $date )
+{
+	if ( ! preg_match( '/^.*$/', $date ) )
+		die( "date '$date' does not validate" );
+	return $date;
+}
+
+function argTime( $time )
+{
+	if ( ! preg_match( '/^.*$/', $time ) )
+		die( "time '$time' does not validate" );
+	return $time;
+}
+
+function argLength( $length )
+{
+	if ( ! preg_match( '/^.*$/', $length ) )
+		die( "length '$length' does not validate" );
+	return $length;
+}
+
 switch ( $notification_type ) {
 	case "notification_broadcast": {
 		# Read the message from stdin.
-		$user = $argv[0];
-		$author = $argv[1];
-		$seqNum = $argv[2];
-		$date = $argv[3];
-		$time = $argv[4];
-		$length = $argv[5];
+		$user = argUser( $argv[0] );
+		$author = argId( $argv[1] );
+		$seqNum = argNum( $argv[2] );
+		$date = argDate( $argv[3] );
+		$time = argTime( $argv[4] );
+		$length = argLength( $argv[5] );
 
 		$m = new Message;
 		$m->parseBroadcast( $user, $author, $seqNum, $date,
@@ -49,11 +91,11 @@ switch ( $notification_type ) {
 	}
 
 	case "notification_message": {
-		$user = $argv[0];
-		$author = $argv[1];
-		$date = $argv[2];
-		$time = $argv[3];
-		$length = $argv[4];
+		$user = argUser( $argv[0] );
+		$author = argId( $argv[1] );
+		$date = argDate( $argv[2] );
+		$time = argTime( $argv[3] );
+		$length = argLength( $argv[4] );
 
 		$m = new Message;
 		$m->parseMessage( $use, $author, $date, $time, $length, STDIN );
@@ -61,13 +103,13 @@ switch ( $notification_type ) {
 	}
 
 	case "notification_remote_message": {
-		$user = $argv[0];
-		$subject = $argv[1];
-		$author = $argv[2];
-		$seqNum = $argv[3];
-		$date = $argv[4];
-		$time = $argv[5];
-		$length = $argv[6];
+		$user = argUser( $argv[0] );
+		$subject = argId( $argv[1] );
+		$author = argId( $argv[2] );
+		$seqNum = argNum( $argv[3] );
+		$date = argDate( $argv[4] );
+		$time = argTime( $argv[5] );
+		$length = argLength( $argv[6] );
 
 		$m = new Message;
 		$m->parseRemoteMessage( $user, $subject, $author, $seqNum,
@@ -76,9 +118,9 @@ switch ( $notification_type ) {
 	}
 
 	case "notification_remote_publication": {
-		$user = $argv[0];
-		$subject = $argv[1];
-		$length = $argv[2];
+		$user = argUser( $argv[0] );
+		$subject = argId( $argv[1] );
+		$length = argLength( $argv[2] );
 
 		$m = new Message;
 		$m->parseRemotePublication( $user, $subject, $length, STDIN );

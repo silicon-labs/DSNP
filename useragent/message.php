@@ -248,9 +248,10 @@ class Message
 		return array( $headers, $msg );
 	}
 
-	function parseBroadcast( $file )
+	function parseBroadcast( $user, $author,
+		$seqNum, $date, $time, $length, $file )
 	{
-		$msg = $this->parse( $file, $this->length );
+		$msg = $this->parse( $file, $length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
@@ -258,25 +259,25 @@ class Message
 
 			switch ( $type ) {
 				case 'name-change':
-					$this->recvNameChange( $this->user, $this->author,
-							$this->seqNum, $this->date, $this->time,
+					$this->recvNameChange( $user, $author,
+							$seqNum, $date, $time,
 							$msg, $contextType );
 					break;
 				case 'photo-upload':
-					$this->recvPhotoUpload( $this->user, $this->author,
-							$this->seqNum, $this->date, $this->time,
+					$this->recvPhotoUpload( $user, $author,
+							$seqNum, $date, $time,
 							$msg, $contextType );
 					break;
 				case 'broadcast':
-					$this->recvBroadcast( $this->user, $this->author,
-							$this->seqNum, $this->date, $this->time,
+					$this->recvBroadcast( $user, $author,
+							$seqNum, $date, $time,
 							$msg, $contextType );
 					break;
 			}
 		}
 	}
 
-	function parseMessage( $file )
+	function parseMessage( $use, $author, $date, $time, $length, $file )
 	{
 		$msg = $this->parse( $file, $this->length );
 
@@ -291,7 +292,8 @@ class Message
 		}
 	}
 
-	function parseRemoteMessage( $file )
+	function parseRemoteMessage( $user, $subject, $author,
+			$seqNum, $date, $time, $length, $file )
 	{
 		# Read the message from stdin.
 		$msg = $this->parse( $file, $this->length );
@@ -310,7 +312,7 @@ class Message
 		}
 	}
 
-	function parseRemotePublication( $file )
+	function parseRemotePublication( $user, $subject, $length, $file )
 	{
 		# Read the message from stdin.
 		$msg = $this->parse( $file, $this->length );

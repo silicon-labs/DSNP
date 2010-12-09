@@ -35,48 +35,53 @@ mysql_select_db($CFG[DB_DATABASE]) or die
 switch ( $notification_type ) {
 	case "notification_broadcast": {
 		# Read the message from stdin.
+		$user = $argv[0];
+		$author = $argv[1];
+		$seqNum = $argv[2];
+		$date = $argv[3];
+		$time = $argv[4];
+		$length = $argv[5];
+
 		$m = new Message;
-		$m->user = $argv[0];
-		$m->author = $argv[1];
-		$m->seqNum = $argv[2];
-		$m->date = $argv[3];
-		$m->time = $argv[4];
-		$m->length = $argv[5];
-		$m->parseBroadcast( STDIN );
+		$m->parseBroadcast( $user, $author, $seqNum, $date,
+				$time, $length, STDIN );
 		break;
 	}
 
 	case "notification_message": {
+		$user = $argv[0];
+		$author = $argv[1];
+		$date = $argv[2];
+		$time = $argv[3];
+		$length = $argv[4];
+
 		$m = new Message;
-		$m->user = $argv[0];
-		$m->author = $argv[1];
-		$m->date = $argv[2];
-		$m->time = $argv[3];
-		$m->length = $argv[4];
-		$m->parseMessage( STDIN );
+		$m->parseMessage( $use, $author, $date, $time, $length, STDIN );
 		break;
 	}
 
 	case "notification_remote_message": {
-		$m = new Message;
-		$m->user = $argv[0];
-		$m->subject = $argv[1];
-		$m->author = $argv[2];
-		$m->seqNum = $argv[3];
-		$m->date = $argv[4];
-		$m->time = $argv[5];
-		$m->length = $argv[6];
+		$user = $argv[0];
+		$subject = $argv[1];
+		$author = $argv[2];
+		$seqNum = $argv[3];
+		$date = $argv[4];
+		$time = $argv[5];
+		$length = $argv[6];
 
-		$m->parseRemoteMessage( STDIN );
+		$m = new Message;
+		$m->parseRemoteMessage( $user, $subject, $author, $seqNum,
+				$date, $time, $length, STDIN );
 		break;
 	}
 
 	case "notification_remote_publication": {
+		$user = $argv[0];
+		$subject = $argv[1];
+		$length = $argv[2];
+
 		$m = new Message;
-		$m->user = $argv[0];
-		$m->subject = $argv[1];
-		$m->length = $argv[2];
-		$m->parseRemotePublication( STDIN );
+		$m->parseRemotePublication( $user, $subject, $length, STDIN );
 		break;
 	}
 }

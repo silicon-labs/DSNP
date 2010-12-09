@@ -1,35 +1,68 @@
-SITE INSTALL INSTRUCTIONS
-=========================
+SYSTEM INSTALL INSTRUCTIONS
+===========================
 
 1. Configure, make and install. 
 
-$ prefix=/opt/dsnp
-$ ./configure --prefix=$prefix
-$ make
-$ make install
+   $ prefix=/opt/dsnp
+   $ ./configure --prefix=$prefix
+   $ make
+   $ make install
 
 2. Ensure that the data directory is writable by the user that the webserver
-runs as.
+   runs as.
 
-$ chown www-data:www-data $prefix/var/lib/dsnp
+   $ chown www-data:www-data $prefix/var/lib/dsnp
 
 3. Add an entry for DSNP to /etc/services. 
 
-# Local services
-dsnp            7085/tcp
+   # Local services
+   dsnp            7085/tcp
 
 4. Install xinetd. Add a config fragment for DSNPd. You may wish to adjust the
-parameters. The user should also be able to write to the data directory. 
+   parameters. The user should also be able to write to the data directory. 
 
-service dsnp
-{
-	disable		= no
-	socket_type	= stream
-	protocol	= tcp
-	wait		= no
-	user		= www-data
-	instances	= UNLIMITED
-	per_source	= UNLIMITED
-	cps		= 10000 1
-	server		= /opt/dsnp/bin/dsnpd
-}
+   service dsnp
+   {
+       disable          = no
+       socket_type      = stream
+       protocol         = tcp
+       wait             = no
+       user             = www-data
+       instances        = UNLIMITED
+       per_source       = UNLIMITED
+       cps              = 10000 1
+       server           = /opt/dsnp/bin/dsnpd
+   }
+
+
+SITE INSTALL INSTRUCTIONS
+=========================
+
+You can run more than one site on a single system. Each site has it's own
+database.
+
+1. Generate config fragments for the site. This script will ask you for site
+   name, URI, and database credentials. It will then generate two fragments.
+   One goes in $prefix/etc/dsnpd.conf the other in $prefix/etc/config.php
+
+   $ ./new-site.sh
+
+   The output will be printed to the console. Copy and paste this to the
+   aformentioned files.
+
+2. Install/upgrade the databases. This script will get the credentials from the
+   config files and will create the database user and database.
+
+3. Make the site's data directory and set up permissions.
+
+   $ mkdir $prefix/var/lib/dsnp/$NAME
+   $ mkdir $prefix/var/lib/dsnp/$NAME/data
+   $ chown -R www-data:www-data $prefix/var/lib/dsnp/$NAME
+
+4. Acquire/generate generate certs for the the site and set the appropriate
+   options in the dsnpd.conf file. You need a key file, certificate file and a
+   list of certificate authorities to trust. If you wish to generate a self-signed cert there is 
+
+   CFG_TLS_CA_CERTS = /path/to/certificate-authority-cert-list.crt
+   CFG_TLS_CRT = /path/to/certificate.crt
+   CFG_TLS_KEY = /path/to/private-key.key

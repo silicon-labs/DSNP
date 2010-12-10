@@ -5,6 +5,7 @@ define( 'ROOT', dirname(__FILE__) );
 define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
 require( ROOT . "/message.php" );
+require( ROOT . "/regexes.php" );
 
 printf( "NOTIFICATION ARRIVED:\n" );
 print_r( $argv );
@@ -34,42 +35,42 @@ mysql_select_db($CFG[DB_DATABASE]) or die
 
 function argUser( $user )
 {
-	if ( ! preg_match( '/^.*$/', $user ) )
+	if ( ! preg_match( REGEX_USER, $user ) )
 		die( "user '$user' does not validate" );
 	return $user;
 }
 
 function argId( $id )
 {
-	if ( ! preg_match( '/^.*$/', $id ) )
+	if ( ! preg_match( REGEX_ID, $id ) )
 		die( "id '$id' does not validate" );
 	return $id;
 }
 
-function argNum( $num )
-{
-	if ( ! preg_match( '/^.*$/', $num ) )
-		die( "number '$num' does not validate" );
-	return $num;
-}
-
 function argDate( $date )
 {
-	if ( ! preg_match( '/^.*$/', $date ) )
+	if ( ! preg_match( REGEX_DATE, $date ) )
 		die( "date '$date' does not validate" );
 	return $date;
 }
 
 function argTime( $time )
 {
-	if ( ! preg_match( '/^.*$/', $time ) )
+	if ( ! preg_match( REGEX_TIME, $time ) )
 		die( "time '$time' does not validate" );
 	return $time;
 }
 
+function argNum( $num )
+{
+	if ( ! preg_match( '/^[0-9]+$/', $num ) )
+		die( "number '$num' does not validate" );
+	return $num;
+}
+
 function argLength( $length )
 {
-	if ( ! preg_match( '/^.*$/', $length ) )
+	if ( ! preg_match( '/^[0-9]+$/', $length ) )
 		die( "length '$length' does not validate" );
 	return $length;
 }

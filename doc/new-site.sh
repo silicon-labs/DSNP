@@ -29,7 +29,7 @@ CFG_PORT=7085
 
 function usage()
 {
-	echo usage: ./new-site.sh output-file
+	echo usage: ./new-site.sh instructions-file
 	exit 1;
 }
 
@@ -41,10 +41,10 @@ if [ -z "$OUTPUT" ]; then
 	exit 1;
 fi
 
-# CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
-# CFG_TLS_CRT = /etc/ssl/local/yoho.crt
-# CFG_TLS_KEY = /etc/ssl/local/yoho.key
-
+# Clear the output file.
+rm $OUTPUT;
+touch $OUTPUT;
+chmod 600 $OUTPUT;
 
 echo
 echo "Please give a short name for the site. It should contain only letters and"
@@ -114,8 +114,28 @@ done
 #
 
 cat << EOF > $OUTPUT
+INSTALL INSTRUCTIONS: $NAME
+======================`echo $NAME | sed 's/./=/g'`
 
-1. Add the following configuration fragment to $DSNPD_CONF.
+STEP 1
+======
+
+Complete and install the dsnpd.conf configuration fragment.
+
+Acquire/generate certs for the site and set the appropriate options in the
+dsnpd.conf file. You need a file containaining the list of CA certs to trust
+(typically on your system already), a key file, and a valid certificate file
+that will be trusted by any site you wish to communicate with. 
+   
+   CFG_TLS_CA_CERTS = /path/to/certificate-authority-cert-list.pem
+   CFG_TLS_CRT = /path/to/certificate.crt
+   CFG_TLS_KEY = /path/to/private-key.key
+
+If this is a testing installation that will only communicate with itself, you
+can generate a self-signed cert and use it as the CA_CERTS file.
+
+Once the cert section is complete, add the configuration fragment to
+$DSNPD_CONF.
 
 -------- BEGIN FRAGMENT --------
 
@@ -143,8 +163,10 @@ EOF
 
 cat << EOF >> $OUTPUT
 
+STEP 2
+======
 
-2. Add the following configuration fragment to $PHP_CONF.
+Add the following configuration fragment to $PHP_CONF.
 
 -------- BEGIN FRAGMENT --------
 
@@ -174,14 +196,38 @@ EOF
 
 cat << EOF >> $OUTPUT
 
+STEP 3
+======
 
-3. Run the following script as the new user.
+Run the following script as the new user.
 
 -------- BEGIN SCRIPT -------
 
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/data
 chown -R www-data:www-data $LOCALSTATEDIR/lib/dsnp/$NAME
+
+-------- END SCRIPT -------
+EOF
+
+cat << EOF >> $OUTPUT
+
+STEP 4
+======
+
+Initialize the database. This step will require the mysql root password. You
+may wish to consider copying this fragment to a file and executing it to avoid
+putting the database user and pass on your history.
+
+-------- BEGIN SCRIPT -------
+
+mysql -u root -p -B -N << EOS
+	CREATE USER '${NAME}'@'localhost' IDENTIFIED BY '$CFG_DB_PASS';
+	CREATE DATABASE ${NAME};
+	GRANT ALL ON ${NAME}.* TO '${NAME}'@'localhost';
+EOS
+
+mysql -u $NAME -p'$CFG_DB_PASS' $NAME < $DATADIR/dsnp/init.sql
 
 -------- END SCRIPT -------
 EOF

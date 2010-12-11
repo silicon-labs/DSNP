@@ -29,3 +29,6 @@ new-site: new-site.sh
 	sed $(sedsubst) $< > $@
 	chmod +x $@
 
+install:
+	install -d @prefix@/lib/dsnp
+	install -m 755 new-site @prefix@/lib/dsnp/new-site

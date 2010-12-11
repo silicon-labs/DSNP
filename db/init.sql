@@ -326,4 +326,10 @@ CREATE TABLE friend_link
 	PRIMARY KEY ( network_id, from_fc_id, to_fc_id )
 );
 
+-- Database schema verison. Initialize it.
+CREATE TABLE version
+(
+	version INT
+);
 
+INSERT INTO version ( version ) VALUES ( 0 );

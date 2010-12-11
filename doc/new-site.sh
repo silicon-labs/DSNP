@@ -27,8 +27,24 @@ SYSCONFDIR=@sysconfdir@
 # Port for the server.
 CFG_PORT=7085
 
-# Start the config file.
-#{ echo '<?php'; echo; } #>> $PHP_CONF
+function usage()
+{
+	echo usage: ./new-site.sh output-file
+	exit 1;
+}
+
+# Write config file fragments to this file. It can then be copy-pasted to the
+# right places. It will contain instructions.
+OUTPUT=$1;
+if [ -z "$OUTPUT" ]; then
+	usage;
+	exit 1;
+fi
+
+# CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
+# CFG_TLS_CRT = /etc/ssl/local/yoho.crt
+# CFG_TLS_KEY = /etc/ssl/local/yoho.key
+
 
 echo
 echo "Please give a short name for the site. It should contain only letters and"
@@ -93,19 +109,15 @@ while true; do
 	break;
 done
 
-CN=$CFG_HOST
-CERT_LOC=$SYSCONFDIR/dsnpd-certs
-
-
-#
-# Init the database.
-#
-
 #
 # Add the site to the dsnpd config file.
 #
 
-cat << EOF
+cat << EOF > $OUTPUT
+
+1. Add the following configuration fragment to $DSNPD_CONF.
+
+-------- BEGIN FRAGMENT --------
 
 ===== $NAME =====
 CFG_URI = $CFG_URI
@@ -120,21 +132,25 @@ CFG_PORT = $CFG_PORT
 CFG_TLS_CA_CERTS = SET_THIS
 CFG_TLS_CRT = SET_THIS
 CFG_TLS_KEY = SET_THIS
+
+-------- END FRAGMENT --------
 EOF
 
-#CFG_TLS_CA_CERTS = /etc/ssl/certs/ca-certificates.crt
-#CFG_TLS_CRT = /etc/ssl/local/yoho.crt
-#CFG_TLS_KEY = /etc/ssl/local/yoho.key
 
 #
 # Add the site to the PHP config file.
 #
 
-#grep -v '^\?>' $PHP_CONF > $PHP_CONF.new
+cat << EOF >> $OUTPUT
 
-cat << EOF
 
-if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_PATH' ) === 0 ) {
+2. Add the following configuration fragment to $PHP_CONF.
+
+-------- BEGIN FRAGMENT --------
+
+if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], 
+		'$CFG_HOST$CFG_PATH' ) === 0 )
+{
 	\$CFG[SITE_NAME] = '$NAME DSNP';
 	\$CFG[NAME] = '$NAME';
 	\$CFG[URI] = '$CFG_URI';
@@ -152,31 +168,20 @@ if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], '$CFG_HOST$CFG_P
 	\$CFG[RC_PUBLIC_KEY] = 'unused';
 	\$CFG[RC_PRIVATE_KEY] = 'unused';
 }
+
+-------- END FRAGMENT --------
 EOF
 
-exit;
+cat << EOF >> $OUTPUT
 
-#cat $PHP_CONF.new > $PHP_CONF
-#rm $PHP_CONF.new
 
-echo
-echo "Thank you, now initializing the database. Please login as root@localhost."
-echo "Please ignore any \"Can't drop\" messages."
-echo
+3. Run the following script as the new user.
+
+-------- BEGIN SCRIPT -------
 
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/data
-
 chown -R www-data:www-data $LOCALSTATEDIR/lib/dsnp/$NAME
 
-#
-# Generate a self-signed cert
-#
-
-openssl genrsa -out $CERT_LOC/$CN.key 1024
-openssl req -new \
-	-subj "/CN=$CN" \
-	-key $CERT_LOC/$CN.key -out $CERT_LOC/$CN.csr
-openssl x509 -req -days 365 \
-	-in $CERT_LOC/$CN.csr -signkey $CERT_LOC/$CN.key -out $CERT_LOC/$CN.crt
-
+-------- END SCRIPT -------
+EOF

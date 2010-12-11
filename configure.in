@@ -25,6 +25,6 @@ AC_CHECK_LIB(mysqlclient, mysql_connect)
 
 dnl write output files
 AC_OUTPUT( Makefile dsnpd/Makefile db/Makefile 
-	useragent/Makefile scripts/Makefile )
+	useragent/Makefile scripts/Makefile doc/Makefile )
 
 echo "configuration of dsnpd complete"

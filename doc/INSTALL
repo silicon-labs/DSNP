@@ -41,27 +41,23 @@ SITE INSTALL INSTRUCTIONS
 You can run more than one site on a single system. Each site has it's own
 database.
 
-1. Generate config fragments for the site. This script will ask you for site
-   name, URI, and database credentials. It will then generate two fragments.
-   One goes in $prefix/etc/dsnpd.conf the other in $prefix/etc/config.php
+1. Generate config and script fragments for the site. This script will ask you
+   for site name, URI, and database credentials. It will then generate two
+   fragments. One goes in $prefix/etc/dsnpd.conf the other in
+   $prefix/etc/config.php
 
-   $ ./new-site.sh
+   $ ./new-site.sh instructions
 
-   The output will be printed to the console. Copy and paste this to the
-   aformentioned files.
+   The output file will contain instructions for generating the new site.
+   Follow these instructions.
 
 2. Install/upgrade the databases. This script will get the credentials from the
    config files and will create the database user and database.
 
-3. Make the site's data directory and set up permissions.
-
-   $ mkdir $prefix/var/lib/dsnp/$NAME
-   $ mkdir $prefix/var/lib/dsnp/$NAME/data
-   $ chown -R www-data:www-data $prefix/var/lib/dsnp/$NAME
-
-4. Acquire/generate generate certs for the the site and set the appropriate
+3. Acquire/generate generate certs for the the site and set the appropriate
    options in the dsnpd.conf file. You need a key file, certificate file and a
-   list of certificate authorities to trust. If you wish to generate a self-signed cert there is 
+   list of certificate authorities to trust. If you wish to generate a
+   self-signed cert there is 
 
    CFG_TLS_CA_CERTS = /path/to/certificate-authority-cert-list.crt
    CFG_TLS_CRT = /path/to/certificate.crt

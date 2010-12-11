@@ -3147,7 +3147,7 @@ _ACEOF
 fi
 
 
-ac_config_files="$ac_config_files Makefile dsnpd/Makefile db/Makefile useragent/Makefile scripts/Makefile"
+ac_config_files="$ac_config_files Makefile dsnpd/Makefile db/Makefile useragent/Makefile scripts/Makefile doc/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3748,6 +3748,7 @@ do
     "db/Makefile") CONFIG_FILES="$CONFIG_FILES db/Makefile" ;;
     "useragent/Makefile") CONFIG_FILES="$CONFIG_FILES useragent/Makefile" ;;
     "scripts/Makefile") CONFIG_FILES="$CONFIG_FILES scripts/Makefile" ;;
+    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 $as_echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

@@ -3147,7 +3147,7 @@ _ACEOF
 fi
 
 
-ac_config_files="$ac_config_files Makefile doc/Makefile db/Makefile dsnpd/Makefile useragent/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile etc/Makefile db/Makefile dsnpd/Makefile useragent/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3745,6 +3745,7 @@ do
     "dsnpd/config.h") CONFIG_HEADERS="$CONFIG_HEADERS dsnpd/config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+    "etc/Makefile") CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
     "db/Makefile") CONFIG_FILES="$CONFIG_FILES db/Makefile" ;;
     "dsnpd/Makefile") CONFIG_FILES="$CONFIG_FILES dsnpd/Makefile" ;;
     "useragent/Makefile") CONFIG_FILES="$CONFIG_FILES useragent/Makefile" ;;

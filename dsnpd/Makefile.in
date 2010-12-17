@@ -23,7 +23,7 @@ CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp \
 GEN_SRCS = parser.cpp rcfile.cpp base64.cpp
 
 LIBS = @LIBS@
-LIBS += -lssl -lcrypto -ldl
+LIBS += -lcrypto -ldl
 
 #*************************************
 

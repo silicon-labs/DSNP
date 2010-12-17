@@ -18,11 +18,11 @@
 #include "encrypt.h"
 #include "string.h"
 
+#include <mysql/mysql.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <mysql.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

@@ -17,7 +17,7 @@
 #ifndef _DSNPD_H
 #define _DSNPD_H
 
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <list>

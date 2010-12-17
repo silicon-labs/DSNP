@@ -17,11 +17,21 @@ AC_CONFIG_HEADER(dsnpd/config.h)
 
 dnl Checks for programs.
 AC_PROG_CXX
+AC_LANG_C
 
 dnl Check for definition of MAKE.
 AC_PROG_MAKE_SET
 
-AC_CHECK_LIB(mysqlclient, mysql_connect)
+dnl Need ragel to build.
+dnl FIXME: distribute the ragel-generated code with the tarball.
+AC_CHECK_PROG(RAGEL, ragel, ragel)
+if test -z "$RAGEL"; then
+	AC_ERROR([ragel not found])
+fi
+
+AC_CHECK_HEADER([mysql/mysql.h], [], AC_ERROR([mysql/mysql.h not found]))
+LDFLAGS="${LDFLAGS} -L/usr/lib/mysql"
+AC_CHECK_LIB(mysqlclient, mysql_init, [], AC_ERROR([mysqlclient not found]))
 
 dnl write output files
 AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile

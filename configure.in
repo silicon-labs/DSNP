@@ -29,9 +29,13 @@ if test -z "$RAGEL"; then
 	AC_ERROR([ragel not found])
 fi
 
-AC_CHECK_HEADER([mysql/mysql.h], [], AC_ERROR([mysql/mysql.h not found]))
 LDFLAGS="${LDFLAGS} -L/usr/lib/mysql"
-AC_CHECK_LIB(mysqlclient, mysql_init, [], AC_ERROR([mysqlclient not found]))
+AC_CHECK_HEADER([mysql/mysql.h], [], AC_ERROR([mysql/mysql.h not found]))
+AC_CHECK_LIB(mysqlclient, mysql_init, [], AC_ERROR([libmysqlclient not found]))
+
+AC_CHECK_HEADER([openssl/ssl.h], [], AC_ERROR([openssl/ssl.h not found]))
+AC_CHECK_LIB(ssl, SSL_new, [], AC_ERROR([libssl not found]))
+
 
 dnl write output files
 AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile

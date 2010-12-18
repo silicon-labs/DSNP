@@ -1,3 +1,22 @@
+REQUIREMENTS for INSTALLATION 
+=============================
+
+1. You must have root privileges on your system. You need to be able to install
+   a new service.
+
+2. Apache with mod_ssl, mod_php and mod_rewrite installed. The mod_rewrite
+   module must be configured to work in .htaccess files.
+
+3. You need to have mysql server and the client library. You need the ability
+   to create new databases and users.
+
+4. You need the openssl development package installed on your system.
+
+5. You need xinetd (or similar) installed.
+
+6. If you are building from the source repository, you need Ragel installed.
+
+
 SYSTEM INSTALL INSTRUCTIONS
 ===========================
 

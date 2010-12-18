@@ -232,3 +232,18 @@ mysql -u $NAME -p'$CFG_DB_PASS' $NAME < $DATADIR/dsnp/init.sql
 
 -------- END SCRIPT -------
 EOF
+
+cat << EOF >> $OUTPUT
+
+STEP 5
+======
+
+Configure Apache to serve the User Agent files. Go to the webroot for
+$CFG_HOST and link:
+
+ln -s $DATADIR/dsnp/web/webroot .$CFG_PATH
+
+Note that if there is no path on the domain hosting the site, you should go one
+directory up and create the link as the directory housing the entire site.
+
+EOF

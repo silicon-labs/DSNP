@@ -15,7 +15,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 DSNPD_CONF=@sysconfdir@/dsnpd.conf
-PHP_CONF=@sysconfdir@/config.php
+PHP_CONF=@sysconfdir@/dsnpua.php
 DATADIR=@datadir@
 LOCALSTATEDIR=@localstatedir@
 SYSCONFDIR=@sysconfdir@

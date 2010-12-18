@@ -27,7 +27,7 @@ install-default-config:
 	if test '!' -f $(sysconfdir)/dsnpd.conf; then \
 		install -m 644 dsnpd.conf $(sysconfdir)/dsnpd.conf; \
 	fi
-	if test '!' -f $(sysconfdir)/config.php; then \
-		install -m 644 config.php $(sysconfdir)/config.php; \
+	if test '!' -f $(sysconfdir)/dsnpua.php; then \
+		install -m 644 dsnpua.php $(sysconfdir)/dsnpua.php; \
 	fi
 

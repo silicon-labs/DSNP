@@ -81,7 +81,7 @@ if (!defined('WWW_ROOT')) {
 
 /* Location of the data files. */
 /* This choose the site to configure for. */
-include( PREFIX . '/etc/config.php' );
+include( PREFIX . '/etc/dsnpua.php' );
 
 define( 'CFG_DB_HOST', $CFG_DB_HOST );
 define( 'CFG_DB_USER', $CFG_DB_USER );

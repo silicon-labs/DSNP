@@ -9,7 +9,7 @@ define( 'HASH_BASE64_SIZE', 27 );
 define( 'TOKEN_BASE64_SIZE', 22 );
 
 /* This selects the site to configure for. */
-require( PREFIX . DS . 'etc' . DS . 'config.php' );
+require( PREFIX . DS . 'etc' . DS . 'dsnpua.php' );
 
 require( ROOT . DS . 'connection.php' );
 require( ROOT . DS . 'controller.php' );

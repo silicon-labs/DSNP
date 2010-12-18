@@ -1,16 +1,18 @@
-
-REQUIREMENTS and DEPENDENCIES
+REQUIREMENTS for INSTALLATION 
 =============================
 
-1. Root access
+- root privileges
 
-2. Mysql server and client library.
+- Apache with mod_rewrite installed. It must be configured to work in
+  .htaccess files.
 
-3. openssl library.
+- mysql server and the client library.
 
-4. xinetd (or similar).
+- openssl library.
 
-5. ragel (if building from the source repository).
+- xinetd (or similar).
+
+- ragel (if building from the source repository).
 
 INSTALLATION
 ============

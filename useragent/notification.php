@@ -20,7 +20,7 @@ $CFG = NULL;
 $_SERVER['HTTP_HOST'] = array_shift( $argv );
 $_SERVER['REQUEST_URI'] = array_shift( $argv ) . '/';
 
-require( PREFIX . '/etc/config.php' );
+require( PREFIX . '/etc/dsnpua.php' );
 require( PREFIX . '/share/dsnp/web/database.php' );
 
 $DATA_DIR = PREFIX . "/var/lib/dsnp/{$CFG[NAME]}/data";

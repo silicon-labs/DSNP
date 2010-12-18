@@ -342,7 +342,7 @@ int TlsConnect::connect4( MYSQL *mysql, const char *host,
 
 	/* Send the request. */
 	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
+		"DSNP/0.1 %s\r\n"
 		"start_ftf %s\r\n",
 		site, relid );
 	BIO_flush( buffer );
@@ -390,7 +390,7 @@ int TlsConnect::connect5( MYSQL *mysql, const char *host,
 
 	/* Send the request. */
 	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
+		"DSNP/0.1 %s\r\n"
 		"start_pre %s\r\n",
 		site, reqid );
 	BIO_flush( buffer );

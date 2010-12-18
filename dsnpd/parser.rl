@@ -345,7 +345,7 @@ bool gblKeySubmitted = false;
 			
 	)*;
 
-	main := 'SPP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
+	main := 'DSNP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
 }%%
 
 %% write data;

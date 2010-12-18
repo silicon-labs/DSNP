@@ -188,7 +188,7 @@ int TlsConnect::connect2( const char *host, const char *site )
 
 	/* Send the request. */
 	BIO_printf( buffer,
-		"SPP/0.1 %s\r\n"
+		"DSNP/0.1 %s\r\n"
 		"start_exchange\r\n",
 		site );
 	BIO_flush( buffer );

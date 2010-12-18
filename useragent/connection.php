@@ -13,7 +13,7 @@ class Connection
 			exit(1);
 		
 		$send = 
-			"SPP/0.1 " . $CFG[URI] . "\r\n" .
+			"DSNP/0.1 " . $CFG[URI] . "\r\n" .
 			"comm_key " . $CFG[COMM_KEY] . "\r\n";
 		fwrite( $this->fp, $send );
 	}

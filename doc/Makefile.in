@@ -30,5 +30,7 @@ new-site: new-site.sh
 	chmod +x $@
 
 install:
-	install -d @prefix@/lib/dsnp
-	install -m 755 new-site @prefix@/lib/dsnp/new-site
+	install -d @prefix@/share/dsnp
+	install -m 755 new-site @prefix@/share/dsnp/new-site
+	install -m 644 README @prefix@/share/dsnp/README
+	install -m 644 INSTALL @prefix@/share/dsnp/INSTALL

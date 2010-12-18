@@ -42,7 +42,7 @@ if [ -z "$OUTPUT" ]; then
 fi
 
 # Clear the output file.
-rm $OUTPUT;
+rm -f $OUTPUT;
 touch $OUTPUT;
 chmod 600 $OUTPUT;
 
@@ -122,17 +122,18 @@ STEP 1
 
 Complete and install the dsnpd.conf configuration fragment.
 
-Acquire/generate certs for the site and set the appropriate options in the
-dsnpd.conf file. You need a file containaining the list of CA certs to trust
-(typically on your system already), a key file, and a valid certificate file
-that will be trusted by any site you wish to communicate with. 
+Start by acquiring certs for the site so you can set the appropriate options in
+the dsnpd.conf file. You also need a file containaining the list of CA certs to
+trust (typically on your system already), a key file, and a valid certificate
+file that will be trusted by any site you wish to communicate with. Be sure
+to make sure all three files are readable by the user dsnpd runs as.
    
    CFG_TLS_CA_CERTS = /path/to/certificate-authority-cert-list.pem
    CFG_TLS_CRT = /path/to/certificate.crt
    CFG_TLS_KEY = /path/to/private-key.key
 
 If this is a testing installation that will only communicate with itself, you
-can generate a self-signed cert and use it as the CA_CERTS file.
+can generate a self-signed cert and use it as the CFG_TLS_CA_CERTS file.
 
 Once the cert section is complete, add the configuration fragment to
 $DSNPD_CONF.

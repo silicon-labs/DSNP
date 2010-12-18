@@ -29,7 +29,7 @@ LIBS += -lcrypto -ldl
 
 DEFS += \
 	-DSYSCONFDIR='"@prefix@/etc"' \
-	-DLOGDIR='"@prefix@/var/log"' \
+	-DLOGDIR='"@prefix@/var/log/dsnp"' \
 	-DNOTIFICATION='"php @prefix@/share/dsnp/web/notification.php"' \
 	-DPKGSTATEDIR='"@prefix@/var/lib/dsnp"' \
 	-DLIBDIR='"@prefix@/lib/dsnp"'
@@ -79,6 +79,7 @@ clean:
 install: all
 	install -d $(DESTDIR)$(prefix)/bin
 	install -d $(DESTDIR)$(prefix)/var/log
+	install -d $(DESTDIR)$(prefix)/var/log/dsnp
 	install -d $(DESTDIR)$(prefix)/var/lib
 	install -d $(DESTDIR)$(prefix)/var/lib/dsnp
 	install -d $(DESTDIR)$(prefix)/etc/

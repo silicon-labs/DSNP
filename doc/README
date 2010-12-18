@@ -1,28 +1,18 @@
 
-DEPENDENCIES
+REQUIREMENTS and DEPENDENCIES
+=============================
+
+1. Root access
+
+2. Mysql server and client library.
+
+3. openssl library.
+
+4. xinetd (or similar).
+
+5. ragel (if building from the source repository).
+
+INSTALLATION
 ============
 
-Install and run this package you will need a few things.
-
-1. Mysql installed and running.
-
-2. To build dsnpd: ragel, libssl and libmysql.
-
-3. To run dsnpd: xinetd (or similar).
-
-INTIALIZATION
-=============
-
-To initialize a new installation you will need to know its public URI and the
-root@localhost password for the MySQL database. You will also need to choose an
-admin password for the installation. This will be used as the password for the
-dsnp user in the database.
-
-Run the ./init.sh script.
-
-The installation script will create:
-	./dsnpd/dsnpd.conf
-
-Set up xinetd (a sample config file is given in dsnpd/) and make sure it
-receives dsnpd.conf as the first argument. The port for the DSNP service in
-/etc/services should be the same as the port specified in the dsnpd.conf file.
+See the INSTALL file.

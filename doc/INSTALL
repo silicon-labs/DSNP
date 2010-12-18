@@ -3,23 +3,23 @@ SYSTEM INSTALL INSTRUCTIONS
 
 1. Configure, make and install. 
 
-   $ prefix=/opt/dsnp
-   $ ./configure --prefix=$prefix
+   $ ./configure --prefix=PREFIX
    $ make
    $ make install
 
-2. Ensure that the data directory is writable by the user that the webserver
-   runs as.
+2. Ensure that the data and log directories are writable by the user that the
+   webserver runs as.
 
-   $ chown www-data:www-data $prefix/var/lib/dsnp
+   $ chown www-data:www-data PREFIX/var/lib/dsnp
+   $ chown www-data:www-data PREFIX/var/log/dsnp
 
 3. Add an entry for DSNP to /etc/services. 
 
    # Local services
    dsnp            7085/tcp
 
-4. Install xinetd. Add a config fragment for DSNPd. You may wish to adjust the
-   parameters. The user should also be able to write to the data directory. 
+4. Install xinetd. Add a config fragment for DSNPd. Run the server using the
+   webserver user. You may wish to adjust the limits.
 
    service dsnp
    {
@@ -28,12 +28,23 @@ SYSTEM INSTALL INSTRUCTIONS
        protocol         = tcp
        wait             = no
        user             = www-data
-       instances        = UNLIMITED
-       per_source       = UNLIMITED
-       cps              = 10000 1
-       server           = /opt/dsnp/bin/dsnpd
+       instances        = 500
+       per_source       = 500
+       cps              = 1000 1
+       server           = PREFIX/bin/dsnpd
    }
 
+5. Install a logrotate fragment.
+
+   PREFIX/var/log/dsnp/*.log {
+       weekly
+       missingok
+       rotate 26
+       compress
+       delaycompress
+       notifempty
+       create 640 www-data www-data
+   }
 
 SITE INSTALL INSTRUCTIONS
 =========================
@@ -44,4 +55,4 @@ ask you for site name, URI, and database credentials. It will then generate
 instructions, config fragments and various script fragments to install the new
 site. Run it, then follow the instructions.
 
-$ $prefix/share/dsnp/new-site /tmp/instructions
+$ PREFIX/share/dsnp/new-site /tmp/instructions

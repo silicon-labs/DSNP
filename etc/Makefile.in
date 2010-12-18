@@ -23,6 +23,7 @@ all:
 install: install-default-config
 
 install-default-config:
+	install -d $(sysconfdir)
 	if test '!' -f $(sysconfdir)/dsnpd.conf; then \
 		install -m 644 dsnpd.conf $(sysconfdir)/dsnpd.conf; \
 	fi

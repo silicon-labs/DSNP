@@ -7,8 +7,9 @@ REQUIREMENTS for INSTALLATION
 2. Apache with mod_ssl, mod_php and mod_rewrite installed. The mod_rewrite
    module must be configured to work in .htaccess files.
 
-3. You need to have mysql server and the client library. You need the ability
-   to create new databases and users.
+3. You need to have mysql server, the mysql client library, and the mysql
+   module for php installed. You need the ability to create new databases
+   and users.
 
 4. You need the openssl development package installed on your system.
 

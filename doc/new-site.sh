@@ -19,6 +19,7 @@ PHP_CONF=@sysconfdir@/dsnpua.php
 DATADIR=@datadir@
 LOCALSTATEDIR=@localstatedir@
 SYSCONFDIR=@sysconfdir@
+PREFIX=@prefix@
 
 #
 # Config for all sites
@@ -32,6 +33,14 @@ function usage()
 	echo usage: ./new-site.sh instructions-file
 	exit 1;
 }
+
+# Read the new-site config file.
+{
+	while read name eq value; do
+		eval $name=$value;
+	done
+} < ${PREFIX}/etc/dsnp-new-site.conf
+
 
 # Write config file fragments to this file. It can then be copy-pasted to the
 # right places. It will contain instructions.
@@ -116,25 +125,47 @@ done
 cat << EOF > $OUTPUT
 INSTALL INSTRUCTIONS: $NAME
 ======================`echo $NAME | sed 's/./=/g'`
+EOF
+
+#
+# The Certificates
+#
+
+cat << EOF >> $OUTPUT
 
 STEP 1
 ======
 
-Complete and install the dsnpd.conf configuration fragment.
+Acquire and install the site's certificate and key file.
 
-Start by acquiring certs for the site so you can set the appropriate options in
-the dsnpd.conf file. You also need a file containaining the list of CA certs to
-trust (typically on your system already), a key file, and a valid certificate
-file that will be trusted by any site you wish to communicate with. Be sure
-to make sure all three files are readable by the user dsnpd runs as.
-   
-   CFG_TLS_CA_CERTS = /path/to/certificate-authority-cert-list.pem
-   CFG_TLS_CRT = /path/to/certificate.crt
-   CFG_TLS_KEY = /path/to/private-key.key
+The key file you should have generated yourself. The certificate was issued to
+you. If there is a chain, add the certs to the end (your cert first, then
+append certs as you go up the chain).
+
+$ KEY_FILE=/path/to/private-key.key
+$ CRT_FILE=/path/to/certificate.crt
+
+$ cp \$KEY_FILE $SYSCONFDIR/dsnp-ssl/$NAME.key
+$ cp \$CRT_FILE $SYSCONFDIR/dsnp-ssl/$NAME.crt
+$ chown ${WWW_USER}:${WWW_USER} \\
+      $SYSCONFDIR/dsnp-ssl/$NAME.crt \\
+      $SYSCONFDIR/dsnp-ssl/$NAME.crt 
+$ chmod 600 \\
+      $SYSCONFDIR/dsnp-ssl/$NAME.crt \\
+      $SYSCONFDIR/dsnp-ssl/$NAME.crt 
 
 If this is a testing installation that will only communicate with itself, you
-can generate a self-signed cert and use it as the CFG_TLS_CA_CERTS file.
+can generate a self-signed cert and use it as the CFG_TLS_CA_CERTS in the next step.
+EOF
 
+#
+# The dsnpd.conf file
+#
+
+cat << EOF >> $OUTPUT
+
+STEP 2
+======
 Once the cert section is complete, add the configuration fragment to
 $DSNPD_CONF.
 
@@ -150,9 +181,9 @@ CFG_DB_DATABASE = ${NAME}
 CFG_DB_PASS = $CFG_DB_PASS
 CFG_COMM_KEY = $CFG_COMM_KEY
 CFG_PORT = $CFG_PORT
-CFG_TLS_CA_CERTS = SET_THIS
-CFG_TLS_CRT = SET_THIS
-CFG_TLS_KEY = SET_THIS
+CFG_TLS_CA_CERTS = ${CA_CERTS}
+CFG_TLS_CRT = $SYSCONFDIR/dsnp-ssl/$NAME.crt
+CFG_TLS_KEY = $SYSCONFDIR/dsnp-ssl/$NAME.key
 
 -------- END FRAGMENT --------
 EOF
@@ -164,7 +195,7 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 2
+STEP 3
 ======
 
 Add the following configuration fragment to $PHP_CONF.
@@ -197,7 +228,7 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 3
+STEP 4
 ======
 
 Run the following script as the new user.
@@ -213,7 +244,7 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 4
+STEP 5
 ======
 
 Initialize the database. This step will require the mysql root password. You
@@ -235,7 +266,7 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 5
+STEP 6
 ======
 
 Configure Apache to serve the User Agent files. Go to the webroot for

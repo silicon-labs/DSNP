@@ -17,62 +17,31 @@ REQUIREMENTS for INSTALLATION
 
 6. If you are building from the source repository, you need Ragel installed.
 
-
 SYSTEM INSTALL INSTRUCTIONS
 ===========================
 
-1. Configure, make and install. 
+In the default setup, dsnpd is run from xinetd. Since both dsnpd and the
+webserver need to access the same set of files, it is convenient to run dsnpd
+as the web server user.
+
+First configure, make and make install. 
 
    $ ./configure --prefix=PREFIX
    $ make
    $ make install
 
-2. Ensure that the data and log directories are writable by the user that the
-   webserver runs as.
+The system install instructions need to followed only once. Use the init-system
+script to generate the instructions, then follow them.
 
-   $ chown www-data:www-data PREFIX/var/lib/dsnp
-   $ chown www-data:www-data PREFIX/var/log/dsnp
-
-3. Add an entry for DSNP to /etc/services. 
-
-   # Local services
-   dsnp            7085/tcp
-
-4. Install xinetd. Add a config fragment for DSNPd. Run the server using the
-   webserver user. You may wish to adjust the limits.
-
-   service dsnp
-   {
-       disable          = no
-       socket_type      = stream
-       protocol         = tcp
-       wait             = no
-       user             = www-data
-       instances        = 500
-       per_source       = 500
-       cps              = 1000 1
-       server           = PREFIX/bin/dsnpd
-   }
-
-5. Install a logrotate fragment.
-
-   PREFIX/var/log/dsnp/*.log {
-       weekly
-       missingok
-       rotate 26
-       compress
-       delaycompress
-       notifempty
-       create 640 www-data www-data
-   }
+$ PREFIX/share/dsnp/init-system /tmp/system
 
 SITE INSTALL INSTRUCTIONS
 =========================
 
 You can run more than one site on a single system. Each site has it's own
-database. To add a site to the system run the new-site script. This script will
-ask you for site name, URI, and database credentials. It will then generate
-instructions, config fragments and various script fragments to install the new
-site. Run it, then follow the instructions.
+database. To add a site to the system first run the new-site script. This
+script will ask you for site name, URI, and database credentials. It will then
+generate various config and script fragments to help you install the new site.
+Run it, then follow the instructions.
 
-$ PREFIX/share/dsnp/new-site /tmp/instructions
+$ PREFIX/share/dsnp/new-site /tmp/site-name

@@ -16,7 +16,8 @@
 prefix = @prefix@
 datarootdir = @datarootdir@
 
-all: new-site dsnp-spec.pdf
+all: new-site init-system
+#dsnp-spec.pdf
 
 sedsubst = \
 	-e 's,\@prefix\@,@prefix@,g;' \
@@ -29,9 +30,14 @@ new-site: new-site.sh
 	sed $(sedsubst) $< > $@
 	chmod +x $@
 
+init-system: init-system.sh
+	sed $(sedsubst) $< > $@
+	chmod +x $@
+
 install:
 	install -d @prefix@/share/dsnp
 	install -m 755 new-site @prefix@/share/dsnp/new-site
+	install -m 755 init-system @prefix@/share/dsnp/init-system
 	install -m 644 INSTALL @prefix@/share/dsnp/INSTALL
 
 dsnp-spec.pdf: dsnp-spec.tex

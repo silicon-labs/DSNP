@@ -91,9 +91,9 @@ while true; do
 	echo; echo error: uri did not validate; echo
 done 
 
-CFG_HOST=`echo $URI_IN | sed 's/^https:\/\///; s/\/.*$//;'`
+CFG_HOST=`echo $URI_IN | sed 's|^https://||; s|/.*$||; s|/$||'`
 CFG_URI=$URI_IN;
-CFG_PATH=`echo $URI_IN | sed 's/^https:\/\///; s/^[^\/]*//;'`
+CFG_PATH=`echo $URI_IN | sed 's|^https://||; s|^[^/]*||; s|/$||'`
 
 # Make a key for communication from the frontend to backend.
 CFG_COMM_KEY=`head -c 24 < /dev/urandom | xxd -p`
@@ -148,10 +148,10 @@ $ CRT_FILE=/path/to/certificate.crt
 $ cp \$KEY_FILE $SYSCONFDIR/dsnp-ssl/$NAME.key
 $ cp \$CRT_FILE $SYSCONFDIR/dsnp-ssl/$NAME.crt
 $ chown ${WWW_USER}:${WWW_USER} \\
-      $SYSCONFDIR/dsnp-ssl/$NAME.crt \\
+      $SYSCONFDIR/dsnp-ssl/$NAME.key \\
       $SYSCONFDIR/dsnp-ssl/$NAME.crt 
 $ chmod 600 \\
-      $SYSCONFDIR/dsnp-ssl/$NAME.crt \\
+      $SYSCONFDIR/dsnp-ssl/$NAME.key \\
       $SYSCONFDIR/dsnp-ssl/$NAME.crt 
 
 If this is a testing installation that will only communicate with itself, you
@@ -198,7 +198,7 @@ cat << EOF >> $OUTPUT
 STEP 3
 ======
 
-Add the following configuration fragment to $PHP_CONF.
+Add the following configuration fragment to $PHP_CONF
 
 -------- BEGIN FRAGMENT --------
 
@@ -231,13 +231,13 @@ cat << EOF >> $OUTPUT
 STEP 4
 ======
 
-Run the following script as the new user.
+Run the following script as root.
 
 -------- BEGIN SCRIPT -------
 
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/data
-chown -R www-data:www-data $LOCALSTATEDIR/lib/dsnp/$NAME
+chown -R ${WWW_DATA}:${WWW_DATA} $LOCALSTATEDIR/lib/dsnp/$NAME
 
 -------- END SCRIPT -------
 EOF
@@ -269,12 +269,12 @@ cat << EOF >> $OUTPUT
 STEP 6
 ======
 
-Configure Apache to serve the User Agent files. Go to the webroot for
+Configure Apache to serve the weboot. Go to the webroot for
 $CFG_HOST and link:
 
 ln -s $DATADIR/dsnp/web/webroot .$CFG_PATH
 
-Note that if there is no path on the domain hosting the site, you should go one
-directory up and create the link as the directory housing the entire site.
+If there is no path on the domain hosting the site, you should go one directory
+up and create the link as the directory housing the entire site.
 
 EOF

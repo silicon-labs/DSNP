@@ -167,11 +167,12 @@ cat << EOF >> $OUTPUT
 STEP 2
 ======
 Once the cert section is complete, add the configuration fragment to
-$DSNPD_CONF.
+$DSNPD_CONF
 
 -------- BEGIN FRAGMENT --------
 
 ===== $NAME =====
+
 CFG_URI = $CFG_URI
 CFG_HOST = $CFG_HOST
 CFG_PATH = $CFG_PATH

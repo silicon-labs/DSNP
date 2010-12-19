@@ -16,7 +16,7 @@
 prefix = @prefix@
 datarootdir = @datarootdir@
 
-all: new-site
+all: new-site dsnp-spec.pdf
 
 sedsubst = \
 	-e 's,\@prefix\@,@prefix@,g;' \
@@ -33,3 +33,11 @@ install:
 	install -d @prefix@/share/dsnp
 	install -m 755 new-site @prefix@/share/dsnp/new-site
 	install -m 644 INSTALL @prefix@/share/dsnp/INSTALL
+
+dsnp-spec.pdf: dsnp-spec.tex
+	pdflatex -interaction=nonstopmode $< >/dev/null
+	pdflatex -interaction=nonstopmode $< >/dev/null
+	pdflatex -interaction=nonstopmode $< >/dev/null
+
+clean:
+	rm dsnp-spec.pdf dsnp-spec.log

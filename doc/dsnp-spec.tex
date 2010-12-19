@@ -1,0 +1,343 @@
+%
+%   Copyright 2001-2009 Adrian Thurston <thurston@complang.org>
+%
+
+%   This file is part of Ragel.
+%
+%   Ragel is free software; you can redistribute it and/or modify
+%   it under the terms of the GNU General Public License as published by
+%   the Free Software Foundation; either version 2 of the License, or
+%   (at your option) any later version.
+%
+%   Ragel is distributed in the hope that it will be useful,
+%   but WITHOUT ANY WARRANTY; without even the implied warranty of
+%   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%   GNU General Public License for more details.
+%
+%   You should have received a copy of the GNU General Public License
+%   along with Ragel; if not, write to the Free Software
+%   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+
+% TODO: Need a section on the different strategies for handline recursion.
+
+\documentclass[letterpaper,11pt,oneside]{article}
+%\usepackage{graphicx}
+\usepackage{comment}
+%\usepackage{multicol}
+%\usepackage[
+%	colorlinks=true,
+%	linkcolor=black,
+%	citecolor=green,
+%	filecolor=black,
+%	urlcolor=black]{hyperref}
+
+\topmargin -0.20in
+\oddsidemargin 0in
+\textwidth 6.5in
+\textheight 9in
+
+\setlength{\parskip}{0pt}
+\setlength{\topsep}{0pt}
+\setlength{\partopsep}{0pt}
+\setlength{\itemsep}{0pt}
+
+%% \input{version}
+%% 
+%% \newcommand{\verbspace}{\vspace{10pt}}
+%% \newcommand{\graphspace}{\vspace{10pt}}
+%% 
+%% \renewcommand\floatpagefraction{.99}
+%% \renewcommand\topfraction{.99}
+%% \renewcommand\bottomfraction{.99}
+%% \renewcommand\textfraction{.01}   
+%% \setcounter{totalnumber}{50}
+%% \setcounter{topnumber}{50}
+%% \setcounter{bottomnumber}{50}
+%% 
+%% \newenvironment{inline_code}{\def\baselinestretch{1}\vspace{12pt}\small}{}
+
+\begin{document}
+
+%
+% Title page
+%
+\thispagestyle{empty}
+\begin{center}
+{\huge DSNP: Distributed Social Network Protocol}\\
+\vspace*{12pt}
+{\Large Specification and Software Documentation}\\
+\vspace{12pt}
+by\\
+\vspace{12pt}
+{\large Dr. Adrian D. Thurston}\\
+\end{center}
+
+\pagenumbering{roman}
+
+\section*{License}
+
+Copyright \copyright\ 2007-2011 Adrian D. Thurston
+
+\vspace{5pt}
+
+{\bf\it\noindent Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.}
+
+\vspace{5pt}
+
+{\bf\it\noindent THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
+
+\tableofcontents
+
+%
+% Chapter 1
+%
+
+
+% Topics:
+% RSA Keys allocated to each identity
+%
+% Broadcast Keys
+%
+% Properties.
+%  Forgery
+%  Privacy
+%
+% Protocol
+%  Friendship Initialization
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+This is the introduction
+
+\section{Identity Initialization}
+
+A user name and password is requested. These credentials will be used by the
+user to login as the owner of the identity.
+
+A URI consiting of the site root name followed by the user name as the last
+component is assigned. This is an internet facing web address that the user has
+control of (possibly through a service provider). It represents their identity.
+
+An RSA key pair is created. The key has no passphrase. 
+
+The public portion of the key is made publically available. The key must always
+be fetched using SSL. This guarantees that a key has been provided by the
+server hosting the identity and has not been tampered with.
+
+\section{Owner Login}
+
+User submits credentials via a web form underneath URI and recieves a session
+cookie that indicates to the server that the user is logged in.
+
+\section{Friendship Request}
+
+The person requesting friendship is the friender, with identity URI.
+The person who is receiving the request is the friendee, with FR-URI
+
+\begin{enumerate}
+\item The friender fills in a friend request form at FR-URI
+	\begin{enumerate}
+	\item friender answers a challenge (generic CAPTCHA, or personalized)
+	\item friender submits URI
+	\end{enumerate}
+
+\item Friendee server processes the request:
+	\begin{enumerate}
+	\item verifies challenge response
+	\item fetches the public key for URI (using SSL)
+	\item randomly generates a one-way relationship id (REQUESTED-RELID)
+	\item randomly generates a one-way request id (REQUESTED-REQID)
+	\item encrypts REQUESTED-RELID to friender and signs it
+	\item makes message available to be fetched using REQUESTED-REQID to identify it
+	\item redirects the user's browser to https://URI/return-relid?uri=FR-URI\&reqid=REQUESTED-REQID
+	\end{enumerate}
+
+\item Friender server processes the return-relid request:
+	\begin{enumerate}
+	\item verifies browser is logged in as owner
+	\item fetches public key for FR-URI (using SSL)
+	\item fetches encrypted REQUESTED-RELID from FR-URI using REQUESTED-REQID
+	\item decrypts and verifies REQUESTED-RELID
+	\item randomly generates RETURNED-RELID
+	\item randomly generates RETURNED-REQID
+	\item encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
+	\item makes message available at to be fetched using RETURNED-REQID to identify it
+	\item redirects the friender to https://FR-URI/friend-final?uri=URI\&reqid=REQID
+	\end{enumerate}
+
+\item Friendee server processes the friend-final request:
+	\begin{enumerate}
+	\item fetches encrypted RETURNED-RELID using RETURNED-REQID
+	\item decrypts and verifies message, must contain correct REQUESTED-RELID
+	\item stores request for friendee to accept/deny
+	\end{enumerate}
+\end{enumerate}
+
+\section{Friendship Accept/Deny}
+
+The next time the friendee logs in they are presented with the friendship
+request. They can either accept or deny the request. 
+
+The acceptor sends accept notification with both relids. They are sent back
+indicating that the friendship was registered on the other end. The acceptor
+then registers the friendship and sends a registered message. It can can now
+send broadcast key and broadcast tree insertion messages. The other end can
+send these messages after it receives the registered message.
+
+\section{Publishing to Friends}
+
+\subsection{Broadcast Encryption Keys}
+
+Use a broadcast key. Gives the sender some control over who can read broadcast
+messages. Requires sending out session keys ahead of time. This does not stop a
+bad friend from forwarding a session key. But the protocol doesn't have this
+feature. Session keys must be signed.
+
+\subsection{Distribution Tree}
+
+The most simple approach is to iterate through your list of friends and deliver
+broadcast messages. However, a large number of friends multiplied by lots of
+activity results in many messages.  
+
+To mitigate this cost a user's set of friends is organized into a complete
+binary tree and broadcast messages are forwarded through this tree, resulting
+in log n steps to distribute a broadcast.
+
+Doing this means that each of your friends must know the server at which a
+couple of your other friends have their identity hosted. This revelation does
+not cross friend-partition boundaries, however. It is a minor weakening of the
+claim that your friend list is private.
+
+This reduces the time to get messages out, but complicates matters when a node
+fails to forward a message on behalf of a friend. The approach I'm considering
+is to send acknowledgment messages back up the tree of friends and back to the
+originator as confirmation. If the ack does not arrive back in time there is a
+distribution problem that needs to be corrected by discovering the faulty node
+and removing it or swapping it with a leaf node. The message can then be
+rebroadcast. 
+
+A faulty node can be reported to the originator at the point of failure, either
+due to a timeout, or an inability to connect. 
+
+\subsection{Tree Generaion Numbers}
+
+To speed up the distribution of messages, a user's list of friends is 
+organized into a tree. Each friend forwards broadcast messages on to 
+other friends. This requires that there be agreement on the correct 
+structure of the tree among a user's friends. Friends do not need to 
+have a view of the complete tree, just their children.
+
+Another way to view the issue of agreement is that all operations that 
+modify the friend's view of the tree need to be atomic across all 
+friends that are involved in the modification. A message that passes 
+through the tree must either see all of a change or none of it. When 
+adding a member to the tree this is easy, the new member is added as a 
+leaf node and just one node (its parent) needs to be modified.
+
+When removing a node from the distribution tree there is more than one 
+modification that needs to be made among the friends. To ensure that 
+these modifications are atomic, I am using a tree generation number. 
+Each broadcast message carries with it the generation of the 
+distribution tree that should be used to propagate the message. When the 
+tree is modified, the generation number is incremented. Friend nodes 
+that are modified keep the old tree generation data around during the 
+modification process and continue to use it for any messages that arrive 
+with the old generation number. When the changes are complete, new 
+messages are sent with the new generation number, making the new tree 
+effective.
+
+While this gives us atomic operations, it has the unfortunate property 
+that all nodes need to have their generation number updated even if they 
+are not involved in an update to the tree. To get around this, friends 
+do not look up the exact generation number of messages to find forward 
+information, but rather the youngest generation that is less than or 
+equal to the generation number of the message. This lets us avoid 
+updating the generation number with every friend.
+
+\subsection{Roles and Friendship Types}
+
+The different roles poeple play in their lives are often reflected in a
+categorization of their relationships. It would be useful in DSNP to support
+friendship categories. Each category should have it's own broadcast key and the
+distribution trees should not be disconnected. The categories should not
+necessarily be comprised of disjoint sets of friends however. Your brother can
+be both in your friend category and your family category. You grandmonther,
+however, can just be in your family category so you can shelter her from the
+details of that crazy weekend in Montreal.
+
+\subsection{Login as a Friend}
+
+This allows people to login to a friend's page to see the content that has been
+summarized by their feed. It is an open-id style login.
+
+User:     URI,    RELID
+Friend:   FR-URI, FR-RELID
+
+\begin{enumerate}
+\item User fills in a login-as-friend form
+	\begin{enumerate}
+	\item User visits https://FR-URI/login-as-friend
+	\item submits URI
+	\end{enumerate}
+
+\item The friend's server processes the request.
+	\begin{enumerate}
+	\item verifies that URI is a friend
+	\item randomly generates a token
+	\item encrypts the token to the user and signs it.
+	\item makes it available under to be fetched with FR-RELID as identifier
+	\item redirects user to https://URI/return-token?uri=FR-URI
+	\end{enumerate}
+
+\item  The user's server verifies the user owns the identitiy.
+	\begin{enumerate}
+	\item checks that FR-URI is a friend
+	\item if browser is not logged in, fails the process (possibly with redirect to loging screen)
+	\item fetches the token using from FR-URI using FR-RELID to identify it
+	\item decrypts and verifies the token
+	\item redirects the browser to https://FP-URI/submit-token?uri=URI\&token=TOK
+	\end{enumerate}
+
+\item Friend login final
+	\begin{enumerate}
+	\item Verifies (URI, TOK)
+	\item grants friend credentials to the browser using cookie-based session.
+	\end{enumerate}
+\end{enumerate}
+
+\subsection{Characteristics}
+
+Your list of friends can be treated as private information. It is impossible
+for someone to probe your list of friends if you don't want to publish it.
+The list must be explictly granted, even to current friends (see next point
+for a minor exception). This makes it possible to partition your
+relationships into differnet groups, such as family, close friends,
+co-workers, and people you hardly know but might like to get to know better.
+
+The user must trust the server that is hosting their identity. But like email,
+blogs, and other forms of internet identity, we are free to choose our service
+providers and the truely paranoid and technically inclined are free to host
+their own identity on their own server. Perhaps a more difficult problem is
+that the user must trust the server that is hosting their friend's identities.
+However, this is not a problem unique to DSNP. This is true of email as well.
+
+\subsection{Notifications}
+
+\begin{itemize}
+\item notification\_broadcast           (user message to a group)
+\item notification\_message             (user message direct)
+\item notification\_remote\_message     (author-subject message to a group)
+\item notification\_remote\_publication (author-subject message to the author)
+\end{itemize}
+
+\end{document}

@@ -117,7 +117,16 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
 
 \section{Introduction}
 
-This is the introduction
+DSNP is a protocol for distributed social networking. The goal is to allow you
+to host your profile with a provider that you choose (possibly yourself), give
+you the freedom to maintain control over your personal information, and
+interact with your friends and family in a secure manner.
+
+DSNP aims to cover any use case that can be described as first creating a
+profile for yourself, establishing connections to people you know, then
+broadcasting private information to these people. The information that we share
+are the artifacts of our life. No single provider should house this for
+everyone.
 
 \section{Identity Initialization}
 
@@ -196,14 +205,14 @@ send these messages after it receives the registered message.
 
 \section{Publishing to Friends}
 
-\subsection{Broadcast Encryption Keys}
+\section{Broadcast Encryption Keys}
 
 Use a broadcast key. Gives the sender some control over who can read broadcast
 messages. Requires sending out session keys ahead of time. This does not stop a
 bad friend from forwarding a session key. But the protocol doesn't have this
 feature. Session keys must be signed.
 
-\subsection{Distribution Tree}
+\section{Distribution Tree}
 
 The most simple approach is to iterate through your list of friends and deliver
 broadcast messages. However, a large number of friends multiplied by lots of
@@ -229,7 +238,7 @@ rebroadcast.
 A faulty node can be reported to the originator at the point of failure, either
 due to a timeout, or an inability to connect. 
 
-\subsection{Tree Generaion Numbers}
+\section{Tree Generaion Numbers}
 
 To speed up the distribution of messages, a user's list of friends is 
 organized into a tree. Each friend forwards broadcast messages on to 
@@ -264,7 +273,7 @@ information, but rather the youngest generation that is less than or
 equal to the generation number of the message. This lets us avoid 
 updating the generation number with every friend.
 
-\subsection{Roles and Friendship Types}
+\section{Roles and Friendship Types}
 
 The different roles poeple play in their lives are often reflected in a
 categorization of their relationships. It would be useful in DSNP to support
@@ -275,7 +284,7 @@ be both in your friend category and your family category. You grandmonther,
 however, can just be in your family category so you can shelter her from the
 details of that crazy weekend in Montreal.
 
-\subsection{Login as a Friend}
+\section{Login as a Friend}
 
 This allows people to login to a friend's page to see the content that has been
 summarized by their feed. It is an open-id style login.
@@ -315,7 +324,7 @@ Friend:   FR-URI, FR-RELID
 	\end{enumerate}
 \end{enumerate}
 
-\subsection{Characteristics}
+\section{Characteristics}
 
 Your list of friends can be treated as private information. It is impossible
 for someone to probe your list of friends if you don't want to publish it.
@@ -331,7 +340,7 @@ their own identity on their own server. Perhaps a more difficult problem is
 that the user must trust the server that is hosting their friend's identities.
 However, this is not a problem unique to DSNP. This is true of email as well.
 
-\subsection{Notifications}
+\section{Notifications}
 
 \begin{itemize}
 \item notification\_broadcast           (user message to a group)

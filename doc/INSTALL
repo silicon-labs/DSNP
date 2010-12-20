@@ -1,4 +1,4 @@
-REQUIREMENTS for INSTALLATION 
+REQUIREMENTS FOR INSTALLATION 
 =============================
 
 1. You must have root privileges on your system. You need to be able to install
@@ -16,6 +16,17 @@ REQUIREMENTS for INSTALLATION
 5. You need xinetd (or similar) installed.
 
 6. If you are building from the source repository, you need Ragel installed.
+
+REQUIREMENTS FOR EACH SITE
+==========================
+
+You must have an SSL certificate for site you wish to host. This is a
+requirement of the DSNP protocol. The SSL cert will be used to protect pages
+that are served by apache and it will be used by the DSNP daemon when it serves
+up public keys.
+
+You should also have a recapcha key for each site you wish to host. This will
+be used on the new-user page, as well as the friend-request page.
 
 SYSTEM INSTALL INSTRUCTIONS
 ===========================

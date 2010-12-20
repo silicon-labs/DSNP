@@ -39,7 +39,6 @@ const char *cfgVals[] = {
 
 void processValue( const char *n, long nl, const char *v, long vl )
 {
-	printf("%ld %ld\n", nl, vl);
 	long numCV = sizeof(cfgVals) / sizeof(const char*);
 	for ( long i = 0; i < numCV; i++ ) {
 		if ( strncmp( cfgVals[i], n, nl ) == 0 ) {
@@ -82,10 +81,10 @@ void processSection( const char *n, long nl )
 	action ln { n2 = p; }
 
 	# Open and close a value.
-	action sv { v1 = p; printf("sv: %p\n", v1); }
-	action lv { v2 = p; printf("lv: %p\n", v2); }
+	action sv { v1 = p; }
+	action lv { v2 = p; }
 
-	value = [^\n] var >sn %ln ws* '=' 
+	value = var >sn %ln ws* '=' 
 		ws* (^ws [^\n]*)? >sv %lv '\n';
 
 	action value { 

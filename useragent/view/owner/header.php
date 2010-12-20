@@ -6,7 +6,7 @@
 			echo ": {$USER[NAME]}";
 		?>
 	</title>
-	<link href="<?echo $this->siteLoc( '/css/fif.css' ); ?>"
+	<link href="<?echo $this->siteLoc( '/css/dsnpua.css' ); ?>"
 		rel="stylesheet" type="text/css"/>
 </head>
 <body>

@@ -35,7 +35,21 @@
 <h2>Become Friend</h2>
 
 <form method="post" action="sbecome">
-Please submit your identity. Make sure you are logged in to your identity first.<br><br>
+Please submit your identity. Make sure you are logged in to your profile first.<br><br>
+
+<input type="text" size=70 name="identity">
+
+<?php
+if ( $this->CFG['USE_RECAPTCHA'] ) {
+	require_once( RECAPTCHA_LIB );
+	echo "<p>";
+	echo recaptcha_get_html($this->CFG['RC_PUBLIC_KEY']);
+}
+?>
+<p>
+<input type="submit">
+
+<p>
 
 Identities are normally of the form: <code>https://www.example.com/path/user/</code><br><br>
 
@@ -43,7 +57,7 @@ Note:<br>
 &nbsp;1. Identities are case-sensitive.<br>
 &nbsp;2. The <code>https://</code> at the beginning is required.<br>
 &nbsp;3. The exact hostname must be used.<br>
-&nbsp;4. There may be no path in your identity.<br>
+&nbsp;4. There may be no path in your identity. (i.e. <code>https://host.ca/user/</code>)<br>
 &nbsp;5. The trailing <code>/</code> at the end is required.<br><br>
 
 <big>The <b>easiest</b> way to do this is to <b>copy</b> your identity from the address bar of
@@ -53,18 +67,6 @@ Here is an example: <code>https://www.iduri.ca/thurston/</code><br><br>
 
 One last reminder: you need to be logged in to your identity.<br><br>
 
-<input type="text" size=70 name="identity">
-
-<p>
-
-<?php
-require_once( RECAPTCHA_LIB );
-//echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
-?>
-
-<p>
-
-<input type="submit">
 </form>
 </div>
 

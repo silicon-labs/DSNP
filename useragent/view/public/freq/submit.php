@@ -58,7 +58,7 @@ One last reminder: you need to be logged in to your identity.<br><br>
 <p>
 
 <?php
-//require_once('../recaptcha-php-1.10/recaptchalib.php');
+require_once( RECAPTCHA_LIB );
 //echo recaptcha_get_html($CFG_RC_PUBLIC_KEY);
 ?>
 

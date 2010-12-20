@@ -63,6 +63,18 @@
 	<input name="pass2" type="password"/>
 	</td>
 </tr>
+
+<?php
+if ( $CFG['USE_RECAPTCHA'] ) {
+	echo "<tr>\n";
+	echo "<td colspan=2>\n";
+	require_once( RECAPTCHA_LIB );
+	echo recaptcha_get_html( $CFG['RC_PUBLIC_KEY'] );
+	echo "</td>\n";
+	echo "</tr>\n";
+}
+?>
+
 <tr>
 	<td>
 		<input type="submit">
@@ -71,8 +83,11 @@
 		&nbsp;
 	</td>
 </tr>
+
+
 </table>
 </form>
+
 
 </div>
 </td></tr></table>

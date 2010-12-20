@@ -11,6 +11,13 @@ class SiteIndexController extends Controller
 			),
 			array( post => 'pass1', nonEmpty => true ),
 			array( post => 'pass2', nonEmpty => true ),
+
+			# The recaptcha fields are optional only if we are not using
+			# recaptcha.
+			array( post => 'recaptcha_challenge_field',
+					optional => RECAPTCHA_ARGS_OPTIONAL ),
+			array( post => 'recaptcha_response_field', 
+					optional => RECAPTCHA_ARGS_OPTIONAL ),
 		),
 	);
 
@@ -30,6 +37,22 @@ class SiteIndexController extends Controller
 		$user = $this->args['user'];
 		$pass1 = $this->args['pass1'];
 		$pass2 = $this->args['pass2'];
+
+		if ( $this->CFG['USE_RECAPTCHA'] ) {
+			require_once( RECAPTCHA_LIB );
+
+			$resp = recaptcha_check_answer(
+					$this->CFG['RC_PRIVATE_KEY'],
+					$_SERVER['REMOTE_ADDR'],
+					$this->args['recaptcha_challenge_field'],
+					$this->args['recaptcha_response_field'] );
+
+			if ( ! $resp->is_valid ) {
+				// What happens when the CAPTCHA was entered incorrectly
+				die ("The reCAPTCHA wasn't entered correctly. Go back and try it again." .
+						"(reCAPTCHA said: " . $resp->error . ")");
+			}
+		}
 
 		if ( $pass1 != $pass2 )
 			$this->userError( "password mismatch", "" );

@@ -22,7 +22,6 @@ class PublicFreqController extends Controller
 
 	function sbecome()
 	{
-		global $USER;
 		$identity = $this->args['identity'];
 
 		if ( $identity === $this->USER[URI] ) {

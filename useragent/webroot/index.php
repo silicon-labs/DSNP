@@ -8,12 +8,12 @@ define( 'ACTIVITY_SIZE', 30 );
 define( 'HASH_BASE64_SIZE', 27 );
 define( 'TOKEN_BASE64_SIZE', 22 );
 
-/* This selects the site to configure for. */
+# This selects the site to configure for.
 require( PREFIX . DS . 'etc' . DS . 'dsnpua.php' );
 
+# Make sure a site was selected. */
 if ( !isset( $CFG['NAME']  ) )
 	die("site not configured properly");
-
 
 define( 'RECAPTCHA_LIB', ROOT . DS . 'recaptcha-php-1.11' . DS . 'recaptchalib.php' );
 define( 'RECAPTCHA_ARGS_OPTIONAL', ! $CFG['USE_RECAPTCHA'] );

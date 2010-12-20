@@ -11,7 +11,7 @@ define( 'TOKEN_BASE64_SIZE', 22 );
 /* This selects the site to configure for. */
 require( PREFIX . DS . 'etc' . DS . 'dsnpua.php' );
 
-if ( ! defined( $CFG['NAME']  ) )
+if ( !isset( $CFG['NAME']  ) )
 	die("site not configured properly");
 
 require( ROOT . DS . 'connection.php' );

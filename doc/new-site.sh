@@ -232,6 +232,17 @@ cat << EOF >> $OUTPUT
 STEP 4
 ======
 
+Set up reCAPTCHA. This step is optional, however, it is strongly recommended
+that you complete it. Change USE_RECAPTCHA in the config file to true, acquire
+keys from reCAPTCHA, and set them in the config file.
+
+EOF
+
+cat << EOF >> $OUTPUT
+
+STEP 5
+======
+
 Run the following script as root.
 
 -------- BEGIN SCRIPT -------
@@ -245,7 +256,7 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 5
+STEP 6
 ======
 
 Initialize the database. This step will require the mysql root password. You
@@ -267,7 +278,7 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 6
+STEP 7
 ======
 
 Configure Apache to serve the weboot. Go to the webroot for

@@ -37,8 +37,9 @@ const char *cfgVals[] = {
 	"CFG_TLS_CA_CERTS",
 };
 
-void process_value( const char *n, long nl, const char *v, long vl )
+void processValue( const char *n, long nl, const char *v, long vl )
 {
+	printf("%ld %ld\n", nl, vl);
 	long numCV = sizeof(cfgVals) / sizeof(const char*);
 	for ( long i = 0; i < numCV; i++ ) {
 		if ( strncmp( cfgVals[i], n, nl ) == 0 ) {
@@ -50,7 +51,7 @@ void process_value( const char *n, long nl, const char *v, long vl )
 	}
 }
 
-void process_section( const char *n, long nl )
+void processSection( const char *n, long nl )
 {
 	/* Create the config. */
 	c = new Config;
@@ -73,7 +74,7 @@ void process_section( const char *n, long nl )
 %%{
 	machine rcfile;
 
-	ws = [ \n\r\t\v\f];
+	ws = [ \t];
 	var = [a-zA-Z_][a-zA-Z_0-9]*;
 
 	# Open and close a variable name.
@@ -81,24 +82,24 @@ void process_section( const char *n, long nl )
 	action ln { n2 = p; }
 
 	# Open and close a value.
-	action sv { v1 = p; }
-	action lv { v2 = p; }
+	action sv { v1 = p; printf("sv: %p\n", v1); }
+	action lv { v2 = p; printf("lv: %p\n", v2); }
 
-	value = var >sn %ln ws* '=' ws* 
-		(^ws [^\n]*)? >sv %lv '\n';
+	value = [^\n] var >sn %ln ws* '=' 
+		ws* (^ws [^\n]*)? >sv %lv '\n';
 
 	action value { 
 		while ( v2 > v1 && ( v2[-1] == ' ' || v2[-1] == '\t' ) )
 			v2--;
 
-		process_value( n1, n2-n1, v1, v2-v1 );
+		processValue( n1, n2-n1, v1, v2-v1 );
 	}
 
-	action section { process_section( n1, n2-n1 ); }
+	action section { processSection( n1, n2-n1 ); }
 
 	main := (
 		'#' [^\n]* '\n' |
-		ws |
+		ws* '\n' |
 		value %value |
 		'='+ ws* var >sn %ln %section ws* '='+ '\n'
 	)*;
@@ -106,7 +107,7 @@ void process_section( const char *n, long nl )
 
 %% write data;
 
-int rcfile_parse( const char *data, long length )
+int parseRcFile( const char *data, long length )
 {
 	long cs;
 	const char *p = data, *pe = data + length;

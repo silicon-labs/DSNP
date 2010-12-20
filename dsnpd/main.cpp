@@ -44,7 +44,7 @@ void read_rcfile( const char *confFile )
 	/* FIXME: this must be fixed. */
 	static char buf[1024*16];
 	long len = fread( buf, 1, 1024*16, rcfile );
-	rcfile_parse( buf, len );
+	parseRcFile( buf, len );
 }
 
 int checkArgs( int argc, char **argv )

@@ -68,7 +68,7 @@ long runBroadcastQueue();
 long runMessageQueue();
 
 int serverParseLoop();
-int rcfile_parse( const char *data, long length );
+int parseRcFile( const char *data, long length );
 
 struct Global
 {

@@ -206,22 +206,22 @@ Add the following configuration fragment to $PHP_CONF
 if ( strpos( \$_SERVER['HTTP_HOST'] . \$_SERVER['REQUEST_URI'], 
 		'$CFG_HOST$CFG_PATH' ) === 0 )
 {
-	\$CFG[SITE_NAME] = '$NAME DSNP';
-	\$CFG[NAME] = '$NAME';
-	\$CFG[URI] = '$CFG_URI';
-	\$CFG[HOST] = '$CFG_HOST';
-	\$CFG[PATH] = '$CFG_PATH';
-	\$CFG[DB_HOST] = 'localhost';
-	\$CFG[DB_USER] = '${NAME}';
-	\$CFG[DB_DATABASE] = '${NAME}';
-	\$CFG[DB_PASS] = '$CFG_DB_PASS';
-	\$CFG[COMM_KEY] = '$CFG_COMM_KEY';
-	\$CFG[PORT] = $CFG_PORT;
+	\$CFG['SITE_NAME'] = '$NAME DSNP';
+	\$CFG['NAME'] = '$NAME';
+	\$CFG['URI'] = '$CFG_URI';
+	\$CFG['HOST'] = '$CFG_HOST';
+	\$CFG['PATH'] = '$CFG_PATH';
+	\$CFG['DB_HOST'] = 'localhost';
+	\$CFG['DB_USER'] = '${NAME}';
+	\$CFG['DB_DATABASE'] = '${NAME}';
+	\$CFG['DB_PASS'] = '$CFG_DB_PASS';
+	\$CFG['COMM_KEY'] = '$CFG_COMM_KEY';
+	\$CFG['PORT'] = $CFG_PORT;
 
-	\$CFG[IM_CONVERT] = 'gm convert';
-	\$CFG[USE_RECAPTCHA] = 'unused';
-	\$CFG[RC_PUBLIC_KEY] = 'unused';
-	\$CFG[RC_PRIVATE_KEY] = 'unused';
+	\$CFG['IM_CONVERT'] = 'gm convert';
+	\$CFG['USE_RECAPTCHA'] = false;
+	\$CFG['RC_PUBLIC_KEY'] = 'unused';
+	\$CFG['RC_PRIVATE_KEY'] = 'unused';
 }
 
 -------- END FRAGMENT --------

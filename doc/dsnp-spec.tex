@@ -212,7 +212,9 @@ server hosting the identity and has not been tampered with.
 User submits credentials via a web form underneath URI and recieves a session
 cookie that indicates to the server that the user is logged in.
 
-\section{Friendship Request}
+\section{Establishing Relationships}
+
+\subsection{Friendship Request}
 
 The person requesting friendship is the friender, with identity URI.
 The person who is receiving the request is the friendee, with FR-URI
@@ -256,7 +258,7 @@ The person who is receiving the request is the friendee, with FR-URI
 	\end{enumerate}
 \end{enumerate}
 
-\section{Friendship Accept/Deny}
+\subsection{Friendship Accept/Deny}
 
 The next time the friendee logs in they are presented with the friendship
 request. They can either accept or deny the request. 
@@ -269,7 +271,11 @@ send these messages after it receives the registered message.
 
 \section{Publishing to Friends}
 
-\section{Broadcast Encryption Keys}
+\subsection{Direct Messages}
+
+\subsection{Broadcast to all Friends}
+
+\subsubsection{Broadcast Encryption Keys}
 
 DSNP uses a broadcast key for encrypting messages broadcast to all friends.
 It requires that keys be delivered to friends ahead of time.
@@ -342,11 +348,11 @@ Friend:   FR-URI, FR-RELID
 \section{Characteristics}
 
 Your list of friends can be treated as private information. It is impossible
-for someone to probe your list of friends if you don't want to publish it.
-The list must be explictly granted, even to current friends (see next point
-for a minor exception). This makes it possible to partition your
-relationships into differnet groups, such as family, close friends,
-co-workers, and people you hardly know but might like to get to know better.
+for someone to probe your list of friends if you don't want to publish it. The
+list must be explictly granted, even to current friends (see next point for a
+minor exception). This makes it possible to partition your relationships into
+differnet groups, such as family, close friends, co-workers, and people you
+hardly know but might like to get to know better.
 
 The user must trust the server that is hosting their identity. But like email,
 blogs, and other forms of internet identity, we are free to choose our service
@@ -354,6 +360,16 @@ providers and the truely paranoid and technically inclined are free to host
 their own identity on their own server. Perhaps a more difficult problem is
 that the user must trust the server that is hosting their friend's identities.
 However, this is not a problem unique to DSNP. This is true of email as well.
+
+\section{Software Architecture}
+
+The system is divided into two subsystems. There is a daemon in C++ that
+handles server-server communication and all encryption facilities. There is a
+web written in PHP that provies user with an experience. It defers to the local
+DSNPd for all protocol-related tasks, such as submitting messages for
+broadcast, initiating friend requests, etc. The expectation is that a number of
+different web UI implementations can utilize the reference DSNPd
+implementation.
 
 \section{Notifications}
 

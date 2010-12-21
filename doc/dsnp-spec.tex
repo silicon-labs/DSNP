@@ -128,6 +128,70 @@ broadcasting private information to these people. The information that we share
 are the artifacts of our life. No single provider should house this for
 everyone.
 
+\subsection{Properties DSNP}
+
+\begin{enumerate}
+
+\item Identities are URI-based.
+
+\item The system is distributed at the level of identities, as opposed to collections
+of identities. This means that the authentication and authorization mechanisms
+are based on the credentials of the two users that are interacting.
+
+\item There is a single point of login. Once a user has logged into her profile, she is get access to her friend's profiles.
+
+\item DSNP is secure against forgery by non-friends and friends. It is secure against
+eavesdropping by non-friends.
+
+\item Allows friendship claims to be verified by trusted third parties. False
+friendships can be claimed easily, but they can also be discredited easily.
+
+\item Security does not rely on DNS or SSL alone. If ownership of a domain is lost to
+an attacker who is able to secure an SSL cert for the domain, the attacker does
+not gain control of the identities on the domain.
+
+\item DSNP allows unfriending. Once a user is unfriended, they no longer have access
+to the user's broadcasts, even if they are able to snoop the broadcast traffic.
+
+\item Identities can be exported and migrated to another provider.
+
+\end{enumerate}
+
+\section{Security Model}
+
+DSNP leverages RSA public key cryptography for identity, the sharing of secrets
+and the declaration of relationships. It can be described as PGP for web-based
+identities, though it does not use PGP. Each identity gets a public/private key
+pair. The public portion of the key must be fetched over SSL. By requiring SSL
+for public key fetches we eliminate the need for a web of trust. Each public
+key is fetched once and trusted from then on.
+
+Use of SSL makes sense for us because it is already need to protect the HTTP
+aspect of the system. We simply use the same cert to solve the problem of
+securely transmitting public keys.
+
+Since public keys are securely exchanged, direct communication between friends
+can be protected in the usual asymmetric manner, where a session key is
+encrypted using the peer's public key, then content is encrypted using the
+session key.
+
+Messages broadcasted to all friends are handled using a pre-shared broadcast
+key. Using a pre-shared key means that messages do not need to crafted for each
+recipient. The message can be computed by the sender, stored once, then a copy
+sent to each recpient. If desired, messages can be handed to a third party and
+delivered on behalf of the user, without the third party being privy to the
+message. Only the recipient list is revealed.
+
+Since users can be expected to have very large friend lists, it is desirable to
+omit the use of SSL when delivering messages. DNSP allows this, without
+explicitly identifying the sender or recipent. Instead, pre-shared relationship
+identifiers are transmitted.
+
+When you send messages to your friends, either directly or by broadcast,
+messages are also digitally signed with your private key. Your friends can then
+use your public key to verify that you wrote the message, uploaded the photo,
+commented on someone else's post, etc.
+
 \section{Identity Initialization}
 
 A user name and password is requested. These credentials will be used by the

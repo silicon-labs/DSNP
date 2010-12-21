@@ -271,71 +271,22 @@ send these messages after it receives the registered message.
 
 \section{Broadcast Encryption Keys}
 
-Use a broadcast key. Gives the sender some control over who can read broadcast
-messages. Requires sending out session keys ahead of time. This does not stop a
-bad friend from forwarding a session key. But the protocol doesn't have this
-feature. Session keys must be signed.
+DSNP uses a broadcast key for encrypting messages broadcast to all friends.
+It requires that keys be delivered to friends ahead of time.
 
-\section{Distribution Tree}
+Broadcast keys reduce the cost of broadcasting, by allowing a message to be
+encrypted only once, then copied to each recipient. Use of SSL for message
+delivery is optional. If it is not used, only a relationship identifier is
+revealed in the broadcast. This identifier has meaning only to the sender and
+recipient. A snooper is able to discover that pairs are repeatedly
+communicating, but cannot discover who. This is in contrast with schemes such
+as PGP or CMS, where senders and recipients are identified in each
+communication.
 
-The most simple approach is to iterate through your list of friends and deliver
-broadcast messages. However, a large number of friends multiplied by lots of
-activity results in many messages.  
-
-To mitigate this cost a user's set of friends is organized into a complete
-binary tree and broadcast messages are forwarded through this tree, resulting
-in log n steps to distribute a broadcast.
-
-Doing this means that each of your friends must know the server at which a
-couple of your other friends have their identity hosted. This revelation does
-not cross friend-partition boundaries, however. It is a minor weakening of the
-claim that your friend list is private.
-
-This reduces the time to get messages out, but complicates matters when a node
-fails to forward a message on behalf of a friend. The approach I'm considering
-is to send acknowledgment messages back up the tree of friends and back to the
-originator as confirmation. If the ack does not arrive back in time there is a
-distribution problem that needs to be corrected by discovering the faulty node
-and removing it or swapping it with a leaf node. The message can then be
-rebroadcast. 
-
-A faulty node can be reported to the originator at the point of failure, either
-due to a timeout, or an inability to connect. 
-
-\section{Tree Generaion Numbers}
-
-To speed up the distribution of messages, a user's list of friends is 
-organized into a tree. Each friend forwards broadcast messages on to 
-other friends. This requires that there be agreement on the correct 
-structure of the tree among a user's friends. Friends do not need to 
-have a view of the complete tree, just their children.
-
-Another way to view the issue of agreement is that all operations that 
-modify the friend's view of the tree need to be atomic across all 
-friends that are involved in the modification. A message that passes 
-through the tree must either see all of a change or none of it. When 
-adding a member to the tree this is easy, the new member is added as a 
-leaf node and just one node (its parent) needs to be modified.
-
-When removing a node from the distribution tree there is more than one 
-modification that needs to be made among the friends. To ensure that 
-these modifications are atomic, I am using a tree generation number. 
-Each broadcast message carries with it the generation of the 
-distribution tree that should be used to propagate the message. When the 
-tree is modified, the generation number is incremented. Friend nodes 
-that are modified keep the old tree generation data around during the 
-modification process and continue to use it for any messages that arrive 
-with the old generation number. When the changes are complete, new 
-messages are sent with the new generation number, making the new tree 
-effective.
-
-While this gives us atomic operations, it has the unfortunate property 
-that all nodes need to have their generation number updated even if they 
-are not involved in an update to the tree. To get around this, friends 
-do not look up the exact generation number of messages to find forward 
-information, but rather the youngest generation that is less than or 
-equal to the generation number of the message. This lets us avoid 
-updating the generation number with every friend.
+Use of broadcast keys also allows a third party message broker to deliver
+messages on behalf of a user. This feature allows more possible architecture
+configurations. One server that is capable of many high-volume transactions can
+serve as the message broker for a number of smaller systems.
 
 \section{Roles and Friendship Types}
 

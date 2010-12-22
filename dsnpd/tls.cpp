@@ -119,7 +119,7 @@ void sslInitServer()
 	if ( c->CFG_TLS_KEY == 0 )
 		fatal("CFG_TLS_KEY is not set\n");
 
-	int result = SSL_CTX_use_certificate_file( ctx, c->CFG_TLS_CRT, SSL_FILETYPE_PEM );
+	int result = SSL_CTX_use_certificate_chain_file( ctx, c->CFG_TLS_CRT );
 	if ( result != 1 ) 
 		fatal("failed to load %s\n", c->CFG_TLS_CRT );
 

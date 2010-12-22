@@ -35,8 +35,10 @@ class Connection
 	function checkResult()
 	{
 		if ( !$this->success ) {
-			print "DSNPd returned an error <br> {$this->result}";
-			exit;
+			$args = preg_split( '/[ \t\n\r]+/', $this->result );
+			array_shift( $args );
+			$code = array_shift( $args );
+			userError( $code, $args );
 		}
 	}
 

@@ -41,7 +41,7 @@ struct PeerFailedSsl
 	virtual void print( BIO *bio )
 	{
 		BIO_printf( bio, 
-				"ERROR %d peer %s failed SSL verification\r\n",
+				"ERROR %d %s\r\n",
 				EC_PEER_FAILED_SSL,
 				host.data );
 
@@ -64,7 +64,7 @@ struct FriendRequestExists
 	virtual void print( BIO *bio )
 	{
 		BIO_printf( bio, 
-				"ERROR %d friend request from %s for %s already exists\r\n",
+				"ERROR %d %s %s\r\n",
 				EC_FRIEND_REQUEST_EXISTS,
 				user.data, identity.data );
 

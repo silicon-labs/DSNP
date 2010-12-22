@@ -18,6 +18,7 @@ if ( !isset( $CFG['NAME']  ) )
 define( 'RECAPTCHA_LIB', ROOT . DS . 'recaptcha-php-1.11' . DS . 'recaptchalib.php' );
 define( 'RECAPTCHA_ARGS_OPTIONAL', ! $CFG['USE_RECAPTCHA'] );
 
+require( ROOT . DS . 'error.php' )
 require( ROOT . DS . 'connection.php' );
 require( ROOT . DS . 'controller.php' );
 require( ROOT . DS . 'message.php' );

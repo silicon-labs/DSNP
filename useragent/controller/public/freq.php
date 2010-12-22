@@ -2,7 +2,7 @@
 class PublicFreqController extends Controller
 {
 	var $function = array(
-		'submit' => array(),
+		'become' => array(),
 
 		'sbecome' => array(
 			array( post => 'identity' ),
@@ -16,7 +16,7 @@ class PublicFreqController extends Controller
 		'frfinal' => array(),
 	);
 
-	function submit()
+	function become()
 	{
 	}
 

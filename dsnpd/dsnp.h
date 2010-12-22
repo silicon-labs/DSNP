@@ -295,10 +295,11 @@ struct TlsConnect
 };
 
 
-int notify_accept_result_parser( MYSQL *mysql, const char *user, const char *user_reqid, 
-		const char *from_id, const char *requested_relid, const char *returned_relid, const char *msg );
-void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, const char *user_reqid, 
-		const char *from_id, const char *requested_relid, 
+int notify_accept_result_parser( MYSQL *mysql, const char *user, 
+		const char *user_reqid, const char *from_id, 
+		const char *requested_relid, const char *returned_relid, const char *msg );
+void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, 
+		const char *user_reqid, const char *from_id, const char *requested_relid, 
 		const char *returned_relid, const char *returned_id_salt );
 
 int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );

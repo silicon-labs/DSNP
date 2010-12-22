@@ -17,6 +17,7 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
+#include "usererr.h"
 
 #include <mysql/mysql.h>
 
@@ -92,10 +93,8 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	}
 
 	/* Check for the existence of a friend request. */
-	if ( friendRequestExists( mysql, user, identity ) ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_REQUEST_EXISTS );
-		return;
-	}
+	if ( friendRequestExists( mysql, user, identity ) )
+		throw FriendRequestExists( user, identity );
 
 	/* Get the public key for the identity. */
 	id_pub = fetchPublicKey( mysql, identity );

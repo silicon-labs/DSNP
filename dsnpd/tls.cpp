@@ -1,9 +1,11 @@
+#include "dsnp.h"
+#include "usererr.h"
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/bio.h>
 
 #include <iostream>
-#include "dsnp.h"
 
 SSL_CTX *ctx = 0;
 
@@ -62,7 +64,6 @@ void sslInitClient()
 		fatal("failed to load %s\n", c->CFG_TLS_CA_CERTS );
 }
 
-
 BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 {
 	/* Create the SSL object an set it in the secure BIO. */
@@ -77,8 +78,10 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 
 	/* Check the verification result. */
 	long verifyResult = SSL_get_verify_result(ssl);
-	if ( verifyResult != X509_V_OK )
-		fatal( "SSL_get_verify_result\n" );
+	if ( verifyResult != X509_V_OK ) {
+		error( "SSL_get_verify_result\n" );
+		throw PeerFailedSsl( host );
+	}
 
 	/* Check the cert chain. The chain length is automatically checked by
 	 * OpenSSL when we set the verify depth in the CTX */
@@ -86,7 +89,8 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	/* Check the common name. */
 	X509 *peer = SSL_get_peer_certificate( ssl );
 	char peer_CN[256];
-	X509_NAME_get_text_by_NID( X509_get_subject_name(peer), NID_commonName, peer_CN, 256);
+	X509_NAME_get_text_by_NID( X509_get_subject_name(peer),
+			NID_commonName, peer_CN, 256);
 
 	if ( strcasecmp( peer_CN, host ) != 0 )
 		fatal( "common name %s, doesn't match host name %s\n", peer_CN, host );

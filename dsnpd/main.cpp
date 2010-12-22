@@ -15,6 +15,7 @@
  */
 
 #include "dsnp.h"
+#include "usererr.h"
 
 #include <openssl/rand.h>
 #include <openssl/bio.h>
@@ -110,9 +111,16 @@ int serverMain()
 	bioOut = BIO_new( BIO_f_buffer() );
 	BIO_push( bioOut, bioFdOut );
 
+	/* Close standard error. */
 	close( 2 );
 
-	serverParseLoop();
+	try {
+		serverParseLoop();
+	}
+	catch ( UserError &e ) {
+		e.print( bioOut );
+		BIO_flush( bioOut );
+	}
 
 	close( 0 );
 	close( 1 );

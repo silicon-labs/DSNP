@@ -34,7 +34,7 @@ init-system: init-system.sh
 	sed $(sedsubst) $< > $@
 	chmod +x $@
 
-install:
+install: all
 	install -d @prefix@/share/dsnp
 	install -m 755 new-site @prefix@/share/dsnp/new-site
 	install -m 755 init-system @prefix@/share/dsnp/init-system

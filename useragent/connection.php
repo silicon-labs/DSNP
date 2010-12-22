@@ -32,11 +32,11 @@ class Connection
 		$this->result = fgets( $this->fp );
 	}
 
-	function checkResult( $pat )
+	function checkResult()
 	{
-		if ( !ereg( $pat , $this->result ) ) {
-			die( "FAILURE *** New user creation failed with: <br> " .
-					$this->result );
+		if ( !$this->success ) {
+			print "DSNPd returned an error <br> {$this->result}";
+			exit;
 		}
 	}
 
@@ -62,6 +62,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+)",
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function relidResponse( $user, $fr_reqid, $identity )
@@ -72,6 +74,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+)", 
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function login( $user, $pass )

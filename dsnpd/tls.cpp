@@ -78,10 +78,8 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 
 	/* Check the verification result. */
 	long verifyResult = SSL_get_verify_result(ssl);
-	if ( verifyResult != X509_V_OK ) {
-		error( "SSL_get_verify_result\n" );
+	if ( verifyResult != X509_V_OK )
 		throw PeerFailedSsl( host );
-	}
 
 	/* Check the cert chain. The chain length is automatically checked by
 	 * OpenSSL when we set the verify depth in the CTX */
@@ -163,10 +161,8 @@ int TlsConnect::connect( const char *host, const char *site )
 	static char buf[8192];
 
 	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
-	if ( socketFd < 0 ) {
-		error( "failed to connect to %s\n", host );
-		return -1;
-	}
+	if ( socketFd < 0 )
+		throw SocketConnectFailed( host );
 
 	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
 	BIO *buffer = BIO_new( BIO_f_buffer() );

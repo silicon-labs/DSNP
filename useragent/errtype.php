@@ -9,10 +9,28 @@ function peerFailedSsl( $host )
 	echo "consult the operator of this server.";
 }
 
+function socketConnectFailed( $host )
+{
+	echo "We failed to connect to {$host}";
+	echo "<p> Please double check the identitiy you entered.";
+}
+
 function friendRequestExists( $user, $identity )
 {
 	echo "A friend request from <code>$identity</code> " .
 		"to user <code>$user</code> already exists.";
+}
+
+function dsnpdNoResponse()
+{
+	echo "There was no response from the dsnpd server. It most " .
+		"likely crashed. ";
+}
+
+function dsnpdTimeout()
+{
+	echo "The connection to the dsnpd server timed out. " .
+		"Something is amiss. ";
 }
 
 switch ( $code ) {
@@ -21,6 +39,19 @@ switch ( $code ) {
 		break;
 	case EC_FRIEND_REQUEST_EXISTS:
 		friendRequestExists( $args[0], $args[1] );
+		break;
+	case EC_DSNPD_NO_RESPONSE:
+		dsnpdNoResponse();
+		break;
+	case EC_DSNPD_TIMEOUT:
+		dsnpdTimeout();
+		break;
+	case EC_SOCKET_CONNECT_FAILED:
+		socketConnectFailed( $args[0] );
+		break;
+	default:
+		echo "Sorry, I don't have any information about " .
+			"the nature of this error.";
 		break;
 }
 

@@ -1,4 +1,6 @@
 <?php
+
+define( 'SOCK_TIMEOUT', 5 );
 class Connection
 {
 	var $fp;
@@ -29,16 +31,29 @@ class Connection
 	function command( $cmd )
 	{
 		fwrite( $this->fp, $cmd );
+		stream_set_timeout( $this->fp, SOCK_TIMEOUT );
 		$this->result = fgets( $this->fp );
+		$this->info = stream_get_meta_data( $this->fp );
 	}
 
 	function checkResult()
 	{
 		if ( !$this->success ) {
-			$args = preg_split( '/[ \t\n\r]+/', $this->result );
-			array_shift( $args );
-			$code = array_shift( $args );
-			userError( $code, $args );
+			if ( $this->info['timed_out'] )
+			{
+				userError( EC_DSNPD_TIMEOUT, array() );
+			}
+			if ( is_bool( $this->result ) && !$this->result || 
+					$this->result == '' )
+			{
+				userError( EC_DSNPD_NO_RESPONSE, array() );
+			}
+			else {
+				$args = preg_split( '/[ \t\n\r]+/', $this->result );
+				array_shift( $args );
+				$code = array_shift( $args );
+				userError( $code, $args );
+			}
 		}
 	}
 

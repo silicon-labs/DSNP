@@ -2,6 +2,9 @@
 
 define( 'EC_PEER_FAILED_SSL',         100 );
 define( 'EC_FRIEND_REQUEST_EXISTS',   101 );
+define( 'EC_DSNPD_NO_RESPONSE',       102 );
+define( 'EC_DSNPD_TIMEOUT',           103 );
+define( 'EC_SOCKET_CONNECT_FAILED',   104 );
 
 function userError( $code, $args )
 {

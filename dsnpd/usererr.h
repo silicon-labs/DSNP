@@ -21,8 +21,11 @@
 
 #include <openssl/bio.h>
 
-#define EC_PEER_FAILED_SSL 100
-#define EC_FRIEND_REQUEST_EXISTS 101
+#define EC_PEER_FAILED_SSL        100
+#define EC_FRIEND_REQUEST_EXISTS  101
+#define EC_DSNPD_NO_RESPONSE      102
+#define EC_DSNPD_TIMEOUT          103
+#define EC_SOCKET_CONNECT_FAILED  104
 
 struct UserError
 {
@@ -73,6 +76,29 @@ struct FriendRequestExists
 				user.data, identity.data );
 	}
 };
+
+struct SocketConnectFailed
+	: public UserError
+{
+	SocketConnectFailed( const char *host )
+		: host( host )
+	{}
+
+	String host;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_SOCKET_CONNECT_FAILED,
+				host.data );
+
+		error( "%d could not connect to %s\n",
+				EC_SOCKET_CONNECT_FAILED,
+				host.data );
+	}
+};
+
 
 #endif
 

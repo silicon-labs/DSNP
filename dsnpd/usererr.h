@@ -21,21 +21,22 @@
 
 #include <openssl/bio.h>
 
-#define EC_PEER_FAILED_SSL        100
+#define EC_PEER_FAILED_SSL_VERIFY 100
 #define EC_FRIEND_REQUEST_EXISTS  101
 #define EC_DSNPD_NO_RESPONSE      102
 #define EC_DSNPD_TIMEOUT          103
 #define EC_SOCKET_CONNECT_FAILED  104
+#define EC_SSL_CONNECT_FAILED     105
 
 struct UserError
 {
 	virtual void print( BIO *bio ) = 0;
 };
 
-struct PeerFailedSsl
+struct PeerFailedSslVerify
 	: public UserError
 {
-	PeerFailedSsl( const char *host )
+	PeerFailedSslVerify( const char *host )
 		: host( host )
 	{}
 
@@ -45,11 +46,11 @@ struct PeerFailedSsl
 	{
 		BIO_printf( bio, 
 				"ERROR %d %s\r\n",
-				EC_PEER_FAILED_SSL,
+				EC_PEER_FAILED_SSL_VERIFY,
 				host.data );
 
 		error( "%d peer %s failed SSL verification\r\n",
-				EC_PEER_FAILED_SSL,
+				EC_PEER_FAILED_SSL_VERIFY,
 				host.data );
 	}
 };
@@ -95,6 +96,29 @@ struct SocketConnectFailed
 
 		error( "%d could not connect to %s\n",
 				EC_SOCKET_CONNECT_FAILED,
+				host.data );
+	}
+};
+
+
+struct SslConnectFailed
+	: public UserError
+{
+	SslConnectFailed( const char *host )
+		: host( host )
+	{}
+
+	String host;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_SSL_CONNECT_FAILED,
+				host.data );
+
+		error( "%d SSL_connect to %s failed\r\n",
+				EC_SSL_CONNECT_FAILED,
 				host.data );
 	}
 };

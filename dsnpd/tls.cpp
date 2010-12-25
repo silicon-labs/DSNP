@@ -74,12 +74,12 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	/* Start the SSL process. */
 	int connResult = SSL_connect( ssl );
 	if ( connResult <= 0 )
-		fatal( "SSL_connect failed\n" );
+		throw SslConnectFailed( host );
 
 	/* Check the verification result. */
 	long verifyResult = SSL_get_verify_result(ssl);
 	if ( verifyResult != X509_V_OK )
-		throw PeerFailedSsl( host );
+		throw PeerFailedSslVerify( host );
 
 	/* Check the cert chain. The chain length is automatically checked by
 	 * OpenSSL when we set the verify depth in the CTX */

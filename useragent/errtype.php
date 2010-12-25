@@ -1,13 +1,22 @@
 <?php
 
-function peerFailedSsl( $host )
+function peerFailedSslVerify( $host )
 {
-	echo "We failed to make a secure connection to {$host}! ";
+	echo "We failed to verify the identity of {$host}! ";
 	echo "<p>This could mean that {$host} is not properly configured, ";
 	echo "that {$host}'s security certificate is invalid or expired, ";
 	echo "or that this server is not properly configured. Please ";
 	echo "consult the operator of this server.";
 }
+
+function sslConnectFailed( $host )
+{
+	echo "We failed to initiate a secure connection to {$host}! ";
+	echo "<p>This could mean that {$host} is not properly configured ";
+	echo "or that this server is not properly configured. Please ";
+	echo "consult the operator of this server.";
+}
+
 
 function socketConnectFailed( $host )
 {
@@ -34,8 +43,11 @@ function dsnpdTimeout()
 }
 
 switch ( $code ) {
-	case EC_PEER_FAILED_SSL:
-		peerFailedSsl( $args[0] );
+	case EC_PEER_FAILED_SSL_VERIFY:
+		peerFailedSslVerify( $args[0] );
+		break;
+	case EC_SSL_CONNECT_FAILED:
+		sslConnectFailed( $args[0] );
 		break;
 	case EC_FRIEND_REQUEST_EXISTS:
 		friendRequestExists( $args[0], $args[1] );

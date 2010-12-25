@@ -21,7 +21,7 @@
 
 #include <openssl/bio.h>
 
-#define EC_PEER_FAILED_SSL_VERIFY 100
+#define EC_SSL_PEER_FAILED_VERIFY 100
 #define EC_FRIEND_REQUEST_EXISTS  101
 #define EC_DSNPD_NO_RESPONSE      102
 #define EC_DSNPD_TIMEOUT          103
@@ -34,10 +34,10 @@ struct UserError
 	virtual void print( BIO *bio ) = 0;
 };
 
-struct PeerFailedSslVerify
+struct SslPeerFailedVerify
 	: public UserError
 {
-	PeerFailedSslVerify( const char *host )
+	SslPeerFailedVerify( const char *host )
 		: host( host )
 	{}
 
@@ -47,11 +47,11 @@ struct PeerFailedSslVerify
 	{
 		BIO_printf( bio, 
 				"ERROR %d %s\r\n",
-				EC_PEER_FAILED_SSL_VERIFY,
+				EC_SSL_PEER_FAILED_VERIFY,
 				host.data );
 
 		error( "%d peer %s failed SSL verification\r\n",
-				EC_PEER_FAILED_SSL_VERIFY,
+				EC_SSL_PEER_FAILED_VERIFY,
 				host.data );
 	}
 };
@@ -124,10 +124,10 @@ struct SslConnectFailed
 	}
 };
 
-struct SslWrongHost
+struct SslPeerCnHostMismatch
 	: public UserError
 {
-	SslWrongHost( const char *expected, const char *got )
+	SslPeerCnHostMismatch( const char *expected, const char *got )
 		: expected(expected), got(got)
 	{}
 

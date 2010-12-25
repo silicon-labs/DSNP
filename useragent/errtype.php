@@ -1,6 +1,6 @@
 <?php
 
-function peerFailedSslVerify( $host )
+function sslPeerFailedVerify( $host )
 {
 	echo "We failed to verify the identity of {$host}! ";
 	echo "<p>This could mean that {$host} is not properly configured, ";
@@ -49,8 +49,8 @@ function dsnpdTimeout()
 }
 
 switch ( $code ) {
-	case EC_PEER_FAILED_SSL_VERIFY:
-		peerFailedSslVerify( $args[0] );
+	case EC_SSL_PEER_FAILED_VERIFY:
+		sslPeerFailedVerify( $args[0] );
 		break;
 	case EC_SSL_CONNECT_FAILED:
 		sslConnectFailed( $args[0] );

@@ -1,6 +1,6 @@
 <?php
 
-define( 'EC_PEER_FAILED_SSL_VERIFY',  100 );
+define( 'EC_SSL_PEER_FAILED_VERIFY',  100 );
 define( 'EC_FRIEND_REQUEST_EXISTS',   101 );
 define( 'EC_DSNPD_NO_RESPONSE',       102 );
 define( 'EC_DSNPD_TIMEOUT',           103 );

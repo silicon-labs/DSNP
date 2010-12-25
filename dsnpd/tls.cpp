@@ -79,7 +79,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	/* Check the verification result. */
 	long verifyResult = SSL_get_verify_result(ssl);
 	if ( verifyResult != X509_V_OK )
-		throw PeerFailedSslVerify( host );
+		throw SslPeerFailedVerify( host );
 
 	/* Check the cert chain. The chain length is automatically checked by
 	 * OpenSSL when we set the verify depth in the CTX */
@@ -91,7 +91,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 			NID_commonName, peer_CN, 256);
 
 	if ( strcasecmp( host, peer_CN ) != 0 )
-		throw SslWrongHost( host, peer_CN );
+		throw SslPeerCnHostMismatch( host, peer_CN );
 
 	/* Create a BIO for the ssl wrapper. */
 	BIO *sbio = BIO_new( BIO_f_ssl() );

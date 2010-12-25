@@ -21,13 +21,14 @@
 
 #include <openssl/bio.h>
 
-#define EC_SSL_PEER_FAILED_VERIFY 100
-#define EC_FRIEND_REQUEST_EXISTS  101
-#define EC_DSNPD_NO_RESPONSE      102
-#define EC_DSNPD_TIMEOUT          103
-#define EC_SOCKET_CONNECT_FAILED  104
-#define EC_SSL_CONNECT_FAILED     105
-#define EC_SSL_WRONG_HOST         106
+#define EC_SSL_PEER_FAILED_VERIFY    100
+#define EC_FRIEND_REQUEST_EXISTS     101
+#define EC_DSNPD_NO_RESPONSE         102
+#define EC_DSNPD_TIMEOUT             103
+#define EC_SOCKET_CONNECT_FAILED     104
+#define EC_SSL_CONNECT_FAILED        105
+#define EC_SSL_WRONG_HOST            106
+#define EC_SSL_CA_CERT_LOAD_FAILURE  107
 
 struct UserError
 {
@@ -50,7 +51,7 @@ struct SslPeerFailedVerify
 				EC_SSL_PEER_FAILED_VERIFY,
 				host.data );
 
-		error( "%d peer %s failed SSL verification\r\n",
+		error( "%d peer %s failed SSL verification\n",
 				EC_SSL_PEER_FAILED_VERIFY,
 				host.data );
 	}
@@ -73,7 +74,7 @@ struct FriendRequestExists
 				EC_FRIEND_REQUEST_EXISTS,
 				user.data, identity.data );
 
-		error( "%d friend request from %s for %s already exists\r\n",
+		error( "%d friend request from %s for %s already exists\n",
 				EC_FRIEND_REQUEST_EXISTS,
 				user.data, identity.data );
 	}
@@ -118,7 +119,7 @@ struct SslConnectFailed
 				EC_SSL_CONNECT_FAILED,
 				host.data );
 
-		error( "%d SSL_connect to %s failed\r\n",
+		error( "%d SSL_connect to %s failed\n",
 				EC_SSL_CONNECT_FAILED,
 				host.data );
 	}
@@ -141,9 +142,31 @@ struct SslPeerCnHostMismatch
 				EC_SSL_WRONG_HOST,
 				expected.data, got.data );
 
-		error( "%d verified SSL connection to %s, but cert presented belongs to %s\r\n",
+		error( "%d verified SSL connection to %s, but cert presented belongs to %s\n",
 				EC_SSL_WRONG_HOST,
 				expected.data, got.data );
+	}
+};
+
+struct SslCaCertLoadFailure
+	: public UserError
+{
+	SslCaCertLoadFailure( const char *file )
+		: file( file )
+	{}
+
+	String file;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_SSL_CA_CERT_LOAD_FAILURE,
+				file.data );
+
+		error( "%d failed to load CA cert file %s\n",
+				EC_SSL_CA_CERT_LOAD_FAILURE,
+				file.data );
 	}
 };
 

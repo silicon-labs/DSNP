@@ -24,6 +24,12 @@ function sslWrongHost( $expected, $got )
 	echo "and not {$expected} as expected.";
 }
 
+function sslCaCertLoadFailure( $file )
+{
+	echo "There is an SSL configuration error. ";
+	echo "<p>We could not load the CA cert file {$file} ";
+}
+
 function socketConnectFailed( $host )
 {
 	echo "We failed to connect to {$host}";
@@ -57,6 +63,9 @@ switch ( $code ) {
 		break;
 	case EC_SSL_WRONG_HOST:
 		sslWrongHost( $args[0], $args[1] );
+		break;
+	case EC_SSL_CA_CERT_LOAD_FAILURE:
+		sslCaCertLoadFailure( $args[0] );
 		break;
 	case EC_FRIEND_REQUEST_EXISTS:
 		friendRequestExists( $args[0], $args[1] );

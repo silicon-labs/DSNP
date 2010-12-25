@@ -61,7 +61,7 @@ void sslInitClient()
 	/* Load the CA certificates that we will use to verify. */
 	int result = SSL_CTX_load_verify_locations( ctx, c->CFG_TLS_CA_CERTS, NULL );
 	if ( !result ) 
-		fatal("failed to load %s\n", c->CFG_TLS_CA_CERTS );
+		throw SslCaCertLoadFailure( c->CFG_TLS_CA_CERTS );
 }
 
 BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )

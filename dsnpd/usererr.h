@@ -27,6 +27,7 @@
 #define EC_DSNPD_TIMEOUT          103
 #define EC_SOCKET_CONNECT_FAILED  104
 #define EC_SSL_CONNECT_FAILED     105
+#define EC_SSL_WRONG_HOST         106
 
 struct UserError
 {
@@ -120,6 +121,29 @@ struct SslConnectFailed
 		error( "%d SSL_connect to %s failed\r\n",
 				EC_SSL_CONNECT_FAILED,
 				host.data );
+	}
+};
+
+struct SslWrongHost
+	: public UserError
+{
+	SslWrongHost( const char *expected, const char *got )
+		: expected(expected), got(got)
+	{}
+
+	String expected;
+	String got;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s %s\r\n",
+				EC_SSL_WRONG_HOST,
+				expected.data, got.data );
+
+		error( "%d verified SSL connection to %s, but cert presented belongs to %s\r\n",
+				EC_SSL_WRONG_HOST,
+				expected.data, got.data );
 	}
 };
 

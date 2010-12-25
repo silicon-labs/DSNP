@@ -90,8 +90,8 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	X509_NAME_get_text_by_NID( X509_get_subject_name(peer),
 			NID_commonName, peer_CN, 256);
 
-	if ( strcasecmp( peer_CN, host ) != 0 )
-		fatal( "common name %s, doesn't match host name %s\n", peer_CN, host );
+	if ( strcasecmp( host, peer_CN ) != 0 )
+		throw SslWrongHost( host, peer_CN );
 
 	/* Create a BIO for the ssl wrapper. */
 	BIO *sbio = BIO_new( BIO_f_ssl() );

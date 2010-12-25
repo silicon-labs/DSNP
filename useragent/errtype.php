@@ -17,6 +17,12 @@ function sslConnectFailed( $host )
 	echo "consult the operator of this server.";
 }
 
+function sslWrongHost( $expected, $got )
+{
+	echo "We failed to verify the identity of {$expected}! ";
+	echo "<p>We got a cert that verfies, but it belongs to {$got} ";
+	echo "and not {$expected} as expected.";
+}
 
 function socketConnectFailed( $host )
 {
@@ -48,6 +54,9 @@ switch ( $code ) {
 		break;
 	case EC_SSL_CONNECT_FAILED:
 		sslConnectFailed( $args[0] );
+		break;
+	case EC_SSL_WRONG_HOST:
+		sslWrongHost( $args[0], $args[1] );
 		break;
 	case EC_FRIEND_REQUEST_EXISTS:
 		friendRequestExists( $args[0], $args[1] );

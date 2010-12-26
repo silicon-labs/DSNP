@@ -85,6 +85,10 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	String ourId( "%s%s/", c->CFG_URI, user );
 	if ( strcasecmp( ourId.data, identity ) == 0 )
 		throw CannotFriendSelf( identity );
+	
+	/* FIXME: these should be presented to the user only after the bounce back
+	 * that authenticates the submitter, otherwise anyone can test friendship
+	 * between arbitrary users. */
 
 	/* Check for the existence of a friend claim. */
 	if ( checkFriendClaimExists( mysql, user, identity ) )
@@ -296,7 +300,8 @@ long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 	return 0;
 }
 
-void friendFinal( MYSQL *mysql, const char *user, const char *reqid_str, const char *identity )
+void friendFinal( MYSQL *mysql, const char *user, 
+		const char *reqid_str, const char *identity )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 
 	 * b) decrypts and verifies message, must contain correct $FR-RELID

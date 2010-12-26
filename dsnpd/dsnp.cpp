@@ -208,7 +208,7 @@ void publicKey( MYSQL *mysql, const char *user )
 	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );
 }
 
-long open_inet_connection( const char *hostname, unsigned short port )
+long openInetConnection( const char *hostname, unsigned short port )
 {
 	sockaddr_in servername;
 	hostent *hostinfo;
@@ -257,7 +257,7 @@ long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *identity )
 	return 0;
 }
 
-long store_public_key( MYSQL *mysql, const char *identity, PublicKey &pub )
+long storePublicKey( MYSQL *mysql, const char *identity, PublicKey &pub )
 {
 	DbQuery( mysql,
 		"INSERT INTO public_key ( identity, rsa_n, rsa_e ) "
@@ -296,7 +296,7 @@ Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
 			return 0;
 
 		/* Store it in the db. */
-		store_public_key( mysql, identity, pub );
+		storePublicKey( mysql, identity, pub );
 	}
 
 	rsa = RSA_new();

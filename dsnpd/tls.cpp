@@ -9,7 +9,7 @@
 
 SSL_CTX *ctx = 0;
 
-void printError( int e )
+void sslError( int e )
 {
 	switch ( e ) {
 		case SSL_ERROR_NONE:
@@ -88,7 +88,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host )
 	X509 *peer = SSL_get_peer_certificate( ssl );
 	char peer_CN[256];
 	X509_NAME_get_text_by_NID( X509_get_subject_name(peer),
-			NID_commonName, peer_CN, 256);
+			NID_commonName, peer_CN, 256 );
 
 	if ( strcasecmp( host, peer_CN ) != 0 )
 		throw SslPeerCnHostMismatch( host, peer_CN );
@@ -142,7 +142,7 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio )
 	int connResult = SSL_accept( ssl );
 	if ( connResult <= 0 ) {
 		connResult = SSL_get_error( ssl, connResult );
-		printError( connResult );
+		sslError( connResult );
 		fatal( "SSL_accept failed: %s\n",  ERR_error_string( ERR_get_error( ), 0 ) );
 	}
 
@@ -160,7 +160,7 @@ int TlsConnect::connect( const char *host, const char *site )
 {
 	static char buf[8192];
 
-	long socketFd = open_inet_connection( host, atoi(c->CFG_PORT) );
+	long socketFd = openInetConnection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		throw SocketConnectFailed( host );
 

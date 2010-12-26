@@ -46,7 +46,7 @@ void test_tls()
 	if ( connect_res == 0 )
 		fatal( "ERROR failed to connect to the database\r\n");
 
-	long socketFd = open_inet_connection( "localhost", 7070 );
+	long socketFd = openInetConnection( "localhost", 7070 );
 	if ( socketFd < 0 )
 		fatal("connection\n");
 

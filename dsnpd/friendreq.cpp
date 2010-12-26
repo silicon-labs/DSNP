@@ -87,10 +87,8 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	}
 
 	/* Check for the existence of a friend claim. */
-	if ( friendClaimExists( mysql, user, identity ) ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_CLAIM_EXISTS );
-		return;
-	}
+	if ( friendClaimExists( mysql, user, identity ) )
+		throw FriendClaimExists( user, identity );
 
 	/* Check for the existence of a friend request. */
 	if ( friendRequestExists( mysql, user, identity ) )

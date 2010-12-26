@@ -29,6 +29,7 @@
 #define EC_SSL_CONNECT_FAILED        105
 #define EC_SSL_WRONG_HOST            106
 #define EC_SSL_CA_CERT_LOAD_FAILURE  107
+#define EC_FRIEND_CLAIM_EXISTS       108
 
 struct UserError
 {
@@ -170,6 +171,27 @@ struct SslCaCertLoadFailure
 	}
 };
 
+struct FriendClaimExists
+	: public UserError
+{
+	FriendClaimExists( const char *user, const char *identity )
+		: user(user), identity(identity) {}
+
+	String user;
+	String identity;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s %s\r\n",
+				EC_FRIEND_CLAIM_EXISTS,
+				user.data, identity.data );
+
+		error( "%d user %s is already friends with identity %s\n",
+				EC_FRIEND_CLAIM_EXISTS,
+				user.data, identity.data );
+	}
+};
 
 #endif
 

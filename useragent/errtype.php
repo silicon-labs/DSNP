@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is included into a function.
+ */
+
+define( 'EC_SSL_PEER_FAILED_VERIFY',     100 );
+define( 'EC_FRIEND_REQUEST_EXISTS',      101 );
+define( 'EC_DSNPD_NO_RESPONSE',          102 );
+define( 'EC_DSNPD_TIMEOUT',              103 );
+define( 'EC_SOCKET_CONNECT_FAILED',      104 );
+define( 'EC_SSL_CONNECT_FAILED',         105 );
+define( 'EC_SSL_WRONG_HOST',             106 );
+define( 'EC_SSL_CA_CERT_LOAD_FAILURE',   107 );
+define( 'EC_FRIEND_CLAIM_EXISTS',        108 );
+
 function sslPeerFailedVerify( $host )
 {
 	echo "We failed to verify the identity of {$host}! ";
@@ -42,6 +56,12 @@ function friendRequestExists( $user, $identity )
 		"to user <code>$user</code> already exists.";
 }
 
+function friendClaimExists( $user, $identity )
+{
+	echo "User <code>$user</code> already has <code>$identity</code> " .
+		"in its friend list.";
+}
+
 function dsnpdNoResponse()
 {
 	echo "There was no response from the dsnpd server. It most " .
@@ -70,6 +90,9 @@ switch ( $code ) {
 	case EC_FRIEND_REQUEST_EXISTS:
 		friendRequestExists( $args[0], $args[1] );
 		break;
+	case EC_FRIEND_CLAIM_EXISTS:
+		friendClaimExists( $args[0], $args[1] );
+		break;
 	case EC_DSNPD_NO_RESPONSE:
 		dsnpdNoResponse();
 		break;
@@ -82,6 +105,9 @@ switch ( $code ) {
 	default:
 		echo "Sorry, I don't have any information about " .
 			"the nature of this error.";
+		echo "<p>Error Code: $code";
+		echo "<p>Args:";
+		print_r( $args );
 		break;
 }
 

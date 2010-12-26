@@ -14,6 +14,13 @@ class PublicFreqController extends Controller
 		),
 
 		'frfinal' => array(),
+
+		/* Need to be logged in for this. Prompt for for login and then
+		 * redirect. */
+		'retrelid' => array(
+			array( get => 'identity', type => 'identity' ),
+			array( get => 'fr_reqid', type => 'base64' ),
+		),
 	);
 
 	function become()
@@ -64,6 +71,12 @@ class PublicFreqController extends Controller
 		else {
 			echo $this->result;
 		}
+	}
+
+	function retrelid()
+	{
+		# FIXME: need to give a more helpful message here.
+		$this->userRedirect( "/cred/login?d=" . urlencode($_SERVER['REQUEST_URI']) );
 	}
 }
 ?>

@@ -2,14 +2,18 @@
 class OwnerFreqController extends Controller
 {
 	var $function = array(
-		'retrelid' => array(),
 		'answer' => array(),
+
+		'retrelid' => array(
+			array( get => 'identity', type => 'identity' ),
+			array( get => 'fr_reqid', type => 'base64' ),
+		),
 	);
 
 	function retrelid()
 	{
-		$identity = $_GET['identity'];
-		$fr_reqid = $_GET['fr_reqid'];
+		$identity = $this->args['identity'];
+		$fr_reqid = $this->args['fr_reqid'];
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
@@ -17,15 +21,10 @@ class OwnerFreqController extends Controller
 		$connection->relidResponse( 
 			$this->USER[USER], $fr_reqid, $identity );
 
-		if ( $connection->success ) {
-			$arg_identity = 'identity=' . urlencode( $this->USER[URI]);
-			$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
+		$arg_identity = 'identity=' . urlencode( $this->USER[URI]);
+		$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
 
-			$this->redirect("${identity}freq/frfinal?${arg_identity}&${arg_reqid}" );
-		}
-		else {
-			echo $connection->result;
-		}
+		$this->redirect("${identity}freq/frfinal?${arg_identity}&${arg_reqid}" );
 	}
 
 	function answer()

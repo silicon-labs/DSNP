@@ -87,8 +87,20 @@ function checkArgs( $functionDef, $route )
 
 		if ( isset($arg[type] ) ) {
 			switch ( $arg[type] ) {
+				case 'identity': {
+					$match = preg_match( '|^https://.*/$|', $value );
+					if ( $match === false ) {
+						die("<br><br>there was an error checking " . 
+							"$name regex for identity type");
+					}
+					else if ( $match === 0 ) {
+						die("arg $name is not identity type");
+						$value = (int)$value;
+					}
+					break;
+				}
 				case 'base64': {
-					$match = preg_match( '/[0-9a-zA-Z_\-]+/', $value );
+					$match = preg_match( '/^[0-9a-zA-Z_\-]+$/', $value );
 					if ( $match === false ) {
 						die("<br><br>there was an error checking " . 
 							"$name regex for base64 type");
@@ -100,7 +112,7 @@ function checkArgs( $functionDef, $route )
 					break;
 				}
 				case 'int': {
-					$match = preg_match( '/[0-9]+/', $value );
+					$match = preg_match( '/^[0-9]+$/', $value );
 					if ( $match === false ) {
 						die("<br><br>there was an error checking " . 
 							"$name regex for integer");

@@ -15,7 +15,7 @@
  */
 
 #include "dsnp.h"
-#include "usererr.h"
+#include "error.h"
 
 #include <openssl/rand.h>
 #include <openssl/bio.h>

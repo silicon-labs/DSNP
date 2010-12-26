@@ -30,6 +30,7 @@
 #define EC_SSL_WRONG_HOST            106
 #define EC_SSL_CA_CERT_LOAD_FAILURE  107
 #define EC_FRIEND_CLAIM_EXISTS       108
+#define EC_CANNOT_FRIEND_SELF        109
 
 struct UserError
 {
@@ -190,6 +191,27 @@ struct FriendClaimExists
 		error( "%d user %s is already friends with identity %s\n",
 				EC_FRIEND_CLAIM_EXISTS,
 				user.data, identity.data );
+	}
+};
+
+struct CannotFriendSelf
+	: public UserError
+{
+	CannotFriendSelf( const char *identity )
+		: identity(identity) {}
+
+	String identity;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_CANNOT_FRIEND_SELF,
+				identity.data );
+
+		error( "%d cannot friend oneself %s\n",
+				EC_CANNOT_FRIEND_SELF,
+				identity.data );
 	}
 };
 

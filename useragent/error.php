@@ -13,6 +13,7 @@ define( 'EC_SSL_CONNECT_FAILED',         105 );
 define( 'EC_SSL_WRONG_HOST',             106 );
 define( 'EC_SSL_CA_CERT_LOAD_FAILURE',   107 );
 define( 'EC_FRIEND_CLAIM_EXISTS',        108 );
+define( 'EC_CANNOT_FRIEND_SELF',         109 );
 
 function sslPeerFailedVerify( $host )
 {
@@ -74,6 +75,12 @@ function dsnpdTimeout()
 		"Something is amiss. ";
 }
 
+function cannotFriendSelf( $identity )
+{
+	echo "The identity submitted <code>$identity</code> belongs to this user.";
+	echo "It is not possible to friend oneself.";
+}
+
 switch ( $code ) {
 	case EC_SSL_PEER_FAILED_VERIFY:
 		sslPeerFailedVerify( $args[0] );
@@ -101,6 +108,9 @@ switch ( $code ) {
 		break;
 	case EC_SOCKET_CONNECT_FAILED:
 		socketConnectFailed( $args[0] );
+		break;
+	case EC_CANNOT_FRIEND_SELF:
+		cannotFriendSelf( $args[0] );
 		break;
 	default:
 		echo "Sorry, I don't have any information about " .

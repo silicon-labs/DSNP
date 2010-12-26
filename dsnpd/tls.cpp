@@ -1,5 +1,5 @@
 #include "dsnp.h"
-#include "usererr.h"
+#include "error.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

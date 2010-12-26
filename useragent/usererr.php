@@ -9,7 +9,7 @@ function userError( $code, $args )
 	print '<body>';
 	print '<p>';
 	print '<h1> Ooops, there was an error!</h1><big><div style="width: 50%">';
-	include( ROOT . DS . 'errtype.php' );
+	include( ROOT . DS . 'error.php' );
 	print '</div></big>';
 	print '</body>';
 	print '</html>';

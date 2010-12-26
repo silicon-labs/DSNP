@@ -24,13 +24,6 @@ class PublicFreqController extends Controller
 	{
 		$identity = $this->args['identity'];
 
-		if ( $identity === $this->USER[URI] ) {
-			$this->userError(
-				'The identity submitted belongs to this user.',
-				'It is not possible to friend request oneself.'
-			);
-		}
-
 		if ( $this->CFG['USE_RECAPTCHA'] ) {
 			require_once( RECAPTCHA_LIB );
 

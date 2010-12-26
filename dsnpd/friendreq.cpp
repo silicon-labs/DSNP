@@ -17,7 +17,7 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
-#include "usererr.h"
+#include "error.h"
 
 #include <mysql/mysql.h>
 
@@ -36,7 +36,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-bool friendClaimExists( MYSQL *mysql, const char *user, const char *identity )
+bool checkFriendClaimExists( MYSQL *mysql, const char *user,
+		const char *identity )
 {
 	/* Check to see if there is already a friend claim. */
 	DbQuery claim( mysql, "SELECT user, friend_id FROM friend_claim "
@@ -49,7 +50,8 @@ bool friendClaimExists( MYSQL *mysql, const char *user, const char *identity )
 	return false;
 }
 
-bool friendRequestExists( MYSQL *mysql, const char *user, const char *identity )
+bool checkFriendRequestExists( MYSQL *mysql, const char *user,
+		const char *identity )
 {
 	DbQuery exists( mysql, "SELECT for_user, from_id FROM friend_request "
 		"WHERE for_user = %e AND from_id = %e",
@@ -81,17 +83,15 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Check to make sure this isn't ourselves. */
 	String ourId( "%s%s/", c->CFG_URI, user );
-	if ( strcasecmp( ourId.data, identity ) == 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FRIEND_OURSELVES );
-		return;
-	}
+	if ( strcasecmp( ourId.data, identity ) == 0 )
+		throw CannotFriendSelf( identity );
 
 	/* Check for the existence of a friend claim. */
-	if ( friendClaimExists( mysql, user, identity ) )
+	if ( checkFriendClaimExists( mysql, user, identity ) )
 		throw FriendClaimExists( user, identity );
 
 	/* Check for the existence of a friend request. */
-	if ( friendRequestExists( mysql, user, identity ) )
+	if ( checkFriendRequestExists( mysql, user, identity ) )
 		throw FriendRequestExists( user, identity );
 
 	/* Get the public key for the identity. */

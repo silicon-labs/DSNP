@@ -38,37 +38,40 @@ class View
 
 	function absLink( $text, $location, $class = null )
 	{
-		$link = "<a";
+		$link = '<a';
 		if ( isset( $class ) )
 			$link .= " class=\"$class\"";
-		$link .= " href=\"" . $location . "\">" . $text . "</a>";
+		$link .= ' href=\"' . $location . '\">' . $text . '</a>';
 		return $link;
 	}
 
-	function link( $text, $location )
+	function link( $text, $location, $class = null )
 	{
-		global $CFG;
-		return "<a href=" . $CFG[PATH] . $location . ">" . $text . "</a>";
+		$link = '<a';
+		if ( isset( $class ) )
+			$link .= " class=\"$class\"";
+		$link .= ' href=' . $this->CFG['PATH'] . $location . '>' . $text . '</a>';
+		return $link;
 	}
 
 	function userLink( $text, $location, $class = null )
 	{
 		$link = "<a";
 		if ( isset( $class ) )
-			$link .= "class=\"$class\"";
-		$link .= " href=" . $this->CFG[PATH] . '/' . $this->USER[USER] . 
-				$location . ">" . $text . "</a>";
+			$link .= " class=\"$class\"";
+		$link .= ' href=' . $this->CFG['PATH'] . '/' . $this->USER['USER'] . 
+				$location . '>' . $text . '</a>';
 		return $link;
 	}
 
 	function siteLoc( $location )
 	{
-		return $this->CFG[PATH] . $location;
+		return $this->CFG['PATH'] . $location;
 	}
 
 	function userLoc( $location )
 	{
-		return $this->CFG[PATH] . '/' . $this->USER[USER] . $location;
+		return $this->CFG['PATH'] . '/' . $this->USER['USER'] . $location;
 	}
 
 }

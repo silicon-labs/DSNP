@@ -5,7 +5,7 @@
 
 body {
 	font-family: 'lucida grande',verdana,helvetica,arial,sans-serif;
-	font-size: 90%;
+	font-size: 100%;
 	margin: 0;
 }
 
@@ -90,14 +90,14 @@ div.content {
 	background: #eef;
 }
 
-#edit {
+a.edit {
 	float: right;
-	font-size: small;
+	/*font-size: small;*/
 }
 
 #manage {
 	float: right;
-	font-size: small;
+	/*font-size: small;*/
 }
 
 /*

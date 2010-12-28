@@ -2,7 +2,7 @@
 <td id="leftcol">
 
 <div id="details">
-<h2><?php print $USER[USER];?></h2>
+	<h2><?php print $USER['USER'];?></h2>
 </div>
 
 </td>
@@ -19,7 +19,7 @@
 		User
 	</td>
 	<td>
-	<input name="user" type="text" value="<?echo $USER[USER];?>"/>
+	<input name="user" type="text" value="<?echo $USER['USER'];?>"/>
 	</td>
 </tr>
 

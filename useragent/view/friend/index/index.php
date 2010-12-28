@@ -25,10 +25,7 @@ require( ROOT . DS . 'view' . DS . 'functions.php' );
 <td id="leftcol">
 
 <div id="details">
-
-<!--<h2><?php print $USER['display_short'];?></h2>-->
-<h2><?php print $USER[USER];?></h2>
-
+    <h2><?php print $USER['NAME'];?></h2>
 </div>
 
 <div class="content">

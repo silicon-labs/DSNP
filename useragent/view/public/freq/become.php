@@ -23,7 +23,7 @@
 <td id="leftcol">
 
 <div id="details">
-<h2><?php print $USER_NAME;?></h2>
+	<h2><?php print $USER['USER'];?></h2>
 </div>
 
 </td>

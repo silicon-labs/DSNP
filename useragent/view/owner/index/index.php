@@ -25,13 +25,8 @@ require( ROOT . DS . 'view' . DS . 'functions.php' );
 <td id="leftcol">
 
 <div id="details">
-
-<a id="edit" href="<?php 
-	echo $this->userLoc( "/user/edit" );?>">edit</a>
-
-<!--<h2><?php echo $USER['display_short'];?></h2>-->
-<h2><?php print $USER[USER];?></h2>
-
+	<?php echo $this->userLink( 'edit', '/user/edit', 'edit' );?>
+    <h2><?php print $USER['NAME'];?></h2>
 </div>
 
 <?php

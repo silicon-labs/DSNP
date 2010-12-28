@@ -2,7 +2,7 @@
 
 <td id="leftcol">
 <div id="details">
-<h2><?php echo $USER[USER];?></h2>
+    <h2><?php print $USER['NAME'];?></h2>
 </div>
 </td>
 

@@ -145,8 +145,8 @@ if ( $count % 2 == 1 )
 
 <div class="content">
 <form method="post" action="<?echo $this->userLoc( "/user/broadcast" ); ?>">
-Broadcast a Message to all Friends
-<textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
+Broadcast a Message to all Friends<br>
+<textarea rows="3" cols="65" name="message" wrap="physical"></textarea><br>
 <input value="Submit Message" type="submit">
 </form>
 </div>

@@ -7,15 +7,18 @@ REQUIREMENTS FOR INSTALLATION
 2. Apache with mod_ssl, mod_php and mod_rewrite installed. The mod_rewrite
    module must be configured to work in .htaccess files.
 
-3. You need to have mysql server, the mysql client library, and the mysql
+3. You need the php command line program 'php'. This is used by the daemon to
+   call the message script.
+
+4. You need to have mysql server, the mysql client library, and the mysql
    module for php installed. You need the ability to create new databases
    and users.
 
-4. You need the openssl development package installed on your system.
+5. You need the openssl development package installed on your system.
 
-5. You need xinetd (or similar) installed.
+6. You need xinetd (or similar) installed.
 
-6. If you are building from the source repository, you need Ragel installed.
+7. If you are building from the source repository, you need Ragel installed.
 
 UBUNTU PACKAGES
 ===============
@@ -23,7 +26,7 @@ UBUNTU PACKAGES
 If you are running ubuntu, install these packages:
 
     mysql-server mysql-client libmysqlclient-dev libssl-dev libapache2-mod-php5
-    xinetd php5-mysql
+    xinetd php5-mysql php5-cli
 
 Make sure the following modules are enabled:
 

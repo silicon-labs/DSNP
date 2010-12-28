@@ -59,9 +59,9 @@ function dbQuery()
 }
 
 # Connect to the database.
-mysql_connect( $CFG[DB_HOST], $CFG[DB_USER], $CFG[DB_PASS] )
+mysql_connect( $CFG['DB_HOST'], $CFG['DB_USER'], $CFG['DB_PASS'] )
 	or die("ERROR: could not connect to database\n");
-mysql_select_db( $CFG[DB_DATABASE] ) 
-	or die('ERROR: could not select database ' . $CFG[DB_DATABASE] . "\n" );
+mysql_select_db( $CFG['DB_DATABASE'] ) 
+	or die('ERROR: could not select database ' . $CFG['DB_DATABASE'] . "\n" );
 	
 ?>

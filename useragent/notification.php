@@ -23,15 +23,15 @@ $_SERVER['REQUEST_URI'] = array_shift( $argv ) . '/';
 require( PREFIX . '/etc/dsnpua.php' );
 require( PREFIX . '/share/dsnp/web/database.php' );
 
-$DATA_DIR = PREFIX . "/var/lib/dsnp/{$CFG[NAME]}/data";
+$DATA_DIR = PREFIX . "/var/lib/dsnp/{$CFG['NAME']}/data";
 
 $notification_type = array_shift( $argv );
 
 # Connect to the database.
-$conn = mysql_connect($CFG[DB_HOST], $CFG[DB_USER], $CFG[DB_PASS]) or die 
+$conn = mysql_connect($CFG['DB_HOST'], $CFG['DB_USER'], $CFG['DB_PASS']) or die 
 	('Could not connect to database');
-mysql_select_db($CFG[DB_DATABASE]) or die
-	('Could not select database ' . $CFG[DB_DATABASE]);
+mysql_select_db($CFG['DB_DATABASE']) or die
+	('Could not select database ' . $CFG['DB_DATABASE']);
 
 function argUser( $user )
 {

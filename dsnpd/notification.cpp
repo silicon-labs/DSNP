@@ -103,7 +103,10 @@ void appNotification( const char *args, const char *data, long length )
 		dup2( fds[0], 0 );
 		dup2( fileno(log), 1 );
 		dup2( fileno(log), 2 );
+
 		execvp( "php", makeNotifiyArgv( args ) );
+		error( "failed to call php interpreter to run notification %s\n", 
+				strerror(errno) );
 		exit(0);
 	}
 	

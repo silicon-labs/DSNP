@@ -295,7 +295,24 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 8 (optional)
+STEP 8 
+======
+
+Make sure mod_rewrite can work from .htaccess files. Add the following to the
+appropriate location or directory.
+
+-------- BEGIN FRAGMENT --------
+
+        AllowOverride FileInfo Options
+
+-------- END FRAGMENT --------
+
+
+EOF
+
+cat << EOF >> $OUTPUT
+
+STEP 9 (optional)
 =================
 
 The DSNP user agent does not work with host aliases. Users must use the primary

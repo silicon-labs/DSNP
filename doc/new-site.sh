@@ -142,17 +142,21 @@ The key file you should have generated yourself. The certificate was issued to
 you. If there is a chain, add the certs to the end (your cert first, then
 append certs as you go up the chain).
 
-$ KEY_FILE=/path/to/private-key.key
-$ CRT_FILE=/path/to/certificate.crt
+KEY_FILE=/path/to/private-key.key
+CRT_FILE=/path/to/certificate.crt
 
-$ cp \$KEY_FILE $SYSCONFDIR/dsnp-ssl/$NAME.key
-$ cp \$CRT_FILE $SYSCONFDIR/dsnp-ssl/$NAME.crt
-$ chown ${WWW_USER}:${WWW_USER} \\
+-------- BEGIN SCRIPT -------
+
+cp \$KEY_FILE $SYSCONFDIR/dsnp-ssl/$NAME.key
+cp \$CRT_FILE $SYSCONFDIR/dsnp-ssl/$NAME.crt
+chown ${WWW_USER}:${WWW_USER} \\
       $SYSCONFDIR/dsnp-ssl/$NAME.key \\
       $SYSCONFDIR/dsnp-ssl/$NAME.crt 
-$ chmod 600 \\
+chmod 600 \\
       $SYSCONFDIR/dsnp-ssl/$NAME.key \\
       $SYSCONFDIR/dsnp-ssl/$NAME.crt 
+
+-------- END SCRIPT -------
 
 If this is a testing installation that will only communicate with itself, you
 can generate a self-signed cert and use it as the CFG_TLS_CA_CERTS in the next step.
@@ -229,13 +233,12 @@ EOF
 
 cat << EOF >> $OUTPUT
 
-STEP 4
-======
+STEP 4 (optional)
+=================
 
 Set up reCAPTCHA. This step is optional, however, it is strongly recommended
 that you complete it. Change USE_RECAPTCHA in the config file to true, acquire
 keys from reCAPTCHA, and set them in the config file.
-
 EOF
 
 cat << EOF >> $OUTPUT
@@ -265,11 +268,11 @@ putting the database user and pass on your history.
 
 -------- BEGIN SCRIPT -------
 
-mysql -u root -p -B -N << EOS
+mysql -u root -p -B -N -e
 	CREATE USER '${NAME}'@'localhost' IDENTIFIED BY '$CFG_DB_PASS';
 	CREATE DATABASE ${NAME};
 	GRANT ALL ON ${NAME}.* TO '${NAME}'@'localhost';
-EOS
+'
 
 mysql -u $NAME -p'$CFG_DB_PASS' $NAME < $DATADIR/dsnp/init.sql
 
@@ -288,5 +291,33 @@ ln -s $DATADIR/dsnp/web/webroot .$CFG_PATH
 
 If there is no path on the domain hosting the site, you should go one directory
 up and create the link as the directory housing the entire site.
+EOF
 
+cat << EOF >> $OUTPUT
+
+STEP 8 (optional)
+=================
+
+The DSNP user agent does not work with host aliases. Users must use the primary
+site name in their browsers (the one you gave when you specified the site's
+URI). IT is convenient to setup some redirects. The first is to force SSL and
+should be used the conf file for the plain HTTP server.
+
+-------- BEGIN FRAGMENT --------
+
+        RewriteEngine On
+        RewriteRule ^/(.*) https://www.site.com/$1 [L,R=permanent]
+
+-------- END FRAGMENT --------
+
+The second is to redirect host aliases to the primary site. It should be used
+in the HTTPS site configuration.
+
+-------- BEGIN FRAGMENT --------
+
+        RewriteEngine On
+        RewriteCond %{HTTP_HOST}   ^site\.com [NC]
+        RewriteRule ^/(.*) https://www.site.com/$1 [L,R=permanent]
+
+-------- END FRAGMENT --------
 EOF

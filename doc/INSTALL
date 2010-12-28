@@ -17,6 +17,20 @@ REQUIREMENTS FOR INSTALLATION
 
 6. If you are building from the source repository, you need Ragel installed.
 
+UBUNTU PACKAGES
+===============
+
+If you are running ubuntu, install these packages:
+
+    mysql-server mysql-client libmysqlclient-dev libssl-dev libapache2-mod-php5
+    xinetd php5-mysql
+
+Make sure the following modules are enabled:
+
+    a2enmod rewrite 
+    a2enmod php5
+    a2enmod ssl
+
 REQUIREMENTS FOR EACH SITE
 ==========================
 

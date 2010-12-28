@@ -35,8 +35,10 @@ if [ -z "$OUTPUT" ]; then
 	exit 1;
 fi
 
+echo
 echo "Please indicate which user the webserver runs as? The dsnpd daemon should be"
 echo "run as this user."
+echo 
 
 while true; do 
 	read -p 'user: ' WWW_DATA
@@ -99,15 +101,15 @@ SYSTEM INSTALL INSTRUCTIONS
        create 640 ${WWW_DATA} ${WWW_DATA}
    }
 
-5. Make the config file for the new-site script. You first need a file
-   containing the list of CA certs to trust. This is often avaialable on
-   your system. On Ubuntu it is:
-   /etc/ssl/certs/ca-certificates.crt
+5. Make the config file for the new-site script. 
 
-   Change the CA_CERT path and put the following in:
-   ${PREFIX}/etc/dsnp-new-site.conf
+   File: ${PREFIX}/etc/dsnp-new-site.conf
 
    CA_CERTS = /path/to/certificate-authority-cert-list.pem
    WWW_USER = ${WWW_DATA}
 
+   You need a file containing the list of CA certs to trust. This is often
+   avaialable on your system. On Ubuntu it is:
+
+   /etc/ssl/certs/ca-certificates.crt
 EOF

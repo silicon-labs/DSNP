@@ -3,14 +3,14 @@
 if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
-$USER[USER] = null;
-$USER[NAME] = null;
-$USER[ID] = null;
-$USER[URI] = null;
+$USER['USER'] = null;
+$USER['NAME'] = null;
+$USER['ID'] = null;
+$USER['URI'] = null;
 
 # ID is the id of the friend_claim row.
-$BROWSER[ID] = null;
-$BROWSER[URI] = null;
+$BROWSER['ID'] = null;
+$BROWSER['URI'] = null;
 
 function checkUserDb()
 {
@@ -18,17 +18,17 @@ function checkUserDb()
 	global $USER;
 	$result = dbQuery( 
 		"SELECT id, user, identity, name FROM user WHERE user = %e",
-		$USER[USER] );
+		$USER['USER'] );
 
 	if ( count( $result ) != 1 )
-		die("ERROR: user $USER[USER] not found in database");
+		userError( EC_USER_NOT_FOUND, array( $USER['USER'] ) );
 
 	# Turn result int first row.
 	$result = $result[0];
 
-	$USER[ID] = $result['id'];
-	$USER[URI] =  "$CFG[URI]$USER[USER]/";
-	$USER[NAME] = $result['user'];
+	$USER['ID'] = $result['id'];
+	$USER['URI'] =  "{$CFG['URI']}{$USER['USER']}/";
+	$USER['NAME'] = $result['name'];
 
 #	$this->USER_NAME = $user['user'];
 #	$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";
@@ -63,7 +63,7 @@ else {
 		if ( $component === "" )
 			continue;
 		else if	( ! preg_match( '/^[a-zA-Z][a-zA-Z0-9_\-\.]*$/', $component ) )
-			die( "route component '$component' does not validate" );
+			userError( EC_INVALID_ROUTE, array( $component ) );
 		else {
 			$normalizedRoute[] = $component;
 		}

@@ -31,6 +31,8 @@
 #define EC_SSL_CA_CERT_LOAD_FAILURE  107
 #define EC_FRIEND_CLAIM_EXISTS       108
 #define EC_CANNOT_FRIEND_SELF        109
+#define EC_USER_NOT_FOUND            110
+#define EC_INVALID_ROUTE             111
 
 struct UserError
 {

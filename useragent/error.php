@@ -4,17 +4,6 @@
  * This file is included into a function.
  */
 
-define( 'EC_SSL_PEER_FAILED_VERIFY',     100 );
-define( 'EC_FRIEND_REQUEST_EXISTS',      101 );
-define( 'EC_DSNPD_NO_RESPONSE',          102 );
-define( 'EC_DSNPD_TIMEOUT',              103 );
-define( 'EC_SOCKET_CONNECT_FAILED',      104 );
-define( 'EC_SSL_CONNECT_FAILED',         105 );
-define( 'EC_SSL_WRONG_HOST',             106 );
-define( 'EC_SSL_CA_CERT_LOAD_FAILURE',   107 );
-define( 'EC_FRIEND_CLAIM_EXISTS',        108 );
-define( 'EC_CANNOT_FRIEND_SELF',         109 );
-
 function sslPeerFailedVerify( $host )
 {
 	echo "We failed to verify the identity of {$host}! ";
@@ -81,6 +70,16 @@ function cannotFriendSelf( $identity )
 	echo "It is not possible to friend oneself.";
 }
 
+function userNotFound( $user )
+{
+	echo "User <code>{$user}</code> not found.";
+}
+
+function invalidRoute( $component )
+{
+	echo "Route component <code>$component</code> contains an invalid character.";
+}
+
 switch ( $code ) {
 	case EC_SSL_PEER_FAILED_VERIFY:
 		sslPeerFailedVerify( $args[0] );
@@ -111,6 +110,12 @@ switch ( $code ) {
 		break;
 	case EC_CANNOT_FRIEND_SELF:
 		cannotFriendSelf( $args[0] );
+		break;
+	case EC_USER_NOT_FOUND:
+		userNotFound( $args[0] );
+		break;
+	case EC_INVALID_ROUTE:
+		invalidRoute( $args[0] );
 		break;
 	default:
 		echo "Sorry, I don't have any information about " .

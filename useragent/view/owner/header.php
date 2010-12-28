@@ -2,8 +2,8 @@
 <head>
 	<title>
 		<?php 
-			echo $CFG[SITE_NAME];
-			echo ": {$USER[NAME]}";
+			echo $CFG['SITE_NAME'];
+			echo ": {$USER['NAME']}";
 		?>
 	</title>
 	<link href="<?echo $this->siteLoc( '/css/dsnpua.css' ); ?>"

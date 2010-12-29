@@ -47,8 +47,8 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 
 	/* First try to make the new user. */
 	DbQuery insert( mysql,
-			"INSERT IGNORE INTO user ( user, name, identity )"
-			"VALUES ( %e, %e, %e )",
+			"INSERT IGNORE INTO user ( user, name, identity ) "
+			"VALUES ( %e, %e, %e ) ",
 			user, user, identity.data );
 	if ( insert.affectedRows() == 0 )
 		throw UserExists( user );
@@ -93,6 +93,15 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	addNetwork( mysql, userId, "-" );
 
 	RSA_free( rsa );
+
+	String photoDir( PREFIX "/var/lib/dsnp/%s/data", c->name );
+
+	/* Create the photo directory. */
+	String photoDirCmd( "umask 0002; mkdir %s/%s", photoDir.data, user );
+	message( "executing photo creating command: %s\n", photoDirCmd.data );
+	int res = system( photoDirCmd.data );
+	if ( res < 0 )
+		error( "photo dir creation failed with %s\n", strerror(errno) );
 
 	BIO_printf( bioOut, "OK\r\n" );
 }

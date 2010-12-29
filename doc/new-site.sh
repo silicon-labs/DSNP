@@ -252,7 +252,7 @@ Run the following script as root.
 
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME
 mkdir $LOCALSTATEDIR/lib/dsnp/$NAME/data
-chown -R ${WWW_DATA}:${WWW_DATA} $LOCALSTATEDIR/lib/dsnp/$NAME
+chown -R ${WWW_USER}:${WWW_USER} $LOCALSTATEDIR/lib/dsnp/$NAME
 
 -------- END SCRIPT -------
 EOF

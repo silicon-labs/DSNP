@@ -60,10 +60,6 @@ class SiteIndexController extends Controller
 		$connection->openLocalPriv();
 		$connection->newUser( $user, $pass1 );
 
-		# Create the photo directory.
-		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";
-		system( $photoDirCmd );
-
 		$this->siteRedirect( "/" );
 	}
 }

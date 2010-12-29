@@ -32,9 +32,11 @@ DEFS += \
 	-DLOGDIR='"@prefix@/var/log/dsnp"' \
 	-DNOTIFICATION='"php @prefix@/share/dsnp/web/notification.php"' \
 	-DPKGSTATEDIR='"@prefix@/var/lib/dsnp"' \
-	-DLIBDIR='"@prefix@/lib/dsnp"'
+	-DLIBDIR='"@prefix@/lib/dsnp"' \
+	-DPREFIX='"@prefix@"'
 
 prefix = @prefix@
+datarootdir = @datarootdir@
 BUILD_PARSERS = @BUILD_PARSERS@
 EXEEXT = @EXEEXT@
 CXX = @CXX@

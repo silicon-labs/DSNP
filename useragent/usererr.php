@@ -12,6 +12,8 @@ define( 'EC_FRIEND_CLAIM_EXISTS',        108 );
 define( 'EC_CANNOT_FRIEND_SELF',         109 );
 define( 'EC_USER_NOT_FOUND',             110 );
 define( 'EC_INVALID_ROUTE',              111 );
+define( 'EC_USER_EXISTS',                112 );
+define( 'EC_RSA_KEY_GEN_FAILED',         113 );
 
 function userError( $code, $args )
 {

@@ -59,15 +59,6 @@ class SiteIndexController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->newUser( $user, $pass1 );
-		if ( !$connection->success ) {
-			$this->userError( "FAILURE *** New user creation " .
-					"failed with: <br> ", "" );
-		}
-
-		$identity = $this->CFG[URI] . $user . '/';
-		dbQuery( "UPDATE user SET name = %e, identity = %e, " .
-			"type = %l WHERE user = %e ",
-			$user, $identity, 0, $user );
 
 		# Create the photo directory.
 		$photoDirCmd =  "umask 0002; mkdir " . DATA_DIR . "/$user";

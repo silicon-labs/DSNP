@@ -33,6 +33,8 @@
 #define EC_CANNOT_FRIEND_SELF        109
 #define EC_USER_NOT_FOUND            110
 #define EC_INVALID_ROUTE             111
+#define EC_USER_EXISTS               112
+#define EC_RSA_KEY_GEN_FAILED        113
 
 struct UserError
 {
@@ -217,5 +219,44 @@ struct CannotFriendSelf
 	}
 };
 
-#endif
+struct UserExists
+	: public UserError
+{
+	UserExists( const char *user )
+		: user(user) {}
 
+	String user;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_USER_EXISTS,
+				user.data );
+
+		error( "%d user %s already exists\n",
+				EC_USER_EXISTS,
+				user.data );
+	}
+};
+
+struct RsaKeyGenError
+	: public UserError
+{
+	RsaKeyGenError( unsigned long code )
+		: code(code) {}
+
+	unsigned long code;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d\r\n",
+				EC_RSA_KEY_GEN_FAILED );
+
+		error( "%d RSA key generation failed\n",
+				EC_RSA_KEY_GEN_FAILED );
+	}
+};
+
+#endif

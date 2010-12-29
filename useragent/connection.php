@@ -69,6 +69,8 @@ class Connection
 		$this->success = ereg(
 			"^OK",
 			$this->result );
+
+		$this->checkResult();
 	}
 
 	function relidRequest( $user, $identity )

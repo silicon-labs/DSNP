@@ -28,6 +28,7 @@ long long addNetwork( MYSQL *mysql, long long userId, const char *name )
 			"SELECT id FROM network WHERE user_id = %L and private_name = %e",
 			userId, name );
 		if ( findNetwork.rows() == 0 ) {
+			/* This should not happen. */
 			fatal("could not insert or find network for user_id "
 					"%lld and network name %s\n", userId, name );
 		}

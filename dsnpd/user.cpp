@@ -14,10 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "dsnp.h"
-#include "encrypt.h"
-#include "string.h"
-
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -34,14 +30,28 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include "dsnp.h"
+#include "encrypt.h"
+#include "string.h"
+#include "error.h"
+
 void newUser( MYSQL *mysql, const char *user, const char *pass )
 {
+	String identity( "%s%s/", c->CFG_URI, user );
+
+	/* Generate a new key. Do this first so we don't have to remove the user if
+	 * it fails. */
+	RSA *rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
+	if ( rsa == 0 )
+		throw RsaKeyGenError( ERR_get_error() );
+
 	/* First try to make the new user. */
-	DbQuery insert( mysql, "INSERT IGNORE INTO user ( user ) VALUES ( %e ) ", user );
-	if ( insert.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user exists\r\n" );
-		return;
-	}
+	DbQuery insert( mysql,
+			"INSERT IGNORE INTO user ( user, name, identity )"
+			"VALUES ( %e, %e, %e )",
+			user, user, identity.data );
+	if ( insert.affectedRows() == 0 )
+		throw UserExists( user );
 
 	long long userId = lastInsertId( mysql );
 
@@ -52,13 +62,6 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	u_char idSalt[SALT_SIZE];
 	RAND_bytes( idSalt, SALT_SIZE );
 	String idSaltStr = binToBase64( idSalt, SALT_SIZE );
-
-	/* Generate a new key. */
-	RSA *rsa = RSA_generate_key( 1024, RSA_F4, 0, 0 );
-	if ( rsa == 0 ) {
-		BIO_printf( bioOut, "ERROR key generation failed\r\n");
-		return;
-	}
 
 	/* Extract the components to hex strings. */
 	String n = bnToBase64( rsa->n );

@@ -75,10 +75,22 @@ function userNotFound( $user )
 	echo "User <code>{$user}</code> not found.";
 }
 
+function userExists( $user )
+{
+	echo "User <code>{$user}</code> already exists.";
+}
+
 function invalidRoute( $component )
 {
 	echo "Route component <code>$component</code> contains an invalid character.";
 }
+
+function rsaKeyGenFailed( $code )
+{
+	echo "There was an error generating the security key.";
+	echo "<p>Please contact the site administrator.";
+}
+
 
 switch ( $code ) {
 	case EC_SSL_PEER_FAILED_VERIFY:
@@ -117,6 +129,13 @@ switch ( $code ) {
 	case EC_INVALID_ROUTE:
 		invalidRoute( $args[0] );
 		break;
+	case EC_USER_EXISTS:
+		userExists( $args[0] );
+		break;
+	case EC_RSA_KEY_GEN_FAILED:
+		rsaKeyGenFailed( $args[0] );
+		break;
+
 	default:
 		echo "Sorry, I don't have any information about " .
 			"the nature of this error.";

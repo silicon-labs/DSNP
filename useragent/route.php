@@ -17,8 +17,11 @@ function checkUserDb()
 	global $CFG;
 	global $USER;
 	$result = dbQuery( 
-		"SELECT id, user, identity, name FROM user WHERE user = %e",
-		$USER['USER'] );
+		"SELECT user.id, user.user, user.identity, user.name, friend_claim.id AS rel_id_self " .
+		"FROM user " .
+		"JOIN friend_claim ON user.id = friend_claim.user_id " .
+		"WHERE user.user = %e AND friend_claim.type = %l",
+		$USER['USER'], REL_TYPE_SELF );
 
 	if ( count( $result ) != 1 )
 		userError( EC_USER_NOT_FOUND, array( $USER['USER'] ) );
@@ -29,6 +32,7 @@ function checkUserDb()
 	$USER['ID'] = $result['id'];
 	$USER['URI'] =  "{$CFG['URI']}{$USER['USER']}/";
 	$USER['NAME'] = $result['name'];
+	$USER['FRIEND_CLAIM_SELF_ID'] = $result['rel_id_self'];
 
 #	$this->USER_NAME = $user['user'];
 #	$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";

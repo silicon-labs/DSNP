@@ -90,9 +90,9 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 
 	/* Create the relationship to oneself. */
 	DbQuery( mysql,
-			"INSERT INTO friend_claim ( user, user_id, friend_id, name, type ) "
-			"VALUES ( %e, %L, %e, %e, %l ) ",
-			user, userId, identity.data, user, REL_TYPE_SELF );
+			"INSERT INTO friend_claim ( user, user_id, friend_id, identity, name, type ) "
+			"VALUES ( %e, %L, %e, %e %e, %l ) ",
+			user, userId, identity.data, identity.data, user, REL_TYPE_SELF );
 	
 	/* Add the - network for the new user. */
 	//long long networkNameId = findNetworkName( mysql, "-" );

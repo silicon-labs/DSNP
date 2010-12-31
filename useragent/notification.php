@@ -4,6 +4,7 @@ define( 'DS', DIRECTORY_SEPARATOR );
 define( 'ROOT', dirname(__FILE__) );
 define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
+require( ROOT . "/definitions.php" );
 require( ROOT . "/message.php" );
 require( ROOT . "/regexes.php" );
 

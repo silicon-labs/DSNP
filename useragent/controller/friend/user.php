@@ -17,11 +17,12 @@ class FriendUserController extends Controller
 
 		dbQuery( "
 			INSERT INTO activity ( 
-				user_id, author_id, published, type, message
+				user_id, author_id, subject_id, published, type, message
 			)
-			VALUES ( %l, %e, true, 'BRD', %e )",
+			VALUES ( %l, %l, %l, true, 'BRD', %e )",
 			$this->USER['ID'],
 			$BROWSER['ID'],
+			$this->USER['FRIEND_CLAIM_SELF_ID'],
 			$text
 		);
 

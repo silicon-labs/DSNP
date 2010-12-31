@@ -32,6 +32,19 @@ class Message
 		return -1;
 	}
 
+	function findRelationshipSelf( $userId )
+	{
+		$result = dbQuery(
+			"SELECT id FROM friend_claim " .
+			"WHERE user_id = %l AND type = %l",
+			$userId, REL_TYPE_SELF
+		);
+
+		if ( count( $result ) == 1 )
+			return (int) $result[0]['id'];
+		return -1;
+	}
+
 	function findUserId( $user )
 	{
 		$results = dbQuery(
@@ -44,6 +57,17 @@ class Message
 		return -1;
 	}
 
+	function findUserIdentity( $user )
+	{
+		$results = dbQuery(
+			"SELECT identity FROM user WHERE user.user = %e",
+			$user
+		);
+
+		if ( count( $results ) == 1 )
+			return (int) $results[0]['id'];
+		return -1;
+	}
 
 	function nameChange( $newName )
 	{
@@ -174,23 +198,23 @@ class Message
 		$this->message = $headers . $text;
 	}
 
-	function recvBoardPost( $forUser, $subject, $author,
+	function recvBoardPost( $user, $subject, $author,
 			$seqNum, $date, $time, $msg, $contextType )
 	{
-		$user_id = $this->findUserId( $forUser );
-		$subject_id = $this->findFriendClaimId( $forUser, $subject );
-		$author_id = $this->findFriendClaimId( $forUser, $author );
+		$userId = $this->findUserId( $user );
+		$authorId = $this->findFriendClaimId( $user, $author );
+		$subjectId = $this->findFriendClaimId( $user, $subject );
 
 		dbQuery(
 			"INSERT INTO activity " .
 			"	( " .
-			"		user_id, subject_id, author_id, seq_num, time_published, " .
+			"		user_id, author_id, subject_id, seq_num, time_published, " .
 			"		time_received, type, message " .
 			"	) " .
 			"VALUES ( %l, %l, %l, %l, %e, now(), %e, %e )",
-			$user_id,
-			$subject_id, 
-			$author_id, 
+			$userId,
+			$authorId, 
+			$subjectId, 
 			$seqNum, 
 			$date . ' ' . $time,
 			'BRD',
@@ -201,15 +225,17 @@ class Message
 
 	function recvRemoteBoardPost( $user, $subject, $msg, $contextType )
 	{
-		$user_id = $this->findUserId( $user );
-		$subject_id = $this->findFriendClaimId( $user, $subject );
+		$userId = $this->findUserId( $user );
+		$authorId = $this->findRelationshipSelf( $userId );
+		$subjectId = $this->findFriendClaimId( $user, $subject );
 
 		dbQuery(
 			"INSERT INTO activity " .
-			"	( user_id, subject_id, published, time_published, type, message ) " .
-			"VALUES ( %l, %l, true, now(), %e, %e )",
-			$user_id,
-			$subject_id, 
+			"	( user_id, author_id, subject_id, published, time_published, type, message ) " .
+			"VALUES ( %l, %l, %l, true, now(), %e, %e )",
+			$userId,
+			$authorId,
+			$subjectId, 
 			'BRD',
 			$msg[1]
 		);

@@ -4,31 +4,26 @@ define( 'DS', DIRECTORY_SEPARATOR );
 define( 'ROOT', dirname(dirname(__FILE__)) );
 define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
-define( 'ACTIVITY_SIZE', 30 );
-define( 'HASH_BASE64_SIZE', 27 );
-define( 'TOKEN_BASE64_SIZE', 22 );
-
-define( 'REL_TYPE_SELF',     1 );
-define( 'REL_TYPE_FRIEND',   8 );
+require( ROOT . '/definitions.php' );
 
 # This selects the site to configure for.
-require( PREFIX . DS . 'etc' . DS . 'dsnpua.php' );
+require( PREFIX . '/etc/dsnpua.php' );
 
 # Make sure a site was selected. */
 if ( !isset( $CFG['NAME']  ) )
 	die("site not configured properly");
 
-define( 'RECAPTCHA_LIB', ROOT . DS . 'recaptcha-php-1.11' . DS . 'recaptchalib.php' );
+define( 'RECAPTCHA_LIB', ROOT . '/recaptcha-php-1.11/recaptchalib.php' );
 define( 'RECAPTCHA_ARGS_OPTIONAL', ! $CFG['USE_RECAPTCHA'] );
 
-require( ROOT . DS . 'usererr.php' );
-require( ROOT . DS . 'connection.php' );
-require( ROOT . DS . 'controller.php' );
-require( ROOT . DS . 'message.php' );
-require( ROOT . DS . 'view.php' );
-require( ROOT . DS . 'database.php' );
-require( ROOT . DS . 'route.php' );
-require( ROOT . DS . 'session.php' );
-require( ROOT . DS . 'dispatch.php' );
+require( ROOT . '/usererr.php' );
+require( ROOT . '/connection.php' );
+require( ROOT . '/controller.php' );
+require( ROOT . '/message.php' );
+require( ROOT . '/view.php' );
+require( ROOT . '/database.php' );
+require( ROOT . '/route.php' );
+require( ROOT . '/session.php' );
+require( ROOT . '/dispatch.php' );
 
 ?>

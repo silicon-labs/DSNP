@@ -6,5 +6,5 @@ ALTER TABLE friend_claim ADD COLUMN type INTEGER;
 UPDATE friend_claim SET type = 8;
 
 INSERT INTO friend_claim 
-	( user, user_id, friend_id, name, type )
-	( SELECT user, id, identity, name, 1 FROM user );
+	( user, user_id, friend_id, identity, name, type )
+	( SELECT user, id, identity, identity, name, 1 FROM user );

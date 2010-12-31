@@ -112,12 +112,7 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		if ( $published ) {
-			echo "your";
-		}
-		else {
-			printName( $USER, $BROWSER, $subject_id, $subject_name, true );
-		}
+		printName( $USER, $BROWSER, $subject_id, $subject_name, true );
 		echo " board</font>";
 		echo '</div>';
 		echo '</td>';

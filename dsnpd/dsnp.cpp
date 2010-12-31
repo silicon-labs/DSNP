@@ -17,6 +17,7 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
+#include "error.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -374,11 +375,8 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	DbQuery login( mysql, 
 		"SELECT user, pass_salt, pass, id_salt FROM user WHERE user = %e", user );
 
-	if ( login.rows() == 0 ) {
-		message( "login of %s failed, user not found\n", user );
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
+	if ( login.rows() == 0 )
+		throw InvalidLogin( user, pass, "bad user" );
 
 	MYSQL_ROW row = login.fetchRow();
 	char *salt_str = row[1];
@@ -391,11 +389,8 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	String pass_hashed = passHash( pass_salt, pass );
 
 	/* Check the login. */
-	if ( strcmp( pass_hashed, pass_str ) != 0 ) {
-		message("login of %s failed, pass hashes do not match\n", user );
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
+	if ( strcmp( pass_hashed, pass_str ) != 0 )
+		throw InvalidLogin( user, pass, "bad pass" );
 
 	/* Login successful. Make a token. */
 	u_char token[TOKEN_SIZE];

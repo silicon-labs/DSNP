@@ -105,6 +105,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+) ([-A-Za-z0-9_]+) ([0-9]+)",
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function ftokenRequest( $user, $hash )

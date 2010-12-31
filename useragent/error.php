@@ -91,6 +91,12 @@ function rsaKeyGenFailed( $code )
 	echo "<p>Please contact the site administrator.";
 }
 
+function invalidLogin( $code )
+{
+	echo "Invalid Login";
+	echo "<p> Please press the back button to try again.\n";
+}
+
 
 switch ( $code ) {
 	case EC_SSL_PEER_FAILED_VERIFY:
@@ -134,6 +140,9 @@ switch ( $code ) {
 		break;
 	case EC_RSA_KEY_GEN_FAILED:
 		rsaKeyGenFailed( $args[0] );
+		break;
+	case EC_INVALID_LOGIN:
+		invalidLogin();
 		break;
 
 	default:

@@ -35,6 +35,7 @@
 #define EC_INVALID_ROUTE             111
 #define EC_USER_EXISTS               112
 #define EC_RSA_KEY_GEN_FAILED        113
+#define EC_INVALID_LOGIN             114
 
 struct UserError
 {
@@ -258,5 +259,27 @@ struct RsaKeyGenError
 				EC_RSA_KEY_GEN_FAILED );
 	}
 };
+
+struct InvalidLogin
+	: public UserError
+{
+	InvalidLogin( const char *user, const char *pass, const char *reason )
+		: user(user), pass(pass), reason(reason) {}
+
+	String user, pass, reason;
+	
+	virtual void print( BIO *bio )
+	{
+		/* Don't give the reason to the UI. */
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_INVALID_LOGIN );
+
+		error( "%d invalid login for user %s due to %s\n", 
+				EC_RSA_KEY_GEN_FAILED, user.data, reason.data );
+	}
+};
+
+
 
 #endif

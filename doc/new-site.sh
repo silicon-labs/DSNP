@@ -246,7 +246,8 @@ cat << EOF >> $OUTPUT
 STEP 5
 ======
 
-Run the following script as root.
+Create and set permissions on the site's data directory. This is where uploads
+go. Run the following script as root.
 
 -------- BEGIN SCRIPT -------
 
@@ -268,11 +269,11 @@ putting the database user and pass on your history.
 
 -------- BEGIN SCRIPT -------
 
-mysql -u root -p -B -N -e
+mysql -u root -p -B -N -e "
 	CREATE USER '${NAME}'@'localhost' IDENTIFIED BY '$CFG_DB_PASS';
 	CREATE DATABASE ${NAME};
 	GRANT ALL ON ${NAME}.* TO '${NAME}'@'localhost';
-'
+"
 
 mysql -u $NAME -p'$CFG_DB_PASS' $NAME < $DATADIR/dsnp/init.sql
 

@@ -55,7 +55,7 @@ class OwnerIndexController extends Controller
 			WHERE activity.user_id = %l
 			ORDER BY time_published DESC LIMIT %l
 			",
-			$this->USER[ID], $start + ACTIVITY_SIZE );
+			$this->USER['ID'], $start + ACTIVITY_SIZE );
 		$this->vars['start'] = $start;
 		$this->vars['activity'] = $activity;
 	}

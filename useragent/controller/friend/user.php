@@ -20,8 +20,8 @@ class FriendUserController extends Controller
 				user_id, author_id, published, type, message
 			)
 			VALUES ( %l, %e, true, 'BRD', %e )",
-			$this->USER[ID],
-			$BROWSER['id'],
+			$this->USER['ID'],
+			$BROWSER['ID'],
 			$text
 		);
 

@@ -199,7 +199,7 @@ class Message
 	}
 
 
-	function recvRemoteBoardPost( $user, $network, $subject, $msg, $contextType )
+	function recvRemoteBoardPost( $user, $subject, $msg, $contextType )
 	{
 		$user_id = $this->findUserId( $user );
 		$subject_id = $this->findFriendClaimId( $user, $subject );
@@ -323,8 +323,8 @@ class Message
 
 			switch ( $type ) {
 				case 'board-post':
-					$this->recvRemoteBoardPost( $this->user, $this->network,
-							$this->subject, $msg, $contextType );
+					$this->recvRemoteBoardPost( $user, 
+							$subject, $msg, $contextType );
 					break;
 			}
 		}

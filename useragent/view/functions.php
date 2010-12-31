@@ -62,6 +62,7 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 	$local_resid = $item['local_resid'];
 	$remote_resid = $item['remote_resid'];
 	$message = $item['message'];
+	$published = $item['published'];
 
 	echo '<div class="msgdisp">';
 	echo '<table><tr>';
@@ -111,7 +112,12 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
 		printName( $USER, $BROWSER, $author_id, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		printName( $USER, $BROWSER, $subject_id, $subject_name, true );
+		if ( $published ) {
+			echo "your";
+		}
+		else {
+			printName( $USER, $BROWSER, $subject_id, $subject_name, true );
+		}
 		echo " board</font>";
 		echo '</div>';
 		echo '</td>';

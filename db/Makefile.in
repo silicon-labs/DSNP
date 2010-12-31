@@ -15,12 +15,20 @@
 
 prefix = @prefix@
 
-all:
+schema_version := $(shell \
+	find -name 'update-*.sql' | \
+	sed 's|\./update-||; s|\.sql||; s|^0*||' | \
+	sort -n -r | head -1)
 
-install: 
+schema_version:
+	echo $(schema_version) > schema_version
+
+all: schema_version
+
+install: all
 	install -d $(DESTDIR)$(prefix)/share/dsnp
 	install postinst-db.sh $(DESTDIR)$(prefix)/share/dsnp
 	install drop-db.sh $(DESTDIR)$(prefix)/share/dsnp
 	install -m '644' common.sh $(DESTDIR)$(prefix)/share/dsnp
 	install -m '644' init.sql $(DESTDIR)$(prefix)/share/dsnp
-
+	install -m '644' schema_version $(DESTDIR)$(prefix)/share/dsnp

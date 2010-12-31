@@ -61,7 +61,7 @@ First configure, make and make install.
 The system install instructions need to followed only once. Use the init-system
 script to generate the instructions, then follow them.
 
-$ PREFIX/share/dsnp/init-system /tmp/system
+$ PREFIX/share/dsnp/init-system system-instructions
 
 SITE INSTALL INSTRUCTIONS
 =========================
@@ -72,4 +72,4 @@ script will ask you for site name, URI, and database credentials. It will then
 generate various config and script fragments to help you install the new site.
 Run it, then follow the instructions.
 
-$ PREFIX/share/dsnp/new-site /tmp/site-name
+$ PREFIX/share/dsnp/new-site site-name-instructions

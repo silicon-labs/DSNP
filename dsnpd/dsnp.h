@@ -25,6 +25,9 @@
 
 #include "string.h"
 
+#define REL_TYPE_SELF    1
+#define REL_TYPE_FRIEND  8
+
 /* Wraps up RSA struct and private key/x509. Useful for transition to CMS. */
 struct Keys
 {

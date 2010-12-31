@@ -29,8 +29,9 @@ class OwnerIndexController extends Controller
 
 		# Load the friend list.
 		$friendClaims = dbQuery(
-			"SELECT * FROM friend_claim WHERE user_id = %l",
-			$this->USER[ID] );
+			"SELECT * FROM friend_claim WHERE user_id = %l AND type = %l",
+			$this->USER[ID],
+			REL_TYPE_FRIEND );
 		$this->vars['friendClaims'] = $friendClaims;
 
 		# Load the user's images.

@@ -47,7 +47,7 @@ void sendAllInProofs( MYSQL *mysql, const char *user, const char *network, long 
 
 	/* Send out all proofs in the group. */
 	DbQuery allProofs( mysql,
-		"SELECT friend_id, friend_hash, generation, friend_proof "
+		"SELECT iduri, friend_hash, generation, friend_proof "
 		"FROM friend_claim "
 		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
 		"WHERE user = %e AND network_id = %L",
@@ -76,7 +76,7 @@ void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 	message("sending all out-proofs for user %s network %s to %s\n", user, network, friendId );
 
 	DbQuery allProofs( mysql,
-		"SELECT friend_id, friend_hash, generation, reverse_proof "
+		"SELECT iduri, friend_hash, generation, reverse_proof "
 		"FROM friend_claim "
 		"JOIN network_member "
 		"	ON friend_claim.id = network_member.friend_claim_id "
@@ -183,7 +183,7 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
-		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", 
+		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND iduri = %e", 
 		user, identity );
 
 	if ( findClaim.rows() == 0 ) {
@@ -265,7 +265,7 @@ void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, con
 
 	/* Query the friend claim. */
 	DbQuery findClaim( mysql, 
-		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND friend_id = %e", 
+		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND iduri = %e", 
 		user, identity );
 
 	if ( findClaim.rows() == 0 ) {

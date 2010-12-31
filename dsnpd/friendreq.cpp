@@ -40,8 +40,8 @@ bool checkFriendClaimExists( MYSQL *mysql, const char *user,
 		const char *identity )
 {
 	/* Check to see if there is already a friend claim. */
-	DbQuery claim( mysql, "SELECT user, friend_id FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e",
+	DbQuery claim( mysql, "SELECT user, iduri FROM friend_claim "
+		"WHERE user = %e AND iduri = %e",
 		user, identity );
 
 	if ( claim.rows() != 0 )

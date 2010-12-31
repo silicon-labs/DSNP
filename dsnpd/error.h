@@ -36,6 +36,7 @@
 #define EC_USER_EXISTS               112
 #define EC_RSA_KEY_GEN_FAILED        113
 #define EC_INVALID_LOGIN             114
+#define EC_DATABASE_ERROR            115
 
 struct UserError
 {

@@ -36,13 +36,13 @@ echo '<h3>Friend List</h3>';
 
 foreach ( $friendClaims as $row ) {
 	$name = $row['name'];
-	$dest_id = $row['identity'];
+	$iduri = $row['iduri'];
 
-	echo "<a href=\"${dest_id}\">";
+	echo "<a href=\"${iduri}\">";
 	if ( isset( $name ) )
 		echo $name;
 	else
-		echo $dest_id;
+		echo $iduri;
 	echo "</a> <br>\n";
 }
 

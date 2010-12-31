@@ -30,9 +30,9 @@ class FriendIndexController extends Controller
 		$activity = dbQuery( "
 			SELECT 
 				activity.*, 
-				author_fc.identity AS author_identity,
+				author_fc.iduri AS author_iduri,
 				author_fc.name AS author_name,
-				subject_fc.identity AS subject_identity,
+				subject_fc.iduri AS subject_iduri,
 				subject_fc.name AS subject_name
 			FROM activity 
 			LEFT OUTER JOIN friend_claim AS author_fc

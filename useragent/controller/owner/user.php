@@ -30,8 +30,12 @@ class OwnerUserController extends Controller
 		$text = trim( $this->args['message'] );
 
 		dbQuery( "
-			INSERT INTO activity ( user_id, published, type, message )
-			VALUES ( %e, true, 'MSG', %e )", $this->USER[ID], $text );
+			INSERT INTO activity ( user_id, author_id, published, type, message )
+			VALUES ( %l, %l, true, 'MSG', %e )", 
+			$this->USER['ID'], 
+			$this->USER['FRIEND_CLAIM_SELF_ID'],
+			$text
+		);
 
 		$message = new Message;
 		$message->broadcast( $text );

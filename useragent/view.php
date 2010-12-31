@@ -41,16 +41,16 @@ class View
 		$link = '<a';
 		if ( isset( $class ) )
 			$link .= " class=\"$class\"";
-		$link .= ' href=\"' . $location . '\">' . $text . '</a>';
+		$link .= ' href="' . $location . '">' . $text . '</a>';
 		return $link;
 	}
 
-	function link( $text, $location, $class = null )
+	function siteLink( $text, $location, $class = null )
 	{
 		$link = '<a';
 		if ( isset( $class ) )
 			$link .= " class=\"$class\"";
-		$link .= ' href=' . $this->CFG['PATH'] . $location . '>' . $text . '</a>';
+		$link .= ' href="' . $this->CFG['PATH'] . $location . '">' . $text . '</a>';
 		return $link;
 	}
 
@@ -59,8 +59,8 @@ class View
 		$link = "<a";
 		if ( isset( $class ) )
 			$link .= " class=\"$class\"";
-		$link .= ' href=' . $this->CFG['PATH'] . '/' . $this->USER['USER'] . 
-				$location . '>' . $text . '</a>';
+		$link .= ' href="' . $this->CFG['PATH'] . '/' . $this->USER['USER'] . 
+				$location . '">' . $text . '</a>';
 		return $link;
 	}
 

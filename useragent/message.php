@@ -22,7 +22,7 @@ class Message
 		$result = dbQuery(
 			"SELECT friend_claim.id FROM friend_claim " .
 			"JOIN user ON user.id = friend_claim.user_id " .
-			"WHERE user.user = %e AND friend_claim.friend_id = %e",
+			"WHERE user.user = %e AND friend_claim.iduri = %e",
 			$user,
 			$identity
 		);
@@ -92,7 +92,7 @@ class Message
 			$user = $result[0];
 			dbQuery( 
 				"UPDATE friend_claim SET name = %e " . 
-				"WHERE user_id = %L AND friend_id = %e",
+				"WHERE user_id = %L AND iduri = %e",
 				$msg[1], $user['id'], $author_id );
 		}
 	}

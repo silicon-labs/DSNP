@@ -26,7 +26,7 @@ class FriendUserController extends Controller
 			$text
 		);
 
-		$identity = $BROWSER[URI];
+		$identity = $BROWSER['IDURI'];
 		$hash = $_SESSION['hash'];
 		$token = $_SESSION['token'];
 

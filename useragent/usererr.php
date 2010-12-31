@@ -15,6 +15,7 @@ define( 'EC_INVALID_ROUTE',              111 );
 define( 'EC_USER_EXISTS',                112 );
 define( 'EC_RSA_KEY_GEN_FAILED',         113 );
 define( 'EC_INVALID_LOGIN',              114 );
+define( 'EC_DATABASE_ERROR',             115 );
 
 function userError( $code, $args )
 {
@@ -25,7 +26,7 @@ function userError( $code, $args )
 	print '<body>';
 	print '<p>';
 	print '<h1> Ooops, there was an error!</h1><big><div style="width: 50%">';
-	include( ROOT . DS . 'error.php' );
+	include( ROOT . '/error.php' );
 	print '</div></big>';
 	print '</body>';
 	print '</html>';

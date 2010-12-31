@@ -40,10 +40,10 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 
 	/* Insert the friend claim. */
 	DbQuery( mysql, "INSERT INTO friend_claim "
-		"( user, user_id, friend_id, identity, friend_salt, "
-		"	friend_hash, put_relid, get_relid, name, state ) "
-		"VALUES ( %e, %L, %e, %e, %e, %e, %e, %e, %e, 0 );",
-		user, userId, identity, identity, idSalt, friendHashStr, putRelid, getRelid, fr.user );
+		"( user, user_id, iduri, friend_salt, "
+		"	friend_hash, put_relid, get_relid, name ) "
+		"VALUES ( %e, %L, %e, %e, %e, %e, %e, %e );",
+		user, userId, identity, idSalt, friendHashStr, putRelid, getRelid, fr.user );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );

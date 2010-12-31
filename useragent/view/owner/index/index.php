@@ -75,15 +75,15 @@ if ( count( $sentFriendRequests ) > 0 ) {
 
 foreach ( $friendClaims as $row ) {
 	$name = $row['name'];
-	$dest_id = $row['identity'];
+	$iduri = $row['iduri'];
 
-	echo "<a class=\"idlink\" href=\"${dest_id}cred/sflogin?h=" . 
+	echo "<a class=\"idlink\" href=\"${iduri}cred/sflogin?h=" . 
 		urlencode( $_SESSION['hash'] ) . "\">";
 
 	if ( isset( $name ) )
 		echo $name;
 	else
-		echo $dest_id;
+		echo $iduri;
 
 	echo "</a>";
 
@@ -160,7 +160,7 @@ for ( $i = $start; $i < $limit; $i++ ) {
 	$item = $row;
 
 	echo "<p>\n";
-	printMessage( $this, $text, $USER, null, $author, $subject, $item );
+	printMessage( $this, $text, $USER, $USER, $author, $subject, $item );
 }
 
 if ( $start > 0 ) 

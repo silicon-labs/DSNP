@@ -8,10 +8,10 @@ function setCookieParams()
 	# If there is a user, then the cookie is restricted to it, Otherwise it is
 	# active only for the admin controller (currently is site because that is
 	# where new users are created.
-	if ( isset( $USER[USER] ) )
-		$path = $CFG[PATH] . '/' . $USER[USER] . '/';
+	if ( isset( $USER['USER'] ) )
+		$path = $CFG['PATH'] . '/' . $USER['USER'] . '/';
 	else
-		$path = $CFG[PATH] . '/site/';
+		$path = $CFG['PATH'] . '/site/';
 	
 	# 30 days.
 	$lifetime =
@@ -30,10 +30,10 @@ if ( isset( $_COOKIE['PHPSESSID'] ) ) {
 }
 
 $ROLE = 'public';
-if ( isset( $USER[USER] ) ) {
-	if ( $_SESSION[ROLE] == 'owner' )
+if ( isset( $USER['USER'] ) ) {
+	if ( $_SESSION['ROLE'] == 'owner' )
 		$ROLE = 'owner';
-	else if ( $_SESSION[ROLE] == 'friend' ) {
+	else if ( $_SESSION['ROLE'] == 'friend' ) {
 		$ROLE = 'friend';
 		$BROWSER = $_SESSION['BROWSER'];
 	}

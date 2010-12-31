@@ -4,6 +4,12 @@ define( 'DS', DIRECTORY_SEPARATOR );
 define( 'ROOT', dirname(__FILE__) );
 define( 'PREFIX', dirname(dirname(dirname(ROOT))) );
 
+function userError( $code, $args )
+{
+	print "user error: $code\n";
+	print_r( $args );
+}
+
 require( ROOT . "/definitions.php" );
 require( ROOT . "/message.php" );
 require( ROOT . "/regexes.php" );

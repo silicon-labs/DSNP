@@ -172,6 +172,8 @@ class Connection
 		$this->success = ereg(
 			"^OK", 
 			$this->result );
+
+		$this->checkResult();
 	}
 
 	function remoteBroadcastRequest( $user, $identity, 

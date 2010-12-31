@@ -38,7 +38,7 @@ long checkFriendClaim( Identity &identity, MYSQL *mysql, const char *user,
 		const char *friendHash )
 {
 	DbQuery check( mysql,
-		"SELECT friend_id FROM friend_claim WHERE user = %e AND friend_hash = %e",
+		"SELECT iduri FROM friend_claim WHERE user = %e AND friend_hash = %e",
 		user, friendHash );
 
 	if ( check.rows() != 0 ) {
@@ -246,7 +246,7 @@ void submitFtoken( MYSQL *mysql, const char *token )
 		user, fromId, token, lasts );
 
 	DbQuery hashQuery( mysql,
-		"SELECT friend_hash FROM friend_claim WHERE friend_id = %e", fromId );
+		"SELECT friend_hash FROM friend_claim WHERE iduri = %e", fromId );
 
 	if ( hashQuery.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );

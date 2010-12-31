@@ -156,7 +156,7 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 {
 	DbQuery claim( mysql, 
 		"SELECT put_relid FROM friend_claim "
-		"WHERE user = %e AND friend_id = %e ",
+		"WHERE user = %e AND iduri = %e ",
 		from_user, to_identity );
 
 	if ( claim.rows() == 0 )

@@ -13,7 +13,7 @@ class CredController extends Controller
 		if ( $connection->success ) {
 			$arg_h = 'h=' . urlencode( $connection->regs[3] );
 			$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
-			$friend_id = $connection->regs[2];
+			$iduri = $connection->regs[2];
 			$dest = "";
 
 			# FIXME: put this into the args definition.
@@ -21,7 +21,7 @@ class CredController extends Controller
 				$dest = "&d=" . urlencode($_GET['d']);
 				
 			$this->redirect(
-				"{$friend_id}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
+				"{$iduri}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
 		}
 		else {
 			$this->userRedirect( "/" );

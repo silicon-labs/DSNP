@@ -99,22 +99,22 @@ class PublicCredController extends CredController
 #			$this->Session->write( 'hash', $hash );
 		
 			$this->startSession();
-			$_SESSION[ROLE] = 'friend';
-			$_SESSION[NETWORK_NAME] = '-';
-			$_SESSION[hash] = $hash;
-			$_SESSION[token] = $ftoken;
+			$_SESSION['ROLE'] = 'friend';
+			$_SESSION['NETWORK_NAME'] = '-';
+			$_SESSION['hash'] = $hash;
+			$_SESSION['token'] = $ftoken;
 
 			$friendClaim = dbQuery( "
-				SELECT id, user_id, user, friend_id, name
-				FROM friend_claim WHERE user_id = %l AND friend_id = %e
+				SELECT id, user_id, user, iduri, name
+				FROM friend_claim WHERE user_id = %l AND iduri = %e
 				",
 				$this->USER[ID],
 				$identity
 			);
 
 			# FIXME: check result
-			$BROWSER[ID] = $friendClaim[0]['id'];
-			$BROWSER[URI] = $friendClaim[0]['friend_id'];
+			$BROWSER['ID'] = $friendClaim[0]['id'];
+			$BROWSER['IDURI'] = $friendClaim[0]['iduri'];
 
 			$_SESSION[BROWSER] = $BROWSER;
 

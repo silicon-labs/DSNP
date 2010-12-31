@@ -91,7 +91,7 @@ int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	DbQuery claim( mysql, 
-		"SELECT friend_claim.id, friend_claim.user, friend_claim.friend_id, "
+		"SELECT friend_claim.id, friend_claim.user, friend_claim.iduri, "
 		"	friend_claim.friend_hash, user.id "
 		"FROM friend_claim "
 		"JOIN user ON friend_claim.user = user.user "

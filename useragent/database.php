@@ -44,24 +44,58 @@ function dbQuery()
 	}
 
 	$result = array();
-	$query_result = mysql_query($query) or die( 'Query failed: ' . 
-			mysql_error() . "\n" );
+	$query_result = mysql_query($query);
+	
+	if ( ! $query_result )
+		userError( EC_DATABASE_ERROR, array( 'query failed: ' . mysql_error() ) );
+
+	$checkedMapping = false;
 	if ( is_bool( $query_result ) ) {
 		# Return the boolean directly. 
 		return $query_result;
 	}
 	else {
 		# Collect the results and return.
-		while ( $row = mysql_fetch_assoc($query_result) )
+		$mapping = array();
+		$classDef = array();
+		while ( $row = mysql_fetch_assoc($query_result) ) {
+			if ( !$checkedMapping ) {
+				$checkedMapping = true;
+
+				foreach ( $row as $key => $value ) {
+					$pos = strpos( $key, '.' );
+					if ( $pos !== false ) {
+						$class = substr( $key, 0, $pos );
+						$field = substr( $key, $pos + 1, strlen( $key ) - pos - 1 );
+
+						$mapping[$key] = array( $class, $field );
+						$classDef[$class] = 1;
+					}
+				}
+			}
+
+			if ( count( $mapping ) ) {
+				foreach ( $classDef as $class => $value )
+					$row[$class] = array();
+
+				foreach ( $row as $key => $value ) {
+					if ( isset( $mapping[$key] ) ) {
+						$class = $mapping[$key][0];
+						$field = $mapping[$key][1];
+						$row[$class][$field] = $row[$key];
+					}
+				}
+			}
 			$result[] = $row;
+		}
 		return $result;
 	}
 }
 
 # Connect to the database.
-mysql_connect( $CFG['DB_HOST'], $CFG['DB_USER'], $CFG['DB_PASS'] )
-	or die("ERROR: could not connect to database\n");
-mysql_select_db( $CFG['DB_DATABASE'] ) 
-	or die('ERROR: could not select database ' . $CFG['DB_DATABASE'] . "\n" );
+if ( ! mysql_connect( $CFG['DB_HOST'], $CFG['DB_USER'], $CFG['DB_PASS'] ) )
+	userError( EC_DATABASE_ERROR, array( 'could not connect to database' ) );
+if ( ! mysql_select_db( $CFG['DB_DATABASE'] ) )
+	userError( EC_DATABASE_ERROR, array( 'could not select database ' . $CFG['DB_DATABASE'] ) );
 	
 ?>

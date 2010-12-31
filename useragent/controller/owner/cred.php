@@ -52,11 +52,11 @@ class OwnerCredController extends CredController
 
 		if ( $connection->success ) {
 			$arg_ftoken = 'ftoken=' . urlencode( $connection->regs[1] );
-			$friend_id = $connection->regs[2];
+			$iduri = $connection->regs[2];
 			$dest = "";
 			if ( isset( $_GET['d'] ) )
 				$dest = "&d=" . urlencode($_GET['d']);
-			$this->redirect("{$friend_id}cred/sftoken?{$arg_ftoken}{$dest}" );
+			$this->redirect("{$iduri}cred/sftoken?{$arg_ftoken}{$dest}" );
 		}
 		else {
 			$this->userError("ftoken response failed: {$connection->result}", "");

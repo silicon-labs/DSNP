@@ -6,18 +6,18 @@ if ( isset( $_GET['url'] ) )
 $USER['USER'] = null;
 $USER['NAME'] = null;
 $USER['ID'] = null;
-$USER['URI'] = null;
+$USER['IDURI'] = null;
 
 # ID is the id of the friend_claim row.
 $BROWSER['ID'] = null;
-$BROWSER['URI'] = null;
+$BROWSER['IDURI'] = null;
 
 function checkUserDb()
 {
 	global $CFG;
 	global $USER;
 	$result = dbQuery( 
-		"SELECT user.id, user.user, user.identity, user.name, friend_claim.id AS rel_id_self " .
+		"SELECT user.id, user.user, user.iduri, user.name, friend_claim.id AS rel_id_self " .
 		"FROM user " .
 		"JOIN friend_claim ON user.id = friend_claim.user_id " .
 		"WHERE user.user = %e AND friend_claim.type = %l",
@@ -30,7 +30,7 @@ function checkUserDb()
 	$result = $result[0];
 
 	$USER['ID'] = $result['id'];
-	$USER['URI'] =  "{$CFG['URI']}{$USER['USER']}/";
+	$USER['IDURI'] =  "{$CFG['URI']}{$USER['USER']}/";
 	$USER['NAME'] = $result['name'];
 	$USER['FRIEND_CLAIM_SELF_ID'] = $result['rel_id_self'];
 

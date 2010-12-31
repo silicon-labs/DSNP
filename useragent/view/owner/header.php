@@ -14,14 +14,14 @@
 	<table><tr>
 		<td id="header_left"><div class="header_content">
 		<h1>
-				<?php echo $this->link( $CFG[SITE_NAME], '/' ); ?>
+				<?php echo $this->siteLink( $CFG['SITE_NAME'], '/' ); ?>
 		</h1>
 		</div></td>
 
 		<td id="header_middle"><div class="header_content">
 		<h1>
 		<?php
-			echo $this->absLink( $USER[NAME], $USER[URI] );
+			echo $this->absLink( $USER['NAME'], $USER['URI'] );
 		?>
 		</h1>
 		</div></td>
@@ -29,7 +29,7 @@
 		<td id="header_right"><div class="header_content">
 		<h1>
 		<?php 
-			echo $this->link( $USER[NAME], $USER[URI] );
+			echo $this->absLink( $USER['NAME'], $USER['IDURI'] );
 			echo " - ";
 			echo $this->userLink( 'logout', "/cred/logout" );
 		?>

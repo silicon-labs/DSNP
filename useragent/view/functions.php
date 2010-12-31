@@ -1,7 +1,7 @@
 <?php
 
 /* 
- * Copyright (c) 2007-2009, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2007-2010, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,16 +18,7 @@
 
 function printName( $USER, $BROWSER, $identity, $name, $possessive )
 {
-	if ( !isset($identity) && isset($BROWSER) ) {
-		echo "<font class=\"msgwho\">";
-		echo $USER['display_short'];
-		if ( $possessive )
-			echo "'s";
-		echo "</font>";
-	}
-	else if ( !isset($identity) || 
-			!isset($BROWSER) && $identity == $USER['identity'] || 
-			isset($BROWSER) && $identity == $BROWSER['identity'] )
+	if ( $identity === $BROWSER['IDURI'] )
 	{
 		if ( $possessive )
 			echo "<font class=\"msgwho\"> your </font>";
@@ -51,10 +42,10 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 {
 	$USER_NAME = $USER['user'];
 
-	$author_id = $author['author_identity'];
+	$author_iduri = $author['author_iduri'];
 	$author_name = $author['author_name'];
 
-	$subject_id = $subject['subject_identity'];
+	$subject_iduri = $subject['subject_iduri'];
 	$subject_name = $subject['subject_name'];
 
 	$time_published = $item['time_published'];
@@ -70,7 +61,7 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 		echo '<td class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
-		printName( $USER, $BROWSER, $author_id, $author_name, false );
+		printName( $USER, $BROWSER, $author_iduri, $author_name, false );
 		echo "<font class=\"msgaction\"> uploaded a photo </font>";
 		echo '</div>';
 		echo '</td>';
@@ -78,7 +69,7 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 		echo '<td class="msgbody">';
 		echo '<div class="msgphoto">';
 		if ( isset( $remote_resid ) ) {
-			echo "<a href=\"${author_id}image/view/img-$remote_resid.jpg?h=" . 
+			echo "<a href=\"${author_iduri}image/view/img-$remote_resid.jpg?h=" . 
 				urlencode($_SESSION['hash']) . "\">";
 			echo "<img src=\"" . $view->userLoc( "/$USER_NAME/image/view/pub-$local_resid.jpg" ) . 
 				"\" alt=\"$message\"></a>\n";
@@ -95,7 +86,7 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 		echo '<td class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
-		printName( $USER, $BROWSER, $author_id, $author_name, false );
+		printName( $USER, $BROWSER, $author_iduri, $author_name, false );
 		echo "<font class=\"msgaction\"> posted </font>";
 		echo '</div>';
 		echo '</td>';
@@ -110,9 +101,9 @@ function printMessage( $view, $text, $USER, $BROWSER, $author, $subject, $item )
 		echo '<td class="msgleft">';
 		echo '<div class="msgabout">';
 		echo "<font class=\"msgtime\">" . str_replace( ' ', ' &nbsp; ', $time_published ) . "</font><br>";
-		printName( $USER, $BROWSER, $author_id, $author_name, false );
+		printName( $USER, $BROWSER, $author_iduri, $author_name, false );
 		echo "<font class=\"msgaction\"> wrote on ";
-		printName( $USER, $BROWSER, $subject_id, $subject_name, true );
+		printName( $USER, $BROWSER, $subject_iduri, $subject_name, true );
 		echo " board</font>";
 		echo '</div>';
 		echo '</td>';

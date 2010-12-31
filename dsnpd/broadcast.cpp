@@ -40,11 +40,11 @@ void groupMemberRevocation( MYSQL *mysql, const char *user,
 		long long generation, const char *revokedId )
 {
 	DbQuery findFrom( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		"SELECT id FROM friend_claim WHERE user = %e AND iduri = %e",
 		user, friendId );
 
 	DbQuery findTo( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		"SELECT id FROM friend_claim WHERE user = %e AND iduri = %e",
 		user, revokedId );
 
 	if ( findFrom.rows() > 0 && findTo.rows() > 0 ) {
@@ -70,11 +70,11 @@ void remoteInner( MYSQL *mysql, const char *user, const char *network,
 void storeFriendLink( MYSQL *mysql, const char *user, long long networkId, const char *from, const char *to )
 {
 	DbQuery findFrom( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		"SELECT id FROM friend_claim WHERE user = %e AND iduri = %e",
 		user, from );
 
 	DbQuery findTo( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND friend_id = %e",
+		"SELECT id FROM friend_claim WHERE user = %e AND iduri = %e",
 		user, to );
 
 	if ( findFrom.rows() > 0 && findTo.rows() > 0 ) {
@@ -113,7 +113,7 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 	/* Messages has a remote sender and needs to be futher decrypted. */
 	DbQuery recipient( mysql, 
 		"SELECT friend_claim.id, "
-		"	friend_claim.friend_id, "
+		"	friend_claim.iduri, "
 		"	get_broadcast_key.broadcast_key "
 		"FROM friend_claim "
 		"JOIN get_broadcast_key "
@@ -192,7 +192,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 	DbQuery recipient( mysql, 
 		"SELECT friend_claim.id, "
 		"	friend_claim.user, "
-		"	friend_claim.friend_id, "
+		"	friend_claim.iduri, "
 		"	get_broadcast_key.broadcast_key, "
 		"	network.id "
 		"FROM friend_claim "
@@ -340,12 +340,12 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	 */
 	message("finding out-of-tree broadcasts for %s %lld\n", user, put.networkId );
 	DbQuery outOfTree( mysql,
-		"SELECT friend_claim.friend_id, friend_claim.put_relid "
+		"SELECT friend_claim.iduri, friend_claim.put_relid "
 		"FROM friend_claim "
 		"JOIN network_member "
 		"ON friend_claim.id = network_member.friend_claim_id "
 		"WHERE friend_claim.user = %e AND network_member.network_id = %L "
-		"ORDER BY friend_claim.friend_id",
+		"ORDER BY friend_claim.iduri",
 		user, put.networkId );
 
 	storeBroadcastRecipients( mysql, user, messageId, outOfTree );
@@ -420,7 +420,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 
 	/* Find the relid from subject to author. */
 	DbQuery putRelidQuery( mysql,
-			"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+			"SELECT put_relid FROM friend_claim WHERE user = %e AND iduri = %e",
 			toUser, authorId );
 	if ( putRelidQuery.rows() != 1 ) {
 		message("find of put_relid from subject to author failed\n");
@@ -500,7 +500,7 @@ void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqi
 
 	/* Find the relid from subject to author. */
 	DbQuery putRelidQuery( mysql,
-			"SELECT put_relid FROM friend_claim WHERE user = %e AND friend_id = %e",
+			"SELECT put_relid FROM friend_claim WHERE user = %e AND iduri = %e",
 			user, identity );
 	if ( putRelidQuery.rows() != 1 ) {
 		message("find of put_relid from subject to author failed\n");
@@ -523,7 +523,7 @@ void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqi
 }
 
 void return_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *friend_id, const char *reqid, long long generation, const char *sym )
+		const char *iduri, const char *reqid, long long generation, const char *sym )
 {
 	message("return_remote_broadcast\n");
 
@@ -535,7 +535,7 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 		"UPDATE pending_remote_broadcast "
 		"SET generation = %L, sym = %e, reqid_final = %e"
 		"WHERE user = %e AND identity = %e AND reqid = %e ",
-		generation, sym, reqid_final_str, user, friend_id, reqid );
+		generation, sym, reqid_final_str, user, iduri, reqid );
 
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_final_str );
 }

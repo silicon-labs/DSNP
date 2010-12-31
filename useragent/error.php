@@ -97,6 +97,12 @@ function invalidLogin( $code )
 	echo "<p> Please press the back button to try again.\n";
 }
 
+function databaseError( $reason )
+{
+	echo "There was an internal database error. If you can, please report this.";
+	echo "<p> $reason";
+}
+
 
 switch ( $code ) {
 	case EC_SSL_PEER_FAILED_VERIFY:
@@ -144,7 +150,9 @@ switch ( $code ) {
 	case EC_INVALID_LOGIN:
 		invalidLogin();
 		break;
-
+	case EC_DATABASE_ERROR:
+		databaseError( $args[0] );
+		break;
 	default:
 		echo "Sorry, I don't have any information about " .
 			"the nature of this error.";

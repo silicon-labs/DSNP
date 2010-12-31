@@ -90,9 +90,10 @@ if ( $count % 2 == 1 )
 <form method="post" action="<?php echo $this->userLoc("/user/board");?>">
 
 Write on <?php print $USER_NAME;?>'s message board:
+<p>
 <!--<input type="text" name="message" size="50">-->
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
-<input value="Submit" type="submit">
+<p><input value="Submit" type="submit">
 
 
 </form>

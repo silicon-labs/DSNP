@@ -174,7 +174,7 @@ class Message
 		$this->message = $headers . $text;
 	}
 
-	function recvBoardPost( $forUser, $network, $subject, $author,
+	function recvBoardPost( $forUser, $subject, $author,
 			$seqNum, $date, $time, $msg, $contextType )
 	{
 		$user_id = $this->findUserId( $forUser );
@@ -279,7 +279,7 @@ class Message
 
 	function parseMessage( $use, $author, $date, $time, $length, $file )
 	{
-		$msg = $this->parse( $file, $this->length );
+		$msg = $this->parse( $file, $length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
@@ -296,7 +296,7 @@ class Message
 			$seqNum, $date, $time, $length, $file )
 	{
 		# Read the message from stdin.
-		$msg = $this->parse( $file, $this->length );
+		$msg = $this->parse( $file, $length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];
@@ -304,9 +304,9 @@ class Message
 
 			switch ( $type ) {
 				case 'board-post':
-					$this->recvBoardPost( $this->user, $this->network, 
-							$this->subject, $this->author, $this->seqNum,
-							$this->date, $this->time, $msg, $contextType );
+					$this->recvBoardPost( $user,
+							$subject, $author, $seqNum,
+							$date, $time, $msg, $contextType );
 					break;
 			}
 		}
@@ -315,7 +315,7 @@ class Message
 	function parseRemotePublication( $user, $subject, $length, $file )
 	{
 		# Read the message from stdin.
-		$msg = $this->parse( $file, $this->length );
+		$msg = $this->parse( $file, $length );
 
 		if ( isset( $msg[0]['type'] ) && isset( $msg[0]['content-type'] ) ) {
 			$type = $msg[0]['type'];

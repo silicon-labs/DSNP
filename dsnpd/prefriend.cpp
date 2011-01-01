@@ -17,6 +17,7 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
+#include "error.h"
 
 #include <string.h>
 
@@ -29,9 +30,9 @@ void deleteFriendRequest( MYSQL *mysql, const char *user, const char *user_reqid
 }
 
 long long storeFriendClaim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *idSalt, const char *putRelid, const char *getRelid )
+		const char *identity, const char *putRelid, const char *getRelid )
 {
-	char *friendHashStr = makeIdHash( idSalt, identity );
+	char *friendHashStr = makeIduriHash( identity );
 	IdentityOrig fr(identity);
 	fr.parse();
 
@@ -40,10 +41,10 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 
 	/* Insert the friend claim. */
 	DbQuery( mysql, "INSERT INTO friend_claim "
-		"( user, user_id, iduri, friend_salt, "
+		"( user, user_id, iduri, "
 		"	friend_hash, put_relid, get_relid, name ) "
-		"VALUES ( %e, %L, %e, %e, %e, %e, %e, %e );",
-		user, userId, identity, idSalt, friendHashStr, putRelid, getRelid, fr.user );
+		"VALUES ( %e, %L, %e, %e, %e, %e, %e );",
+		user, userId, identity, friendHashStr, putRelid, getRelid, fr.user );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
@@ -53,28 +54,26 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 	return strtoll( lastInsertId.fetchRow()[0], 0, 10 );
 }
 
-long notifyAccept( MYSQL *mysql, const char *forUser, const char *from_id,
-		const char *id_salt, const char *requested_relid, const char *returned_relid )
+long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
+		const String &requestedRelid, const String &returnedRelid )
 {
 	/* Verify that there is a friend request. */
 	DbQuery checkSentRequest( mysql, 
-		"SELECT from_user FROM sent_friend_request "
-		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e and returned_relid = %e",
-		forUser, from_id, requested_relid, returned_relid );
+		"SELECT id FROM sent_friend_request "
+		"WHERE user_id = %L AND identity_id = %L AND requested_relid = %e and returned_relid = %e",
+		user.id(), identity.id(), requestedRelid(), returnedRelid() );
 
-	if ( checkSentRequest.rows() != 1 ) {
-		message("accept friendship failed: could not find send_friend_request\r\n");
-		BIO_printf( bioOut, "ERROR request not found\r\n");
-		return 0;
-	}
+	if ( checkSentRequest.rows() != 1 )
+		throw FriendRequestInvalid();
 
-	Keys *user_priv = loadKey( mysql, forUser );
-	Keys *id_pub = fetchPublicKey( mysql, from_id );
+	Keys *userPriv = loadKey( mysql, user.user() );
+	Keys *idPub = identity.fetchPublicKey();
 
+#if 0
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	const char *putRelid = requested_relid;
 	const char *getRelid = returned_relid;
-	storeFriendClaim( mysql, forUser, from_id, id_salt, putRelid, getRelid );
+	storeFriendClaim( mysql, forUser, from_id, putRelid, getRelid );
 
 	/* Clear the sent_freind_request. */
 	DbQuery salt( mysql, "SELECT id_salt FROM user WHERE user = %e", forUser );
@@ -89,10 +88,11 @@ long notifyAccept( MYSQL *mysql, const char *forUser, const char *from_id,
 	String resultCommand( "notify_accept_result %s\r\n", returned_id_salt );
 
 	Encrypt encrypt( id_pub, user_priv );
-	encrypt.signEncrypt( (u_char*)resultCommand.data, resultCommand.length+1 );
+	encrypt.signEncrypt( (u_char*)resultCommand(), resultCommand.length+1 );
 
 	BIO_printf( bioOut, "RESULT %ld\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
+#endif
 
 	return 0;
 }
@@ -125,7 +125,7 @@ void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *use
 	/* The friendship has been accepted. Store the claim. */
 	const char *putRelid = returned_relid;
 	const char *getRelid = requested_relid;
-	storeFriendClaim( mysql, user, from_id, returned_id_salt, putRelid, getRelid );
+	storeFriendClaim( mysql, user, from_id, putRelid, getRelid );
 
 	/* Notify the requester. */
 	String registered( "registered %s %s\r\n", 
@@ -146,87 +146,77 @@ void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *use
 void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	DbQuery sent( mysql, 
-		"SELECT from_user, for_id FROM sent_friend_request "
+		"SELECT user_id, identity_id FROM sent_friend_request "
 		"WHERE requested_relid = %e",
 		relid );
 
 	if ( sent.rows() == 0 ) {
-		message("prefriend_message: could not locate friend via sent_friend_request\n");
+		error("prefriend_message: could not locate friend via sent_friend_request\n");
 		BIO_printf( bioOut, "ERROR finding friend\r\n" );
 		return;
 	}
 
 	MYSQL_ROW row = sent.fetchRow();
-	const char *user = row[0];
-	const char *friend_id = row[1];
+	long long userId = strtoll( row[0], 0, 10 );
+	long long identityId = strtoll( row[1], 0, 10 );
 
-	Keys *user_priv = loadKey( mysql, user );
-	Keys *id_pub = fetchPublicKey( mysql, friend_id );
+	User user( mysql, userId );
+	Identity identity( mysql, identityId );
 
-	Encrypt encrypt( id_pub, user_priv );
-	int decrypt_res = encrypt.decryptVerify( msg );
+	Keys *userPriv = loadKey( mysql, user.user );
+	Keys *idPub = identity.fetchPublicKey();
 
-	if ( decrypt_res < 0 ) {
-		message("prefriend_message: decrypting message failed\n");
-		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
-		return;
-	}
+	Encrypt encrypt( idPub, userPriv );
+	int decryptRes = encrypt.decryptVerify( msg );
+
+	if ( decryptRes < 0 )
+		throw DecryptVerifyFailed();
 
 	PrefriendParser pfp;
 	pfp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 	switch ( pfp.type ) {
 		case PrefriendParser::NotifyAccept:
-			notifyAccept( mysql, user, friend_id, pfp.id_salt, 
-					pfp.requested_relid, pfp.returned_relid );
+			notifyAccept( mysql, user, identity,
+					pfp.requestedRelid, pfp.returnedRelid );
 			break;
 		case PrefriendParser::Registered:
-			registered( mysql, user, friend_id, pfp.requested_relid, pfp.returned_relid  );
+			registered( mysql, user.user, identity.iduri,
+					pfp.requestedRelid, pfp.returnedRelid  );
 			break;
 		default:
 			break;
 	}
 }
 
-void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid )
+void acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
 {
-	char *result_message = 0;
-	char *from_id, *requested_relid, *returned_relid;
-	char *id_salt;
-
-	/* Find the salt for the user. */
-	DbQuery salt( mysql, "SELECT id_salt FROM user WHERE user = %e", user );
-
-	/* Check for a result. */
-	if ( salt.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR request not found\r\n" );
-		return;
-	}
-	MYSQL_ROW row = salt.fetchRow();
-	id_salt = row[0];
+	User user( mysql, _user );
+	if ( user.id() < 0 )
+		throw InvalidUser( user.user );
 
 	/* Find the friend request. */
 	DbQuery friendRequest( mysql, 
-		"SELECT from_id, requested_relid, returned_relid "
+		"SELECT identity_id, requested_relid, returned_relid "
 		"FROM friend_request "
-		"WHERE for_user = %e AND reqid = %e;",
-		user, user_reqid );
+		"WHERE user_id = %L AND reqid = %e;",
+		user.id(), userReqid );
 
 	/* Check for a result. */
-	if ( friendRequest.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR request not found\r\n" );
-		return;
-	}
+	if ( friendRequest.rows() == 0 )
+		throw FriendRequestInvalid();
 
-	row = friendRequest.fetchRow();
-	from_id = row[0];
-	requested_relid = row[1];
-	returned_relid = row[2];
+	MYSQL_ROW row = friendRequest.fetchRow();
+	long long identityId = strtoll( row[0], 0, 10 );
+	char *requestedRelid = row[1];
+	char *returnedRelid = row[2];
+
+	Identity identity( mysql, identityId );
 
 	/* Notify the requester. */
-	String buf( "notify_accept %s %s %s\r\n", id_salt, requested_relid, returned_relid );
-	message( "accept_friend sending: %s to %s from %s\n", buf.data, from_id, user  );
-	int nfa = sendMessageNow( mysql, true, user, from_id, 
-			requested_relid, buf.data, &result_message );
+	String buf( "notify_accept %s %s\r\n", requestedRelid, returnedRelid );
+
+	char *resultMessage = 0;
+	int nfa = sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, buf(), &resultMessage );
 
 	if ( nfa < 0 ) {
 		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );
@@ -234,11 +224,11 @@ void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid )
 	}
 
 	NotifyAcceptResultParser narp;
-	narp.parse( result_message, strlen(result_message) );
+	narp.parse( resultMessage, strlen(resultMessage) );
 	switch ( narp.type ) {
 		case NotifyAcceptResultParser::NotifyAcceptResult:
-			notifyAcceptReturnedIdSalt( mysql, user, user_reqid, 
-				from_id, requested_relid, returned_relid, narp.token );
+			notifyAcceptReturnedIdSalt( mysql, user.user, userReqid, 
+				identity.iduri, requestedRelid, returnedRelid, narp.token );
 			break;
 		default:
 			break;

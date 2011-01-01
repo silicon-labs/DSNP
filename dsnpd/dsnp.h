@@ -79,18 +79,13 @@ private:
 
 struct User
 {
-	User( MYSQL *mysql, const char *user )
-	: 
-		mysql(mysql),
-		user(user),
-		haveId(false),
-		_id(-1)
-	{}
+	User( MYSQL *mysql, const char *user );
+	User( MYSQL *mysql, long long _id );
 	
 	long long id();
 	
 	MYSQL *mysql;
-	const char *user;
+	String user;
 
 	bool haveId;
 	long long _id;
@@ -98,17 +93,11 @@ struct User
 
 struct Identity
 {
-	Identity( MYSQL *mysql, const char *iduri )
-	:
-		mysql(mysql),
-		iduri(iduri),
-		haveId(false), 
-		parsed(false),
-		_id(-1)
-	{}
+	Identity( MYSQL *mysql, const char *iduri );
+	Identity( MYSQL *mysql, long long _id );
 
 	MYSQL *mysql;
-	const char *iduri;
+	String iduri;
 
 	long long id();
 	AllocString hash();
@@ -122,9 +111,9 @@ struct Identity
 private:
 	long parse();
 
-	const char *_host;
-	const char *_user;
-	const char *_site;
+	String _host;
+	String _user;
+	String _site;
 
 	bool haveId, parsed;
 	long long _id;
@@ -479,7 +468,8 @@ struct PrefriendParser
 	};
 
 	Type type;
-	String id_salt, requested_relid, returned_relid;
+	String requestedRelid;
+	String returnedRelid;
 
 	int parse( const char *msg, long mLen );
 };
@@ -546,6 +536,8 @@ long long addNetwork( MYSQL *mysql, long long userId, const char *privateName );
 AllocString passHash( const u_char *pass_salt, const char *pass );
 
 void startPreFriend( MYSQL *mysql, char *reqid );
+
+BIGNUM *base64ToBn( const char *base64 );
 
 #define LOGIN_TOKEN_LASTS 86400
 

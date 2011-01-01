@@ -377,7 +377,7 @@ Keys *loadKey( MYSQL *mysql, User &user )
 		"WHERE user.id = %L", user.id() );
 
 	if ( keyQuery.rows() < 1 )
-		fatal( "user %s is missing keys", user.user );
+		fatal( "user %s is missing keys", user.user() );
 
 	MYSQL_ROW row = keyQuery.fetchRow();
 
@@ -501,108 +501,6 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	message( "decrypt_result: %s\n", encrypt.decrypted );
 
 	return strdup((char*)encrypt.decrypted);
-}
-
-long long User::id()
-{
-	if ( !haveId ) {
-		DbQuery find( mysql,
-			"SELECT id FROM user WHERE user = %e", 
-			user );
-
-		if ( find.rows() > 0 ) {
-			_id = strtoll( find.fetchRow()[0], 0, 10 );
-			haveId = true;
-		}
-	}
-	return _id;
-}
-
-AllocString Identity::hash()
-{
-	return makeIduriHash( iduri );
-}
-
-long long Identity::id()
-{
-	if ( !haveId ) {
-		String hash = makeIduriHash( iduri );
-
-		/* Always try to insert. Ignore failures. */
-		DbQuery insert( mysql, 
-			"INSERT IGNORE INTO identity "
-			"( iduri, hash ) "
-			"VALUES ( %e, %e )",
-			iduri, hash.data
-		);
-
-		if ( insert.affectedRows() > 0 )
-			_id = lastInsertId( mysql );
-		else {
-			DbQuery find( mysql,
-				"SELECT id FROM identity WHERE iduri = %e", 
-				iduri );
-			MYSQL_ROW row = find.fetchRow();
-			_id = strtoll( row[0], 0, 10 );
-		}
-
-		haveId = true;
-	}
-
-	return _id;
-}
-
-Keys *Identity::fetchPublicKey()
-{
-	/* Make sure the identity is in the database. */
-	id();
-	parse();
-
-	/* First try to fetch the public key from the database. */
-	PublicKey pub;
-	long result = fetchPublicKeyDb( pub, mysql, _id );
-
-	/* If the db fetch failed, get the public key off the net. */
-	if ( result == 0 ) {
-		fetchPublicKeyNet( pub, _site, _host, _user );
-
-		/* Store it in the db. */
-		DbQuery( mysql,
-			"INSERT INTO public_key ( identity_id, rsa_n, rsa_e ) "
-			"VALUES ( %L, %e, %e ) ", _id, pub.n, pub.e );
-	}
-
-	RSA *rsa = RSA_new();
-	rsa->n = base64ToBn( pub.n );
-	rsa->e = base64ToBn( pub.e );
-
-	Keys *keys = new Keys;
-	keys->rsa = rsa;
-
-	return keys;
-
-}
-
-const char *Identity::host()
-{
-	if ( !parsed )
-		parse();
-	return _host;
-}
-
-const char *Identity::user()
-{
-	if ( !parsed )
-		parse();
-	message("user: %s\n", _user );
-	return _user;
-}
-
-const char *Identity::site()
-{
-	if ( !parsed )
-		parse();
-	return _site;
 }
 
 Relationship::Relationship( MYSQL *mysql, User &user, int type, Identity &identity )

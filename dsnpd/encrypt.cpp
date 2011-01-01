@@ -150,10 +150,10 @@ int Encrypt::decryptVerify( const char *srcMsg )
 	long symLen = ntohs( *((uint16_t*)message) );
 	message += 2;
 
-	u_char *cms = message + symLen;
-	long cmsLen = ntohs( *((uint16_t*)cms) );
-	cms += 2;
-	::message("cms %p %d\n", cms, cmsLen );
+	// WAT?
+	//u_char *cms = message + symLen;
+	//long cmsLen = ntohs( *((uint16_t*)cms) );
+	//cms += 2;
 
 	/* Decrypt the key. */
 	u_char *session_key = (u_char*) malloc( RSA_size( privDecSign->rsa ) );

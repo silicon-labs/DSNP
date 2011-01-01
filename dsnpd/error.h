@@ -43,6 +43,12 @@
 #define EC_RESPONSE_IS_ERROR         119
 #define EC_SSL_NEW_CONTEXT_FAILURE   120
 #define EC_SSL_CA_CERTS_NOT_SET      121
+#define EC_FRIEND_REQUEST_INVALID    122
+#define EC_IDENTITY_ID_INVALID       123
+#define EC_USER_ID_INVALID           124
+#define EC_STOPPING                  125
+#define EC_NOT_PREFRIEND             126
+#define EC_DECRYPT_VERIFY_FAILED     127         
 
 struct UserError
 {
@@ -375,6 +381,90 @@ struct SslCaCertsNotSet
 
 		error( "%d SSL error: CA_CERTS is not set\n",
 				EC_SSL_CA_CERTS_NOT_SET );
+	}
+};
+
+struct FriendRequestInvalid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_FRIEND_REQUEST_INVALID );
+
+		error( "%d friend request is not valid\n",
+				EC_FRIEND_REQUEST_INVALID );
+	}
+};
+
+struct IdentityIdInvalid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_IDENTITY_ID_INVALID );
+
+		error( "%d identity id supplied is not valid\n",
+				EC_IDENTITY_ID_INVALID );
+	}
+};
+
+struct UserIdInvalid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_USER_ID_INVALID );
+
+		error( "%d user id supplied is not valid\n",
+				EC_USER_ID_INVALID );
+	}
+};
+
+struct Stopping
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_STOPPING );
+
+		error( "%d stopping\n",
+				EC_STOPPING );
+	}
+};
+
+struct NotPrefriend
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_NOT_PREFRIEND );
+
+		error( "%d not a prefriend\n",
+				EC_NOT_PREFRIEND );
+	}
+};
+
+struct DecryptVerifyFailed
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_DECRYPT_VERIFY_FAILED );
+
+		error( "%d decrypt verify failed\n",
+				EC_DECRYPT_VERIFY_FAILED );
 	}
 };
 

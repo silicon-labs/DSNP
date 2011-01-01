@@ -45,8 +45,8 @@ bool gblKeySubmitted = false;
 	relid = base64            >{mark=p;} %{relid.set(mark, p);};
 	token = base64            >{mark=p;} %{token.set(mark, p);};
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
-	requested_relid = base64  >{mark=p;} %{requested_relid.set(mark, p);};
-	returned_relid = base64   >{mark=p;} %{returned_relid.set(mark, p);};
+	requested_relid = base64  >{mark=p;} %{requestedRelid.set(mark, p);};
+	returned_relid = base64   >{mark=p;} %{returnedRelid.set(mark, p);};
 	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
 
 	date = ( 
@@ -112,7 +112,7 @@ bool gblKeySubmitted = false;
 			fgoto *parser_error;
 
 		/* Read in the message and the mandadory \r\r. */
-		BIO_read( bioIn, message_buffer, length+2 );
+		BIO_read( bioIn, message_buffer.data, length+2 );
 
 		/* Parse just the \r\r. */
 		p = message_buffer.data + length;
@@ -469,7 +469,7 @@ int NotifyAcceptResultParser::parse( const char *msg, long len )
 	include common;
 
 	main :=
-		'notify_accept'i ' ' id_salt ' ' requested_relid ' ' returned_relid EOL @{
+		'notify_accept'i ' ' requested_relid ' ' returned_relid EOL @{
 			type = NotifyAccept;
 		} |
 		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
@@ -482,6 +482,9 @@ int NotifyAcceptResultParser::parse( const char *msg, long len )
 
 int PrefriendParser::parse( const char *msg, long mLen )
 {
+	/* Did we get a full line? */
+	message("prefriend message: %.*s", (int)mLen, msg );
+
 	long cs;
 	const char *mark;
 
@@ -495,9 +498,9 @@ int PrefriendParser::parse( const char *msg, long mLen )
 
 	if ( cs < %%{ write first_final; }%% ) {
 		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
+			throw ParseError();
 		else
-			return ERR_UNEXPECTED_END;
+			throw ParseError();
 	}
 
 	return 0;
@@ -1034,15 +1037,12 @@ long Identity::parse()
 	if ( cs < %%{ write first_final; }%% )
 		return ERR_PARSE_ERROR;
 	
-	_host = allocString( h1, h2 );
-	_user = allocString( pp1, pp2 );
+	_host.set( h1, h2 );
+	_user.set( pp1, pp2 );
 
 	/* We can use the start of the last path part to get the site. */
-	_site = allocString( iduri, pp1 );
-
+	_site.set( iduri, pp1 );
 	parsed = true;
-
-	message("parsed user: %s\n", _user );
 	return result;
 }
 

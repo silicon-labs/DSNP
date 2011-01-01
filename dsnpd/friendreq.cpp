@@ -84,8 +84,8 @@ void relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 		throw InvalidUser( user.user );
 
 	/* Check to make sure this isn't ourselves. */
-	String ourId( "%s%s/", c->CFG_URI, user.user );
-	if ( strcasecmp( ourId.data, identity.iduri ) == 0 )
+	String ourId( "%s%s/", c->CFG_URI, user.user() );
+	if ( strcasecmp( ourId(), identity.iduri ) == 0 )
 		throw CannotFriendSelf( identity.iduri );
 	
 	/* FIXME: these should be presented to the user only after the bounce back
@@ -123,7 +123,7 @@ void relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 	String relid = binToBase64( relidBin, RELID_SIZE );
 	String reqid = binToBase64( reqidBin, REQID_SIZE );
 
-	message("allocated requested_relid %s for user %s\n", relid.data, user.user );
+	message("allocated requested_relid %s for user %s\n", relid(), user.user() );
 
 	DbQuery( mysql,
 		"INSERT INTO relid_request "
@@ -225,8 +225,7 @@ void relidResponse( MYSQL *mysql, const char *_user,
 	char *response_relid_str = binToBase64( response_relid, RELID_SIZE );
 	char *response_reqid_str = binToBase64( response_reqid, REQID_SIZE );
 
-	::message( "allocated response relid %s for user %s\n", response_relid_str, user.user );
-
+	::message( "allocated response relid %s for user %s\n", response_relid_str, user.user() );
 	
 	/* Record the response, which will be fetched. */
 	DbQuery( mysql,
@@ -243,7 +242,7 @@ void relidResponse( MYSQL *mysql, const char *_user,
 		"VALUES ( %L, %L, %e, %e );",
 		user.id(), identity.id(), requested_relid_str, response_relid_str );
 
-	String args( "sent_friend_request %s %s", user.user, identity.iduri );
+	String args( "sent_friend_request %s %s", user.user(), identity.iduri() );
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
@@ -360,7 +359,7 @@ void friendFinal( MYSQL *mysql, const char *_user,
 		user.id(), identity.id(), relationship.id(), user_reqid_str, requested_relid_str, returned_relid_str );
 	
 	String args( "friend_request %s %s %s %s %s",
-		user.user, identity.iduri, user_reqid_str, requested_relid_str, returned_relid_str );
+		user.user(), identity.iduri(), user_reqid_str, requested_relid_str, returned_relid_str );
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */

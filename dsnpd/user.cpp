@@ -35,6 +35,47 @@
 #include "string.h"
 #include "error.h"
 
+User::User( MYSQL *mysql, const char *user )
+: 
+	mysql(mysql),
+	user(user),
+	haveId(false),
+	_id(-1)
+{}
+
+
+User::User( MYSQL *mysql, long long _id )
+: 
+	mysql(mysql),
+	haveId(true),
+	_id(_id)
+{
+	DbQuery find( mysql,
+		"SELECT user FROM user WHERE id = %L", 
+		_id );
+
+	if ( find.rows() != 1 )
+		throw UserIdInvalid();
+	
+	MYSQL_ROW row = find.fetchRow();
+	user = strdup( row[0] );
+}
+
+long long User::id()
+{
+	if ( !haveId ) {
+		DbQuery find( mysql,
+			"SELECT id FROM user WHERE user = %e", 
+			user() );
+
+		if ( find.rows() > 0 ) {
+			_id = strtoll( find.fetchRow()[0], 0, 10 );
+			haveId = true;
+		}
+	}
+	return _id;
+}
+
 void newUser( MYSQL *mysql, const char *user, const char *pass )
 {
 	String iduri( "%s%s/", c->CFG_URI, user );
@@ -149,3 +190,4 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 
 	BIO_printf( bioOut, "OK\r\n" );
 }
+

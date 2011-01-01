@@ -22,7 +22,11 @@ struct String
 		: data(0), length(0)
 	{}
 
-	operator char*() const { return data; }
+	operator const char*() const { return data; }
+
+	const char* operator()() const { return data; }
+
+	void operator=(const char *src) { set(src); }
 
 	String( const char *fmt, ... );
 	String( const AllocString &as );

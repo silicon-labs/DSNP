@@ -286,7 +286,7 @@ long storeBroadcastRecipients( MYSQL *mysql, const char *user,
 		char *putRelid = row[1];
 		message( "send to %s %s\n", friendId, putRelid );
 
-		Identity id( friendId );
+		IdentityOrig id( friendId );
 		id.parse();
 
 		/* If we need a new host then add it. */

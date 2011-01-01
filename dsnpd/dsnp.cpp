@@ -272,6 +272,30 @@ long storePublicKey( MYSQL *mysql, const char *identity, PublicKey &pub )
 	return 0;
 }
 
+long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, long long identityId )
+{
+	DbQuery keys( mysql, 
+		"SELECT rsa_n, rsa_e "
+		"FROM public_key "
+		"WHERE identity_id = %L",
+		identityId );
+
+	/* Check for a result. */
+	if ( keys.rows() > 0 ) {
+		MYSQL_ROW row = keys.fetchRow();
+		pub.n = strdup( row[0] );
+		pub.e = strdup( row[1] );
+		return 1;
+	}
+
+	return 0;
+}
+
+long storePublicKey( MYSQL *mysql, long long identityId, PublicKey &pub )
+{
+	return 0;
+}
+
 void makeCertsDir()
 {
 	String dir1( "%s/%s", PKGSTATEDIR, c->name );
@@ -282,31 +306,27 @@ void makeCertsDir()
 	mkdir( dir2.data, 0777 );
 }
 
-Keys *fetchPublicKey( MYSQL *mysql, const char *identity )
+Keys *fetchPublicKey( MYSQL *mysql, const char *iduri )
 {
-	PublicKey pub;
-	RSA *rsa;
-
-	Identity id( identity );
-	id.parse();
+	IdentityOrig identity(iduri);
+	identity.parse();
 
 	/* First try to fetch the public key from the database. */
-	long result = fetchPublicKeyDb( pub, mysql, identity );
+	PublicKey pub;
+	long result = fetchPublicKeyDb( pub, mysql, iduri );
 	if ( result < 0 )
 		return 0;
 
 	/* If the db fetch failed, get the public key off the net. */
 	if ( result == 0 ) {
-		char *site = get_site( identity );
-		result = fetchPublicKeyNet( pub, site, id.host, id.user );
-		if ( result < 0 )
-			return 0;
+		char *site = get_site( iduri );
+		fetchPublicKeyNet( pub, site, identity.host, identity.user );
 
 		/* Store it in the db. */
-		storePublicKey( mysql, identity, pub );
+		storePublicKey( mysql, identity.identity, pub );
 	}
 
-	rsa = RSA_new();
+	RSA *rsa = RSA_new();
 	rsa->n = base64ToBn( pub.n );
 	rsa->e = base64ToBn( pub.e );
 
@@ -342,6 +362,37 @@ Keys *loadKey( MYSQL *mysql, const char *user )
 		keys = new Keys;
 		keys->rsa = rsa;
 	}
+
+	return keys;
+}
+
+Keys *loadKey( MYSQL *mysql, User &user )
+{
+	Keys *keys = 0;
+
+	DbQuery keyQuery( mysql,
+		"SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
+		"FROM user "
+		"JOIN user_keys ON user.user_keys_id = user_keys.id "
+		"WHERE user.id = %L", user.id() );
+
+	if ( keyQuery.rows() < 1 )
+		fatal( "user %s is missing keys", user.user );
+
+	MYSQL_ROW row = keyQuery.fetchRow();
+
+	RSA *rsa = RSA_new();
+	rsa->n =    base64ToBn( row[0] );
+	rsa->e =    base64ToBn( row[1] );
+	rsa->d =    base64ToBn( row[2] );
+	rsa->p =    base64ToBn( row[3] );
+	rsa->q =    base64ToBn( row[4] );
+	rsa->dmp1 = base64ToBn( row[5] );
+	rsa->dmq1 = base64ToBn( row[6] );
+	rsa->iqmp = base64ToBn( row[7] );
+
+	keys = new Keys;
+	keys->rsa = rsa;
 
 	return keys;
 }
@@ -452,7 +503,83 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	return strdup((char*)encrypt.decrypted);
 }
 
-long long Identity::fetchId( MYSQL *mysql )
+long long User::id()
 {
+	if ( !haveId ) {
+		DbQuery find( mysql,
+			"SELECT id FROM user WHERE user = %e", 
+			user );
+
+		if ( find.rows() > 0 ) {
+			_id = strtoll( find.fetchRow()[0], 0, 10 );
+			haveId = true;
+		}
+	}
+	return _id;
+}
+
+AllocString Identity::hash()
+{
+	return makeIduriHash( iduri );
+}
+
+long long Identity::id()
+{
+	if ( !haveId ) {
+		String hash = makeIduriHash( iduri );
+
+		/* Always, try to insert. Ignore failures. FIXME: need to loop on the
+		 * random selection here. */
+		DbQuery insert( mysql, 
+			"INSERT IGNORE INTO identity "
+			"( iduri, hash ) "
+			"VALUES ( %e, %e )",
+			iduri, hash.data
+		);
+
+		if ( insert.affectedRows() > 0 )
+			_id = lastInsertId( mysql );
+		else {
+			DbQuery find( mysql,
+				"SELECT id FROM identity WHERE iduri = %e", 
+				iduri );
+			MYSQL_ROW row = find.fetchRow();
+			_id = strtoll( row[0], 0, 10 );
+		}
+
+		haveId = true;
+	}
+
+	return _id;
+}
+
+Keys *Identity::fetchPublicKey()
+{
+	/* Make sure the identity is in the database. */
+	id();
+	parse();
+
+	/* First try to fetch the public key from the database. */
+	PublicKey pub;
+	long result = fetchPublicKeyDb( pub, mysql, _id );
+
+	/* If the db fetch failed, get the public key off the net. */
+	if ( result == 0 ) {
+		fetchPublicKeyNet( pub, _site, _host, _user );
+
+		/* Store it in the db. */
+		DbQuery( mysql,
+			"INSERT INTO public_key ( identity_id, rsa_n, rsa_e ) "
+			"VALUES ( %L, %e, %e ) ", _id, pub.n, pub.e );
+	}
+
+	RSA *rsa = RSA_new();
+	rsa->n = base64ToBn( pub.n );
+	rsa->e = base64ToBn( pub.e );
+
+	Keys *keys = new Keys;
+	keys->rsa = rsa;
+
+	return keys;
 
 }

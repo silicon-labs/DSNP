@@ -34,7 +34,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-long checkFriendClaim( Identity &identity, MYSQL *mysql, const char *user, 
+long checkFriendClaim( IdentityOrig &identity, MYSQL *mysql, const char *user, 
 		const char *friendHash )
 {
 	DbQuery check( mysql,
@@ -73,7 +73,7 @@ void ftokenRequest( MYSQL *mysql, const char *user, const char *hash )
 	unsigned char flogin_token[TOKEN_SIZE], reqid[REQID_SIZE];
 	char *flogin_token_str, *reqid_str;
 	long friend_claim;
-	Identity friend_id;
+	IdentityOrig friend_id;
 	Encrypt encrypt;
 
 	/* Check if this identity is our friend. */
@@ -161,7 +161,7 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	unsigned char *flogin_token;
 	char *flogin_token_str;
 	long friend_claim;
-	Identity friend_id;
+	IdentityOrig friend_id;
 	char *site;
 	Encrypt encrypt;
 

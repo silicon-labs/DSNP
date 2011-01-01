@@ -1,4 +1,5 @@
 
+DROP TABLE IF EXISTS user;
 CREATE TABLE user
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -16,6 +17,7 @@ CREATE TABLE user
 	UNIQUE KEY ( user )
 );
 
+DROP TABLE IF EXISTS identity;
 CREATE TABLE identity
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -27,6 +29,7 @@ CREATE TABLE identity
 	UNIQUE KEY ( iduri )
 );
 
+DROP TABLE IF EXISTS relationship;
 CREATE TABLE relationship
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -48,6 +51,7 @@ CREATE TABLE relationship
 );
 
 -- Public and Private keys for users.
+DROP TABLE IF EXISTS user_keys;
 CREATE TABLE user_keys
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -65,6 +69,7 @@ CREATE TABLE user_keys
 );
 
 -- Fetched public keys.
+DROP TABLE IF EXISTS public_key;
 CREATE TABLE public_key
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -76,65 +81,93 @@ CREATE TABLE public_key
 	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS relid_request;
 CREATE TABLE relid_request
 (
-	for_user VARCHAR(20),
-	from_id TEXT,
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	requested_relid VARCHAR(48) BINARY,
 	reqid VARCHAR(48) BINARY,
-	msg_sym TEXT
+	msg_sym TEXT,
+
+	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS relid_response;
 CREATE TABLE relid_response
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	from_id TEXT,
 	requested_relid VARCHAR(48) BINARY,
 	returned_relid VARCHAR(48) BINARY,
 	reqid VARCHAR(48) BINARY,
-	msg_sym TEXT
+	msg_sym TEXT,
+
+	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS friend_request;
 CREATE TABLE friend_request
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	for_user VARCHAR(20), 
 	from_id TEXT,
 	reqid VARCHAR(48) BINARY,
 	requested_relid VARCHAR(48) BINARY,
-	returned_relid VARCHAR(48) BINARY
+	returned_relid VARCHAR(48) BINARY,
+
+	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS sent_friend_request;
 CREATE TABLE sent_friend_request
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	from_user VARCHAR(20),
 	for_id TEXT,
 	requested_relid VARCHAR(48) BINARY,
-	returned_relid VARCHAR(48) BINARY
+	returned_relid VARCHAR(48) BINARY,
+
+	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS friend_claim;
 CREATE TABLE friend_claim
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
 	user_id BIGINT,
-	relationship_id BIGINT
+	identity_id BIGINT,
+	relationship_id BIGINT,
 
 	put_relid VARCHAR(48) BINARY,
 	get_relid VARCHAR(48) BINARY,
 
-
 	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS ftoken_request;
 CREATE TABLE ftoken_request
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20), 
 	from_id TEXT,
 	token VARCHAR(48) BINARY,
 	reqid VARCHAR(48) BINARY,
 	msg_sym TEXT,
-	network_id BIGINT
+	network_id BIGINT,
+
+	PRIMARY KEY( id )
 );
 
+DROP TABLE IF EXISTS network;
 CREATE TABLE network
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -156,6 +189,7 @@ CREATE TABLE network
 	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS network_member;
 CREATE TABLE network_member
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -168,6 +202,7 @@ CREATE TABLE network_member
 );
 
 
+DROP TABLE IF EXISTS broadcast_message;
 CREATE TABLE broadcast_message
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -181,6 +216,7 @@ CREATE TABLE broadcast_message
 	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS broadcast_queue;
 CREATE TABLE broadcast_queue
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -193,6 +229,7 @@ CREATE TABLE broadcast_queue
 	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS broadcast_recipient;
 CREATE TABLE broadcast_recipient
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -203,11 +240,12 @@ CREATE TABLE broadcast_recipient
 	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS message_queue;
 CREATE TABLE message_queue
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
-	send_after DATETIME,
 
+	send_after DATETIME,
 	from_user VARCHAR(20),
 	to_id TEXT,
 	relid VARCHAR(48) BINARY,
@@ -216,6 +254,7 @@ CREATE TABLE message_queue
 	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS broadcasted;
 CREATE TABLE broadcasted
 (
 	user VARCHAR(20),
@@ -229,30 +268,48 @@ CREATE TABLE broadcasted
 	PRIMARY KEY ( user, seq_num )
 );
 
+DROP TABLE IF EXISTS login_token;
 CREATE TABLE login_token
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20),
 	login_token VARCHAR(48) BINARY,
-	expires TIMESTAMP
+	expires TIMESTAMP,
+
+	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS flogin_token;
 CREATE TABLE flogin_token
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20),
 	identity TEXT,
 	login_token VARCHAR(48) BINARY,
-	expires TIMESTAMP
+	expires TIMESTAMP,
+
+	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS remote_flogin_token;
 CREATE TABLE remote_flogin_token
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20),
 	identity TEXT,
-	login_token VARCHAR(48) BINARY
+	login_token VARCHAR(48) BINARY,
+
+	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS pending_remote_broadcast;
 CREATE TABLE pending_remote_broadcast
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20),
 	identity TEXT,
 	hash TEXT,
@@ -261,16 +318,23 @@ CREATE TABLE pending_remote_broadcast
 	seq_num BIGINT,
 	generation BIGINT,
 	sym TEXT,
-	network_name TEXT
+	network_name TEXT,
+
+	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS remote_broadcast_request;
 CREATE TABLE remote_broadcast_request
 (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
 	user VARCHAR(20),
 	identity TEXT,
 	reqid VARCHAR(48) BINARY,
 	generation BIGINT,
-	sym TEXT
+	sym TEXT,
+
+	PRIMARY KEY ( id )
 );
 
 --
@@ -280,6 +344,7 @@ CREATE TABLE remote_broadcast_request
 --   activity_stream: what's going on with the user's friends.
 --
 
+DROP TABLE IF EXISTS activity;
 CREATE TABLE activity
 ( 
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -305,11 +370,12 @@ CREATE TABLE activity
 -- END ACTIVITY
 --
 
-
+DROP TABLE IF EXISTS image;
 CREATE TABLE image
 (
 	user_id BIGINT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
+
 	rows INT,
 	cols INT,
 	mime_type VARCHAR(32),
@@ -317,6 +383,7 @@ CREATE TABLE image
 	PRIMARY KEY ( user_id, seq_num )
 );
 
+DROP TABLE IF EXISTS put_broadcast_key;
 CREATE TABLE put_broadcast_key
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
@@ -329,6 +396,7 @@ CREATE TABLE put_broadcast_key
 	PRIMARY KEY ( id )
 );
 
+DROP TABLE IF EXISTS get_broadcast_key;
 CREATE TABLE get_broadcast_key
 (
 	id bigint NOT NULL AUTO_INCREMENT,
@@ -346,6 +414,7 @@ CREATE TABLE get_broadcast_key
 );
 
 -- Database schema verison. Initialize it.
+DROP TABLE IF EXISTS version;
 CREATE TABLE version
 (
 	version INT

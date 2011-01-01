@@ -32,7 +32,7 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 		const char *identity, const char *idSalt, const char *putRelid, const char *getRelid )
 {
 	char *friendHashStr = makeIdHash( idSalt, identity );
-	Identity fr(identity);
+	IdentityOrig fr(identity);
 	fr.parse();
 
 	DbQuery findUser( mysql, "SELECT id FROM user WHERE user = %e", user );
@@ -91,7 +91,7 @@ long notifyAccept( MYSQL *mysql, const char *forUser, const char *from_id,
 	Encrypt encrypt( id_pub, user_priv );
 	encrypt.signEncrypt( (u_char*)resultCommand.data, resultCommand.length+1 );
 
-	BIO_printf( bioOut, "RESULT %d\r\n", strlen(encrypt.sym) );
+	BIO_printf( bioOut, "RESULT %ld\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 
 	return 0;

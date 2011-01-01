@@ -50,14 +50,15 @@ struct RelidEncSig
 	char *sym;
 };
 
-struct Identity
+
+struct IdentityOrig
 {
-	Identity( const char *identity ) :
+	IdentityOrig( const char *identity ) :
 		identity(identity),
 		haveId(false)
 	{}
 
-	Identity() {}
+	IdentityOrig() {}
 
 	void load( const char *identity )
 		{ this->identity = identity; }
@@ -74,6 +75,64 @@ struct Identity
 private:
 	bool haveId;
 	long long id;
+};
+
+struct User
+{
+	User( MYSQL *mysql, const char *user )
+	: 
+		mysql(mysql),
+		user(user),
+		haveId(false),
+		_id(-1)
+	{}
+	
+	long long id();
+	
+	MYSQL *mysql;
+	const char *user;
+
+	bool haveId;
+	long long _id;
+};
+
+struct Identity
+{
+	Identity( MYSQL *mysql, const char *iduri )
+	:
+		mysql(mysql),
+		iduri(iduri),
+		haveId(false), 
+		parsed(false),
+		_id(-1)
+	{}
+
+	Identity() {}
+
+	void load( const char *identity )
+		{ this->iduri = iduri; }
+
+	MYSQL *mysql;
+	const char *iduri;
+
+	long long id();
+	AllocString hash();
+
+	const char *host();
+	const char *user();
+	const char *site();
+
+	Keys *fetchPublicKey();
+
+private:
+	long parse();
+
+	const char *_host;
+	const char *_user;
+	const char *_site;
+
+	bool haveId, parsed;
+	long long _id;
 };
 
 void runQueue( const char *siteName );
@@ -107,7 +166,7 @@ extern Global gbl;
 void newUser( MYSQL *mysql, const char *user, const char *pass );
 void publicKey( MYSQL *mysql, const char *identity );
 void certificate( MYSQL *mysql, const char *identity );
-void relidRequest( MYSQL *mysql, const char *user, const char *identity );
+void relidRequest( MYSQL *mysql, const char *user, const char *iduri );
 void fetchRequestedRelid( MYSQL *mysql, const char *reqid );
 void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 		const char *identity );
@@ -126,7 +185,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 		long long generation, const char *broadcastKey, const char *friendProof1,
 		const char *friendProof2 );
 
-long fetchPublicKeyNet( PublicKey &pub, const char *site,
+void fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
 long openInetConnection( const char *hostname, unsigned short port );
 long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
@@ -294,14 +353,7 @@ long long lastInsertId( MYSQL *mysql );
 
 struct TlsConnect
 {
-	int connect( const char *host, const char *site );
-	int connect2( const char *host, const char *site );
-	int connect4( MYSQL *mysql, const char *host,
-		const char *site, const char *relid, 
-		const char *user, const char *friendId );
-	int connect5( MYSQL *mysql, const char *host,
-		const char *site, const char *relid, 
-		const char *user, const char *friendId );
+	void connect( const char *host, const char *site );
 	BIO *sbio;
 };
 
@@ -435,7 +487,8 @@ struct NotifyAcceptResultParser
 	int parse( const char *msg, long mLen );
 };
 
-Keys *fetchPublicKey( MYSQL *mysql, const char *identity );
+Keys *fetchPublicKey( MYSQL *mysql, const char *iduri );
+Keys *loadKey( MYSQL *mysql, User &user );
 Keys *loadKey( MYSQL *mysql, const char *user );
 long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,

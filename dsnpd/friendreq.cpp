@@ -36,13 +36,14 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-bool checkFriendClaimExists( MYSQL *mysql, const char *user,
-		const char *identity )
+bool checkFriendClaimExists( MYSQL *mysql, User &user, Identity &identity )
 {
 	/* Check to see if there is already a friend claim. */
-	DbQuery claim( mysql, "SELECT user, iduri FROM friend_claim "
-		"WHERE user = %e AND iduri = %e",
-		user, identity );
+	DbQuery claim( mysql, 
+		"SELECT id "
+		"FROM friend_claim "
+		"WHERE user_id = %L AND identity_id = %L",
+		user.id(), identity.id() );
 
 	if ( claim.rows() != 0 )
 		return true;
@@ -50,21 +51,22 @@ bool checkFriendClaimExists( MYSQL *mysql, const char *user,
 	return false;
 }
 
-bool checkFriendRequestExists( MYSQL *mysql, const char *user,
-		const char *identity )
+bool checkFriendRequestExists( MYSQL *mysql, User &user, Identity &identity )
 {
-	DbQuery exists( mysql, "SELECT for_user, from_id FROM friend_request "
-		"WHERE for_user = %e AND from_id = %e",
-		user, identity );
+	/* Check to see if there is already a friend claim. */
+	DbQuery claim( mysql, 
+		"SELECT id "
+		"FROM relid_request "
+		"WHERE user_id = %L AND identity_id = %L",
+		user.id(), identity.id() );
 
-	if ( exists.rows() > 0 )
+	if ( claim.rows() != 0 )
 		return true;
 
 	return false;
 }
 
-
-void relidRequest( MYSQL *mysql, const char *user, const char *identity )
+void relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -74,11 +76,17 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	 * f) makes message available at $FR-URI/friend-request/$FR-REQID.asc
 	 * g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 	 */
+	
+	User user( mysql, _user );
+	Identity identity( mysql, _iduri );
+
+	if ( user.id() < 0 )
+		throw InvalidUser( user.user );
 
 	/* Check to make sure this isn't ourselves. */
-	String ourId( "%s%s/", c->CFG_URI, user );
-	if ( strcasecmp( ourId.data, identity ) == 0 )
-		throw CannotFriendSelf( identity );
+	String ourId( "%s%s/", c->CFG_URI, user.user );
+	if ( strcasecmp( ourId.data, identity.iduri ) == 0 )
+		throw CannotFriendSelf( identity.iduri );
 	
 	/* FIXME: these should be presented to the user only after the bounce back
 	 * that authenticates the submitter, otherwise anyone can test friendship
@@ -86,53 +94,45 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 
 	/* Check for the existence of a friend claim. */
 	if ( checkFriendClaimExists( mysql, user, identity ) )
-		throw FriendClaimExists( user, identity );
+		throw FriendClaimExists( user.user, identity.iduri );
 
 	/* Check for the existence of a friend request. */
 	if ( checkFriendRequestExists( mysql, user, identity ) )
-		throw FriendRequestExists( user, identity );
+		throw FriendRequestExists( user.user, identity.iduri );
 
-	/* Get the public key for the identity. */
-	Keys *id_pub = fetchPublicKey( mysql, identity );
-	if ( id_pub == 0 ) {
-		BIO_printf( bioOut, "ERROR %d\n", ERROR_PUBLIC_KEY );
-		return;
-	}
+	Keys *idPub = identity.fetchPublicKey();
 
 	/* Load the private key for the user the request is for. */
-	Keys *user_priv = loadKey( mysql, user );
+	Keys *userPriv = loadKey( mysql, user );
 
 	/* Generate the relationship and request ids. */
-	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
-	RAND_bytes( requested_relid, RELID_SIZE );
-	RAND_bytes( fr_reqid, REQID_SIZE );
+	unsigned char relidBin[RELID_SIZE], reqidBin[REQID_SIZE];
+	RAND_bytes( relidBin, RELID_SIZE );
+	RAND_bytes( reqidBin, REQID_SIZE );
 
 	/* Encrypt and sign the relationship id. */
 	Encrypt encrypt;
-	encrypt.load( id_pub, user_priv );
-	int sigRes = encrypt.signEncrypt( requested_relid, RELID_SIZE );
+	encrypt.load( idPub, userPriv );
+	int sigRes = encrypt.signEncrypt( relidBin, RELID_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 	
 	/* Store the request. */
-	char *requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
-	char *reqid_str = binToBase64( fr_reqid, REQID_SIZE );
+	String relid = binToBase64( relidBin, RELID_SIZE );
+	String reqid = binToBase64( reqidBin, REQID_SIZE );
 
-	message("allocated requested_relid %s for user %s\n", requested_relid_str, user );
+	message("allocated requested_relid %s for user %s\n", relid.data, user.user );
 
 	DbQuery( mysql,
 		"INSERT INTO relid_request "
-		"( for_user, from_id, requested_relid, reqid, msg_sym ) "
-		"VALUES( %e, %e, %e, %e, %e )",
-		user, identity, requested_relid_str, reqid_str, encrypt.sym );
+		"( user_id, identity_id, requested_relid, reqid, msg_sym ) "
+		"VALUES( %L, %L, %e, %e, %e )",
+		user.id(), identity.id(), relid.data, reqid.data, encrypt.sym );
 
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s\r\n", reqid_str );
-
-	delete[] requested_relid_str;
-	delete[] reqid_str;
+	BIO_printf( bioOut, "OK %s\r\n", reqid.data );
 }
 
 void fetchRequestedRelid( MYSQL *mysql, const char *reqid )
@@ -186,7 +186,7 @@ void relidResponse( MYSQL *mysql, const char *user,
 	unsigned char message[RELID_SIZE*2];
 	Encrypt encrypt;
 
-	Identity id( identity );
+	IdentityOrig id( identity );
 	id.parse();
 
 	/* Get the public key for the identity. */
@@ -312,7 +312,7 @@ void friendFinal( MYSQL *mysql, const char *user,
 	unsigned char user_reqid[REQID_SIZE];
 	char *user_reqid_str;
 	Encrypt encrypt;
-	Identity id( identity );
+	IdentityOrig id( identity );
 	id.parse();
 
 	/* Get the public key for the identity. */

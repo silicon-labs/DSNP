@@ -21,6 +21,7 @@
 #include <openssl/bio.h>
 #include "dsnp.h"
 #include "string.h"
+#include "error.h"
 
 #define MAX_MSG_LEN 16384
 
@@ -393,7 +394,7 @@ int serverParseLoop()
 		const char *p = buf, *pe = buf + lineLen;
 		%% write exec;
 
-		BIO_flush( bioOut );
+		(void)BIO_flush( bioOut );
 
 		if ( exit )
 			break;
@@ -713,7 +714,7 @@ long EncryptedBroadcastParser::parse( const char *msg )
 	write data;
 }%%
 
-long fetchPublicKeyNet( PublicKey &pub, const char *site, 
+void fetchPublicKeyNet( PublicKey &pub, const char *site, 
 		const char *host, const char *user )
 {
 	static char buf[8192];
@@ -724,14 +725,12 @@ long fetchPublicKeyNet( PublicKey &pub, const char *site,
 	String n, e;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( host, site );
-	if ( result < 0 ) 
-		return result;
+	tlsConnect.connect( host, site );
 
 	message( "fetching public key for %s from host %s site %s\n", user, host, site );
 
 	BIO_printf( tlsConnect.sbio, "public_key %s\r\n", user );
-	BIO_flush( tlsConnect.sbio );
+	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -739,7 +738,7 @@ long fetchPublicKeyNet( PublicKey &pub, const char *site,
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
+		throw CommError( "read error" );
 
 	/* Parser for response. */
 	%%{
@@ -761,17 +760,13 @@ long fetchPublicKeyNet( PublicKey &pub, const char *site,
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
+		throw CommError( "parse error" );
 	
 	if ( ! OK )
-		return ERR_SERVER_ERROR;
+		throw CommError( "server responded with failure" );
 	
 	pub.n = n.relinquish();
 	pub.e = e.relinquish();
-
-	message("fetchPublicKeyNet returning %s %s\n", pub.n, pub.e );
-
-	return 0;
 }
 
 /*
@@ -795,13 +790,11 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	String sym;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( host, site );
-	if ( result < 0 ) 
-		return result;
+	tlsConnect.connect( host, site );
 
 	/* Send the request. */
 	BIO_printf( tlsConnect.sbio, "fetch_requested_relid %s\r\n", fr_reqid );
-	BIO_flush( tlsConnect.sbio );
+	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -859,13 +852,11 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	String sym;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( host, site );
-	if ( result < 0 ) 
-		return result;
+	tlsConnect.connect( host, site );
 
 	/* Send the request. */
 	BIO_printf( tlsConnect.sbio, "fetch_response_relid %s\r\n", reqid );
-	BIO_flush( tlsConnect.sbio );
+	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -921,13 +912,11 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 	String sym;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( host, site );
-	if ( result < 0 ) 
-		return result;
+	tlsConnect.connect( host, site );
 
 	/* Send the request. */
 	BIO_printf( tlsConnect.sbio, "fetch_ftoken %s\r\n", flogin_reqid );
-	BIO_flush( tlsConnect.sbio );
+	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -965,15 +954,15 @@ long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
 
 
 /*
- * Identity::parse()
+ * IdentityOrig::parse()
  */
 
 %%{
-	machine identity;
+	machine identity_orig;
 	write data;
 }%%
 
-long Identity::parse()
+long IdentityOrig::parse()
 {
 	long result = 0, cs;
 	const char *p, *pe, *eof;
@@ -1011,6 +1000,53 @@ long Identity::parse()
 }
 
 /*
+ * Identity2::parse()
+ */
+
+%%{
+	machine identity;
+	write data;
+}%%
+
+long Identity::parse()
+{
+	const char *p = iduri;
+	const char *pe = p + strlen(iduri);
+	const char *eof = pe;
+
+	const char *i1, *i2;
+	const char *h1, *h2;
+	const char *pp1, *pp2;
+
+	/* Parser for response. */
+	%%{
+		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
+
+		main :=
+			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
+			>{i1=p;} %{i2=p;};
+	}%%
+
+
+	long result = 0, cs;
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
+	
+	_host = allocString( h1, h2 );
+	_user = allocString( pp1, pp2 );
+
+	/* We can use the start of the last path part to get the site. */
+	_site = allocString( iduri, pp1 );
+
+	return result;
+}
+
+/*
  * send_broadcast_net
  */
 
@@ -1030,21 +1066,19 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	String relid, gen_str, seq_str;
 
 	/* Need to parse the identity. */
-	Identity site( toSite );
+	IdentityOrig site( toSite );
 	pres = site.parse();
 
 	if ( pres < 0 )
 		return pres;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( site.host, toSite );
-	if ( result < 0 ) 
-		return result;
+	tlsConnect.connect( site.host, toSite );
 	
 	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ ) {
 		BIO_printf( tlsConnect.sbio, 
 			"broadcast_recipient %s\r\n", r->c_str() );
-		BIO_flush( tlsConnect.sbio );
+		(void)BIO_flush( tlsConnect.sbio );
 
 		/* Read the result. */
 		BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -1055,7 +1089,7 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 			network, keyGen, mLen );
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	BIO_flush( tlsConnect.sbio );
+	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -1116,22 +1150,20 @@ long sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
 		*result_message = 0;
 
 	/* Need to parse the identity. */
-	Identity toIdent( to_identity );
+	IdentityOrig toIdent( to_identity );
 	pres = toIdent.parse();
 
 	if ( pres < 0 )
 		return pres;
 
 	TlsConnect tlsConnect;
-	int result = tlsConnect.connect( toIdent.host, toIdent.site );
-	if ( result < 0 ) 
-		return result;
+	tlsConnect.connect( toIdent.host, toIdent.site );
 
 	/* Send the request. */
 	BIO_printf( tlsConnect.sbio, "%smessage %s %ld\r\n", prefriend ? "prefriend_" : "", relid, mLen );
 	BIO_write( tlsConnect.sbio, message, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	BIO_flush( tlsConnect.sbio );
+	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );

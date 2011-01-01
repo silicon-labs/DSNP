@@ -58,7 +58,7 @@ void test_tls()
 	BIO_printf( bio,
 		"DSNP/0.1 https://localhost/spp/\r\n"
 		"start_tls\r\n" );
-	BIO_flush( bio );
+	(void)BIO_flush( bio );
 
 	int len = BIO_gets( bio, buf, 8192 );
 	buf[len] = 0;
@@ -68,7 +68,7 @@ void test_tls()
 	bioIn = bioOut = sslStartClient( socketBio, socketBio, "localhost" );
 
 	BIO_printf( bioOut, "public_key age\r\n" );
-	BIO_flush( bioOut );
+	(void)BIO_flush( bioOut );
 	len = BIO_gets( bioIn, buf, 8192 );
 	buf[len] = 0;
 	message( "result: %s\n", buf );

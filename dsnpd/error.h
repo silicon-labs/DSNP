@@ -37,6 +37,9 @@
 #define EC_RSA_KEY_GEN_FAILED        113
 #define EC_INVALID_LOGIN             114
 #define EC_DATABASE_ERROR            115
+#define EC_INVALID_USER              116
+#define EC_COMM_ERROR                117
+#define EC_SSL_ERROR                 118
 
 struct UserError
 {
@@ -281,6 +284,69 @@ struct InvalidLogin
 	}
 };
 
+struct InvalidUser
+	: public UserError
+{
+	InvalidUser( const char *user )
+		: user(user) {}
 
+	String user;
+
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_INVALID_USER,
+				user.data );
+
+		error( "%d user %s does not exist\n",
+				EC_INVALID_USER,
+				user.data );
+	}
+};
+
+struct CommError
+	: public UserError
+{
+	CommError( const char *reason )
+		: reason(reason) {}
+
+	String reason;
+
+	virtual void print( BIO *bio )
+	{
+		/* FIXME: Can't use arbitrary strings. */
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_COMM_ERROR,
+				reason.data );
+
+		error( "%d communication error: %s\n",
+				EC_COMM_ERROR,
+				reason.data );
+	}
+};
+
+struct SslError
+	: public UserError
+{
+	SslError( const char *reason )
+		: reason(reason) {}
+
+	String reason;
+
+	virtual void print( BIO *bio )
+	{
+		/* FIXME: Can't use arbitrary strings. */
+		BIO_printf( bio, 
+				"ERROR %d %s\r\n",
+				EC_SSL_ERROR,
+				reason.data );
+
+		error( "%d SSL error: %s\n",
+				EC_SSL_ERROR,
+				reason.data );
+	}
+};
 
 #endif

@@ -53,10 +53,10 @@ void sslInitClient()
 	/* Create the SSL_CTX. */
 	ctx = SSL_CTX_new(TLSv1_client_method());
 	if ( ctx == NULL )
-		fatal("creating context failed\n");
+		throw SslError( "SslContetCreationFailed();" );
 	
 	if ( c->CFG_TLS_CA_CERTS == 0 )
-		fatal("CFG_TLS_CA_CERTS is not set\n");
+		throw SslError( "SslCaCertsNotSet();" );
 
 	/* Load the CA certificates that we will use to verify. */
 	int result = SSL_CTX_load_verify_locations( ctx, c->CFG_TLS_CA_CERTS, NULL );
@@ -156,7 +156,7 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio )
 	return bio;
 }
 
-int TlsConnect::connect( const char *host, const char *site )
+void TlsConnect::connect( const char *host, const char *site )
 {
 	static char buf[8192];
 
@@ -173,7 +173,7 @@ int TlsConnect::connect( const char *host, const char *site )
 		"DSNP/0.1 %s\r\n"
 		"start_tls\r\n",
 		site );
-	BIO_flush( buffer );
+	(void) BIO_flush( buffer ); 
 
 	/* Read the result. */
 	BIO_gets( buffer, buf, 8192 );
@@ -182,14 +182,12 @@ int TlsConnect::connect( const char *host, const char *site )
 
 	sslInitClient();
 	sbio = sslStartClient( socketBio, socketBio, host );
-
-	return 0;
 }
 
 void startTls()
 {
 	BIO_printf( bioOut, "OK\r\n" );
-	BIO_flush( bioOut );
+	(void) BIO_flush( bioOut );
 
 	/* Don't need the buffering wrappers anymore. */
 	bioIn = BIO_pop( bioIn );

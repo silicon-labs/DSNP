@@ -16,6 +16,9 @@ define( 'EC_USER_EXISTS',                112 );
 define( 'EC_RSA_KEY_GEN_FAILED',         113 );
 define( 'EC_INVALID_LOGIN',              114 );
 define( 'EC_DATABASE_ERROR',             115 );
+define( 'EC_INVALID_USER',               116 );
+define( 'EC_COMM_ERROR',                 117 );
+define( 'EC_SSL_ERROR',                  118 );
 
 function userError( $code, $args )
 {

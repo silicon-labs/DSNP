@@ -119,7 +119,7 @@ int serverMain()
 	}
 	catch ( UserError &e ) {
 		e.print( bioOut );
-		BIO_flush( bioOut );
+		(void)BIO_flush( bioOut );
 	}
 
 	close( 0 );

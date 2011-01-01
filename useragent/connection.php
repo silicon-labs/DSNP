@@ -15,8 +15,8 @@ class Connection
 			exit(1);
 		
 		$send = 
-			"DSNP/0.1 " . $CFG[URI] . "\r\n" .
-			"comm_key " . $CFG[COMM_KEY] . "\r\n";
+			"DSNP/0.1 " . $CFG['URI'] . "\r\n" .
+			"comm_key " . $CFG['COMM_KEY'] . "\r\n";
 		fwrite( $this->fp, $send );
 	}
 
@@ -147,6 +147,8 @@ class Connection
 		$this->success = ereg(
 			"^OK",
 			$this->result );
+
+		$this->checkResult();
 	}
 
 	function acceptFriend( $user, $reqid )

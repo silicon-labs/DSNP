@@ -56,7 +56,7 @@ bool checkFriendRequestExists( MYSQL *mysql, User &user, Identity &identity )
 	/* Check to see if there is already a friend claim. */
 	DbQuery claim( mysql, 
 		"SELECT id "
-		"FROM relid_request "
+		"FROM friend_request "
 		"WHERE user_id = %L AND identity_id = %L",
 		user.id(), identity.id() );
 
@@ -150,20 +150,6 @@ void fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 	}
 }
 
-long storeRelidResponse( MYSQL *mysql, const char *identity, const char *fr_relid_str,
-		const char *fr_reqid_str, const char *relid_str, const char *reqid_str, 
-		const char *sym )
-{
-	DbQuery( mysql,
-		"INSERT INTO relid_response "
-		"( from_id, requested_relid, returned_relid, reqid, msg_sym ) "
-		"VALUES ( %e, %e, %e, %e, %e )",
-		identity, fr_relid_str, relid_str, 
-		reqid_str, sym );
-	
-	return 0;
-}
-
 void relidResponse( MYSQL *mysql, const char *_user, 
 		const char *reqid, const char *_iduri )
 {
@@ -241,10 +227,17 @@ void relidResponse( MYSQL *mysql, const char *_user,
 
 	::message( "allocated response relid %s for user %s\n", response_relid_str, user.user );
 
-	storeRelidResponse( mysql, identity.iduri, requested_relid_str, reqid, 
-			response_relid_str, response_reqid_str, encrypt.sym );
+	
+	/* Record the response, which will be fetched. */
+	DbQuery( mysql,
+		"INSERT INTO relid_response "
+		"( identity_id, requested_relid, returned_relid, reqid, msg_sym ) "
+		"VALUES ( %L, %e, %e, %e, %e )",
+		identity.id(), requested_relid_str, response_relid_str, 
+		response_reqid_str, encrypt.sym );
+	
 
-	/* Insert the friend claim. */
+	/* Recored the sent request. */
 	DbQuery( mysql, "INSERT INTO sent_friend_request "
 		"( user_id, identity_id, requested_relid, returned_relid ) "
 		"VALUES ( %L, %L, %e, %e );",
@@ -281,7 +274,7 @@ long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 {
 	char *requested_relid_str = binToBase64( fr_relid, RELID_SIZE );
 	DbQuery request( mysql,
-		"SELECT from_id FROM relid_request WHERE requested_relid = %e", 
+		"SELECT id FROM relid_request WHERE requested_relid = %e", 
 		requested_relid_str );
 
 	/* Check for a result. */
@@ -291,45 +284,42 @@ long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 	return 0;
 }
 
-void friendFinal( MYSQL *mysql, const char *user, 
-		const char *reqid_str, const char *identity )
+void friendFinal( MYSQL *mysql, const char *_user, 
+		const char *reqid_str, const char *_iduri )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 
 	 * b) decrypts and verifies message, must contain correct $FR-RELID
 	 * c) stores request for friendee to accept/deny
 	 */
 
-	int verifyRes, fetchRes;
-	Keys *user_priv, *id_pub;
-	unsigned char *message;
-	unsigned char requested_relid[RELID_SIZE], returned_relid[RELID_SIZE];
-	char *requested_relid_str, *returned_relid_str;
-	unsigned char user_reqid[REQID_SIZE];
-	char *user_reqid_str;
-	Encrypt encrypt;
-	IdentityOrig id( identity );
-	id.parse();
+	User user( mysql, _user );
+	if ( user.id() < 0 )
+		throw InvalidUser( user.user );
+
+	Identity identity( mysql, _iduri );
+
 
 	/* Get the public key for the identity. */
-	id_pub = fetchPublicKey( mysql, identity );
+	Keys *id_pub = identity.fetchPublicKey();
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
 		return;
 	}
 
 	RelidEncSig encsig;
-	fetchRes = fetch_response_relid_net( encsig, id.site, id.host, reqid_str );
+	int fetchRes = fetch_response_relid_net( encsig, identity.site(), identity.host(), reqid_str );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
 		return;
 	}
 	
 	/* Load the private key for the user the request is for. */
-	user_priv = loadKey( mysql, user );
+	Keys *user_priv = loadKey( mysql, user );
 
+	Encrypt encrypt;
 	encrypt.load( id_pub, user_priv );
 
-	verifyRes = encrypt.decryptVerify( encsig.sym );
+	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		::message("friend_final: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
@@ -342,8 +332,9 @@ void friendFinal( MYSQL *mysql, const char *user,
 		return;
 	}
 
-	message = encrypt.decrypted;
+	unsigned char *message = encrypt.decrypted;
 
+	unsigned char requested_relid[RELID_SIZE], returned_relid[RELID_SIZE];
 	memcpy( requested_relid, message, RELID_SIZE );
 	memcpy( returned_relid, message+RELID_SIZE, RELID_SIZE );
 
@@ -353,21 +344,22 @@ void friendFinal( MYSQL *mysql, const char *user,
 		return;
 	}
 		
-	requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
-	returned_relid_str = binToBase64( returned_relid, RELID_SIZE );
+	char *requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	char *returned_relid_str = binToBase64( returned_relid, RELID_SIZE );
 
 	/* Make a user request id. */
+	unsigned char user_reqid[REQID_SIZE];
 	RAND_bytes( user_reqid, REQID_SIZE );
-	user_reqid_str = binToBase64( user_reqid, REQID_SIZE );
+	char *user_reqid_str = binToBase64( user_reqid, REQID_SIZE );
 
 	DbQuery( mysql, 
 		"INSERT INTO friend_request "
-		" ( for_user, from_id, reqid, requested_relid, returned_relid ) "
-		" VALUES ( %e, %e, %e, %e, %e ) ",
-		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
+		" ( user_id, identity_id, reqid, requested_relid, returned_relid ) "
+		" VALUES ( %L, %L, %e, %e, %e ) ",
+		user.id(), identity.id(), user_reqid_str, requested_relid_str, returned_relid_str );
 	
 	String args( "friend_request %s %s %s %s %s",
-		user, identity, user_reqid_str, requested_relid_str, returned_relid_str );
+		user.user, identity.iduri, user_reqid_str, requested_relid_str, returned_relid_str );
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
@@ -376,6 +368,3 @@ void friendFinal( MYSQL *mysql, const char *user,
 	delete[] requested_relid_str;
 	delete[] returned_relid_str;
 }
-
-
-

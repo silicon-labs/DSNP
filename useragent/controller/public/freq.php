@@ -51,26 +51,21 @@ class PublicFreqController extends Controller
 		$connection->openLocalPriv();
 		$connection->relidRequest( $this->USER[USER], $identity );
 
-		$arg_identity = 'identity=' . urlencode( $this->USER[URI]);
+		$arg_identity = 'identity=' . urlencode( $this->USER['iduri']);
 		$arg_reqid = 'fr_reqid=' . urlencode( $connection->regs[1] );
 		$this->redirect("{$identity}freq/retrelid?{$arg_identity}&{$arg_reqid}" );
 	}
 
 	function frfinal()
 	{
-		$identity = $_GET['identity'];
+		$iduri = $_GET['identity'];
 		$reqid = $_GET['reqid'];
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-		$connection->frFinal( $this->USER[USER], $reqid, $identity );
+		$connection->frFinal( $this->USER['USER'], $reqid, $iduri );
 
-		if ( $connection->success ) {
-			$this->redirect( $this->USER[URI] );
-		}
-		else {
-			echo $this->result;
-		}
+		$this->redirect( $this->USER['iduri'] );
 	}
 
 	function retrelid()

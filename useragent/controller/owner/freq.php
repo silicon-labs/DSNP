@@ -21,7 +21,7 @@ class OwnerFreqController extends Controller
 		$connection->relidResponse( 
 			$this->USER[USER], $fr_reqid, $identity );
 
-		$arg_identity = 'identity=' . urlencode( $this->USER[URI]);
+		$arg_identity = 'identity=' . urlencode( $this->USER['iduri']);
 		$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
 
 		$this->redirect("${identity}freq/frfinal?${arg_identity}&${arg_reqid}" );

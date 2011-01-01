@@ -17,19 +17,21 @@ class OwnerIndexController extends Controller
 		$start = $this->args[start];
 
 		$sentFriendRequests = dbQuery(
-			"SELECT * FROM sent_friend_request WHERE from_user = %e", 
-			$this->USER['USER'] );
+			"SELECT * FROM sent_friend_request WHERE user_id = %L", 
+			$this->USER['USER_ID'] );
 		$this->vars['sentFriendRequests'] = $sentFriendRequests;
 
 		# Load the user's friend requests. 
 		$friendRequests = dbQuery( 
-			"SELECT * FROM friend_request WHERE for_user = %e",
-			$this->USER['USER'] );
+			"SELECT * " .
+			"FROM friend_request "
+			"WHERE user_id = %L",
+			$this->USER['USER_ID'] );
 		$this->vars['friendRequests'] = $friendRequests;
 
 		# Load the friend list.
 		$friendClaims = dbQuery(
-			"SELECT * FROM friend_claim WHERE user_id = %l",
+			"SELECT * FROM friend_claim WHERE user_id = %L",
 			$this->USER['USER_ID'],
 			REL_TYPE_FRIEND );
 		$this->vars['friendClaims'] = $friendClaims;

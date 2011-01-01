@@ -101,7 +101,8 @@ CREATE TABLE relid_response
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	from_id TEXT,
+	identity_id BIGINT,
+
 	requested_relid VARCHAR(48) BINARY,
 	returned_relid VARCHAR(48) BINARY,
 	reqid VARCHAR(48) BINARY,
@@ -115,8 +116,9 @@ CREATE TABLE friend_request
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	for_user VARCHAR(20), 
-	from_id TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	reqid VARCHAR(48) BINARY,
 	requested_relid VARCHAR(48) BINARY,
 	returned_relid VARCHAR(48) BINARY,
@@ -129,8 +131,9 @@ CREATE TABLE sent_friend_request
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	from_user VARCHAR(20),
-	for_id TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	requested_relid VARCHAR(48) BINARY,
 	returned_relid VARCHAR(48) BINARY,
 

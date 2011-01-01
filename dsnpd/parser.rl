@@ -738,7 +738,7 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 )
-		throw CommError( "read error" );
+		throw ReadError();
 
 	/* Parser for response. */
 	%%{
@@ -760,10 +760,10 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		throw CommError( "parse error" );
+		throw ParseError();
 	
 	if ( ! OK )
-		throw CommError( "server responded with failure" );
+		throw ResponseIsError();
 	
 	pub.n = n.relinquish();
 	pub.e = e.relinquish();

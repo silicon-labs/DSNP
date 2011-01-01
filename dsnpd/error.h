@@ -38,8 +38,11 @@
 #define EC_INVALID_LOGIN             114
 #define EC_DATABASE_ERROR            115
 #define EC_INVALID_USER              116
-#define EC_COMM_ERROR                117
-#define EC_SSL_ERROR                 118
+#define EC_READ_ERROR                117
+#define EC_PARSE_ERROR               118
+#define EC_RESPONSE_IS_ERROR         119
+#define EC_SSL_NEW_CONTEXT_FAILURE   120
+#define EC_SSL_CA_CERTS_NOT_SET      121
 
 struct UserError
 {
@@ -305,47 +308,75 @@ struct InvalidUser
 	}
 };
 
-struct CommError
+struct ReadError
 	: public UserError
 {
-	CommError( const char *reason )
-		: reason(reason) {}
-
-	String reason;
-
 	virtual void print( BIO *bio )
 	{
-		/* FIXME: Can't use arbitrary strings. */
 		BIO_printf( bio, 
-				"ERROR %d %s\r\n",
-				EC_COMM_ERROR,
-				reason.data );
+				"ERROR %d\r\n",
+				EC_READ_ERROR );
 
-		error( "%d communication error: %s\n",
-				EC_COMM_ERROR,
-				reason.data );
+		error( "%d communication error: read error\n",
+				EC_READ_ERROR );
 	}
 };
 
-struct SslError
+struct ParseError
 	: public UserError
 {
-	SslError( const char *reason )
-		: reason(reason) {}
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d\r\n",
+				EC_PARSE_ERROR );
 
-	String reason;
+		error( "%d communication error: parse error\n",
+				EC_PARSE_ERROR );
+	}
+};
 
+struct ResponseIsError
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio, 
+				"ERROR %d\r\n",
+				EC_RESPONSE_IS_ERROR );
+
+		error( "%d communication error: server returned failure code\n",
+				EC_RESPONSE_IS_ERROR );
+	}
+};
+
+struct SslNewContextFailure
+	: public UserError
+{
 	virtual void print( BIO *bio )
 	{
 		/* FIXME: Can't use arbitrary strings. */
 		BIO_printf( bio, 
-				"ERROR %d %s\r\n",
-				EC_SSL_ERROR,
-				reason.data );
+				"ERROR %d\r\n",
+				EC_SSL_NEW_CONTEXT_FAILURE );
 
-		error( "%d SSL error: %s\n",
-				EC_SSL_ERROR,
-				reason.data );
+		error( "%d SSL error: new context failure\n",
+				EC_SSL_NEW_CONTEXT_FAILURE );
+	}
+};
+
+struct SslCaCertsNotSet
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		/* FIXME: Can't use arbitrary strings. */
+		BIO_printf( bio, 
+				"ERROR %d\r\n",
+				EC_SSL_CA_CERTS_NOT_SET );
+
+		error( "%d SSL error: CA_CERTS is not set\n",
+				EC_SSL_CA_CERTS_NOT_SET );
 	}
 };
 

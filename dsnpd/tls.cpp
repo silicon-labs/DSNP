@@ -53,10 +53,10 @@ void sslInitClient()
 	/* Create the SSL_CTX. */
 	ctx = SSL_CTX_new(TLSv1_client_method());
 	if ( ctx == NULL )
-		throw SslError( "SslContetCreationFailed();" );
+		throw SslNewContextFailure();
 	
 	if ( c->CFG_TLS_CA_CERTS == 0 )
-		throw SslError( "SslCaCertsNotSet();" );
+		throw SslCaCertsNotSet();
 
 	/* Load the CA certificates that we will use to verify. */
 	int result = SSL_CTX_load_verify_locations( ctx, c->CFG_TLS_CA_CERTS, NULL );

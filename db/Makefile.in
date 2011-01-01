@@ -15,15 +15,22 @@
 
 prefix = @prefix@
 
-schema_version := $(shell \
-	find -name 'update-*.sql' | \
-	sed 's|\./update-||; s|\.sql||; s|^0*||' | \
-	sort -n -r | head -1)
+#
+#schema_version := $(shell \
+#	find -name 'update-*.sql' | \
+#	sed 's|\./update-||; s|\.sql||; s|^0*||' | \
+#	sort -n -r | head -1)
+#
+#schema_version:
+#	echo $(schema_version) > schema_version
+#
+#all: schema_version
+#
+#install:
+#	install -m '644' schema_version $(DESTDIR)$(prefix)/share/dsnp
+#
 
-schema_version:
-	echo $(schema_version) > schema_version
-
-all: schema_version
+all:
 
 install: all
 	install -d $(DESTDIR)$(prefix)/share/dsnp
@@ -31,4 +38,3 @@ install: all
 	install drop-db.sh $(DESTDIR)$(prefix)/share/dsnp
 	install -m '644' common.sh $(DESTDIR)$(prefix)/share/dsnp
 	install -m '644' init.sql $(DESTDIR)$(prefix)/share/dsnp
-	install -m '644' schema_version $(DESTDIR)$(prefix)/share/dsnp

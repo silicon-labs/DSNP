@@ -30,7 +30,7 @@ if ( isset( $_COOKIE['PHPSESSID'] ) ) {
 }
 
 $ROLE = 'public';
-if ( isset( $USER['USER'] ) ) {
+if ( isset( $USER['USER'] ) && isset( $_SESSION['ROLE'] ) ) {
 	if ( $_SESSION['ROLE'] == 'owner' )
 		$ROLE = 'owner';
 	else if ( $_SESSION['ROLE'] == 'friend' ) {

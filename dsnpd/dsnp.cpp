@@ -528,8 +528,7 @@ long long Identity::id()
 	if ( !haveId ) {
 		String hash = makeIduriHash( iduri );
 
-		/* Always, try to insert. Ignore failures. FIXME: need to loop on the
-		 * random selection here. */
+		/* Always try to insert. Ignore failures. */
 		DbQuery insert( mysql, 
 			"INSERT IGNORE INTO identity "
 			"( iduri, hash ) "
@@ -595,6 +594,7 @@ const char *Identity::user()
 {
 	if ( !parsed )
 		parse();
+	message("user: %s\n", _user );
 	return _user;
 }
 
@@ -603,5 +603,51 @@ const char *Identity::site()
 	if ( !parsed )
 		parse();
 	return _site;
+}
+
+Relationship::Relationship( MYSQL *mysql, User &user, int type, Identity &identity )
+:
+	mysql(mysql),
+	haveId(false)
+{
+	user_id = user.id();
+	this->type = type;
+	identity_id = identity.id();
+	defaultName.set( identity.user() );
+	message("relationship default name: %s\n", identity.user() );
+}
+
+long long Relationship::id()
+{
+	if ( !haveId ) {
+		/* Always try to insert. Ignore failures. */
+		DbQuery insert( mysql, 
+			"INSERT IGNORE INTO relationship "
+			"( user_id, identity_id ) "
+			"VALUES ( %L, %L )",
+			user_id, identity_id
+		);
+
+		if ( insert.affectedRows() > 0 ) {
+			_id = lastInsertId( mysql );
+
+			DbQuery( mysql, 
+				"UPDATE relationship SET type = %l, name = %e WHERE id = %L",
+				type, defaultName.data, _id
+			);
+		}
+		else {
+			DbQuery find( mysql,
+				"SELECT id FROM relationship "
+				"WHERE user_id = %L AND identity_id = %L ", 
+				user_id, identity_id );
+			MYSQL_ROW row = find.fetchRow();
+			_id = strtoll( row[0], 0, 10 );
+		}
+
+		haveId = true;
+	}
+
+	return _id;
 }
 

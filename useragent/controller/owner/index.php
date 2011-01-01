@@ -24,7 +24,7 @@ class OwnerIndexController extends Controller
 		# Load the user's friend requests. 
 		$friendRequests = dbQuery( 
 			"SELECT * " .
-			"FROM friend_request "
+			"FROM friend_request " .
 			"WHERE user_id = %L",
 			$this->USER['USER_ID'] );
 		$this->vars['friendRequests'] = $friendRequests;

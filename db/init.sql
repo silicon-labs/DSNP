@@ -47,7 +47,8 @@ CREATE TABLE relationship
 	name TEXT,
 	email VARCHAR(50),
 
-	PRIMARY KEY( id )
+	PRIMARY KEY( id ),
+	UNIQUE( user_id, identity_id )
 );
 
 -- Public and Private keys for users.
@@ -118,6 +119,7 @@ CREATE TABLE friend_request
 
 	user_id BIGINT,
 	identity_id BIGINT,
+	relationship_id BIGINT,
 
 	reqid VARCHAR(48) BINARY,
 	requested_relid VARCHAR(48) BINARY,

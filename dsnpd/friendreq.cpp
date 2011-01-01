@@ -298,7 +298,6 @@ void friendFinal( MYSQL *mysql, const char *_user,
 
 	Identity identity( mysql, _iduri );
 
-
 	/* Get the public key for the identity. */
 	Keys *id_pub = identity.fetchPublicKey();
 	if ( id_pub == 0 ) {
@@ -352,11 +351,13 @@ void friendFinal( MYSQL *mysql, const char *_user,
 	RAND_bytes( user_reqid, REQID_SIZE );
 	char *user_reqid_str = binToBase64( user_reqid, REQID_SIZE );
 
+	Relationship relationship( mysql, user, REL_TYPE_FRIEND, identity );
+
 	DbQuery( mysql, 
 		"INSERT INTO friend_request "
-		" ( user_id, identity_id, reqid, requested_relid, returned_relid ) "
-		" VALUES ( %L, %L, %e, %e, %e ) ",
-		user.id(), identity.id(), user_reqid_str, requested_relid_str, returned_relid_str );
+		" ( user_id, identity_id, relationship_id, reqid, requested_relid, returned_relid ) "
+		" VALUES ( %L, %L, %L, %e, %e, %e ) ",
+		user.id(), identity.id(), relationship.id(), user_reqid_str, requested_relid_str, returned_relid_str );
 	
 	String args( "friend_request %s %s %s %s %s",
 		user.user, identity.iduri, user_reqid_str, requested_relid_str, returned_relid_str );

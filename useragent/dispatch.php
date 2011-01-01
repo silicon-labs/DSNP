@@ -2,7 +2,7 @@
 
 # Foo.
 $CONTROLLER_TYPE = null;
-if ( isset( $USER[USER] ) )
+if ( isset( $USER['USER'] ) )
 	$CONTROLLER_TYPE = $ROLE;
 else
 	$CONTROLLER_TYPE = 'site';

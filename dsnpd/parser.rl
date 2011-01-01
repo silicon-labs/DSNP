@@ -997,7 +997,7 @@ long IdentityOrig::parse()
 }
 
 /*
- * Identity2::parse()
+ * Identity::parse()
  */
 
 %%{
@@ -1042,6 +1042,7 @@ long Identity::parse()
 
 	parsed = true;
 
+	message("parsed user: %s\n", _user );
 	return result;
 }
 

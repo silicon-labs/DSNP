@@ -107,11 +107,6 @@ struct Identity
 		_id(-1)
 	{}
 
-	Identity() {}
-
-	void load( const char *identity )
-		{ this->iduri = iduri; }
-
 	MYSQL *mysql;
 	const char *iduri;
 
@@ -134,6 +129,24 @@ private:
 	bool haveId, parsed;
 	long long _id;
 };
+
+struct Relationship
+{
+	Relationship( MYSQL *mysql, User &user, int type, Identity &identity );
+
+	long long id();
+
+	MYSQL *mysql;
+	long long user_id;
+	int type;
+	long long identity_id;
+	String defaultName;
+
+private:
+	bool haveId;
+	long long _id;
+};
+
 
 void runQueue( const char *siteName );
 long runBroadcastQueue();

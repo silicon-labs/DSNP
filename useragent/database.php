@@ -59,6 +59,8 @@ function dbQuery()
 		$mapping = array();
 		$classDef = array();
 		while ( $row = mysql_fetch_assoc($query_result) ) {
+			# Are there any column names with '.' in them? If so we need to map
+			# them to arrays. Eg., row['foo.bar'] becomes row['foo']['bar'].
 			if ( !$checkedMapping ) {
 				$checkedMapping = true;
 

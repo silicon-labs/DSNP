@@ -27,7 +27,7 @@
 
 <p>
 <?php
-	echo $this->link( "create new user", "/site/index/newuser" );
+	echo $this->siteLink( "create new user", "/site/index/newuser" );
 ?>
 
 </div>
@@ -42,7 +42,7 @@
 
 foreach ( $users as $row ) {
 	$user = $row['user'];
-	echo $this->link( $user, "/$user/" );
+	echo $this->siteLink( $user, "/$user/" );
 	echo '<br>';
 }
 ?>

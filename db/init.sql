@@ -18,15 +18,30 @@ CREATE TABLE user
 	rsa_dmq1 TEXT BINARY,
 	rsa_iqmp TEXT BINARY,
 
-	identity TEXT,
+	iduri TEXT,
 	name VARCHAR(50),
 	email VARCHAR(50),
 	type INT,
+
+	identity_id BIGINT,
 
 	UNIQUE(user),
 	PRIMARY KEY(id)
 );
 
+CREATE TABLE identity
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	user_id BIGINT,
+	iduri TEXT,
+	hash VARCHAR(48) BINARY,
+
+	name TEXT,
+	type INT,
+
+	PRIMARY KEY(id)
+);
 
 CREATE TABLE public_key
 (
@@ -74,17 +89,18 @@ CREATE TABLE friend_claim
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
+	user_id BIGINT,
 	user VARCHAR(20), 
-	friend_id TEXT,
+	iduri TEXT,
 	friend_salt VARCHAR(48) BINARY,
 	friend_hash VARCHAR(48) BINARY,
 	put_relid VARCHAR(48) BINARY,
 	get_relid VARCHAR(48) BINARY,
 
-	user_id BIGINT,
-	identity TEXT,
+
 	name TEXT,
-	state INT,
+
+	type INTEGER,
 
 	PRIMARY KEY(id)
 );
@@ -333,3 +349,5 @@ CREATE TABLE version
 );
 
 INSERT INTO version ( version ) VALUES ( 0 );
+
+

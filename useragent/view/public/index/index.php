@@ -34,7 +34,7 @@
 <h3>Login</h3>
 
 <? 
-echo $this->link( "login as $USER[USER]", "/$USER[USER]/cred/login" );
+echo $this->userLink( "login as $USER[USER]", "/cred/login" );
 ?>
 
 </div>
@@ -42,7 +42,7 @@ echo $this->link( "login as $USER[USER]", "/$USER[USER]/cred/login" );
 <div class="content">
 <h3>Become Friend</h3>
 <? 
-echo $this->link( "become a friend of $USER[USER]", "/$USER[USER]/freq/become" ); 
+echo $this->userLink( "become a friend of $USER[USER]", "/freq/become" ); 
 ?>
 </div>
 

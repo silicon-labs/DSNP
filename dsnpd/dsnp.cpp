@@ -368,6 +368,14 @@ AllocString makeIdHash( const char *salt, const char *identity )
 	return binToBase64( friend_hash, SHA_DIGEST_LENGTH );
 }
 
+AllocString makeIduriHash( const char *identity )
+{
+	/* Make a hash for the identity. */
+	unsigned char hash[SHA_DIGEST_LENGTH];
+	SHA1( (unsigned char*)identity, strlen(identity), hash );
+	return binToBase64( hash, SHA_DIGEST_LENGTH );
+}
+
 void login( MYSQL *mysql, const char *user, const char *pass )
 {
 	const long lasts = LOGIN_TOKEN_LASTS;

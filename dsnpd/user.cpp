@@ -37,7 +37,7 @@
 
 void newUser( MYSQL *mysql, const char *user, const char *pass )
 {
-	String identity( "%s%s/", c->CFG_URI, user );
+	String iduri( "%s%s/", c->CFG_URI, user );
 
 	/* Generate a new key. Do this first so we don't have to remove the user if
 	 * it fails. */
@@ -47,13 +47,22 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 
 	/* First try to make the new user. */
 	DbQuery insert( mysql,
-			"INSERT IGNORE INTO user ( user, name, identity ) "
+			"INSERT IGNORE INTO user ( user, name, iduri ) "
 			"VALUES ( %e, %e, %e ) ",
-			user, user, identity.data );
+			user, user, iduri.data );
 	if ( insert.affectedRows() == 0 )
 		throw UserExists( user );
 
 	long long userId = lastInsertId( mysql );
+
+	/* Create the relationship to oneself. */
+	String hash = makeIduriHash( iduri.data );
+	DbQuery( mysql,
+			"INSERT INTO identity ( user_id, iduri, hash, name, type ) "
+			"VALUES ( %L, %e, %e, %e, %l ) ",
+			userId, iduri.data, hash.data, user, REL_TYPE_SELF );
+
+	long long identityId = lastInsertId( mysql );
 
 	u_char passSalt[SALT_SIZE];
 	RAND_bytes( passSalt, SALT_SIZE );
@@ -79,20 +88,14 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	DbQuery( mysql,
 		"UPDATE user "
 		"SET "
-		"	pass_salt = %e, pass = %e, id_salt = %e, "
+		"	identity_id = %L, pass_salt = %e, pass = %e, id_salt = %e, "
 		"	rsa_n = %e, rsa_e = %e, rsa_d = %e, rsa_p = %e, "
 		"	rsa_q = %e, rsa_dmp1 = %e, rsa_dmq1 = %e, rsa_iqmp = %e "
 		"WHERE "
 		"	id = %L ",
-		passSaltStr.data, passHashed.data, idSaltStr.data,
+		identityId, passSaltStr.data, passHashed.data, idSaltStr.data,
 		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, 
 		userId );
-
-	/* Create the relationship to oneself. */
-	DbQuery( mysql,
-			"INSERT INTO friend_claim ( user, user_id, iduri, name, type ) "
-			"VALUES ( %e, %L, %e, %e, %l ) ",
-			user, userId, identity.data, user, REL_TYPE_SELF );
 	
 	/* Add the - network for the new user. */
 	//long long networkNameId = findNetworkName( mysql, "-" );

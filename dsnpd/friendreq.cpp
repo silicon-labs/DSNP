@@ -75,12 +75,6 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 	 * g) redirects the user's browser to $URI/return-relid?uri=$FR-URI&reqid=$FR-REQID
 	 */
 
-	int sigRes;
-	Keys *user_priv, *id_pub;
-	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
-	char *requested_relid_str, *reqid_str;
-	Encrypt encrypt;
-
 	/* Check to make sure this isn't ourselves. */
 	String ourId( "%s%s/", c->CFG_URI, user );
 	if ( strcasecmp( ourId.data, identity ) == 0 )
@@ -99,30 +93,32 @@ void relidRequest( MYSQL *mysql, const char *user, const char *identity )
 		throw FriendRequestExists( user, identity );
 
 	/* Get the public key for the identity. */
-	id_pub = fetchPublicKey( mysql, identity );
+	Keys *id_pub = fetchPublicKey( mysql, identity );
 	if ( id_pub == 0 ) {
 		BIO_printf( bioOut, "ERROR %d\n", ERROR_PUBLIC_KEY );
 		return;
 	}
 
 	/* Load the private key for the user the request is for. */
-	user_priv = loadKey( mysql, user );
+	Keys *user_priv = loadKey( mysql, user );
 
 	/* Generate the relationship and request ids. */
+	unsigned char requested_relid[RELID_SIZE], fr_reqid[REQID_SIZE];
 	RAND_bytes( requested_relid, RELID_SIZE );
 	RAND_bytes( fr_reqid, REQID_SIZE );
 
 	/* Encrypt and sign the relationship id. */
+	Encrypt encrypt;
 	encrypt.load( id_pub, user_priv );
-	sigRes = encrypt.signEncrypt( requested_relid, RELID_SIZE );
+	int sigRes = encrypt.signEncrypt( requested_relid, RELID_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 	
 	/* Store the request. */
-	requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
-	reqid_str = binToBase64( fr_reqid, REQID_SIZE );
+	char *requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	char *reqid_str = binToBase64( fr_reqid, REQID_SIZE );
 
 	message("allocated requested_relid %s for user %s\n", requested_relid_str, user );
 

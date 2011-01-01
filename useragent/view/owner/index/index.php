@@ -26,7 +26,7 @@ require( ROOT . DS . 'view' . DS . 'functions.php' );
 
 <div id="details">
 	<?php echo $this->userLink( 'edit', '/user/edit', 'edit' );?>
-    <h2><?php print $USER['NAME'];?></h2>
+    <h2><?php print $USER['name'];?></h2>
 </div>
 
 <?php

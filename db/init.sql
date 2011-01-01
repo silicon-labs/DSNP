@@ -116,17 +116,11 @@ CREATE TABLE friend_claim
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
 	user_id BIGINT,
-	user VARCHAR(20), 
-	iduri TEXT,
-	friend_salt VARCHAR(48) BINARY,
-	friend_hash VARCHAR(48) BINARY,
+	relationship_id BIGINT
+
 	put_relid VARCHAR(48) BINARY,
 	get_relid VARCHAR(48) BINARY,
 
-
-	name TEXT,
-
-	type INTEGER,
 
 	PRIMARY KEY( id )
 );
@@ -314,13 +308,13 @@ CREATE TABLE activity
 
 CREATE TABLE image
 (
-	user VARCHAR(20),
+	user_id BIGINT,
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	rows INT,
 	cols INT,
 	mime_type VARCHAR(32),
 
-	PRIMARY KEY ( user, seq_num )
+	PRIMARY KEY ( user_id, seq_num )
 );
 
 CREATE TABLE put_broadcast_key

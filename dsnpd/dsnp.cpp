@@ -197,8 +197,11 @@ void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 
 void publicKey( MYSQL *mysql, const char *user )
 {
-	/* Query the user. */
-	DbQuery query( mysql, "SELECT rsa_n, rsa_e FROM user WHERE user = %e", user );
+	DbQuery query( mysql, 
+		"SELECT rsa_n, rsa_e "
+		"FROM user "
+		"JOIN user_keys ON user.user_keys_id = user_keys.id "
+		"WHERE user.user = %e", user );
 	if ( query.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR user not found\r\n" );
 		return;
@@ -241,11 +244,14 @@ long openInetConnection( const char *hostname, unsigned short port )
 	return socketFd;
 }
 
-long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *identity )
+long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *iduri )
 {
 	DbQuery keys( mysql, 
-		"SELECT rsa_n, rsa_e FROM public_key WHERE identity = %e",
-		identity );
+		"SELECT rsa_n, rsa_e "
+		"FROM identity "
+		"JOIN public_key ON identity.id = public_key.identity_id "
+		"WHERE identity.iduri = %e",
+		iduri );
 
 	/* Check for a result. */
 	if ( keys.rows() > 0 ) {
@@ -316,7 +322,9 @@ Keys *loadKey( MYSQL *mysql, const char *user )
 
 	DbQuery keyQuery( mysql,
 		"SELECT rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp "
-		"FROM user WHERE user = %e", user );
+		"FROM user "
+		"JOIN user_keys ON user.user_keys_id = user_keys.id "
+		"WHERE user = %e", user );
 
 	if ( keyQuery.rows() > 0 ) {
 		MYSQL_ROW row = keyQuery.fetchRow();
@@ -381,7 +389,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	const long lasts = LOGIN_TOKEN_LASTS;
 
 	DbQuery login( mysql, 
-		"SELECT user, pass_salt, pass, id_salt FROM user WHERE user = %e", user );
+		"SELECT user, pass_salt, pass FROM user WHERE user = %e", user );
 
 	if ( login.rows() == 0 )
 		throw InvalidLogin( user, pass, "bad user" );
@@ -389,7 +397,6 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	MYSQL_ROW row = login.fetchRow();
 	char *salt_str = row[1];
 	char *pass_str = row[2];
-	char *id_salt_str = row[3];
 
 	/* Hash the password using the sale found in the DB. */
 	u_char pass_salt[SALT_SIZE];
@@ -403,18 +410,18 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	/* Login successful. Make a token. */
 	u_char token[TOKEN_SIZE];
 	RAND_bytes( token, TOKEN_SIZE );
-	String token_str = binToBase64( token, TOKEN_SIZE );
+	String tokenStr = binToBase64( token, TOKEN_SIZE );
 
 	/* Record the token. */
 	DbQuery loginToken( mysql, 
 		"INSERT INTO login_token ( user, login_token, expires ) "
 		"VALUES ( %e, %e, date_add( now(), interval %l second ) )", 
-		user, token_str.data, lasts );
+		user, tokenStr.data, lasts );
 
 	String identity( "%s%s/", c->CFG_URI, user );
-	String id_hash_str = makeIdHash( id_salt_str, identity );
+	String idHashStr = makeIduriHash( identity );
 
-	BIO_printf( bioOut, "OK %s %s %ld\r\n", id_hash_str.data, token_str.data, lasts );
+	BIO_printf( bioOut, "OK %s %s %ld\r\n", idHashStr.data, tokenStr.data, lasts );
 
 	message("login of %s successful\n", user );
 }
@@ -445,3 +452,7 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	return strdup((char*)encrypt.decrypted);
 }
 
+long long Identity::fetchId( MYSQL *mysql )
+{
+
+}

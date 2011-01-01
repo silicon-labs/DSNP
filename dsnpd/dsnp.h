@@ -53,8 +53,9 @@ struct RelidEncSig
 struct Identity
 {
 	Identity( const char *identity ) :
-		identity(identity)
-		{}
+		identity(identity),
+		haveId(false)
+	{}
 
 	Identity() {}
 
@@ -67,6 +68,12 @@ struct Identity
 	const char *host;
 	const char *user;
 	const char *site;
+
+	long long fetchId( MYSQL *mysql );
+
+private:
+	bool haveId;
+	long long id;
 };
 
 void runQueue( const char *siteName );

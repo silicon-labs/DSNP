@@ -4,23 +4,26 @@ if ( isset( $_GET['url'] ) )
 	$url = $_GET['url'];
 
 $USER['USER'] = null;
-$USER['NAME'] = null;
-$USER['ID'] = null;
-$USER['IDURI'] = null;
+$USER['USER_ID'] = null;
+$USER['iduri'] = null;
+$USER['name'] = null;
 
 # ID is the id of the friend_claim row.
-$BROWSER['ID'] = null;
-$BROWSER['IDURI'] = null;
+$BROWSER['relationship_id'] = null;
+$BROWSER['iduri'] = null;
 
 function checkUserDb()
 {
 	global $CFG;
 	global $USER;
 	$result = dbQuery( 
-		"SELECT user.id, user.user, identity.iduri, relationship.name, friend_claim.id AS rel_id_self " .
+		"SELECT user.id, user.user, " .
+		"	identity.iduri, " .
+		" 	user.relationship_id, relationship.name " .
 		"FROM user " .
-		"JOIN friend_claim ON user.id = friend_claim.user_id " .
-		"WHERE user.user = %e AND friend_claim.type = %l",
+		"JOIN identity ON user.identity_id = identity.id " .
+		"JOIN relationship ON user.relationship_id = relationship.id " .
+		"WHERE user.user = %e ",
 		$USER['USER'], REL_TYPE_SELF );
 
 	if ( count( $result ) != 1 )
@@ -29,20 +32,10 @@ function checkUserDb()
 	# Turn result int first row.
 	$result = $result[0];
 
-	$USER['ID'] = $result['id'];
-	$USER['IDURI'] =  "{$CFG['URI']}{$USER['USER']}/";
-	$USER['NAME'] = $result['name'];
-	$USER['FRIEND_CLAIM_SELF_ID'] = $result['rel_id_self'];
-
-#	$this->USER_NAME = $user['user'];
-#	$this->USER_URI =  "$this->CFG_URI$this->USER_NAME/";
-#	$this->USER_ID = $result['id'];
-#	$this->USER = $user;
-#
-#	/* Default these to something not too revealing. At session activation
-#	 * time we will upgrade if the role allows it. */
-#	$this->USER['display_short'] = $this->USER['user'];
-#	$this->USER['display_long'] = $this->USER['identity'];
+	$USER['USER_ID'] = $result['id'];
+	$USER['iduri'] =  "{$CFG['URI']}{$USER['USER']}/";
+	$USER['name'] = $result['name'];
+	$USER['relationship_id'] = $result['relationship_id'];
 }
 
 function checkUser()
@@ -81,7 +74,7 @@ else {
 		array_shift( $route );
 	}
 	else {
-		$USER[USER] = array_shift( $route );
+		$USER['USER'] = array_shift( $route );
 		checkUser();
 	}
 

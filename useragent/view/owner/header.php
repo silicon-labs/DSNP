@@ -3,7 +3,7 @@
 	<title>
 		<?php 
 			echo $CFG['SITE_NAME'];
-			echo ": {$USER['NAME']}";
+			echo ": {$USER['name']}";
 		?>
 	</title>
 	<link href="<?echo $this->siteLoc( '/css/dsnpua.css' ); ?>"
@@ -21,7 +21,7 @@
 		<td id="header_middle"><div class="header_content">
 		<h1>
 		<?php
-			echo $this->absLink( $USER['NAME'], $USER['URI'] );
+			echo $this->absLink( $USER['name'], $USER['iduri'] );
 		?>
 		</h1>
 		</div></td>
@@ -29,7 +29,7 @@
 		<td id="header_right"><div class="header_content">
 		<h1>
 		<?php 
-			echo $this->absLink( $USER['NAME'], $USER['IDURI'] );
+			echo $this->absLink( $USER['name'], $USER['iduri'] );
 			echo " - ";
 			echo $this->userLink( 'logout', "/cred/logout" );
 		?>

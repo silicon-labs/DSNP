@@ -7,9 +7,10 @@ CREATE TABLE user
 	pass_salt CHAR(24) BINARY,
 	pass VARCHAR(40) BINARY, 
 
-	identity_id BIGINT,
 	user_keys_id BIGINT,
-	primary_network_id BIGINT,
+	identity_id BIGINT,
+	relationship_id BIGINT,
+	network_id BIGINT,
 
 	PRIMARY KEY( id ),
 	UNIQUE KEY ( user )

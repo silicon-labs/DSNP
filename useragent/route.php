@@ -17,7 +17,7 @@ function checkUserDb()
 	global $CFG;
 	global $USER;
 	$result = dbQuery( 
-		"SELECT user.id, user.user, user.iduri, user.name, friend_claim.id AS rel_id_self " .
+		"SELECT user.id, user.user, identity.iduri, relationship.name, friend_claim.id AS rel_id_self " .
 		"FROM user " .
 		"JOIN friend_claim ON user.id = friend_claim.user_id " .
 		"WHERE user.user = %e AND friend_claim.type = %l",

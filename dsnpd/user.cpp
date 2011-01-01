@@ -67,25 +67,6 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	long long userId = lastInsertId( mysql );
 
 	/*
-	 * Idenity
-	 */
-	String hash = makeIduriHash( iduri.data );
-	DbQuery( mysql,
-			"INSERT INTO identity ( iduri, hash ) "
-			"VALUES ( %e, %e ) ",
-			iduri.data, hash.data );
-
-	long long identityId = lastInsertId( mysql );
-
-	/*
-	 * Self-Relationship
-	 */
-	DbQuery( mysql,
-			"INSERT INTO relationship ( user_id, type, identity_id, name ) "
-			"VALUES ( %L, %l, %L, %e ) ",
-			userId, REL_TYPE_SELF, identityId, user );
-
-	/*
 	 * User Keys
 	 */
 
@@ -106,7 +87,32 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 			"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e );",
 			n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
-	long long userKeyId = lastInsertId( mysql );
+	long long userKeysId = lastInsertId( mysql );
+
+	/*
+	 * Idenity
+	 */
+	String hash = makeIduriHash( iduri.data );
+	DbQuery( mysql,
+			"INSERT IGNORE INTO identity ( iduri, hash ) "
+			"VALUES ( %e, %e ) ",
+			iduri.data, hash.data );
+
+	DbQuery identityQuery( mysql,
+			"SELECT id FROM identity WHERE iduri = %e",
+			iduri.data );
+	long long identityId = strtoll( identityQuery.fetchRow()[0], 0, 10 );
+
+	/*
+	 * Self-Relationship
+	 */
+	DbQuery( mysql,
+			"INSERT INTO relationship ( user_id, type, identity_id, name ) "
+			"VALUES ( %L, %l, %L, %e ) ",
+			userId, REL_TYPE_SELF, identityId, user );
+
+	long long relationshipId = lastInsertId( mysql );
+
 
 	/*
 	 * Network
@@ -118,20 +124,19 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	/* Always, try to insert. Ignore failures. FIXME: need to loop on the
 	 * random selection here. */
 	DbQuery ( mysql, 
-		"INSERT IGNORE INTO network "
-		"( user_id, type, dist_name, key_gen ) "
-		"VALUES ( %L, %l, %e, 1 )",
-		userId, NET_TYPE_PRIMARY, distNameStr.data
-	);
+			"INSERT IGNORE INTO network "
+			"( user_id, type, dist_name, key_gen ) "
+			"VALUES ( %L, %l, %e, 1 )",
+			userId, NET_TYPE_PRIMARY, distNameStr.data );
 
 	long long networkId = lastInsertId( mysql );
 	newBroadcastKey( mysql, networkId, 1 );
 
 	DbQuery( mysql,
-			"UPDATE user SET identity_id = %L, user_keys_id = %L, primary_network_id = %L "
+			"UPDATE user "
+			"SET user_keys_id = %L, identity_id = %L, relationship_id = %L, network_id = %L "
 			"WHERE id = %L ",
-			identityId, userKeyId, networkId, userId );
-	
+			userKeysId, identityId, relationshipId, networkId, userId );
 
 	String photoDir( PREFIX "/var/lib/dsnp/%s/data", c->name );
 

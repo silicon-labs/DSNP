@@ -355,7 +355,6 @@ struct SslNewContextFailure
 {
 	virtual void print( BIO *bio )
 	{
-		/* FIXME: Can't use arbitrary strings. */
 		BIO_printf( bio, 
 				"ERROR %d\r\n",
 				EC_SSL_NEW_CONTEXT_FAILURE );
@@ -370,7 +369,6 @@ struct SslCaCertsNotSet
 {
 	virtual void print( BIO *bio )
 	{
-		/* FIXME: Can't use arbitrary strings. */
 		BIO_printf( bio, 
 				"ERROR %d\r\n",
 				EC_SSL_CA_CERTS_NOT_SET );

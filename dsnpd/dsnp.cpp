@@ -583,3 +583,25 @@ Keys *Identity::fetchPublicKey()
 	return keys;
 
 }
+
+const char *Identity::host()
+{
+	if ( !parsed )
+		parse();
+	return _host;
+}
+
+const char *Identity::user()
+{
+	if ( !parsed )
+		parse();
+	return _user;
+}
+
+const char *Identity::site()
+{
+	if ( !parsed )
+		parse();
+	return _site;
+}
+

@@ -727,14 +727,11 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 	TlsConnect tlsConnect;
 	tlsConnect.connect( host, site );
 
-	message( "fetching public key for %s from host %s site %s\n", user, host, site );
-
 	BIO_printf( tlsConnect.sbio, "public_key %s\r\n", user );
 	(void)BIO_flush( tlsConnect.sbio );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-	message("encrypted return to fetchPublicKeyNet is %s", buf );
 
 	/* If there was an error then fail the fetch. */
 	if ( readRes <= 0 )
@@ -1042,6 +1039,8 @@ long Identity::parse()
 
 	/* We can use the start of the last path part to get the site. */
 	_site = allocString( iduri, pp1 );
+
+	parsed = true;
 
 	return result;
 }

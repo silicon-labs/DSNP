@@ -164,8 +164,8 @@ long storeRelidResponse( MYSQL *mysql, const char *identity, const char *fr_reli
 	return 0;
 }
 
-void relidResponse( MYSQL *mysql, const char *user, 
-		const char *fr_reqid_str, const char *identity )
+void relidResponse( MYSQL *mysql, const char *_user, 
+		const char *reqid, const char *_iduri )
 {
 	/*  a) verifies browser is logged in as owner
 	 *  b) fetches $FR-URI/id.asc (using SSL)
@@ -177,39 +177,32 @@ void relidResponse( MYSQL *mysql, const char *user,
 	 *  h) makes message available at $URI/request-return/$REQID.asc
 	 *  i) redirects the friender to $FR-URI/friend-final?uri=$URI&reqid=$REQID
 	 */
+	
+	User user( mysql, _user );
+	if ( user.id() < 0 )
+		throw InvalidUser( user.user );
 
-	int verifyRes, fetchRes, sigRes;
-	Keys *user_priv, *id_pub;
-	unsigned char *requested_relid;
-	unsigned char response_relid[RELID_SIZE], response_reqid[REQID_SIZE];
-	char *requested_relid_str, *response_relid_str, *response_reqid_str;
-	unsigned char message[RELID_SIZE*2];
-	Encrypt encrypt;
-
-	IdentityOrig id( identity );
-	id.parse();
+	Identity identity( mysql, _iduri );
 
 	/* Get the public key for the identity. */
-	id_pub = fetchPublicKey( mysql, id.identity );
-	if ( id_pub == 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
-		return;
-	}
+	Keys *idPub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	fetchRes = fetch_requested_relid_net( encsig, id.site, id.host, fr_reqid_str );
+	int fetchRes = fetch_requested_relid_net( encsig, identity.site(), identity.host(), reqid );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
 		return;
 	}
 
 	/* Load the private key for the user the request is for. */
-	user_priv = loadKey( mysql, user );
+	Keys *userPriv = loadKey( mysql, user );
 
 	/* Decrypt and verify the requested_relid. */
-	encrypt.load( id_pub, user_priv );
+	Encrypt encrypt;
+	encrypt.load( idPub, userPriv );
 
-	verifyRes = encrypt.decryptVerify( encsig.sym );
+
+	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		::message("relid_response: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
@@ -223,39 +216,41 @@ void relidResponse( MYSQL *mysql, const char *user,
 	}
 
 	/* This should not be deleted as long as we don't do any more decryption. */
-	requested_relid = encrypt.decrypted;
+	unsigned char *requested_relid = encrypt.decrypted;
 	
 	/* Generate the relationship and request ids. */
+	unsigned char response_relid[RELID_SIZE], response_reqid[REQID_SIZE];
 	RAND_bytes( response_relid, RELID_SIZE );
 	RAND_bytes( response_reqid, REQID_SIZE );
 
+	unsigned char message[RELID_SIZE*2];
 	memcpy( message, requested_relid, RELID_SIZE );
 	memcpy( message+RELID_SIZE, response_relid, RELID_SIZE );
 
 	/* Encrypt and sign using the same credentials. */
-	sigRes = encrypt.signEncrypt( message, RELID_SIZE*2 );
+	int sigRes = encrypt.signEncrypt( message, RELID_SIZE*2 );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
 	/* Store the request. */
-	requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
-	response_relid_str = binToBase64( response_relid, RELID_SIZE );
-	response_reqid_str = binToBase64( response_reqid, REQID_SIZE );
+	char *requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	char *response_relid_str = binToBase64( response_relid, RELID_SIZE );
+	char *response_reqid_str = binToBase64( response_reqid, REQID_SIZE );
 
-	::message( "allocated response relid %s for user %s\n", response_relid_str, user );
+	::message( "allocated response relid %s for user %s\n", response_relid_str, user.user );
 
-	storeRelidResponse( mysql, identity, requested_relid_str, fr_reqid_str, 
+	storeRelidResponse( mysql, identity.iduri, requested_relid_str, reqid, 
 			response_relid_str, response_reqid_str, encrypt.sym );
 
 	/* Insert the friend claim. */
 	DbQuery( mysql, "INSERT INTO sent_friend_request "
-		"( from_user, for_id, requested_relid, returned_relid ) "
-		"VALUES ( %e, %e, %e, %e );",
-		user, identity, requested_relid_str, response_relid_str );
+		"( user_id, identity_id, requested_relid, returned_relid ) "
+		"VALUES ( %L, %L, %e, %e );",
+		user.id(), identity.id(), requested_relid_str, response_relid_str );
 
-	String args( "sent_friend_request %s %s", user, identity );
+	String args( "sent_friend_request %s %s", user.user, identity.iduri );
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */

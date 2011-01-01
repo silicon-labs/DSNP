@@ -7,7 +7,49 @@ CREATE TABLE user
 	pass_salt CHAR(24) BINARY,
 	pass VARCHAR(40) BINARY, 
 
-	id_salt CHAR(24) BINARY,
+	identity_id BIGINT,
+	user_keys_id BIGINT,
+	primary_network_id BIGINT,
+
+	PRIMARY KEY( id ),
+	UNIQUE KEY ( user )
+);
+
+CREATE TABLE identity
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	iduri VARCHAR(128),
+	hash VARCHAR(48) BINARY,
+
+	PRIMARY KEY( id ),
+	UNIQUE KEY ( iduri )
+);
+
+CREATE TABLE relationship
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	user_id BIGINT,
+
+	-- 1: self.
+	-- 8: friend.
+	type SMALLINT,
+
+	identity_id BIGINT,
+
+	-- User's view of the remote identity. This is used for one's own data
+	-- as well.
+	name TEXT,
+	email VARCHAR(50),
+
+	PRIMARY KEY( id )
+);
+
+-- Public and Private keys for users.
+CREATE TABLE user_keys
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
 
 	rsa_n TEXT BINARY,
 	rsa_e TEXT BINARY,
@@ -18,36 +60,19 @@ CREATE TABLE user
 	rsa_dmq1 TEXT BINARY,
 	rsa_iqmp TEXT BINARY,
 
-	iduri TEXT,
-	name VARCHAR(50),
-	email VARCHAR(50),
-	type INT,
-
-	identity_id BIGINT,
-
-	UNIQUE(user),
-	PRIMARY KEY(id)
+	PRIMARY KEY( id )
 );
 
-CREATE TABLE identity
+-- Fetched public keys.
+CREATE TABLE public_key
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user_id BIGINT,
-	iduri TEXT,
-	hash VARCHAR(48) BINARY,
-
-	name TEXT,
-	type INT,
-
-	PRIMARY KEY(id)
-);
-
-CREATE TABLE public_key
-(
-	identity TEXT,
+	identity_id BIGINT,
 	rsa_n TEXT,
-	rsa_e TEXT
+	rsa_e TEXT,
+
+	PRIMARY KEY( id )
 );
 
 CREATE TABLE relid_request
@@ -102,7 +127,7 @@ CREATE TABLE friend_claim
 
 	type INTEGER,
 
-	PRIMARY KEY(id)
+	PRIMARY KEY( id )
 );
 
 CREATE TABLE ftoken_request
@@ -113,6 +138,38 @@ CREATE TABLE ftoken_request
 	reqid VARCHAR(48) BINARY,
 	msg_sym TEXT,
 	network_id BIGINT
+);
+
+CREATE TABLE network
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	user_id BIGINT,
+
+	-- 1: primary.
+	-- 2: friend group.
+	type SMALLINT,
+
+	-- Name visible to the user.
+	private_name VARCHAR(20),
+
+	-- Name distributed to others.
+	dist_name VARCHAR(48) BINARY,
+
+	key_gen BIGINT,
+
+	PRIMARY KEY ( id )
+);
+
+CREATE TABLE network_member
+(
+	id BIGINT NOT NULL AUTO_INCREMENT,
+
+	network_id BIGINT,
+	friend_claim_id BIGINT,
+
+	PRIMARY KEY ( id ),
+	UNIQUE KEY ( network_id, friend_claim_id )
 );
 
 
@@ -126,7 +183,7 @@ CREATE TABLE broadcast_message
 	message TEXT,
 	network_name TEXT,
 	
-	PRIMARY KEY(id)
+	PRIMARY KEY ( id )
 );
 
 CREATE TABLE broadcast_queue
@@ -138,7 +195,7 @@ CREATE TABLE broadcast_queue
 	to_site TEXT,
 	forward BOOLEAN,
 
-	PRIMARY KEY(id)
+	PRIMARY KEY ( id )
 );
 
 CREATE TABLE broadcast_recipient
@@ -148,7 +205,7 @@ CREATE TABLE broadcast_recipient
 	queue_id BIGINT,
 	relid VARCHAR(48) BINARY,
 
-	PRIMARY KEY(id)
+	PRIMARY KEY ( id )
 );
 
 CREATE TABLE message_queue
@@ -161,7 +218,7 @@ CREATE TABLE message_queue
 	relid VARCHAR(48) BINARY,
 	message TEXT,
 
-	PRIMARY KEY(id)
+	PRIMARY KEY ( id )
 );
 
 CREATE TABLE broadcasted
@@ -173,7 +230,8 @@ CREATE TABLE broadcasted
 	time_published TIMESTAMP,
 	type CHAR(4),
 	message BLOB,
-	PRIMARY KEY(user, seq_num)
+
+	PRIMARY KEY ( user, seq_num )
 );
 
 CREATE TABLE login_token
@@ -244,7 +302,7 @@ CREATE TABLE activity
 	time_received TIMESTAMP DEFAULT 0,
 	network_id BIGINT,
 
-	PRIMARY KEY(id)
+	PRIMARY KEY ( id )
 );
 
 
@@ -261,7 +319,7 @@ CREATE TABLE image
 	cols INT,
 	mime_type VARCHAR(32),
 
-	PRIMARY KEY(user, seq_num)
+	PRIMARY KEY ( user, seq_num )
 );
 
 CREATE TABLE put_broadcast_key
@@ -288,58 +346,8 @@ CREATE TABLE get_broadcast_key
 	friend_proof TEXT,
 	reverse_proof TEXT,
 
-	UNIQUE KEY ( network_id, friend_claim_id, generation ),
-	PRIMARY KEY (id)
-);
-
---
--- Groups of friends.
--- 
-
-CREATE TABLE network
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	user_id BIGINT,
-
-	-- Name visible to the user.
-	private_name VARCHAR(20),
-
-	-- Name distributed to others.
-	dist_name VARCHAR(48) BINARY,
-
-	key_gen BIGINT,
-	tree_gen_low BIGINT,
-	tree_gen_high BIGINT,
-
 	PRIMARY KEY ( id ),
-
-	UNIQUE ( user_id, private_name )
-);
-
-CREATE TABLE network_member
-(
-	id BIGINT NOT NULL AUTO_INCREMENT,
-
-	network_id BIGINT,
-	friend_claim_id BIGINT,
-
-	PRIMARY KEY ( id ),
-
-	UNIQUE ( network_id, friend_claim_id )
-);
-
---
--- We received proof that from_fc_id considers to_fc_id a friend.
---
-
-CREATE TABLE friend_link
-(
-	network_id BIGINT,
-	from_fc_id BIGINT,
-	to_fc_id BIGINT,
-
-	PRIMARY KEY ( network_id, from_fc_id, to_fc_id )
+	UNIQUE KEY ( network_id, friend_claim_id, generation )
 );
 
 -- Database schema verison. Initialize it.

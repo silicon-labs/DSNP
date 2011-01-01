@@ -28,6 +28,9 @@
 #define REL_TYPE_SELF    1
 #define REL_TYPE_FRIEND  8
 
+#define NET_TYPE_PRIMARY 1
+#define NET_TYPE_GROUP   2
+
 /* Wraps up RSA struct and private key/x509. Useful for transition to CMS. */
 struct Keys
 {

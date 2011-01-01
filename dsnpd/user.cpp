@@ -45,32 +45,49 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	if ( rsa == 0 )
 		throw RsaKeyGenError( ERR_get_error() );
 
+	u_char passSalt[SALT_SIZE];
+	RAND_bytes( passSalt, SALT_SIZE );
+	String passSaltStr = binToBase64( passSalt, SALT_SIZE );
+
+	/* Hash the password. */
+	String passHashed = passHash( passSalt, pass );
+
+	/*
+	 * The User
+	 */
+
 	/* First try to make the new user. */
 	DbQuery insert( mysql,
-			"INSERT IGNORE INTO user ( user, name, iduri ) "
+			"INSERT IGNORE INTO user ( user, pass_salt, pass ) "
 			"VALUES ( %e, %e, %e ) ",
-			user, user, iduri.data );
+			user, passSaltStr.data, passHashed.data );
 	if ( insert.affectedRows() == 0 )
 		throw UserExists( user );
 
 	long long userId = lastInsertId( mysql );
 
-	/* Create the relationship to oneself. */
+	/*
+	 * Idenity
+	 */
 	String hash = makeIduriHash( iduri.data );
 	DbQuery( mysql,
-			"INSERT INTO identity ( user_id, iduri, hash, name, type ) "
-			"VALUES ( %L, %e, %e, %e, %l ) ",
-			userId, iduri.data, hash.data, user, REL_TYPE_SELF );
+			"INSERT INTO identity ( iduri, hash ) "
+			"VALUES ( %e, %e ) ",
+			iduri.data, hash.data );
 
 	long long identityId = lastInsertId( mysql );
 
-	u_char passSalt[SALT_SIZE];
-	RAND_bytes( passSalt, SALT_SIZE );
-	String passSaltStr = binToBase64( passSalt, SALT_SIZE );
+	/*
+	 * Self-Relationship
+	 */
+	DbQuery( mysql,
+			"INSERT INTO relationship ( user_id, type, identity_id, name ) "
+			"VALUES ( %L, %l, %L, %e ) ",
+			userId, REL_TYPE_SELF, identityId, user );
 
-	u_char idSalt[SALT_SIZE];
-	RAND_bytes( idSalt, SALT_SIZE );
-	String idSaltStr = binToBase64( idSalt, SALT_SIZE );
+	/*
+	 * User Keys
+	 */
 
 	/* Extract the components to hex strings. */
 	String n = bnToBase64( rsa->n );
@@ -81,27 +98,40 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	String dmp1 = bnToBase64( rsa->dmp1 );
 	String dmq1 = bnToBase64( rsa->dmq1 );
 	String iqmp = bnToBase64( rsa->iqmp );
-
-	/* Hash the password. */
-	String passHashed = passHash( passSalt, pass );
+	RSA_free( rsa );
 
 	DbQuery( mysql,
-		"UPDATE user "
-		"SET "
-		"	identity_id = %L, pass_salt = %e, pass = %e, id_salt = %e, "
-		"	rsa_n = %e, rsa_e = %e, rsa_d = %e, rsa_p = %e, "
-		"	rsa_q = %e, rsa_dmp1 = %e, rsa_dmq1 = %e, rsa_iqmp = %e "
-		"WHERE "
-		"	id = %L ",
-		identityId, passSaltStr.data, passHashed.data, idSaltStr.data,
-		n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data, 
-		userId );
-	
-	/* Add the - network for the new user. */
-	//long long networkNameId = findNetworkName( mysql, "-" );
-	addNetwork( mysql, userId, "-" );
+			"INSERT INTO user_keys "
+			"	( rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp ) "
+			"VALUES ( %e, %e, %e, %e, %e, %e, %e, %e );",
+			n.data, e.data, d.data, p.data, q.data, dmp1.data, dmq1.data, iqmp.data );
 
-	RSA_free( rsa );
+	long long userKeyId = lastInsertId( mysql );
+
+	/*
+	 * Network
+	 */
+	unsigned char distName[RELID_SIZE];
+	RAND_bytes( distName, RELID_SIZE );
+	String distNameStr = binToBase64( distName, RELID_SIZE );
+
+	/* Always, try to insert. Ignore failures. FIXME: need to loop on the
+	 * random selection here. */
+	DbQuery ( mysql, 
+		"INSERT IGNORE INTO network "
+		"( user_id, type, dist_name, key_gen ) "
+		"VALUES ( %L, %l, %e, 1 )",
+		userId, NET_TYPE_PRIMARY, distNameStr.data
+	);
+
+	long long networkId = lastInsertId( mysql );
+	newBroadcastKey( mysql, networkId, 1 );
+
+	DbQuery( mysql,
+			"UPDATE user SET identity_id = %L, user_keys_id = %L, primary_network_id = %L "
+			"WHERE id = %L ",
+			identityId, userKeyId, networkId, userId );
+	
 
 	String photoDir( PREFIX "/var/lib/dsnp/%s/data", c->name );
 

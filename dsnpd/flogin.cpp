@@ -211,7 +211,7 @@ void submitFtoken( MYSQL *mysql, const char *token )
 
 	String hash = makeIduriHash( identity.iduri() );
 
-	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash(), lasts, identity.iduri() );
+	BIO_printf( bioOut, "OK %s %s %ld\r\n", identity.iduri(), hash(), lasts );
 }
 
 

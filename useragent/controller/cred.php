@@ -10,6 +10,11 @@ class CredController extends Controller
 
 		$connection->ftokenRequest( $this->USER['USER'], $hash );
 
+		/* FIXME: If there is no friend claim ... send back a reqid anyways.
+		 * Don't want to give away that there is no claim, otherwise it would
+		 * be possible to probe  Would be good to fake this with an appropriate
+		 * time delay. */
+
 		$arg_h = 'h=' . urlencode( $connection->hash );
 		$arg_reqid = 'reqid=' . urlencode( $connection->reqid );
 		$dest = "";

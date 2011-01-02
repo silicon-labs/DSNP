@@ -50,13 +50,6 @@ class PublicCredController extends CredController
 
 		$connection->login( $this->USER[USER], $pass );
 
-		if ( !$connection->success ) {
-			$this->userError(
-				'Login failed.',
-				'Please press the back button to try again.'
-			);
-		}
-
 		$this->startSession();
 		$_SESSION[ROLE] = 'owner';
 		$_SESSION[hash] = $connection->regs[1];
@@ -77,9 +70,6 @@ class PublicCredController extends CredController
 
 	function sftoken()
 	{
-#		$this->activateSession();
-#		# No session yet. Maybe going to set it up.
-
 		$ftoken = $this->args['ftoken'];
 
 		$connection = new Connection;
@@ -87,41 +77,29 @@ class PublicCredController extends CredController
 
 		$connection->submitFtoken( $ftoken );
 
-		/* FIXME: If there is no friend claim ... send back a reqid anyways.
-		 * Don't want to give away that there is no claim, otherwise it would
-		 * be possible to probe  Would be good to fake this with an appropriate
-		 * time delay. */
+		$identity = dbQuery( 
+			"SELECT id " .
+			"FROM identity " .
+			"WHERE iduri = %e ",
+			$connection->iduri );
 
-		/* Remmber that if we return from the above then we have success. */
-		$hash = $connection->regs[1];
-		$iduri = $connection->regs[3];
-
-#		# Login successful.
-#		$this->Session->write( 'ROLE', 'friend' );
-#		$this->Session->write( 'NETWORK_NAME', '-' );
-#		$this->Session->write( 'token', $ftoken );
-#		$this->Session->write( 'hash', $hash );
-		
-		$this->startSession();
-		$_SESSION['ROLE'] = 'friend';
-		$_SESSION['NETWORK_NAME'] = '-';
-		$_SESSION['hash'] = $hash;
-		$_SESSION['token'] = $ftoken;
-
-#		$friendClaim = dbQuery( "
-#			SELECT friend_claim.id AS id, identity.iduri AS iduri
-#			FROM friend_claim 
-#			JOIN identity on friend_claim.identity_id = identity.id
-#			WHERE user_id = %l AND iduri = %e
-#			",
-#			$this->USER[ID],
-#			$identity
-#		);
+		$identityId = $identity[0]['id'];
+		$relationship = dbQuery( 
+			"SELECT name " .
+			"FROM relationship " .
+			"WHERE user_id = %L AND identity_id = %L ",
+			$this->USER['USER_ID'], $identityId );
 
 		# FIXME: check result
 		#$BROWSER['ID'] = $friendClaim[0]['id'];
-		$BROWSER['iduri'] = $identity;
+		$BROWSER['iduri'] = $connection->iduri;
+		$BROWSER['name'] = $relationship[0]['name'];
 
+		/* Remmber that if we return from the above then we have success. */
+		$this->startSession();
+		$_SESSION['ROLE'] = 'friend';
+		$_SESSION['hash'] = $connection->hash;
+		$_SESSION['token'] = $connection->ftoken;
 		$_SESSION['BROWSER'] = $BROWSER;
 
 		/* FIXME: check for dest (d). */

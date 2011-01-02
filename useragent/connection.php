@@ -146,10 +146,14 @@ class Connection
 			"submit_ftoken $ftoken\r\n" );
 
 		$this->success = ereg(
-			"^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)",
+			"^OK ([^ \t\r\n]*) ([-A-Za-z0-9_]+) ([0-9]+)",
 			$this->result, $this->regs );
 
 		$this->checkResult();
+
+		$this->iduri = $this->regs[1];
+		$this->hash = $this->regs[2];
+		$this->lasts = $this->regs[3];
 	}
 
 	function frFinal( $user, $reqid, $identity )

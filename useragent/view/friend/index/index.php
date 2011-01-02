@@ -25,7 +25,7 @@ require( ROOT . DS . 'view' . DS . 'functions.php' );
 <td id="leftcol">
 
 <div id="details">
-    <h2><?php print $USER['NAME'];?></h2>
+    <h2><?php print $USER['name'];?></h2>
 </div>
 
 <div class="content">
@@ -89,12 +89,11 @@ if ( $count % 2 == 1 )
 
 <form method="post" action="<?php echo $this->userLoc("/user/board");?>">
 
-Write on <?php print $USER_NAME;?>'s message board:
+Write on <?php print $USER['name'];?>'s message board:
 <p>
 <!--<input type="text" name="message" size="50">-->
 <textarea rows="3" cols="65" name="message" wrap="physical"></textarea>
 <p><input value="Submit" type="submit">
-
 
 </form>
 </div>

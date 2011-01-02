@@ -71,7 +71,7 @@ class PublicCredController extends CredController
 	function sflogin()
 	{
 		/* Initiate the friend login process. */
-		$hash = $this->args[h];
+		$hash = $this->args['h'];
 		$this->submitFriendLogin( $hash );
 	}
 

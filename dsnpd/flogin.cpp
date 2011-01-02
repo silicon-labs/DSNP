@@ -80,9 +80,9 @@ void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 	Keys *userPriv = loadKey( mysql, user.user() );
 
 	/* Generate the login request id and relationship and request ids. */
-	unsigned char flogin_token[TOKEN_SIZE], reqid[REQID_SIZE];
+	unsigned char flogin_token[TOKEN_SIZE], reqidBin[REQID_SIZE];
 	RAND_bytes( flogin_token, TOKEN_SIZE );
-	RAND_bytes( reqid, REQID_SIZE );
+	RAND_bytes( reqidBin, REQID_SIZE );
 
 	Encrypt encrypt;
 	encrypt.load( idPub, userPriv );
@@ -96,21 +96,19 @@ void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 
 	/* Store the request. */
 	char *flogin_token_str = binToBase64( flogin_token, TOKEN_SIZE );
-	char *reqid_str = binToBase64( reqid, REQID_SIZE );
+	String reqid = binToBase64( reqidBin, REQID_SIZE );
 
 	DbQuery( mysql,
 		"INSERT INTO ftoken_request "
 		"( user_id, identity_id, token, reqid, msg_sym ) "
 		"VALUES ( %L, %L, %e, %e, %e ) ",
-		user.id(), identity.id(), flogin_token_str, reqid_str, encrypt.sym );
-
-	message("ftoken_request: %s %s\n", reqid_str, identity.iduri() );
+		user.id(), identity.id(), flogin_token_str, reqid(), encrypt.sym );
 
 	String userIduri( "%s%s/", c->CFG_URI, user.user() );
 	String userHash = makeIduriHash( userIduri );
 
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str, identity.iduri(), userHash() );
+	BIO_printf( bioOut, "OK %s %s %s\r\n", identity.iduri(), userHash(), reqid() );
 }
 
 void fetchFtoken( MYSQL *mysql, const char *reqid )
@@ -183,7 +181,7 @@ void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 		user.id(), identity.id(), flogin_token_str );
 
 	/* Return the login token for the requester to use. */
-	BIO_printf( bioOut, "OK %s %s\r\n", flogin_token_str, identity.iduri() );
+	BIO_printf( bioOut, "OK %s %s\r\n", identity.iduri(), flogin_token_str );
 }
 
 void submitFtoken( MYSQL *mysql, const char *token )

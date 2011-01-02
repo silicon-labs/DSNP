@@ -8,24 +8,18 @@ class CredController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 
-		$connection->ftokenRequest( $this->USER[USER], $hash );
+		$connection->ftokenRequest( $this->USER['USER'], $hash );
 
-		if ( $connection->success ) {
-			$arg_h = 'h=' . urlencode( $connection->regs[3] );
-			$arg_reqid = 'reqid=' . urlencode( $connection->regs[1] );
-			$iduri = $connection->regs[2];
-			$dest = "";
+		$arg_h = 'h=' . urlencode( $connection->hash );
+		$arg_reqid = 'reqid=' . urlencode( $connection->reqid );
+		$dest = "";
 
-			# FIXME: put this into the args definition.
-			if ( isset( $_GET['d'] ) )
-				$dest = "&d=" . urlencode($_GET['d']);
-				
-			$this->redirect(
-				"{$iduri}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
-		}
-		else {
-			$this->userRedirect( "/" );
-		}
+		# FIXME: put this into the args definition.
+		if ( isset( $_GET['d'] ) )
+			$dest = "&d=" . urlencode($_GET['d']);
+			
+		$this->redirect(
+			"{$connection->iduri}cred/retftok?{$arg_h}&{$arg_reqid}{$dest}" );
 	}
 
 	function destroySession()

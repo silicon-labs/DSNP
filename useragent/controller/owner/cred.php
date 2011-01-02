@@ -51,12 +51,11 @@ class OwnerCredController extends CredController
 		$connection->ftokenResponse( $this->USER[USER], $hash, $reqid );
 
 		/* Remember: if it comes back there was no error. */
-		$arg_ftoken = 'ftoken=' . urlencode( $connection->regs[1] );
-		$iduri = $connection->regs[2];
+		$arg_ftoken = 'ftoken=' . urlencode( $connection->ftoken );
 		$dest = "";
 		if ( isset( $_GET['d'] ) )
 			$dest = "&d=" . urlencode($_GET['d']);
-		$this->redirect("{$iduri}cred/sftoken?{$arg_ftoken}{$dest}" );
+		$this->redirect("{$connection->iduri}cred/sftoken?{$arg_ftoken}{$dest}" );
 	}
 
 	function sflogin()

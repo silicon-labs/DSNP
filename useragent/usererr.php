@@ -22,6 +22,16 @@ define( 'EC_PARSE_ERROR',                118 );
 define( 'EC_RESPONSE_IS_ERROR',          119 );
 define( 'EC_SSL_NEW_CONTEXT_FAILURE',    120 );
 define( 'EC_SSL_CA_CERTS_NOT_SET',       121 );
+define( 'EC_FRIEND_REQUEST_INVALID',     122 );
+define( 'EC_IDENTITY_ID_INVALID',        123 );
+define( 'EC_USER_ID_INVALID',            124 );
+define( 'EC_STOPPING',                   125 );
+define( 'EC_NOT_PREFRIEND',              126 );
+define( 'EC_DECRYPT_VERIFY_FAILED',      127 );
+define( 'EC_NO_PRIMARY_NETWORK',         128 );
+define( 'EC_FRIEND_CLAIM_NOT_FOUND',     129 );
+define( 'EC_PUT_KEY_FETCH_ERROR',        130 );
+define( 'EC_INVALID_RELID',              131 );
 
 function userError( $code, $args )
 {

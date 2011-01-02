@@ -135,6 +135,7 @@ CREATE TABLE sent_friend_request
 
 	user_id BIGINT,
 	identity_id BIGINT,
+	relationship_id BIGINT,
 
 	requested_relid VARCHAR(48) BINARY,
 	returned_relid VARCHAR(48) BINARY,
@@ -154,7 +155,8 @@ CREATE TABLE friend_claim
 	put_relid VARCHAR(48) BINARY,
 	get_relid VARCHAR(48) BINARY,
 
-	PRIMARY KEY( id )
+	PRIMARY KEY( id ),
+	UNIQUE KEY ( user_id, identity_id )
 );
 
 DROP TABLE IF EXISTS ftoken_request;
@@ -407,15 +409,13 @@ CREATE TABLE get_broadcast_key
 	id bigint NOT NULL AUTO_INCREMENT,
 
 	friend_claim_id BIGINT,
-	network_id BIGINT,
+	network_dist VARCHAR(48) BINARY,
 	generation BIGINT,
 
 	broadcast_key VARCHAR(48) BINARY,
-	friend_proof TEXT,
-	reverse_proof TEXT,
 
 	PRIMARY KEY ( id ),
-	UNIQUE KEY ( network_id, friend_claim_id, generation )
+	UNIQUE KEY ( friend_claim_id, network_dist, generation )
 );
 
 -- Database schema verison. Initialize it.

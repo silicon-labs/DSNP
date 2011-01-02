@@ -234,13 +234,15 @@ void relidResponse( MYSQL *mysql, const char *_user,
 		"VALUES ( %L, %e, %e, %e, %e )",
 		identity.id(), requested_relid_str, response_relid_str, 
 		response_reqid_str, encrypt.sym );
-	
+
+	Relationship relationship( mysql, user, REL_TYPE_FRIEND, identity );
 
 	/* Recored the sent request. */
-	DbQuery( mysql, "INSERT INTO sent_friend_request "
-		"( user_id, identity_id, requested_relid, returned_relid ) "
-		"VALUES ( %L, %L, %e, %e );",
-		user.id(), identity.id(), requested_relid_str, response_relid_str );
+	DbQuery( mysql, 
+		"INSERT INTO sent_friend_request "
+		"( user_id, identity_id, relationship_id, requested_relid, returned_relid ) "
+		"VALUES ( %L, %L, %L, %e, %e );",
+		user.id(), identity.id(), relationship.id(), requested_relid_str, response_relid_str );
 
 	String args( "sent_friend_request %s %s", user.user(), identity.iduri() );
 	appNotification( args, 0, 0 );

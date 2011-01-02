@@ -37,11 +37,6 @@ class OwnerFreqController extends Controller
 		$connection->acceptFriend( 
 			$this->USER[USER], $reqid );
 
-		if ( !$connection->success ) {
-			$this->userError( "FAILURE *** Friend accept " .
-				"failed with: <br>" . $connection->result, "" );
-		}
-
 		$this->userRedirect( "/" );
 	}
 }

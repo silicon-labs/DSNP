@@ -17,23 +17,32 @@ class OwnerIndexController extends Controller
 		$start = $this->args[start];
 
 		$sentFriendRequests = dbQuery(
-			"SELECT * FROM sent_friend_request WHERE user_id = %L", 
+			"SELECT * " . 
+			"FROM sent_friend_request " . 
+			"JOIN identity ON sent_friend_request.identity_id = identity.id " .
+			"JOIN relationship ON sent_friend_request.relationship_id = relationship.id " .
+			"WHERE sent_friend_request.user_id = %L", 
 			$this->USER['USER_ID'] );
 		$this->vars['sentFriendRequests'] = $sentFriendRequests;
 
 		# Load the user's friend requests. 
 		$friendRequests = dbQuery( 
-			"SELECT * " .
+			"SELECT friend_request.reqid, identity.*, relationship.* " .
 			"FROM friend_request " .
-			"WHERE user_id = %L",
+			"JOIN identity ON friend_request.identity_id = identity.id " .
+			"JOIN relationship ON friend_request.relationship_id = relationship.id " .
+			"WHERE friend_request.user_id = %L",
 			$this->USER['USER_ID'] );
 		$this->vars['friendRequests'] = $friendRequests;
 
 		# Load the friend list.
 		$friendClaims = dbQuery(
-			"SELECT * FROM friend_claim WHERE user_id = %L",
-			$this->USER['USER_ID'],
-			REL_TYPE_FRIEND );
+			"SELECT identity.*, relationship.* " .
+			"FROM friend_claim " .
+			"JOIN identity ON friend_claim.identity_id = identity.id " .
+			"JOIN relationship ON friend_claim.relationship_id = relationship.id " .
+			"WHERE friend_claim.user_id = %L",
+			$this->USER['USER_ID'] );
 		$this->vars['friendClaims'] = $friendClaims;
 
 		# Load the user's images.

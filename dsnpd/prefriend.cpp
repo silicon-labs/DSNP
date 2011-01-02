@@ -97,11 +97,11 @@ long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 long registered( MYSQL *mysql, User &user, Identity &identity,
 		const char *requestedRelid, const char *returnedRelid )
 {
-//	DbQuery removeSentRequest( mysql, 
-//		"DELETE FROM sent_friend_request "
-//		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e AND "
-//		"	returned_relid = %e",
-//		forUser, from_id, requested_relid, returned_relid );
+	DbQuery( mysql, 
+		"DELETE FROM sent_friend_request "
+		"WHERE user_id = %L AND identity_id = %L AND "
+		"	requested_relid = %e AND returned_relid = %e",
+		user.id(), identity.id(), requestedRelid, returnedRelid );
 
 	String args( "sent_friend_request_accepted %s %s", user.user(), identity.iduri() );
 	appNotification( args, 0, 0 );
@@ -134,9 +134,9 @@ void notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
 	String registered( "registered %s %s\r\n", requestedRelid, returnedRelid );
 	sendMessageNow( mysql, true, user.user(), identity.iduri(), requestedRelid, registered(), 0 );
 
-//	DbQuery( mysql, 
-//		"DELETE FROM friend_request WHERE user_id = %L AND reqid = %e;",
-//		user.id(), userReqid );
+	DbQuery( mysql, 
+		"DELETE FROM friend_request WHERE user_id = %L AND reqid = %e;",
+		user.id(), userReqid );
 
 	String args( "friend_request_accepted %s %s", user.user(), identity.iduri() );
 	appNotification( args, 0, 0 );

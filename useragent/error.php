@@ -61,7 +61,7 @@ function dsnpdNoResponse()
 function dsnpdTimeout()
 {
 	echo "The connection to the dsnpd server timed out. " .
-		"Something is amiss. ";
+		"Something is amiss. It is supposed to always get back to us. Please report this if you can.";
 }
 
 function cannotFriendSelf( $identity )

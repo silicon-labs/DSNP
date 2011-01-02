@@ -159,6 +159,8 @@ class Connection
 		$this->success = ereg(
 			"^OK", 
 			$this->result );
+
+		$this->checkResult();
 	}
 
 	function submitBroadcast( $user, $network, $message )

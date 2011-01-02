@@ -34,15 +34,16 @@ if ( count( $friendRequests ) ) {
 	echo '<div class="content">';
 	echo "<h3>Friend Requests</h3>";
 	foreach ( $friendRequests as $row ) {
-		$from_id = $row['from_id'];
+		$name = $row['name'];
+		$iduri = $row['iduri'];
 		$reqid = $row['reqid'];
-		echo $this->absLink( $from_id, $from_id, 'idlink' );
+		echo $this->absLink( $name, $iduri, 'idlink' );
 		echo "&nbsp;&nbsp;&nbsp;\n";
-		echo $this->userLink( 'yes', 
+		echo $this->userLink( '<small>yes</small>', 
 			"/freq/answer?reqid=" . 
 			urlencode($reqid) . "&a=yes" );
 		echo "&nbsp;&nbsp;\n";
-		echo $this->userLink( 'no',
+		echo $this->userLink( '<small>no</small>',
 			"/freq/answer?reqid=" .
 			urlencode($reqid) . "&a=no" );
 		echo "<br>\n";
@@ -57,11 +58,14 @@ if ( count( $sentFriendRequests ) > 0 ) {
 	echo '<div class="content">';
 	echo "<h3>Sent Friend Requests</h3>";
 	foreach ( $sentFriendRequests as $row ) {
-		$for_id = $row['for_id'];
+		$name = $row['name'];
+		$iduri = $row['iduri'];
+
 		#$reqid = $row['requested_reqid'];
-		echo $this->absLink( $for_id, $for_id, 'idlink' );
+		echo $this->absLink( $name, $iduri, 'idlink' );
 		echo "&nbsp;&nbsp;&nbsp;\n";
-		echo $this->userLink( 'cancel', "/freq/abandon?reqid=$reqid" );
+		echo $this->userLink( '<small>cancel</small>', "/freq/abandon?reqid=$reqid" );
+		echo "<br>";
 	}
 	echo "</div>";
 }

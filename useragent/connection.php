@@ -117,6 +117,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+) ([^ \t\n\r]+) ([-A-Za-z0-9_]+)", 
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function ftokenResponse( $user, $hash, $reqid )
@@ -127,6 +129,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+) ([^ \t\r\n]*)",
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function submitFtoken( $ftoken )
@@ -137,6 +141,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+) ([0-9a-f]+) ([^ \t\r\n]*)",
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function frFinal( $user, $reqid, $identity )

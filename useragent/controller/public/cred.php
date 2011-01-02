@@ -87,47 +87,48 @@ class PublicCredController extends CredController
 
 		$connection->submitFtoken( $ftoken );
 
-		# If there is a result then the login is successful. 
-		if ( $connection->success ) {
-			$hash = $connection->regs[1];
-			$identity = $connection->regs[3];
+		/* FIXME: If there is no friend claim ... send back a reqid anyways.
+		 * Don't want to give away that there is no claim, otherwise it would
+		 * be possible to probe  Would be good to fake this with an appropriate
+		 * time delay. */
 
-#			# Login successful.
-#			$this->Session->write( 'ROLE', 'friend' );
-#			$this->Session->write( 'NETWORK_NAME', '-' );
-#			$this->Session->write( 'token', $ftoken );
-#			$this->Session->write( 'hash', $hash );
+		/* Remmber that if we return from the above then we have success. */
+		$hash = $connection->regs[1];
+		$iduri = $connection->regs[3];
+
+#		# Login successful.
+#		$this->Session->write( 'ROLE', 'friend' );
+#		$this->Session->write( 'NETWORK_NAME', '-' );
+#		$this->Session->write( 'token', $ftoken );
+#		$this->Session->write( 'hash', $hash );
 		
-			$this->startSession();
-			$_SESSION['ROLE'] = 'friend';
-			$_SESSION['NETWORK_NAME'] = '-';
-			$_SESSION['hash'] = $hash;
-			$_SESSION['token'] = $ftoken;
+		$this->startSession();
+		$_SESSION['ROLE'] = 'friend';
+		$_SESSION['NETWORK_NAME'] = '-';
+		$_SESSION['hash'] = $hash;
+		$_SESSION['token'] = $ftoken;
 
-			$friendClaim = dbQuery( "
-				SELECT id, user_id, user, iduri, name
-				FROM friend_claim WHERE user_id = %l AND iduri = %e
-				",
-				$this->USER[ID],
-				$identity
-			);
+#		$friendClaim = dbQuery( "
+#			SELECT friend_claim.id AS id, identity.iduri AS iduri
+#			FROM friend_claim 
+#			JOIN identity on friend_claim.identity_id = identity.id
+#			WHERE user_id = %l AND iduri = %e
+#			",
+#			$this->USER[ID],
+#			$identity
+#		);
 
-			# FIXME: check result
-			$BROWSER['ID'] = $friendClaim[0]['id'];
-			$BROWSER['IDURI'] = $friendClaim[0]['iduri'];
+		# FIXME: check result
+		#$BROWSER['ID'] = $friendClaim[0]['id'];
+		$BROWSER['iduri'] = $identity;
 
-			$_SESSION[BROWSER] = $BROWSER;
+		$_SESSION['BROWSER'] = $BROWSER;
 
-#			if ( isset( $_GET['d'] ) )
-#				$this->redirect( $_GET['d'] );
-#			else
-				$this->userRedirect( '/' );
-		}
-		else {
-			echo "<center>\n";
-			echo "FRIEND LOGIN FAILED<br> $res\n";
-			echo "</center>\n";
-			exit;
-		}
+		/* FIXME: check for dest (d). */
+		#if ( isset( $_GET['d'] ) )
+		#	$this->redirect( $_GET['d'] );
+		#else
+
+		$this->userRedirect( '/' );
 	}
 }

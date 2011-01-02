@@ -93,7 +93,10 @@ struct User
 
 struct Identity
 {
+	struct ByHash {};
+
 	Identity( MYSQL *mysql, const char *iduri );
+	Identity( MYSQL *mysql, ByHash, const char *hash );
 	Identity( MYSQL *mysql, long long _id );
 
 	MYSQL *mysql;

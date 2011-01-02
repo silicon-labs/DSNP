@@ -53,6 +53,7 @@
 #define EC_FRIEND_CLAIM_NOT_FOUND    129
 #define EC_PUT_KEY_FETCH_ERROR       130
 #define EC_INVALID_RELID             131
+#define EC_IDENTITY_HASH_INVALID     132
 
 struct UserError
 {
@@ -527,6 +528,21 @@ struct PutKeyFetchError
 
 		error( "%d error fetching current put key\n",
 				EC_PUT_KEY_FETCH_ERROR );
+	}
+
+};
+
+struct IdentityHashInvalid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_IDENTITY_HASH_INVALID );
+
+		error( "%d identity hash not valid\n",
+				EC_IDENTITY_HASH_INVALID );
 	}
 
 };

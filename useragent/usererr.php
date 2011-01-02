@@ -32,6 +32,7 @@ define( 'EC_NO_PRIMARY_NETWORK',         128 );
 define( 'EC_FRIEND_CLAIM_NOT_FOUND',     129 );
 define( 'EC_PUT_KEY_FETCH_ERROR',        130 );
 define( 'EC_INVALID_RELID',              131 );
+define( 'EC_IDENTITY_HASH_INVALID',      132 );
 
 function userError( $code, $args )
 {

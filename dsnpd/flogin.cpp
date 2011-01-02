@@ -66,70 +66,51 @@ char *userIdentityHash( MYSQL *mysql, const char *user )
 }
 
 
-void ftokenRequest( MYSQL *mysql, const char *user, const char *hash )
+void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 {
-	int sigRes;
-	Keys *user_priv, *id_pub;
-	unsigned char flogin_token[TOKEN_SIZE], reqid[REQID_SIZE];
-	char *flogin_token_str, *reqid_str;
-	long friend_claim;
-	IdentityOrig friend_id;
-	Encrypt encrypt;
-
-	/* Check if this identity is our friend. */
-	friend_claim = checkFriendClaim( friend_id, mysql, user, hash );
-	if ( friend_claim <= 0 ) {
-		message("ftoken_request: hash %s for user %s is not valid\n", hash, user );
-
-		/* No friend claim ... send back a reqid anyways. Don't want to give
-		 * away that there is no claim. FIXME: Would be good to fake this with
-		 * an appropriate time delay. */
-		RAND_bytes( reqid, RELID_SIZE );
-		reqid_str = binToBase64( reqid, RELID_SIZE );
-
-		/*FIXME: Hang for a bit here instead. */
-		BIO_printf( bioOut, "OK %s\r\n", reqid_str );
-		return;
-	}
+	/* Load user, identity and friend claim. */
+	User user( mysql, _user );
+	Identity identity( mysql, Identity::ByHash(), hash );
+	FriendClaim friendClaim( mysql, user, identity );
 
 	/* Get the public key for the identity. */
-	id_pub = fetchPublicKey( mysql, friend_id.identity );
-	if ( id_pub == 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
-		return;
-	}
+	Keys *idPub = identity.fetchPublicKey();
 
 	/* Load the private key for the user. */
-	user_priv = loadKey( mysql, user );
+	Keys *userPriv = loadKey( mysql, user.user() );
 
 	/* Generate the login request id and relationship and request ids. */
+	unsigned char flogin_token[TOKEN_SIZE], reqid[REQID_SIZE];
 	RAND_bytes( flogin_token, TOKEN_SIZE );
 	RAND_bytes( reqid, REQID_SIZE );
 
-	encrypt.load( id_pub, user_priv );
+	Encrypt encrypt;
+	encrypt.load( idPub, userPriv );
 
 	/* Encrypt it. */
-	sigRes = encrypt.signEncrypt( flogin_token, TOKEN_SIZE );
+	int sigRes = encrypt.signEncrypt( flogin_token, TOKEN_SIZE );
 	if ( sigRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
 	/* Store the request. */
-	flogin_token_str = binToBase64( flogin_token, TOKEN_SIZE );
-	reqid_str = binToBase64( reqid, REQID_SIZE );
+	char *flogin_token_str = binToBase64( flogin_token, TOKEN_SIZE );
+	char *reqid_str = binToBase64( reqid, REQID_SIZE );
 
 	DbQuery( mysql,
 		"INSERT INTO ftoken_request "
-		"( user, from_id, token, reqid, msg_sym ) "
-		"VALUES ( %e, %e, %e, %e, %e ) ",
-		user, friend_id.identity, flogin_token_str, reqid_str, encrypt.sym );
+		"( user_id, identity_id, token, reqid, msg_sym ) "
+		"VALUES ( %L, %L, %e, %e, %e ) ",
+		user.id(), identity.id(), flogin_token_str, reqid_str, encrypt.sym );
 
-	message("ftoken_request: %s %s\n", reqid_str, friend_id.identity );
+	message("ftoken_request: %s %s\n", reqid_str, identity.iduri() );
+
+	String userIduri( "%s%s/", c->CFG_URI, user.user() );
+	String userHash = makeIduriHash( userIduri );
 
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str,
-			friend_id.identity, userIdentityHash( mysql, user ) );
+	BIO_printf( bioOut, "OK %s %s %s\r\n", reqid_str, identity.iduri(), userHash() );
 }
 
 void fetchFtoken( MYSQL *mysql, const char *reqid )
@@ -146,7 +127,7 @@ void fetchFtoken( MYSQL *mysql, const char *reqid )
 	}
 }
 
-void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 
+void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash, 
 		const char *flogin_reqid_str )
 {
 	/*
@@ -156,47 +137,30 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 	 * d) decrypts and verifies the token
 	 * e) redirects the browser to $FP-URI/submit-token?uri=$URI&token=$TOK
 	 */
-	int verifyRes, fetchRes;
-	Keys *user_priv, *id_pub;
-	unsigned char *flogin_token;
-	char *flogin_token_str;
-	long friend_claim;
-	IdentityOrig friend_id;
-	char *site;
-	Encrypt encrypt;
 
-	/* Check if this identity is our friend. */
-	friend_claim = checkFriendClaim( friend_id, mysql, user, hash );
-	if ( friend_claim <= 0 ) {
-		/* No friend claim ... we can reveal this since ftoken_response requires
-		 * that the user be logged in. */
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NOT_A_FRIEND );
-		return;
-	}
+	/* Load user, identity and friend claim. */
+	User user( mysql, _user );
+	Identity identity( mysql, Identity::ByHash(), hash );
+	FriendClaim friendClaim( mysql, user, identity );
 
 	/* Get the public key for the identity. */
-	id_pub = fetchPublicKey( mysql, friend_id.identity );
-	if ( id_pub == 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
-		return;
-	}
-
-	site = get_site( friend_id.identity );
+	Keys *id_pub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	fetchRes = fetch_ftoken_net( encsig, site, friend_id.host, flogin_reqid_str );
+	int fetchRes = fetch_ftoken_net( encsig, identity.site(), identity.host(), flogin_reqid_str );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_FTOKEN );
 		return;
 	}
 
 	/* Load the private key for the user the request is for. */
-	user_priv = loadKey( mysql, user );
+	Keys *user_priv = loadKey( mysql, user.user() );
 
+	Encrypt encrypt;
 	encrypt.load( id_pub, user_priv );
 
 	/* Decrypt the flogin_token. */
-	verifyRes = encrypt.decryptVerify( encsig.sym );
+	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		message("ftoken_response: ERROR_DECRYPT_VERIFY\n" );
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
@@ -209,19 +173,17 @@ void ftokenResponse( MYSQL *mysql, const char *user, const char *hash,
 		return;
 	}
 
-	flogin_token = encrypt.decrypted;
-	flogin_token_str = binToBase64( flogin_token, RELID_SIZE );
+	unsigned char *flogin_token = encrypt.decrypted;
+	char *flogin_token_str = binToBase64( flogin_token, RELID_SIZE );
 
 	DbQuery( mysql,
 		"INSERT INTO remote_flogin_token "
-		"( user, identity, login_token ) "
-		"VALUES ( %e, %e, %e )",
-		user, friend_id.identity, flogin_token_str );
+		"( user_id, identity_id, login_token ) "
+		"VALUES ( %L, %L, %e )",
+		user.id(), identity.id(), flogin_token_str );
 
 	/* Return the login token for the requester to use. */
-	BIO_printf( bioOut, "OK %s %s\r\n", flogin_token_str, friend_id.identity );
-
-	free( flogin_token_str );
+	BIO_printf( bioOut, "OK %s %s\r\n", flogin_token_str, identity.iduri() );
 }
 
 void submitFtoken( MYSQL *mysql, const char *token )
@@ -229,7 +191,9 @@ void submitFtoken( MYSQL *mysql, const char *token )
 	long lasts = LOGIN_TOKEN_LASTS;
 
 	DbQuery request( mysql,
-		"SELECT user, from_id FROM ftoken_request WHERE token = %e",
+		"SELECT user_id, identity_id "
+		"FROM ftoken_request "
+		"WHERE token = %e",
 		token );
 
 	if ( request.rows() == 0 ) {
@@ -237,25 +201,19 @@ void submitFtoken( MYSQL *mysql, const char *token )
 		return;
 	}
 	MYSQL_ROW row = request.fetchRow();
-	char *user = row[0];
-	char *fromId = row[1];
+	long long userId = parseId( row[0] );
+	long long identityId = parseId( row[1] );
+
+	Identity identity( mysql, identityId );
 
 	DbQuery( mysql, 
-		"INSERT INTO flogin_token ( user, identity, login_token, expires ) "
-		"VALUES ( %e, %e, %e, date_add( now(), interval %l second ) )", 
-		user, fromId, token, lasts );
+		"INSERT INTO flogin_token ( user_id, identity_id, login_token, expires ) "
+		"VALUES ( %L, %L, %e, date_add( now(), interval %l second ) )", 
+		userId, identityId, token, lasts );
 
-	DbQuery hashQuery( mysql,
-		"SELECT friend_hash FROM friend_claim WHERE iduri = %e", fromId );
+	String hash = makeIduriHash( identity.iduri() );
 
-	if ( hashQuery.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return;
-	}
-	row = hashQuery.fetchRow();
-	char *hash = row[0];
-
-	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash, lasts, fromId );
+	BIO_printf( bioOut, "OK %s %ld %s\r\n", hash(), lasts, identity.iduri() );
 }
 
 

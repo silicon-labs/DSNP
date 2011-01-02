@@ -50,6 +50,24 @@ Identity::Identity( MYSQL *mysql, const char *iduri )
 	_id(-1)
 {}
 
+Identity::Identity( MYSQL *mysql, Identity::ByHash, const char *hash )
+:
+	mysql(mysql),
+	haveId(false), 
+	parsed(false),
+	_id(-1)
+{
+	DbQuery find( mysql,
+		"SELECT iduri FROM identity WHERE hash = %e", 
+		hash );
+
+	if ( find.rows() != 1 )
+		throw IdentityHashInvalid();
+
+	MYSQL_ROW row = find.fetchRow();
+	iduri = strdup( row[0] );
+}
+
 Identity::Identity( MYSQL *mysql, long long _id )
 :
 	mysql(mysql),

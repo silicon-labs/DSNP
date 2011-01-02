@@ -32,8 +32,8 @@ class OwnerUserController extends Controller
 		dbQuery( "
 			INSERT INTO activity ( user_id, author_id, published, type, message )
 			VALUES ( %l, %l, true, 'MSG', %e )", 
-			$this->USER['ID'], 
-			$this->USER['FRIEND_CLAIM_SELF_ID'],
+			$this->USER['USER_ID'], 
+			$this->USER['relationship_id'],
 			$text
 		);
 
@@ -44,13 +44,6 @@ class OwnerUserController extends Controller
 		$connection->openLocalPriv();
 		$connection->submitBroadcast( 
 			$this->USER[USER], '-', $message->message );
-
-		if ( $connection->success )
-			$this->userRedirect( "/" );
-		else {
-			$this->userError( "submit_broadcast failed " . 
-					"with $connection->result", "" );
-		}
 	}
 
 	function flush()
@@ -106,13 +99,6 @@ class OwnerUserController extends Controller
 		$connection->openLocalPriv();
 		$connection->submitBroadcast( $this->USER[USER],
 				'-', $message->message );
-
-		if ( $connection->success )
-			$this->userRedirect( "/" );
-		else {
-			$this->userError( "submit_broadcast failed " .
-					"with $connection->result", "" );
-		}
 	}
 }
 ?>

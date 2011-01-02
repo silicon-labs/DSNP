@@ -7,6 +7,7 @@ $USER['USER'] = null;
 $USER['USER_ID'] = null;
 $USER['iduri'] = null;
 $USER['name'] = null;
+$USER['relationship_id'] = null;
 
 # ID is the id of the friend_claim row.
 $BROWSER['relationship_id'] = null;

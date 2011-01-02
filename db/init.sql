@@ -164,8 +164,9 @@ CREATE TABLE ftoken_request
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20), 
-	from_id TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	token VARCHAR(48) BINARY,
 	reqid VARCHAR(48) BINARY,
 	msg_sym TEXT,
@@ -252,9 +253,11 @@ CREATE TABLE message_queue
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	send_after DATETIME,
-	from_user VARCHAR(20),
-	to_id TEXT,
+
 	relid VARCHAR(48) BINARY,
 	message TEXT,
 
@@ -264,15 +267,17 @@ CREATE TABLE message_queue
 DROP TABLE IF EXISTS broadcasted;
 CREATE TABLE broadcasted
 (
-	user VARCHAR(20),
-	author_id TEXT,
-	subject_id TEXT,
+	user_id BIGINT,
+
+	author_id BIGINT,
+	subject_id BIGINT,
+
 	seq_num BIGINT NOT NULL AUTO_INCREMENT,
 	time_published TIMESTAMP,
 	type CHAR(4),
 	message BLOB,
 
-	PRIMARY KEY ( user, seq_num )
+	PRIMARY KEY ( user_id, seq_num )
 );
 
 DROP TABLE IF EXISTS login_token;
@@ -280,7 +285,8 @@ CREATE TABLE login_token
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20),
+	user_id BIGINT,
+
 	login_token VARCHAR(48) BINARY,
 	expires TIMESTAMP,
 
@@ -292,8 +298,9 @@ CREATE TABLE flogin_token
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20),
-	identity TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	login_token VARCHAR(48) BINARY,
 	expires TIMESTAMP,
 
@@ -305,8 +312,9 @@ CREATE TABLE remote_flogin_token
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20),
-	identity TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	login_token VARCHAR(48) BINARY,
 
 	PRIMARY KEY ( id )
@@ -317,8 +325,9 @@ CREATE TABLE pending_remote_broadcast
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20),
-	identity TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	hash TEXT,
 	reqid VARCHAR(48) BINARY,
 	reqid_final VARCHAR(48) BINARY,
@@ -335,8 +344,9 @@ CREATE TABLE remote_broadcast_request
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
-	user VARCHAR(20),
-	identity TEXT,
+	user_id BIGINT,
+	identity_id BIGINT,
+
 	reqid VARCHAR(48) BINARY,
 	generation BIGINT,
 	sym TEXT,

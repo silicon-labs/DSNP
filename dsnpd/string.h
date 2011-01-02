@@ -30,7 +30,6 @@ struct String
 
 	String( const char *fmt, ... );
 	String( const AllocString &as );
-	String( long size );
 
 	~String();
 

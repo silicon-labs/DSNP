@@ -181,9 +181,12 @@ bool sendMessage()
 
 	/* Try to find a message. */
 	DbQuery findOne( mysql, 
-		"SELECT id, from_user, to_id, relid, message "
+		"SELECT message_queue.id, user.id, user.user, "
+		"	identity.id, identity.iduri, message_queue.relid, message_queue.message "
 		"FROM message_queue "
-		"WHERE now() >= send_after ORDER by id LIMIT 1"
+		"JOIN user ON message_queue.user_id = user.id "
+		"JOIN identity ON message_queue.identity_id = identity.id "
+		"WHERE now() >= send_after ORDER by message_queue.id LIMIT 1"
 	);
 
 	if ( findOne.rows() == 0 )
@@ -191,12 +194,13 @@ bool sendMessage()
 
 	MYSQL_ROW row = findOne.fetchRow();
 
-	long long id = strtoll( row[0], 0, 10 );
-
-	char *from_user = row[1];
-	char *to_id = row[2];
-	char *relid = row[3];
-	char *msg = row[4];
+	long long id = parseId( row[0] );
+	long long userId = parseId( row[1] );
+	String user = row[2];
+	long long identityId = parseId( row[3] );
+	String iduri = row[4];
+	char *relid = row[5];
+	char *msg = row[6];
 	
 	/* Remove it. If removing fails then we assume that some other process
 	 * removed the item. */
@@ -209,10 +213,10 @@ bool sendMessage()
 	mysql_close( mysql );
 
 	if ( affected == 1 ) {
-		message("delivering message %lld from %s to %s\n", id, from_user, to_id );
+		message("delivering message %lld from %s to %s\n", id, user(), iduri() );
 
-		long send_res = sendMessageNet( mysql, false, from_user, to_id, relid, 
-				msg, strlen(msg), 0 );
+		long send_res = sendMessageNet( mysql, false, user(),
+				iduri(), relid, msg, strlen(msg), 0 );
 
 		if ( send_res < 0 ) {
 			error( "trouble sending message: %ld\n", send_res );
@@ -222,9 +226,9 @@ bool sendMessage()
 			/* Queue the message. */
 			DbQuery( mysql,
 					"INSERT INTO message_queue "
-					"( from_user, to_id, relid, message, send_after ) "
-					"VALUES ( %e, %e, %e, %e, DATE_ADD( NOW(), INTERVAL 10 MINUTE ) ) ",
-					from_user, to_id, relid, msg );
+					"( user_id, identity_id, relid, message, send_after ) "
+					"VALUES ( %L, %L, %e, %e, DATE_ADD( NOW(), INTERVAL 10 MINUTE ) ) ",
+					userId, identityId, relid, msg );
 
 			mysql_close( mysql );
 		}

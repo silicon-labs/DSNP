@@ -1,6 +1,9 @@
 #include "dsnp.h"
 #include "encrypt.h"
+#include "error.h"
+
 #include <string.h>
+
 
 long long addNetwork( MYSQL *mysql, long long userId, const char *name )
 {
@@ -102,50 +105,6 @@ void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 }
 
 /*
- * Send the current broadcast key and the friend_proof. To make group del and
- * friend del instantaneous we need to destroy the tree.
- */
-void sendBkProof( MYSQL *mysql, const char *user, 
-		const char *network, long long networkId, const char *friendId,
-		long long friendClaimId, const char *putRelid )
-{
-	CurrentPutKey put( mysql, user, network );
-
-	/* Get the current time. */
-	String timeStr = timeNow();
-	String proof1( "friend_proof %s%s/ %s %s\r\n", c->CFG_URI, user, friendId, timeStr.data );
-	String proof2( "friend_proof %s %s%s/ %s\r\n", friendId, c->CFG_URI, user, timeStr.data );
-
-	Keys *user_priv = loadKey( mysql, user );
-	Keys *id_pub = fetchPublicKey( mysql, friendId );
-
-	Encrypt encrypt1( id_pub, user_priv );
-	int sigRes = encrypt1.bkSignEncrypt( put.broadcastKey.data,
-			(u_char*)proof1.data, proof1.length );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
-
-	Encrypt encrypt2( id_pub, user_priv );
-	sigRes = encrypt2.bkSignEncrypt( put.broadcastKey.data,
-			(u_char*)proof2.data, proof2.length );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
-
-	/* Notify the requester. */
-	String registered( "bk_proof %s %lld %s %s %s\r\n", 
-			network, put.keyGen, put.broadcastKey.data, encrypt1.sym, encrypt2.sym );
-
-	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
-
-	sendAllInProofs( mysql, user, network, networkId, friendId );
-	sendAllOutProofs( mysql, user, network, networkId, friendId );
-}
-
-/*
  * To make group del and friend del instantaneous we need to destroy the tree.
  */
 
@@ -208,12 +167,63 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 		return;
 	}
 
-	if ( strcmp( network, "-" ) == 0 )
-		sendBroadcastKey( mysql, user, network, networkId, identity, friendClaimId, putRelid );
-	else
-		sendBkProof( mysql, user, network, networkId, identity, friendClaimId, putRelid );
+	sendBroadcastKey( mysql, user, network, networkId, identity, friendClaimId, putRelid );
 
 	BIO_printf( bioOut, "OK\n" );
+}
+
+long long findPrimaryNetworkId( MYSQL *mysql, User &user )
+{
+	DbQuery query( mysql,
+		"SELECT id FROM network WHERE user_id = %L AND type = %l",
+		user.id(), NET_TYPE_PRIMARY );
+
+	if ( query.rows() != 1 )
+		throw NoPrimaryNetwork();
+
+	return parseId( query.fetchRow()[0] );
+}
+
+long long findFriendClaimId( MYSQL *mysql, User &user, Identity &identity )
+{
+	DbQuery query( mysql,
+		"SELECT id FROM friend_claim WHERE user_id = %L AND identity_id = %L",
+		user.id(), identity.id() );
+
+	if ( query.rows() != 1 )
+		throw FriendClaimNotFound();
+
+	return parseId( query.fetchRow()[0] );
+}
+
+void sendBroadcastKey( MYSQL *mysql, User &user, Identity &identity, 
+		FriendClaim &friendClaim, long long networkId )
+{
+	PutKey put( mysql, networkId );
+
+	/* Notify the requester. */
+	String registered( "broadcast_key %s %lld %s\r\n", 
+			put.distName(), put.generation, put.broadcastKey() );
+
+	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid, registered.data, 0 );
+}
+
+
+void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity )
+{
+	long long networkId = findPrimaryNetworkId( mysql, user );
+
+	FriendClaim friendClaim( mysql, user, identity );
+
+	/* Try to insert the group member. */
+	DbQuery insert( mysql, 
+		"INSERT IGNORE INTO network_member "
+		"( network_id, friend_claim_id  ) "
+		"VALUES ( %L, %L )",
+		networkId, friendClaim.id
+	);
+
+	sendBroadcastKey( mysql, user, identity, friendClaim, networkId );
 }
 
 void invalidateBroadcastKey( MYSQL *mysql, const char *user, long long userId,

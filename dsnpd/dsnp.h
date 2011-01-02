@@ -136,6 +136,21 @@ private:
 	long long _id;
 };
 
+struct FriendClaim
+{
+	FriendClaim( MYSQL *mysql, User &user, Identity &identity );
+	FriendClaim( MYSQL *mysql, const char *getRelid );
+
+	MYSQL *mysql;
+
+	long long id;
+	long long userId;
+	long long identityId;
+	long long relationshipId;
+	String putRelid;
+	String getRelid;
+};
+
 
 void runQueue( const char *siteName );
 long runBroadcastQueue();
@@ -204,6 +219,15 @@ struct CurrentPutKey
 
 	long long networkId;
 	long long keyGen;
+	String broadcastKey;
+};
+
+struct PutKey
+{
+	PutKey( MYSQL *mysql, long long netorkId );
+
+	String distName;
+	long long generation;
 	String broadcastKey;
 };
 
@@ -438,7 +462,6 @@ struct MessageParser
 	{
 		Unknown = 1,
 		BroadcastKey,
-		BkProof,
 		EncryptRemoteBroadcast,
 		ReturnRemoteBroadcast,
 		FriendProofRequest,
@@ -450,7 +473,7 @@ struct MessageParser
 
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
-	String date, network, sym1, sym2;
+	String date, network, distName, sym1, sym2;
 	long length, number;
 	long long seq_num, generation;
 	const char *embeddedMsg;
@@ -510,6 +533,7 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const ch
 void showNetwork( MYSQL *mysql, const char *user, const char *network );
 void unshowNetwork( MYSQL *mysql, const char *user, const char *network );
 void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
+void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity );
 void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
 
 typedef std::list<std::string> RecipientList;
@@ -538,6 +562,11 @@ AllocString passHash( const u_char *pass_salt, const char *pass );
 void startPreFriend( MYSQL *mysql, char *reqid );
 
 BIGNUM *base64ToBn( const char *base64 );
+
+inline long long parseId( const char *id )
+{
+	return strtoll( id, 0, 10 );
+}
 
 #define LOGIN_TOKEN_LASTS 86400
 

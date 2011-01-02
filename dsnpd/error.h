@@ -49,6 +49,10 @@
 #define EC_STOPPING                  125
 #define EC_NOT_PREFRIEND             126
 #define EC_DECRYPT_VERIFY_FAILED     127         
+#define EC_NO_PRIMARY_NETWORK        128
+#define EC_FRIEND_CLAIM_NOT_FOUND    129
+#define EC_PUT_KEY_FETCH_ERROR       130
+#define EC_INVALID_RELID             131
 
 struct UserError
 {
@@ -398,6 +402,34 @@ struct FriendRequestInvalid
 	}
 };
 
+struct FriendClaimNotFound
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_FRIEND_CLAIM_NOT_FOUND );
+
+		error( "%d expected friend claim was not found\n",
+				EC_FRIEND_CLAIM_NOT_FOUND );
+	}
+};
+
+struct InvalidRelid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_INVALID_RELID );
+
+		error( "%d relid supplied does not identify a friend claim\n",
+				EC_INVALID_RELID );
+	}
+};
+
 struct IdentityIdInvalid
 	: public UserError
 {
@@ -466,6 +498,37 @@ struct DecryptVerifyFailed
 		error( "%d decrypt verify failed\n",
 				EC_DECRYPT_VERIFY_FAILED );
 	}
+};
+
+
+struct NoPrimaryNetwork
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_NO_PRIMARY_NETWORK );
+
+		error( "%d primary network not found\n",
+				EC_NO_PRIMARY_NETWORK );
+	}
+
+};
+
+struct PutKeyFetchError
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_PUT_KEY_FETCH_ERROR );
+
+		error( "%d error fetching current put key\n",
+				EC_PUT_KEY_FETCH_ERROR );
+	}
+
 };
 
 #endif

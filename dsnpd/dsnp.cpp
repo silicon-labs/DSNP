@@ -181,6 +181,29 @@ CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group 
 	broadcastKey.set( row[2] );
 }
 
+PutKey::PutKey( MYSQL *mysql, long long networkId )
+{
+	DbQuery query( mysql, 
+		"SELECT "
+		"	network.dist_name, "
+		"	put_broadcast_key.generation, "
+		"	put_broadcast_key.broadcast_key "
+		"FROM network "
+		"JOIN put_broadcast_key "
+		"		ON network.id = put_broadcast_key.network_id AND "
+		"		network.key_gen = put_broadcast_key.generation "
+		"WHERE network.id = %L ",
+		networkId );
+	
+	if ( query.rows() != 1 )
+		throw PutKeyFetchError();
+	
+	MYSQL_ROW row = query.fetchRow();
+	distName = row[0];
+	generation = parseId( row[1] );
+	broadcastKey = row[2];
+}
+
 void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 {
 	/* Generate the relationship and request ids. */
@@ -484,8 +507,6 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 	Encrypt encrypt;
 	int decrypt_res;
 
-	::message( "decrypting result %s %s %s\n", from_user, to_identity, user_message );
-
 	user_priv = loadKey( mysql, from_user );
 	id_pub = fetchPublicKey( mysql, to_identity );
 
@@ -498,54 +519,6 @@ char *decrypt_result( MYSQL *mysql, const char *from_user,
 		return 0;
 	}
 
-	message( "decrypt_result: %s\n", encrypt.decrypted );
-
 	return strdup((char*)encrypt.decrypted);
-}
-
-Relationship::Relationship( MYSQL *mysql, User &user, int type, Identity &identity )
-:
-	mysql(mysql),
-	haveId(false)
-{
-	user_id = user.id();
-	this->type = type;
-	identity_id = identity.id();
-	defaultName.set( identity.user() );
-	message("relationship default name: %s\n", identity.user() );
-}
-
-long long Relationship::id()
-{
-	if ( !haveId ) {
-		/* Always try to insert. Ignore failures. */
-		DbQuery insert( mysql, 
-			"INSERT IGNORE INTO relationship "
-			"( user_id, identity_id ) "
-			"VALUES ( %L, %L )",
-			user_id, identity_id
-		);
-
-		if ( insert.affectedRows() > 0 ) {
-			_id = lastInsertId( mysql );
-
-			DbQuery( mysql, 
-				"UPDATE relationship SET type = %l, name = %e WHERE id = %L",
-				type, defaultName.data, _id
-			);
-		}
-		else {
-			DbQuery find( mysql,
-				"SELECT id FROM relationship "
-				"WHERE user_id = %L AND identity_id = %L ", 
-				user_id, identity_id );
-			MYSQL_ROW row = find.fetchRow();
-			_id = strtoll( row[0], 0, 10 );
-		}
-
-		haveId = true;
-	}
-
-	return _id;
 }
 

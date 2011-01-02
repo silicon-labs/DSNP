@@ -76,6 +76,97 @@ long long User::id()
 	return _id;
 }
 
+Relationship::Relationship( MYSQL *mysql, User &user, int type, Identity &identity )
+:
+	mysql(mysql),
+	haveId(false)
+{
+	user_id = user.id();
+	this->type = type;
+	identity_id = identity.id();
+	defaultName.set( identity.user() );
+}
+
+long long Relationship::id()
+{
+	if ( !haveId ) {
+		/* Always try to insert. Ignore failures. */
+		DbQuery insert( mysql, 
+			"INSERT IGNORE INTO relationship "
+			"( user_id, identity_id ) "
+			"VALUES ( %L, %L )",
+			user_id, identity_id
+		);
+
+		if ( insert.affectedRows() > 0 ) {
+			_id = lastInsertId( mysql );
+
+			DbQuery( mysql, 
+				"UPDATE relationship SET type = %l, name = %e WHERE id = %L",
+				type, defaultName.data, _id
+			);
+		}
+		else {
+			DbQuery find( mysql,
+				"SELECT id FROM relationship "
+				"WHERE user_id = %L AND identity_id = %L ", 
+				user_id, identity_id );
+			MYSQL_ROW row = find.fetchRow();
+			_id = strtoll( row[0], 0, 10 );
+		}
+
+		haveId = true;
+	}
+
+	return _id;
+}
+
+FriendClaim::FriendClaim( MYSQL *mysql, User &user, Identity &identity )
+:
+	mysql(mysql)
+{
+	DbQuery query( mysql,
+		"SELECT id, relationship_id, put_relid, get_relid "
+		"FROM friend_claim "
+		"WHERE user_id = %L AND identity_id = %L",
+		user.id(), identity.id() );
+
+	if ( query.rows() == 0 )
+		throw FriendClaimNotFound();
+
+	userId = user.id();
+	identityId = identity.id();
+
+	MYSQL_ROW row = query.fetchRow();
+	id = parseId( row[0] );
+	relationshipId = parseId( row[1] );
+	putRelid = row[2];
+	getRelid = row[3];
+}
+
+FriendClaim::FriendClaim( MYSQL *mysql, const char *getRelid )
+:
+	mysql(mysql)
+{
+	DbQuery query( mysql,
+		"SELECT id, user_id, identity_id, relationship_id, put_relid, get_relid "
+		"FROM friend_claim "
+		"WHERE get_relid = %e",
+		getRelid );
+	
+	if ( query.rows() == 0 )
+		throw InvalidRelid();
+
+	MYSQL_ROW row = query.fetchRow();
+
+	id = parseId( row[0] );
+	userId = parseId( row[1] );
+	identityId = parseId( row[2] );
+	relationshipId = parseId( row[3] );
+	putRelid = row[4];
+	getRelid = row[5];
+}
+
 void newUser( MYSQL *mysql, const char *user, const char *pass )
 {
 	String iduri( "%s%s/", c->CFG_URI, user );

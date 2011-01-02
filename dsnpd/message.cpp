@@ -36,41 +36,17 @@ void addGetBroadcastKey( MYSQL *mysql, long long friendClaimId, long long networ
 		friendClaimId, networkId, generation );
 }
 
-void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user, long long userId,
-		const char *friendId, const char *friendHash, const char *network,
-		long long generation, const char *broadcastKey, const char *friendProof1, 
-		const char *friendProof2 )
+void storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, FriendClaim &friendClaim,
+		const char *distName, long long generation, const char *broadcastKey )
 {
-	/* Make sure we have the network for the user. */
-	long long networkId = addNetwork( mysql, userId, network );
-
-	/* Store the key. */
-	addGetBroadcastKey( mysql, friendClaimId, networkId, generation );
 	DbQuery( mysql, 
-			"UPDATE get_broadcast_key "
-			"SET broadcast_key = %e, friend_proof = %e, reverse_proof = %e "
-			"WHERE friend_claim_id = %L AND network_id = %L AND generation = %L",
-			broadcastKey, friendProof1, friendProof2, friendClaimId, networkId, generation );
-
-	if ( friendProof1 != 0 ) {
-		/* Broadcast the friend proof that we just received. */
-		message( "broadcasting in-proof for user %s network %s <- %s\n", user, network, friendId );
-		sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof1 );
-	}
-
-	if ( friendProof2 != 0 ) {
-		/* If we have them in this group then broadcast the reverse as well. */
-		DbQuery haveReverse( mysql,
-			"SELECT id FROM network_member "
-			"WHERE network_id = %L AND friend_claim_id = %L",
-			networkId, friendClaimId );
-
-		if ( haveReverse.rows() ) {
-			/* Sending friend */
-			message( "broadcasting out-proof for user %s network %s -> %s\n", user, network, friendId );
-			sendRemoteBroadcast( mysql, user, friendHash, network, generation, 20, friendProof2 );
-		}
-	}
+			"INSERT IGNORE INTO get_broadcast_key "
+			"( "
+			"	friend_claim_id, network_dist, "
+			"	generation, broadcast_key "
+			") "
+			"VALUES ( %L, %e, %L, %e )",
+			friendClaim.id, distName, generation, broadcastKey );
 
 	BIO_printf( bioOut, "OK\n" );
 }
@@ -90,65 +66,45 @@ int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const 
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
-	DbQuery claim( mysql, 
-		"SELECT friend_claim.id, friend_claim.user, friend_claim.iduri, "
-		"	friend_claim.friend_hash, user.id "
-		"FROM friend_claim "
-		"JOIN user ON friend_claim.user = user.user "
-		"WHERE get_relid = %e",
-		relid );
+	FriendClaim friendClaim( mysql, relid );
 
-	if ( claim.rows() == 0 ) {
-		message("message receipt: no friend claim for %s\n", relid );
-		BIO_printf( bioOut, "ERROR finding friend\r\n" );
-		return;
-	}
-	MYSQL_ROW row = claim.fetchRow();
-	long long id = strtoll(row[0], 0, 10);
-	const char *user = row[1];
-	const char *friendId = row[2];
-	const char *friendHash = row[3];
-	long long userId = strtoll(row[4], 0, 10);
+	User user( mysql, friendClaim.userId );
+	Identity identity( mysql, friendClaim.identityId );
 
-	Keys *user_priv = loadKey( mysql, user );
-	Keys *id_pub = fetchPublicKey( mysql, friendId );
+	Keys *userPriv = loadKey( mysql, user );
+	Keys *idPub = identity.fetchPublicKey();
 
-	Encrypt encrypt( id_pub, user_priv );
+	Encrypt encrypt( idPub, userPriv );
 	int decryptRes = encrypt.decryptVerify( msg );
 
 	if ( decryptRes < 0 ) {
-		message("message receipt: decryption failed\n" );
+		error("message receipt: decryption failed\n" );
 		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
 		return;
 	}
 
-	message("received message: %.*s\n", (int)encrypt.decLen, (char*)encrypt.decrypted );
-
 	MessageParser mp;
 	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
+
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
-			storeBroadcastKey( mysql, id, user, userId, friendId, friendHash,
-					mp.network, mp.generation, mp.key, 0, 0 );
-			break;
-		case MessageParser::BkProof:
-			storeBroadcastKey( mysql, id, user, userId, friendId, friendHash,
-					mp.network, mp.generation, mp.key, mp.sym1, mp.sym2 );
+			storeBroadcastKey( mysql, user, identity, friendClaim,
+					mp.distName, mp.generation, mp.key );
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
-			encryptRemoteBroadcast( mysql, user, friendId, mp.token,
-					mp.seq_num, mp.network, mp.embeddedMsg, mp.length );
+//			encryptRemoteBroadcast( mysql, user, friendId, mp.token,
+//					mp.seq_num, mp.network, mp.embeddedMsg, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
-			return_remote_broadcast( mysql, user, friendId, mp.reqid,
-					mp.generation, mp.sym );
+//			return_remote_broadcast( mysql, user, friendId, mp.reqid,
+//					mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProof:
-			friendProofMessage( mysql, user, userId, friendId, mp.hash,
-					mp.network, mp.generation, mp.sym );
+//			friendProofMessage( mysql, user, userId, friendId, mp.hash,
+//					mp.network, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
-			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
+//			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
 			break;
 		default:
 			BIO_printf( bioOut, "ERROR\r\n" );

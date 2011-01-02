@@ -48,6 +48,7 @@ bool gblKeySubmitted = false;
 	requested_relid = base64  >{mark=p;} %{requestedRelid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returnedRelid.set(mark, p);};
 	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
+	dist_name = base64        >{mark=p;} %{distName.set(mark, p);};
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
@@ -427,18 +428,16 @@ int serverParseLoop()
 	include common;
 
 	main :=
-		'notify_accept_result'i ' ' token EOL @{
+		'notify_accept_result'i  EOL @{
 			type = NotifyAcceptResult;
 		};
 }%%
 
 %% write data;
 
-int NotifyAcceptResultParser::parse( const char *msg, long len )
+int NotifyAcceptResultParser::parse( const char *msg, long mLen )
 {
 	long cs;
-	const char *mark;
-	String gen_str;
 
 	type = Unknown;
 	%% write init;
@@ -448,12 +447,8 @@ int NotifyAcceptResultParser::parse( const char *msg, long len )
 
 	%% write exec;
 
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
 
 	return 0;
 }
@@ -496,12 +491,8 @@ int PrefriendParser::parse( const char *msg, long mLen )
 
 	%% write exec;
 
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
-			throw ParseError();
-		else
-			throw ParseError();
-	}
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
 
 	return 0;
 }
@@ -516,13 +507,9 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	include common;
 
 	main := (
-		'broadcast_key'i ' ' network ' ' generation ' ' key
+		'broadcast_key'i ' ' dist_name ' ' generation ' ' key
 			EOL @{
 				type = BroadcastKey;
-			} |
-		'bk_proof'i ' ' network ' ' generation ' ' key ' ' sym1 ' ' sym2
-			EOL @{
-				type = BkProof;
 			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' network ' ' length 
 			EOL @skip_message EOL @{
@@ -545,8 +532,10 @@ int PrefriendParser::parse( const char *msg, long mLen )
 
 %% write data;
 
-int MessageParser::parse( const char *msg, long len )
+int MessageParser::parse( const char *msg, long mLen )
 {
+	message("friend message: %.*s", (int)mLen, msg );
+
 	long cs;
 	const char *mark;
 	String gen_str, seq_str, length_str;
@@ -554,18 +543,13 @@ int MessageParser::parse( const char *msg, long len )
 	%% write init;
 
 	const char *p = msg;
-	const char *pe = msg + len;
+	const char *pe = msg + mLen;
 	type = Unknown;
 
 	%% write exec;
 
-	if ( cs < %%{ write first_final; }%% ) {
-		message("message_parser: parse error: %.*s\n", (int)len, msg );
-		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
 
 	return 0;
 }
@@ -1184,16 +1168,13 @@ long sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
 			BIO_read( tlsConnect.sbio, user_message, length );
 			user_message[length] = 0;
 
-			::message( "about to decrypt RESULT\n" );
-
 			if ( result_message != 0 ) 
 				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
-			::message( "finished with decrypt RESULT\n" );
+
 			OK = true;
 		}
 
 		action token {
-			::message("got back a reqid\n");
 			char *user_message = new char[token.length+1];
 			memcpy( user_message, token.data, token.length );
 			user_message[token.length] = 0;

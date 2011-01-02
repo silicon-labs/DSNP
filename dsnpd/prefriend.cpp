@@ -69,76 +69,79 @@ long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 	Keys *userPriv = loadKey( mysql, user.user() );
 	Keys *idPub = identity.fetchPublicKey();
 
-#if 0
 	/* The relid is the one we made on this end. It becomes the put_relid. */
-	const char *putRelid = requested_relid;
-	const char *getRelid = returned_relid;
-	storeFriendClaim( mysql, forUser, from_id, putRelid, getRelid );
+	const char *putRelid = requestedRelid;
+	const char *getRelid = returnedRelid;
 
-	/* Clear the sent_freind_request. */
-	DbQuery salt( mysql, "SELECT id_salt FROM user WHERE user = %e", forUser );
+	Relationship relationship( mysql, user, REL_TYPE_FRIEND, identity );
 
-	/* Check for a result. */
-	if ( salt.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR request not found\r\n" );
-		return 0;
-	}
-	MYSQL_ROW row = salt.fetchRow();
-	const char *returned_id_salt = row[0];
-	String resultCommand( "notify_accept_result %s\r\n", returned_id_salt );
+	/* Insert the friend claim. */
+	DbQuery( mysql, "INSERT INTO friend_claim "
+		"( user_id, identity_id, relationship_id, "
+		"	put_relid, get_relid ) "
+		"VALUES ( %L, %L, %L, %e, %e );",
+		user.id(), identity.id(), relationship.id(), putRelid, getRelid );
 
-	Encrypt encrypt( id_pub, user_priv );
+	/* Currently nothing to put in here. Should it be removed? */
+	String resultCommand( "notify_accept_result\r\n" );
+
+	Encrypt encrypt( idPub, userPriv );
 	encrypt.signEncrypt( (u_char*)resultCommand(), resultCommand.length+1 );
 
 	BIO_printf( bioOut, "RESULT %ld\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
-#endif
 
 	return 0;
 }
 
-long registered( MYSQL *mysql, const char *forUser, const char *from_id,
-		const char *requested_relid, const char *returned_relid )
+long registered( MYSQL *mysql, User &user, Identity &identity,
+		const char *requestedRelid, const char *returnedRelid )
 {
-	DbQuery removeSentRequest( mysql, 
-		"DELETE FROM sent_friend_request "
-		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e AND "
-		"	returned_relid = %e",
-		forUser, from_id, requested_relid, returned_relid );
-	
+//	DbQuery removeSentRequest( mysql, 
+//		"DELETE FROM sent_friend_request "
+//		"WHERE from_user = %e AND for_id = %e AND requested_relid = %e AND "
+//		"	returned_relid = %e",
+//		forUser, from_id, requested_relid, returned_relid );
+
+	String args( "sent_friend_request_accepted %s %s", user.user(), identity.iduri() );
+	appNotification( args, 0, 0 );
+
+	addToPrimaryNetwork( mysql, user, identity );
+
 	BIO_printf( bioOut, "OK\r\n" );
 
-	String args( "sent_friend_request_accepted %s %s", forUser, from_id );
-	appNotification( args, 0, 0 );
-
-	addToNetwork( mysql, forUser, "-", from_id );
-
 	return 0;
 }
 
-void notifyAcceptReturnedIdSalt( MYSQL *mysql, const char *user, const char *user_reqid, 
-		const char *from_id, const char *requested_relid, 
-		const char *returned_relid, const char *returned_id_salt )
+void notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
+		const char *userReqid, const char *requestedRelid,
+		const char *returnedRelid )
 {
-	message( "accept_friend received: %s\n", returned_id_salt );
-
 	/* The friendship has been accepted. Store the claim. */
-	const char *putRelid = returned_relid;
-	const char *getRelid = requested_relid;
-	storeFriendClaim( mysql, user, from_id, putRelid, getRelid );
+	const char *putRelid = returnedRelid;
+	const char *getRelid = requestedRelid;
+
+	Relationship relationship( mysql, user, REL_TYPE_FRIEND, identity );
+
+	/* Insert the friend claim. */
+	DbQuery( mysql, "INSERT INTO friend_claim "
+		"( user_id, identity_id, relationship_id, "
+		"	put_relid, get_relid ) "
+		"VALUES ( %L, %L, %L, %e, %e );",
+		user.id(), identity.id(), relationship.id(), putRelid, getRelid );
 
 	/* Notify the requester. */
-	String registered( "registered %s %s\r\n", 
-			requested_relid, returned_relid );
-	sendMessageNow( mysql, true, user, from_id, requested_relid, registered.data, 0 );
+	String registered( "registered %s %s\r\n", requestedRelid, returnedRelid );
+	sendMessageNow( mysql, true, user.user(), identity.iduri(), requestedRelid, registered(), 0 );
 
-	/* Remove the user friend request. */
-	deleteFriendRequest( mysql, user, user_reqid );
+//	DbQuery( mysql, 
+//		"DELETE FROM friend_request WHERE user_id = %L AND reqid = %e;",
+//		user.id(), userReqid );
 
-	String args( "friend_request_accepted %s %s", user, from_id );
+	String args( "friend_request_accepted %s %s", user.user(), identity.iduri() );
 	appNotification( args, 0, 0 );
 
-	addToNetwork( mysql, user, "-", from_id );
+	addToPrimaryNetwork( mysql, user, identity );
 
 	BIO_printf( bioOut, "OK\r\n" );
 }
@@ -180,7 +183,7 @@ void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 					pfp.requestedRelid, pfp.returnedRelid );
 			break;
 		case PrefriendParser::Registered:
-			registered( mysql, user.user, identity.iduri,
+			registered( mysql, user, identity,
 					pfp.requestedRelid, pfp.returnedRelid  );
 			break;
 		default:
@@ -227,8 +230,8 @@ void acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
 	narp.parse( resultMessage, strlen(resultMessage) );
 	switch ( narp.type ) {
 		case NotifyAcceptResultParser::NotifyAcceptResult:
-			notifyAcceptReturnedIdSalt( mysql, user.user, userReqid, 
-				identity.iduri, requestedRelid, returnedRelid, narp.token );
+			notifyAcceptResult( mysql, user, identity, 
+				userReqid, requestedRelid, returnedRelid );
 			break;
 		default:
 			break;

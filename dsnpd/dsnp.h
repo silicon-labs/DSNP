@@ -253,7 +253,7 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
 
 long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
-long submitBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen );
+long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
 long remoteBroadcastRequest( MYSQL *mysql, const char *user, 
 		const char *identity, const char *hash, const char *token, const char *group,
 		const char *msg, long mLen );
@@ -570,6 +570,8 @@ inline long long parseId( const char *id )
 {
 	return strtoll( id, 0, 10 );
 }
+
+long long findPrimaryNetworkId( MYSQL *mysql, User &user );
 
 #define LOGIN_TOKEN_LASTS 86400
 

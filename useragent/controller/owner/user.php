@@ -43,7 +43,10 @@ class OwnerUserController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->submitBroadcast( 
-			$this->USER[USER], '-', $message->message );
+			$this->USER['USER'], $message->message );
+
+		$this->userRedirect( '/' );
+
 	}
 
 	function flush()

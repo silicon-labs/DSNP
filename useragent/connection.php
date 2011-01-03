@@ -180,11 +180,11 @@ class Connection
 		$this->checkResult();
 	}
 
-	function submitBroadcast( $user, $network, $message )
+	function submitBroadcast( $user, $message )
 	{
 		$len = strlen( $message );
 
-		$cmd = "submit_broadcast $user $network $len\r\n";
+		$cmd = "submit_broadcast $user $len\r\n";
 		fwrite( $this->fp, $cmd );
 		fwrite( $this->fp, $message, $len );
 		fwrite( $this->fp, "\r\n", 2 );

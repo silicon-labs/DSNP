@@ -277,9 +277,9 @@ bool gblKeySubmitted = false;
 		#
 		# Broadcasting
 		#
-		'submit_broadcast'i ' ' user ' ' network ' ' length 
+		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
-				submitBroadcast( mysql, user, network, message_buffer.data, length );
+				submitBroadcast( mysql, user, message_buffer.data, length );
 			} |
 
 		#
@@ -582,6 +582,8 @@ int MessageParser::parse( const char *msg, long mLen )
 
 int BroadcastParser::parse( const char *msg, long mLen )
 {
+	message("broadcast message: %.*s", (int)mLen, msg );
+
 	long cs;
 	const char *mark;
 	String length_str;

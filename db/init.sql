@@ -215,11 +215,9 @@ CREATE TABLE broadcast_message
 (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 
+	dist_name TEXT,
 	key_gen BIGINT,
-	tree_gen_low BIGINT,
-	tree_gen_high BIGINT,
 	message TEXT,
-	network_name TEXT,
 	
 	PRIMARY KEY ( id )
 );

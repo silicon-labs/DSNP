@@ -66,7 +66,7 @@ bool sendBroadcastMessage()
 	}
 		
 	DbQuery findMsg( mysql, 
-		"SELECT network_name, key_gen, message "
+		"SELECT dist_name, key_gen, message "
 		"FROM broadcast_message "
 		"WHERE id = %L ",
 		messageId

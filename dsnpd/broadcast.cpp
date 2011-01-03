@@ -188,46 +188,33 @@ long long forwardBroadcast( MYSQL *mysql, long long messageId,
 void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 		long long keyGen, const char *encrypted )
 {
+	FriendClaim friendClaim( mysql, relid );
+	User user( mysql, friendClaim.userId );
+	Identity identity( mysql, friendClaim.identityId );
+
 	/* Find the recipient. */
 	DbQuery recipient( mysql, 
-		"SELECT friend_claim.id, "
-		"	friend_claim.user, "
-		"	friend_claim.iduri, "
-		"	get_broadcast_key.broadcast_key, "
-		"	network.id "
-		"FROM friend_claim "
-		"JOIN network "
-		"ON friend_claim.user_id = network.user_id "
-		"JOIN get_broadcast_key "
-		"ON friend_claim.id = get_broadcast_key.friend_claim_id AND "
-		"	network.id = get_broadcast_key.network_id "
-		"WHERE friend_claim.get_relid = %e AND get_broadcast_key.generation <= %L AND "
-		"	network.private_name = %e "
-		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
-		relid, keyGen, network );
+		"SELECT broadcast_key "
+		"FROM get_broadcast_key "
+		"WHERE friend_claim_id = %L AND network_dist = %e AND generation = %L ",
+		friendClaim.id, network, keyGen );
 
 	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR bad recipient\r\n");
 		return;
 	}
-	message( "receive broadcast: got %d recipients\n", recipient.rows() );
 
 	MYSQL_ROW row = recipient.fetchRow();
-	const char *user = row[1];
-	const char *friendId = row[2];
-	const char *broadcastKey = row[3];
-	long long networkId = strtoll( row[4], 0, 10 );
-
-	message( "receive broadcast: key is %s\n", broadcastKey );
+	String broadcastKey = row[0];
 
 	/* Do the decryption. */
-	Keys *id_pub = fetchPublicKey( mysql, friendId );
-	Encrypt encrypt( id_pub, 0 );
+	Keys *idPub = identity.fetchPublicKey();
+	Encrypt encrypt( idPub, 0 );
 	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted, strlen(encrypted) );
 
 	if ( decryptRes < 0 ) {
 		error("unable to decrypt broadcast message for %s from "
-			"%s network %s key gen %lld\n", user, friendId, network, keyGen );
+			"%s network %s key gen %lld\n", user.user(), friendClaim.id, network, keyGen );
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}
@@ -245,16 +232,16 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 	else {
 		switch ( bp.type ) {
 			case BroadcastParser::Direct:
-				directBroadcast( mysql, relid, user, network, friendId, bp.seq_num, 
-						bp.date, bp.embeddedMsg, bp.length );
+				directBroadcast( mysql, relid, user.user(), network, identity.iduri, 
+						bp.seq_num, bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
-				remoteBroadcast( mysql, user, friendId, bp.hash, 
-						bp.network, networkId, bp.generation, bp.embeddedMsg, bp.length );
+	//			remoteBroadcast( mysql, user, friendId, bp.hash, 
+	//					bp.network, networkId, bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::GroupMemberRevocation:
-				groupMemberRevocation( mysql, user, friendId,
-						bp.network, networkId, bp.generation, bp.identity );
+	//			groupMemberRevocation( mysql, user, friendId,
+	//					bp.network, networkId, bp.generation, bp.identity );
 			default:
 				break;
 		}
@@ -284,6 +271,50 @@ long storeBroadcastRecipients( MYSQL *mysql, const char *user,
 		
 		char *friendId = row[0];
 		char *putRelid = row[1];
+		message( "send to %s %s\n", friendId, putRelid );
+
+		IdentityOrig id( friendId );
+		id.parse();
+
+		/* If we need a new host then add it. */
+		if ( lastSite.length == 0 || strcmp( lastSite.data, id.site ) != 0 ) {
+			DbQuery( mysql,
+				"INSERT INTO broadcast_queue "
+				"( message_id, send_after, to_site ) "
+				"VALUES ( %L, NOW(), %e ) ",
+				messageId, id.site );
+
+			lastQueueId = lastInsertId( mysql );
+			lastSite.set( id.site );
+		}
+
+		/* Insert the recipient. */
+		DbQuery( mysql,
+			"INSERT INTO broadcast_recipient "
+			"( queue_id, relid ) "
+			"VALUES ( %L, %e ) ",
+			lastQueueId, putRelid );
+
+		count += 1;
+	}
+	return count;
+}
+
+long storeBroadcastRecipients( MYSQL *mysql, User &user,
+	long long messageId, DbQuery &recipients )
+{
+	String lastSite;
+	long long lastQueueId = -1;
+	long count = 0;
+
+	while ( true ) {
+		MYSQL_ROW row = recipients.fetchRow();
+		if ( !row )
+			break;
+		
+		char *friendId = row[0];
+		char *putRelid = row[1];
+
 		message( "send to %s %s\n", friendId, putRelid );
 
 		IdentityOrig id( friendId );
@@ -352,36 +383,70 @@ long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
 	return 0;
 }
 
+long queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
+{
+	/* Get the latest put session key. */
+	long long networkId = findPrimaryNetworkId( mysql, user );
+	PutKey put( mysql, networkId );
 
-long submitBroadcast( MYSQL *mysql, const char *user, const char *group,
+	/* Do the encryption. */ 
+	Keys *userPriv = loadKey( mysql, user ); 
+	Encrypt encrypt( 0, userPriv ); 
+	encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)msg, mLen ); 
+
+	/* Stroe the message. */
+	DbQuery( mysql,
+		"INSERT INTO broadcast_message "
+		"( dist_name, key_gen, message ) "
+		"VALUES ( %e, %L, %e ) ",
+		put.distName(), put.generation, encrypt.sym );
+
+	long long messageId = lastInsertId( mysql );
+
+
+	/*
+	 * Out-of-tree broadcasts.
+	 */
+	DbQuery outOfTree( mysql,
+		"SELECT identity.iduri, friend_claim.put_relid "
+		"FROM friend_claim "
+		"JOIN identity ON friend_claim.identity_id = identity.id "
+		"JOIN network_member "
+		"ON friend_claim.id = network_member.friend_claim_id "
+		"WHERE friend_claim.user_id = %L AND network_member.network_id = %L ",
+		user.id(), networkId );
+
+	storeBroadcastRecipients( mysql, user, messageId, outOfTree );
+
+	return 0;
+}
+
+
+long submitBroadcast( MYSQL *mysql, const char *_user, 
 		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
-	String authorId( "%s%s/", c->CFG_URI, user );
+	String authorId( "%s%s/", c->CFG_URI, _user );
+
+	User user( mysql, _user );
+	Identity author( mysql, authorId );
 
 	/* insert the broadcast message into the published table. */
 	DbQuery( mysql,
 		"INSERT INTO broadcasted "
-		"( user, author_id, time_published ) "
-		"VALUES ( %e, %e, %e )",
-		user, authorId.data, timeStr.data );
+		"( user_id, author_id, time_published ) "
+		"VALUES ( %L, %L, %e )",
+		user.id(), author.id(), timeStr.data );
 
-	/* Get the id that was assigned to the message. */
-	DbQuery lastInsertId( mysql, "SELECT LAST_INSERT_ID()" );
-	if ( lastInsertId.rows() != 1 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return -1;
-	}
-
-	long long seq_num = strtoll( lastInsertId.fetchRow()[0], 0, 10 );
+	long long seqNum = lastInsertId( mysql );
 
 	/* Make the full message. */
 	String broadcastCmd(
 		"direct_broadcast %lld %s %ld\r\n",
-		seq_num, timeStr.data, mLen );
+		seqNum, timeStr.data, mLen );
 	String full = addMessageData( broadcastCmd, msg, mLen );
 
-	long sendResult = queueBroadcast( mysql, user, group, full.data, full.length );
+	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
 	if ( sendResult < 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return -1;

@@ -52,26 +52,32 @@ class OwnerIndexController extends Controller
 			$this->USER['USER_ID'] );
 		$this->vars['images'] = $images;
 
-#		$activity = dbQuery( "
-#			SELECT 
-#				activity.*, 
-#				activity.author_id AS 'author.id',
-#				author_fc.iduri AS 'author_iduri',
-#				author_fc.name AS 'author_name',
-#				activity.subject_id AS 'subject.id',
-#				subject_fc.iduri AS 'subject_iduri',
-#				subject_fc.name AS 'subject_name'
-#			FROM activity 
-#			LEFT OUTER JOIN friend_claim AS author_fc
-#					ON activity.author_id = author_fc.id
-#			LEFT OUTER JOIN friend_claim AS subject_fc
-#					ON activity.subject_id = subject_fc.id
-#			WHERE activity.user_id = %l
-#			ORDER BY time_published DESC LIMIT %l
-#			",
-#			$this->USER['ID'], $start + ACTIVITY_SIZE );
-#		$this->vars['start'] = $start;
-#		$this->vars['activity'] = $activity;
+		$activity = dbQuery( "
+			SELECT 
+				activity.*, 
+				activity.author_id AS 'author.id',
+				author_fc.iduri AS 'author_iduri',
+				author_fc.name AS 'author_name',
+				activity.subject_id AS 'subject.id',
+				subject_fc.iduri AS 'subject_iduri',
+				subject_fc.name AS 'subject_name'
+			FROM activity 
+			LEFT OUTER JOIN ( 
+					SELECT relationship.id, name, identity.iduri 
+					FROM relationship 
+					JOIN identity ON relationship.identity_id = identity.id
+				) AS author_fc ON activity.author_id = author_fc.id
+			LEFT OUTER JOIN ( 
+					SELECT relationship.id, name, identity.iduri
+					FROM relationship 
+					JOIN identity ON relationship.identity_id = identity.id
+				) AS subject_fc ON activity.subject_id = subject_fc.id
+			WHERE activity.user_id = %L
+			ORDER BY time_published DESC LIMIT %l
+			",
+			$this->USER['USER_ID'], $start + ACTIVITY_SIZE );
+		$this->vars['start'] = $start;
+		$this->vars['activity'] = $activity;
 
 #		echo "<pre>";
 #		print_r( $activity );

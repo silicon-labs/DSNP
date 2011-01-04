@@ -21,8 +21,26 @@ class Message
 	{
 		$result = dbQuery(
 			"SELECT friend_claim.id FROM friend_claim " .
-			"JOIN user ON user.id = friend_claim.user_id " .
+			"JOIN user ON friend_claim.user_id = user.id " .
+			"JOIN identity ON friend_claim.identity_id = identity.id " . 
 			"WHERE user.user = %e AND friend_claim.iduri = %e",
+			$user,
+			$identity
+		);
+
+		if ( count( $result ) == 1 )
+			return (int) $result[0]['id'];
+		return -1;
+	}
+
+	function findRelationshipId( $user, $identity )
+	{
+		$result = dbQuery(
+			"SELECT relationship.id " .
+			"FROM relationship " .
+			"JOIN user ON relationship.user_id = user.id " .
+			"JOIN identity ON relationship.identity_id = identity.id " . 
+			"WHERE user.user = %e AND identity.iduri = %e",
 			$user,
 			$identity
 		);
@@ -35,7 +53,7 @@ class Message
 	function findRelationshipSelf( $userId )
 	{
 		$result = dbQuery(
-			"SELECT id FROM friend_claim " .
+			"SELECT id FROM relationship " .
 			"WHERE user_id = %l AND type = %l",
 			$userId, REL_TYPE_SELF
 		);
@@ -165,15 +183,15 @@ class Message
 		$this->message = $headers . $text;
 	}
 
-	function recvBroadcast( $forUser, $author, $seqNum,
+	function recvBroadcast( $user, $author, $seqNum,
 			$date, $time, $msg, $contextType )
 	{
 		/* Need a resource id. */
 		if ( $contextType != 'text/plain' )
 			return;
 
-		$userId = $this->findUserId( $forUser );
-		$authorId = $this->findFriendClaimId( $forUser, $author );
+		$userId = $this->findUserId( $user );
+		$authorId = $this->findRelationshipId( $user, $author );
 
 		dbQuery(
 			"INSERT INTO activity " .

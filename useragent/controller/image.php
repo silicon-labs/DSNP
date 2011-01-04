@@ -4,7 +4,7 @@ class ImageController extends Controller
 	function viewImage( $file )
 	{
 		/* Find the image in the database. */
-		$path = "{$this->CFG[PHOTO_DIR]}/{$this->USER[USER]}/$file";
+		$path = "{$this->CFG['PHOTO_DIR']}/{$this->USER['USER']}/$file";
 
 		$stat = stat( $path );
 		$size = $stat['size'];

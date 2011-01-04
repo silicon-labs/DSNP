@@ -104,57 +104,62 @@ void friendProofBroadcast( MYSQL *mysql, const char *user,
 		storeFriendLink( mysql, user, networkId, fromId, toId );
 }
 
-void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId, 
+void remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen )
 {
-	message( "remote broadcast: user %s hash %s generation %lld\n", user, hash, generation );
+	message( "remote broadcast: user %s hash %s generation %lld\n", user.user(), hash, generation );
 
-	/* Messages has a remote sender and needs to be futher decrypted. */
-	DbQuery recipient( mysql, 
-		"SELECT friend_claim.id, "
-		"	friend_claim.iduri, "
-		"	get_broadcast_key.broadcast_key "
+	Identity innerIdentity( mysql, Identity::ByHash(), hash );
+
+	DbQuery query( mysql,
+		"SELECT id "
 		"FROM friend_claim "
-		"JOIN get_broadcast_key "
-		"ON friend_claim.id = get_broadcast_key.friend_claim_id "
-		"WHERE friend_claim.user = %e AND friend_claim.friend_hash = %e AND "
-		"	get_broadcast_key.network_id = %L AND get_broadcast_key.generation <= %L "
-		"ORDER BY get_broadcast_key.generation DESC LIMIT 1",
-		user, hash, networkId, generation );
+		"WHERE user_id = %L AND identity_id = %L",
+		user.id(), innerIdentity.id() );
 
-	if ( recipient.rows() > 0 ) {
-		MYSQL_ROW row = recipient.fetchRow();
-		//long long friend_claim_id = strtoll(row[0], 0, 10);
-		const char *authorId = row[1];
-		const char *broadcastKey = row[2];
+	if ( query.rows() > 0 ) {
+		MYSQL_ROW row = query.fetchRow();
+		long long id = parseId( row[0] );
 
-		/* Do the decryption. */
-		Keys *id_pub = fetchPublicKey( mysql, authorId );
-		Encrypt encrypt( id_pub, 0 );
-		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
+		/* Find the recipient. */
+		DbQuery recipient( mysql, 
+			"SELECT broadcast_key "
+			"FROM get_broadcast_key "
+			"WHERE friend_claim_id = %L AND generation = %L ",
+			id, generation );
 
-		if ( decryptRes < 0 ) {
-			error("second level broadcast decrypt verify failed with %s\n", encrypt.err);
-			BIO_printf( bioOut, "ERROR\r\n" );
-			return;
-		}
+		if ( recipient.rows() > 0 ) {
+			MYSQL_ROW row = recipient.fetchRow();
+			const char *broadcastKey = row[0];
 
-		RemoteBroadcastParser rbp;
-		rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
-		switch ( rbp.type ) {
-			case RemoteBroadcastParser::RemoteInner:
-				remoteInner( mysql, user, network, friendId, authorId, rbp.seq_num, 
-						rbp.date, rbp.embeddedMsg, rbp.length );
-				break;
-			case RemoteBroadcastParser::FriendProof:
-				friendProofBroadcast( mysql, user, network, networkId, friendId, authorId,
-						rbp.seq_num, rbp.identity1, rbp.identity2, rbp.date );
-				break;
-			default:
-				error("remote broadcast parse failed: %.*s\n", 
-						(int)encrypt.decLen, (char*)encrypt.decrypted );
-				break;
+			/* Do the decryption. */
+			Keys *idPub = innerIdentity.fetchPublicKey();
+			Encrypt encrypt( idPub, 0 );
+			int decryptRes = encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
+
+			if ( decryptRes < 0 ) {
+				error("second level broadcast decrypt verify failed with %s\n", encrypt.err);
+				BIO_printf( bioOut, "ERROR\r\n" );
+				return;
+			}
+
+			RemoteBroadcastParser rbp;
+			rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
+			switch ( rbp.type ) {
+				case RemoteBroadcastParser::RemoteInner:
+					remoteInner( mysql, user.user(), network, identity.iduri, innerIdentity.iduri, rbp.seq_num, 
+							rbp.date, rbp.embeddedMsg, rbp.length );
+					break;
+				case RemoteBroadcastParser::FriendProof:
+	//				friendProofBroadcast( mysql, user, network, networkId, friendId, authorId,
+	//						rbp.seq_num, rbp.identity1, rbp.identity2, rbp.date );
+					break;
+				default:
+					error("remote broadcast parse failed: %.*s\n", 
+							(int)encrypt.decLen, (char*)encrypt.decrypted );
+					break;
+			}
 		}
 	}
 }
@@ -236,8 +241,8 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 						bp.seq_num, bp.date, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::Remote:
-	//			remoteBroadcast( mysql, user, friendId, bp.hash, 
-	//					bp.network, networkId, bp.generation, bp.embeddedMsg, bp.length );
+				remoteBroadcast( mysql, user, identity, bp.hash, 
+						bp.network, 1, bp.generation, bp.embeddedMsg, bp.length );
 				break;
 			case BroadcastParser::GroupMemberRevocation:
 	//			groupMemberRevocation( mysql, user, friendId,
@@ -457,7 +462,7 @@ long submitBroadcast( MYSQL *mysql, const char *_user,
 }
 
 
-long sendRemoteBroadcast( MYSQL *mysql, const char *user,
+long sendRemoteBroadcast( MYSQL *mysql, User &user,
 		const char *authorHash, const char *network, long long generation,
 		long long seqNum, const char *encMessage )
 {
@@ -469,7 +474,7 @@ long sendRemoteBroadcast( MYSQL *mysql, const char *user,
 		authorHash, network, generation, seqNum, encMessageLen );
 	String full = addMessageData( command, encMessage, encMessageLen );
 
-	long sendResult = queueBroadcast( mysql, user, network, full.data, full.length );
+	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
 	if ( sendResult < 0 )
 		return -1;
 
@@ -483,25 +488,18 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	/* Get the current time. */
 	String timeStr = timeNow();
 
-	/* Find the relid from subject to author. */
-	DbQuery putRelidQuery( mysql,
-			"SELECT put_relid FROM friend_claim WHERE user = %e AND iduri = %e",
-			toUser, authorId );
-	if ( putRelidQuery.rows() != 1 ) {
-		message("find of put_relid from subject to author failed\n");
-		return -1;
-	}
-
-	String putRelid = putRelidQuery.fetchRow()[0];
+	User user( mysql, toUser );
+	Identity identity( mysql, authorId );
+	FriendClaim friendClaim( mysql, user, identity );
 
 	String subjectId( "%s%s/", c->CFG_URI, toUser );
 
-	/* Insert the broadcast message into the published table. */
-	DbQuery( mysql,
-		"INSERT INTO broadcasted "
-		"( user, author_id, subject_id, time_published, message ) "
-		"VALUES ( %e, %e, %e, %e, %d )",
-		toUser, authorId, subjectId.data, timeStr.data, msg, mLen );
+//	/* Insert the broadcast message into the published table. */
+//	DbQuery( mysql,
+//		"INSERT INTO broadcasted "
+//		"( user_id, author_id, subject_id, time_published, message ) "
+//		"VALUES ( %e, %e, %e, %e, %d )",
+//		toUser, authorId, subjectId.data, timeStr.data, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery idQuery( mysql, "SELECT LAST_INSERT_ID()" );
@@ -523,7 +521,7 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		token, seqNum, network, mLen, msg );
 
 	char *result_message;
-	int res = sendMessageNow( mysql, false, toUser, authorId, putRelid.data,
+	int res = sendMessageNow( mysql, false, toUser, authorId, friendClaim.putRelid(),
 			remotePublishCmd.data, &result_message );
 	if ( res < 0 ) {
 		message("encrypt_remote_broadcast message failed\n");
@@ -532,25 +530,28 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	}
 
 	//returned_reqid_parser( mysql, to_user, result_message );
+	String hash = makeIduriHash( identity.iduri );
 
 	DbQuery( mysql,
 		"INSERT INTO pending_remote_broadcast "
-		"( user, identity, hash, reqid, seq_num, network_name ) "
-		"VALUES ( %e, %e, %e, %e, %L, %e )",
-		toUser, authorId, authorHash, result_message, seqNum, network );
+		"( user_id, identity_id, hash, reqid, seq_num, network_name ) "
+		"VALUES ( %L, %L, %e, %e, %L, %e )",
+		user.id(), identity.id(), hash(), result_message, seqNum, network );
 
 	message("send_message_now returned: %s\n", result_message );
 	BIO_printf( bioOut, "OK %s\r\n", result_message );
 	return 0;
 }
 
-void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqid )
+void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
 {
+	User user( mysql, _user );
+
 	DbQuery recipient( mysql, 
-		"SELECT identity, generation, sym "
+		"SELECT identity_id, generation, sym "
 		"FROM remote_broadcast_request "
-		"WHERE user = %e AND reqid = %e",
-		user, reqid );
+		"WHERE user_id = %L AND reqid = %e",
+		user.id(), reqid );
 	
 	if ( recipient.rows() == 0 ) {
 		BIO_printf( bioOut, "ERROR\r\n" );
@@ -558,37 +559,30 @@ void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqi
 	}
 
 	MYSQL_ROW row = recipient.fetchRow();
-	const char *identity = row[0];
+	long long identityId = parseId( row[0] );
 	const char *generation = row[1];
 	const char *sym = row[2];
 	message( "flushing remote with reqid: %s\n", reqid );
 
-	/* Find the relid from subject to author. */
-	DbQuery putRelidQuery( mysql,
-			"SELECT put_relid FROM friend_claim WHERE user = %e AND iduri = %e",
-			user, identity );
-	if ( putRelidQuery.rows() != 1 ) {
-		message("find of put_relid from subject to author failed\n");
-		return;
-	}
-
-	char *put_relid = putRelidQuery.fetchRow()[0];
-	char *result = 0;
+	Identity identity( mysql, identityId );
+	FriendClaim friendClaim( mysql, user, identity );
 
 	String returnCmd( "return_remote_broadcast %s %s %s\r\n", reqid, generation, sym );
-	sendMessageNow( mysql, false, user, identity, put_relid, returnCmd.data, &result );
+
+	char *result = 0;
+	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid(), returnCmd.data, &result );
 
 	/* Clear the pending remote broadcast. */
 	DbQuery clear( mysql, 
 		"DELETE FROM remote_broadcast_request "
-		"WHERE user = %e AND reqid = %e",
-		user, reqid );
+		"WHERE user_id = %L AND reqid = %e",
+		user.id(), reqid );
 
 	BIO_printf( bioOut, "OK %s\r\n", result );
 }
 
-void return_remote_broadcast( MYSQL *mysql, const char *user,
-		const char *iduri, const char *reqid, long long generation, const char *sym )
+void returnRemoteBroadcast( MYSQL *mysql, User &user,
+		Identity &identity, const char *reqid, long long generation, const char *sym )
 {
 	message("return_remote_broadcast\n");
 
@@ -599,29 +593,32 @@ void return_remote_broadcast( MYSQL *mysql, const char *user,
 	DbQuery recipient( mysql, 
 		"UPDATE pending_remote_broadcast "
 		"SET generation = %L, sym = %e, reqid_final = %e"
-		"WHERE user = %e AND identity = %e AND reqid = %e ",
-		generation, sym, reqid_final_str, user, iduri, reqid );
+		"WHERE user_id = %L AND identity_id = %L AND reqid = %e ",
+		generation, sym, reqid_final_str, user.id(), identity.id(), reqid );
 
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_final_str );
 }
 
-void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
+void remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
 {
+	User user( mysql, _user );
+
 	DbQuery recipient( mysql, 
-		"SELECT user, identity, hash, seq_num, network_name, generation, sym "
+		"SELECT identity_id, hash, seq_num, network_name, generation, sym "
 		"FROM pending_remote_broadcast "
-		"WHERE user = %e AND reqid_final = %e",
-		user, reqid );
+		"WHERE user_id = %L AND reqid_final = %e",
+		user.id(), reqid );
 	
 	if ( recipient.rows() == 1 ) {
 		MYSQL_ROW row = recipient.fetchRow();
-		const char *user = row[0];
-		//const char *identity = row[1];
-		const char *hash = row[2];
-		const char *seq_num = row[3];
-		const char *network = row[4];
-		const char *generation = row[5];
-		const char *sym = row[6];
+		long long identityId = parseId( row[0] );
+		const char *hash = row[1];
+		const char *seq_num = row[2];
+		const char *network = row[3];
+		const char *generation = row[4];
+		const char *sym = row[5];
+
+		Identity identity( mysql, identityId );
 
 		long res = sendRemoteBroadcast( mysql, user, hash, network,
 				strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
@@ -633,21 +630,21 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *reqid )
 		/* Clear the pending remote broadcast. */
 		DbQuery clear( mysql, 
 			"DELETE FROM pending_remote_broadcast "
-			"WHERE user = %e AND reqid_final = %e",
-			user, reqid );
+			"WHERE user_id = %L AND reqid_final = %e",
+			user.id(), reqid );
 	}
 
 	BIO_printf( bioOut, "OK\r\n" );
 }
 
-void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
-		const char *subjectId, const char *token,
+void encryptRemoteBroadcast( MYSQL *mysql, User &user,
+		Identity &subjectId, const char *token,
 		long long seqNum, const char *network, const char *msg, long mLen )
 {
 	DbQuery flogin( mysql,
-		"SELECT user FROM remote_flogin_token "
-		"WHERE user = %e AND identity = %e AND login_token = %e",
-		user, subjectId, token );
+		"SELECT id FROM remote_flogin_token "
+		"WHERE user_id = %L AND identity_id = %L AND login_token = %e",
+		user.id(), subjectId.id(), token );
 
 	if ( flogin.rows() == 0 ) {
 		error("failed to find user from provided login token\n");
@@ -658,16 +655,17 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 	/* Get the current time. */
 	String timeStr = timeNow();
 
-	Keys *userPriv = loadKey( mysql, user );
-	Keys *idPub = fetchPublicKey( mysql, subjectId );
+	Keys *userPriv = loadKey( mysql, user.user() );
+	Keys *idPub = fetchPublicKey( mysql, subjectId.iduri );
 
 	/* Notifiy the frontend. */
 	String args( "notification_remote_publication %s %s %ld", 
-			user, subjectId, mLen );
+			user.user(), subjectId.iduri(), mLen );
 	appNotification( args, msg, mLen );
 
 	/* Find current generation and youngest broadcast key */
-	CurrentPutKey put( mysql, user, network );
+	long long networkId = findPrimaryNetworkId( mysql, user );
+	PutKey put( mysql, networkId );
 
 	/* Make the full message. */
 	String command( "remote_inner %lld %s %ld\r\n",
@@ -689,9 +687,9 @@ void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
 
 	DbQuery( mysql,
 		"INSERT INTO remote_broadcast_request "
-		"	( user, identity, reqid, generation, sym ) "
-		"VALUES ( %e, %e, %e, %L, %e )",
-		user, subjectId, reqid_str, put.keyGen, encrypt.sym );
+		"	( user_id, identity_id, reqid, generation, sym ) "
+		"VALUES ( %L, %L, %e, %L, %e )",
+		user.id(), subjectId.id(), reqid_str, put.generation, encrypt.sym );
 
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
 }

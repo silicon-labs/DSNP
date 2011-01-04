@@ -51,9 +51,9 @@ class PublicCredController extends CredController
 		$connection->login( $this->USER[USER], $pass );
 
 		$this->startSession();
-		$_SESSION[ROLE] = 'owner';
-		$_SESSION[hash] = $connection->regs[1];
-		$_SESSION[token] = $connection->regs[2];
+		$_SESSION['ROLE'] = 'owner';
+		$_SESSION['hash'] = $connection->regs[1];
+		$_SESSION['token'] = $connection->regs[2];
 	
 		if ( isset( $dest ) ) 
 			$this->redirect( $dest );
@@ -85,7 +85,7 @@ class PublicCredController extends CredController
 
 		$identityId = $identity[0]['id'];
 		$relationship = dbQuery( 
-			"SELECT name " .
+			"SELECT id, name " .
 			"FROM relationship " .
 			"WHERE user_id = %L AND identity_id = %L ",
 			$this->USER['USER_ID'], $identityId );
@@ -94,12 +94,13 @@ class PublicCredController extends CredController
 		#$BROWSER['ID'] = $friendClaim[0]['id'];
 		$BROWSER['iduri'] = $connection->iduri;
 		$BROWSER['name'] = $relationship[0]['name'];
+		$BROWSER['relationship_id'] = $relationship[0]['id'];
 
 		/* Remmber that if we return from the above then we have success. */
 		$this->startSession();
 		$_SESSION['ROLE'] = 'friend';
 		$_SESSION['hash'] = $connection->hash;
-		$_SESSION['token'] = $connection->ftoken;
+		$_SESSION['token'] = $ftoken;
 		$_SESSION['BROWSER'] = $BROWSER;
 
 		/* FIXME: check for dest (d). */

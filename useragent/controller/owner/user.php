@@ -58,14 +58,9 @@ class OwnerUserController extends Controller
 		$connection->openLocalPriv();
 
 		$connection->remoteBroadcastResponse(
-			$this->USER[USER], $reqid );
+			$this->USER['USER'], $reqid );
 
-		if ( !$connection->success ) {
-			$this->userError( "remote_broadcast_response " . 
-					"failed with $connection->result", "" );
-		}
 		$reqid = $connection->regs[1];
-
 		$this->redirect( "${backto}user/finish?reqid=$reqid" );
 	}
 

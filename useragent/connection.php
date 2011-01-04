@@ -212,6 +212,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+)",
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function remoteBroadcastResponse( $user, $reqid )
@@ -222,6 +224,8 @@ class Connection
 		$this->success = ereg(
 			"^OK ([-A-Za-z0-9_]+)",
 			$this->result, $this->regs );
+
+		$this->checkResult();
 	}
 
 	function remoteBroadcastFinal( $user, $reqid )
@@ -232,6 +236,8 @@ class Connection
 		$this->success = ereg(
 			"^OK", 
 			$this->result );
+
+		$this->checkResult();
 	}
 };
 ?>

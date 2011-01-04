@@ -243,8 +243,8 @@ long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *msg, char **result_msg );
 long queueMessage( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *msg, long mLen );
-void encryptRemoteBroadcast( MYSQL *mysql, const char *user,
-		const char *identity, const char *token,
+void encryptRemoteBroadcast( MYSQL *mysql, User &user,
+		Identity &identity, const char *token,
 		long long seqNum, const char *group, const char *msg, long mLen );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
@@ -398,10 +398,10 @@ int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const ch
 
 void appNotification( const char *args, const char *data, long length );
 
-void remote_broadcast_response( MYSQL *mysql, const char *user, const char *reqid );
+void remoteBroadcastResponse( MYSQL *mysql, const char *user, const char *reqid );
 void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
-void return_remote_broadcast( MYSQL *mysql, const char *user, 
-		const char *friend_id, const char *nonce, long long generation, const char *sym );
+void returnRemoteBroadcast( MYSQL *mysql, User &user,
+		Identity &identity, const char *reqid, long long generation, const char *sym );
 
 void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
 

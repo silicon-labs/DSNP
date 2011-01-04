@@ -220,8 +220,8 @@ class Message
 			$seqNum, $date, $time, $msg, $contextType )
 	{
 		$userId = $this->findUserId( $user );
-		$authorId = $this->findFriendClaimId( $user, $author );
-		$subjectId = $this->findFriendClaimId( $user, $subject );
+		$authorId = $this->findRelationshipId( $user, $author );
+		$subjectId = $this->findRelationshipId( $user, $subject );
 
 		dbQuery(
 			"INSERT INTO activity " .
@@ -245,7 +245,7 @@ class Message
 	{
 		$userId = $this->findUserId( $user );
 		$authorId = $this->findRelationshipSelf( $userId );
-		$subjectId = $this->findFriendClaimId( $user, $subject );
+		$subjectId = $this->findRelationshipId( $user, $subject );
 
 		dbQuery(
 			"INSERT INTO activity " .

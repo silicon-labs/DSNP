@@ -301,7 +301,7 @@ bool gblKeySubmitted = false;
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
 			EOL @check_key @{
-				remote_broadcast_response( mysql, user, reqid );
+				remoteBroadcastResponse( mysql, user, reqid );
 			} |
 
 		'remote_broadcast_final'i ' ' user ' ' reqid

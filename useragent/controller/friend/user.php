@@ -20,13 +20,13 @@ class FriendUserController extends Controller
 				user_id, author_id, subject_id, published, type, message
 			)
 			VALUES ( %l, %l, %l, true, 'BRD', %e )",
-			$this->USER['ID'],
-			$BROWSER['ID'],
-			$this->USER['FRIEND_CLAIM_SELF_ID'],
+			$this->USER['USER_ID'],
+			$BROWSER['relationship_id'],
+			$this->USER['relationship_id'],
 			$text
 		);
 
-		$identity = $BROWSER['IDURI'];
+		$identity = $BROWSER['iduri'];
 		$hash = $_SESSION['hash'];
 		$token = $_SESSION['token'];
 
@@ -36,7 +36,7 @@ class FriendUserController extends Controller
 		$connection = new Connection;
 		$connection->openLocalPriv();
 		$connection->remoteBroadcastRequest( 
-			$this->USER[USER], $identity, 
+			$this->USER['USER'], $identity, 
 			$hash, $token, '-',
 			$message->message );
 
@@ -45,7 +45,7 @@ class FriendUserController extends Controller
 		$reqid = $connection->regs[1];
 
 		$this->redirect( "${identity}user/flush?reqid=$reqid&backto=" . 
-			urlencode( $this->USER[URI] )  );
+			urlencode( $this->USER['iduri'] )  );
 	}
 
 	function finish()
@@ -54,14 +54,7 @@ class FriendUserController extends Controller
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-		$connection->remoteBroadcastFinal(
-			$this->USER[USER], $reqid );
-
-		if ( !$connection->success ) {
-			$this->userError( "remote_broadcast_final " .
-				"failed with $connection->result", "" );
-		}
-
+		$connection->remoteBroadcastFinal( $this->USER['USER'], $reqid );
 		$this->userRedirect( "/" );
 	}
 };

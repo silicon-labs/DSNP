@@ -15,21 +15,22 @@ class FriendIndexController extends Controller
 		$start = $this->args[start];
 
 		# Load the friend list.
-		$friendClaims = dbQuery(
-			"SELECT identity.*, relationship.* " .
-			"FROM friend_claim " .
-			"JOIN identity ON friend_claim.identity_id = identity.id " .
-			"JOIN relationship ON friend_claim.relationship_id = relationship.id " .
-			"WHERE friend_claim.user_id = %L",
+		$friendClaims = dbQuery( "
+			SELECT identity.*, relationship.*
+			FROM friend_claim 
+			JOIN identity ON friend_claim.identity_id = identity.id 
+			JOIN relationship ON friend_claim.relationship_id = relationship.id 
+			WHERE friend_claim.user_id = %L ",
 			$this->USER['USER_ID'] );
 		$this->vars['friendClaims'] = $friendClaims;
 
-#		# Load the user's images.
-#		$images = dbQuery( "
-#			SELECT * FROM image WHERE user = %e 
-#			ORDER BY seq_num DESC LIMIT 30",
-#			$this->USER[NAME] );
-#		$this->vars['images'] = $images;
+		# Load the user's images.
+		$images = dbQuery( "
+			SELECT * FROM image 
+			WHERE user_id = %e 
+			ORDER BY seq_num DESC LIMIT 30",
+			$this->USER['USER_ID'] );
+		$this->vars['images'] = $images;
 
 		$activity = dbQuery( "
 			SELECT 

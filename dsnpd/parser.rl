@@ -293,10 +293,10 @@ bool gblKeySubmitted = false;
 		#
 		# Remote broadcasting
 		#
-		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' network ' ' length
+		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
 			M_EOL @check_key @{
 				remoteBroadcastRequest( mysql, user, identity, hash, 
-						token, network, message_buffer.data, length );
+						token, message_buffer.data, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
@@ -511,7 +511,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @{
 				type = BroadcastKey;
 			} |
-		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' network ' ' length 
+		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;
 			} |

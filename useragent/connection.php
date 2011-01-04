@@ -198,12 +198,12 @@ class Connection
 	}
 
 	function remoteBroadcastRequest( $user, $identity, 
-		$hash, $token, $network, $message )
+		$hash, $token, $message )
 	{
 		$len = strlen( $message );
 		$cmd = 
 			"remote_broadcast_request $user $identity $hash " . 
-			"$token $network $len\r\n";
+			"$token $len\r\n";
 		fwrite( $this->fp, $cmd );
 		fwrite( $this->fp, $message, strlen($message) );
 		fwrite( $this->fp, "\r\n", 2 );

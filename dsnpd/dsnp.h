@@ -245,7 +245,7 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *msg, long mLen );
 void encryptRemoteBroadcast( MYSQL *mysql, User &user,
 		Identity &identity, const char *token,
-		long long seqNum, const char *group, const char *msg, long mLen );
+		long long seqNum, const char *msg, long mLen );
 char *decrypt_result( MYSQL *mysql, const char *from_user, 
 		const char *to_identity, const char *user_message );
 void prefriendMessage( MYSQL *mysql, const char *relid, const char *message );
@@ -255,7 +255,7 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
 long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
 long remoteBroadcastRequest( MYSQL *mysql, const char *user, 
-		const char *identity, const char *hash, const char *token, const char *group,
+		const char *identity, const char *hash, const char *token,
 		const char *msg, long mLen );
 
 void remoteInner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
@@ -572,6 +572,7 @@ inline long long parseId( const char *id )
 }
 
 long long findPrimaryNetworkId( MYSQL *mysql, User &user );
+AllocString findPrimaryNetworkName( MYSQL *mysql, User &user );
 
 #define LOGIN_TOKEN_LASTS 86400
 

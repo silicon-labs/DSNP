@@ -184,6 +184,20 @@ long long findPrimaryNetworkId( MYSQL *mysql, User &user )
 	return parseId( query.fetchRow()[0] );
 }
 
+#if 0
+AllocString findPrimaryNetworkName( MYSQL *mysql, User &user )
+{
+	DbQuery query( mysql,
+		"SELECT dist_name FROM network WHERE user_id = %L AND type = %l",
+		user.id(), NET_TYPE_PRIMARY );
+
+	if ( query.rows() != 1 )
+		throw NoPrimaryNetwork();
+
+	return allocString( query.fetchRow()[0] );
+}
+#endif
+
 long long findFriendClaimId( MYSQL *mysql, User &user, Identity &identity )
 {
 	DbQuery query( mysql,

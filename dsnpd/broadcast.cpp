@@ -120,7 +120,15 @@ void remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		"WHERE user_id = %L AND identity_id = %L AND network_dist = %e AND generation = %L",
 		user.id(), innerIdentity.id(), network, generation );
 
+	message(
+		"SELECT broadcast_key "
+		"FROM friend_claim "
+		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
+		"WHERE user_id = %lld AND identity_id = %lld AND network_dist = '%s' AND generation = %lld\n",
+		user.id(), innerIdentity.id(), network, generation );
+
 	if ( recipient.rows() > 0 ) {
+		message( "remote broadcast: found recipient for inner messsage\n");
 		MYSQL_ROW row = recipient.fetchRow();
 		const char *broadcastKey = row[0];
 
@@ -522,19 +530,11 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	//returned_reqid_parser( mysql, to_user, result_message );
 	String hash = makeIduriHash( identity.iduri );
 
-	DbQuery query( mysql,
-		"SELECT dist_name FROM network WHERE user_id = %L AND type = %l",
-		user.id(), NET_TYPE_PRIMARY );
-
-	if ( query.rows() != 1 )
-		throw NoPrimaryNetwork();
-	String distName = query.fetchRow()[0];
-
 	DbQuery( mysql,
 		"INSERT INTO pending_remote_broadcast "
-		"( user_id, identity_id, hash, reqid, seq_num, network_name ) "
-		"VALUES ( %L, %L, %e, %e, %L, %e )",
-		user.id(), identity.id(), hash(), result_message, seqNum, distName() );
+		"( user_id, identity_id, hash, reqid, seq_num ) "
+		"VALUES ( %L, %L, %e, %e, %L )",
+		user.id(), identity.id(), hash(), result_message, seqNum );
 
 	message("send_message_now returned: %s\n", result_message );
 	BIO_printf( bioOut, "OK %s\r\n", result_message );
@@ -546,7 +546,7 @@ void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid
 	User user( mysql, _user );
 
 	DbQuery recipient( mysql, 
-		"SELECT identity_id, generation, sym "
+		"SELECT identity_id, network_dist, generation, sym "
 		"FROM remote_broadcast_request "
 		"WHERE user_id = %L AND reqid = %e",
 		user.id(), reqid );
@@ -558,14 +558,15 @@ void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid
 
 	MYSQL_ROW row = recipient.fetchRow();
 	long long identityId = parseId( row[0] );
-	const char *generation = row[1];
-	const char *sym = row[2];
+	const char *networkDist = row[1];
+	const char *generation = row[2];
+	const char *sym = row[3];
 	message( "flushing remote with reqid: %s\n", reqid );
 
 	Identity identity( mysql, identityId );
 	FriendClaim friendClaim( mysql, user, identity );
 
-	String returnCmd( "return_remote_broadcast %s %s %s\r\n", reqid, generation, sym );
+	String returnCmd( "return_remote_broadcast %s %s %s %s\r\n", reqid, networkDist, generation, sym );
 
 	char *result = 0;
 	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid(), returnCmd.data, &result );
@@ -579,8 +580,8 @@ void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid
 	BIO_printf( bioOut, "OK %s\r\n", result );
 }
 
-void returnRemoteBroadcast( MYSQL *mysql, User &user,
-		Identity &identity, const char *reqid, long long generation, const char *sym )
+void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 
+		const char *reqid, const char *networkDist, long long generation, const char *sym )
 {
 	message("return_remote_broadcast\n");
 
@@ -590,9 +591,9 @@ void returnRemoteBroadcast( MYSQL *mysql, User &user,
 
 	DbQuery recipient( mysql, 
 		"UPDATE pending_remote_broadcast "
-		"SET generation = %L, sym = %e, reqid_final = %e"
+		"SET network_dist = %e, generation = %L, sym = %e, reqid_final = %e"
 		"WHERE user_id = %L AND identity_id = %L AND reqid = %e ",
-		generation, sym, reqid_final_str, user.id(), identity.id(), reqid );
+		networkDist, generation, sym, reqid_final_str, user.id(), identity.id(), reqid );
 
 	BIO_printf( bioOut, "REQID %s\r\n", reqid_final_str );
 }
@@ -602,7 +603,7 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
 	User user( mysql, _user );
 
 	DbQuery recipient( mysql, 
-		"SELECT identity_id, hash, seq_num, network_name, generation, sym "
+		"SELECT identity_id, hash, seq_num, network_dist, generation, sym "
 		"FROM pending_remote_broadcast "
 		"WHERE user_id = %L AND reqid_final = %e",
 		user.id(), reqid );
@@ -681,14 +682,15 @@ void encryptRemoteBroadcast( MYSQL *mysql, User &user,
 
 	u_char reqid[REQID_SIZE];
 	RAND_bytes( reqid, REQID_SIZE );
-	const char *reqid_str = binToBase64( reqid, REQID_SIZE );
+	const char *reqidStr = binToBase64( reqid, REQID_SIZE );
 
 	DbQuery( mysql,
 		"INSERT INTO remote_broadcast_request "
-		"	( user_id, identity_id, reqid, generation, sym ) "
-		"VALUES ( %L, %L, %e, %L, %e )",
-		user.id(), subjectId.id(), reqid_str, put.generation, encrypt.sym );
+		"	( user_id, identity_id, reqid, network_dist, generation, sym ) "
+		"VALUES ( %L, %L, %e, %e, %L, %e )",
+		user.id(), subjectId.id(), reqidStr,
+		put.distName(), put.generation, encrypt.sym );
 
-	BIO_printf( bioOut, "REQID %s\r\n", reqid_str );
+	BIO_printf( bioOut, "REQID %s\r\n", reqidStr );
 }
 

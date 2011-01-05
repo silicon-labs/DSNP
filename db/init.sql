@@ -330,9 +330,9 @@ CREATE TABLE pending_remote_broadcast
 	reqid VARCHAR(48) BINARY,
 	reqid_final VARCHAR(48) BINARY,
 	seq_num BIGINT,
+	network_dist VARCHAR(48) BINARY,
 	generation BIGINT,
 	sym TEXT,
-	network_name TEXT,
 
 	PRIMARY KEY ( id )
 );
@@ -346,6 +346,7 @@ CREATE TABLE remote_broadcast_request
 	identity_id BIGINT,
 
 	reqid VARCHAR(48) BINARY,
+	network_dist VARCHAR(48) BINARY,
 	generation BIGINT,
 	sym TEXT,
 

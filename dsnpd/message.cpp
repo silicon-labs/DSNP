@@ -97,7 +97,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			returnRemoteBroadcast( mysql, user, identity, mp.reqid,
-					mp.generation, mp.sym );
+					mp.network, mp.generation, mp.sym );
 			break;
 		case MessageParser::FriendProof:
 //			friendProofMessage( mysql, user, userId, friendId, mp.hash,

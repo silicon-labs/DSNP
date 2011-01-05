@@ -515,7 +515,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;
 			} |
-		'return_remote_broadcast'i ' ' reqid ' ' generation ' ' sym
+		'return_remote_broadcast'i ' ' reqid ' ' network ' ' generation ' ' sym
 			EOL @{
 				type = ReturnRemoteBroadcast;
 			} |

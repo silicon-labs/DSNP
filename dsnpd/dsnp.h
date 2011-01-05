@@ -400,8 +400,8 @@ void appNotification( const char *args, const char *data, long length );
 
 void remoteBroadcastResponse( MYSQL *mysql, const char *user, const char *reqid );
 void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
-void returnRemoteBroadcast( MYSQL *mysql, User &user,
-		Identity &identity, const char *reqid, long long generation, const char *sym );
+void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, const char *reqid,
+		const char *network, long long generation, const char *sym );
 
 void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
 

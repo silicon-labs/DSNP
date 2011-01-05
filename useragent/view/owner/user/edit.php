@@ -2,7 +2,7 @@
 
 <td id="leftcol">
 <div id="details">
-    <h2><?php print $USER['NAME'];?></h2>
+    <h2><?php print $USER['name'];?></h2>
 </div>
 </td>
 
@@ -15,14 +15,13 @@
 <div class="input text">
 	<label for="UserName">Name</label>
 	<input name="name" type="text" maxlength="50" 
-	value="<?php echo htmlspecialchars( $user[0]['name'] )?>" 
+	value="<?php echo htmlspecialchars( $USER['name'] )?>" 
 	id="UserName" />
 </div>
 <div class="input text">
 	<label for="UserEmail">Email</label>
 	<input name="email" type="text" maxlength="50" value="" id="UserEmail" />
 </div>
-<input type="hidden" name="id" value="<? echo $this->USER[ID]; ?>" id="UserId" />
 <div class="submit">
 <input type="submit" value="Update" />
 </div>

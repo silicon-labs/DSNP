@@ -98,21 +98,17 @@ class Message
 		$this->message = $headers . $newName;
 	}
 
-	function recvNameChange( $forUser, $author_id, $seqNum, 
+	function recvNameChange( $user, $author_id, $seqNum, 
 			$date, $time, $msg, $contextType )
 	{
 		if ( $contextType != 'text/plain' )
 			return;
 
-		$result = dbQuery( "SELECT id FROM user WHERE user = %e", $forUser );
-
-		if ( count( $result ) === 1 ) {
-			$user = $result[0];
-			dbQuery( 
-				"UPDATE friend_claim SET name = %e " . 
-				"WHERE user_id = %L AND iduri = %e",
-				$msg[1], $user['id'], $author_id );
-		}
+		$id = $this->findRelationshipId( $user, $author_id );
+		dbQuery( 
+			"UPDATE relationship SET name = %e " . 
+			"WHERE id = %L",
+			$msg[1], $id );
 	}
 
 	function photoUpload( $id, $fileName )
@@ -288,7 +284,7 @@ class Message
 			if ( $left <= 0 )
 				break;
 		}
-		$msg = fread( $file, $left );
+		$msg = $left > 0 ? fread( $file, $left ) : "";
 		return array( $headers, $msg );
 	}
 

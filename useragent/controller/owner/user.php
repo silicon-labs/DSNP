@@ -19,7 +19,6 @@ class OwnerUserController extends Controller
 		),
 		'edit' => array(),
 		'sedit' => array(
-			array( post => 'id' ),
 			array( post => 'name' ),
 			array( post => 'email' ),
 		),
@@ -68,13 +67,12 @@ class OwnerUserController extends Controller
 	{
 		$user = dbQuery( 
 			"SELECT * FROM user WHERE user = %e", 
-			$this->USER[USER] );
+			$this->USER['USER'] );
 		$this->vars['user'] = $user;
 	}
 
 	function sedit()
 	{
-		$id = $this->args['id'];
 		$name = $this->args['name'];
 		$email = $this->args['email'];
 
@@ -83,11 +81,9 @@ class OwnerUserController extends Controller
 		if ( preg_match( '/^[ \t\n]*$/', $email ) )
 			$email = null;
 
-		if ( $id === $this->USER[ID] ) {
-			dbQuery( 
-				"UPDATE user SET name = %e, email = %e WHERE id = %l",
-				$name, $email, $this->USER[ID] );
-		}
+		dbQuery( 
+			"UPDATE relationship SET name = %e, email = %e WHERE id = %l",
+			$name, $email, $this->USER['relationship_id'] );
 
 		/* User Message */
 		$message = new Message;
@@ -95,8 +91,10 @@ class OwnerUserController extends Controller
 
 		$connection = new Connection;
 		$connection->openLocalPriv();
-		$connection->submitBroadcast( $this->USER[USER],
-				'-', $message->message );
+		$connection->submitBroadcast( 
+				$this->USER['USER'], $message->message );
+
+		$this->userRedirect( "/user/edit" );
 	}
 }
 ?>

@@ -17,7 +17,8 @@ prefix = @prefix@
 datarootdir = @datarootdir@
 
 all: new-site init-system
-#dsnp-spec.pdf
+
+# dsnp-spec.pdf
 
 sedsubst = \
 	-e 's,\@prefix\@,@prefix@,g;' \

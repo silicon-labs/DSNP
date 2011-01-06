@@ -347,45 +347,6 @@ long storeBroadcastRecipients( MYSQL *mysql, User &user,
 	return count;
 }
 
-long queueBroadcast( MYSQL *mysql, const char *user, const char *network,
-		const char *msg, long mLen )
-{
-	/* Get the latest put session key. */
-	CurrentPutKey put( mysql, user, network );
-
-	/* Do the encryption. */ 
-	Keys *userPriv = loadKey( mysql, user ); 
-	Encrypt encrypt( 0, userPriv ); 
-	encrypt.bkSignEncrypt( put.broadcastKey, (u_char*)msg, mLen ); 
-
-	message( "queue broadcast: encrypting message with %s\n", put.broadcastKey.data );
-
-	/* Stroe the message. */
-	DbQuery( mysql,
-		"INSERT INTO broadcast_message "
-		"( network_name, key_gen, message ) "
-		"VALUES ( %e, %L, %e ) ",
-		network, put.keyGen, encrypt.sym );
-
-	long long messageId = lastInsertId( mysql );
-
-	/*
-	 * Out-of-tree broadcasts.
-	 */
-	message("finding out-of-tree broadcasts for %s %lld\n", user, put.networkId );
-	DbQuery outOfTree( mysql,
-		"SELECT friend_claim.iduri, friend_claim.put_relid "
-		"FROM friend_claim "
-		"JOIN network_member "
-		"ON friend_claim.id = network_member.friend_claim_id "
-		"WHERE friend_claim.user = %e AND network_member.network_id = %L "
-		"ORDER BY friend_claim.iduri",
-		user, put.networkId );
-
-	storeBroadcastRecipients( mysql, user, messageId, outOfTree );
-	return 0;
-}
-
 long queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
 {
 	/* Get the latest put session key. */

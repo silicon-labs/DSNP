@@ -149,38 +149,6 @@ AllocString passHash( const u_char *salt, const char *pass )
 	return binToBase64( hash, SHA_DIGEST_LENGTH );
 }
 
-
-CurrentPutKey::CurrentPutKey( MYSQL *mysql, const char *user, const char *group )
-{
-	DbQuery query( mysql, 
-		"SELECT network.id, "
-		"	network.key_gen, "
-		"	put_broadcast_key.broadcast_key "
-		"FROM user "
-		"JOIN network "
-		"ON user.id = network.user_id "
-		"JOIN put_broadcast_key "
-		"ON network.id = put_broadcast_key.network_id "
-		"WHERE user.user = %e AND "
-		"	network.private_name = %e AND "
-		"	network.key_gen = put_broadcast_key.generation ", 
-		user, group );
-	
-	if ( query.rows() == 0 ) {
-		fatal( "failed to get current put broadcast key for "
-			"user %s and group %s\n", user, group );
-	}
-	if ( query.rows() > 1 ) {
-		fatal( "too many results for current put key "
-				"user %s and group %s\n", user, group );
-	}
-	
-	MYSQL_ROW row = query.fetchRow();
-	networkId = strtoll( row[0], 0, 10 );
-	keyGen = strtoll( row[1], 0, 10 );
-	broadcastKey.set( row[2] );
-}
-
 PutKey::PutKey( MYSQL *mysql, long long networkId )
 {
 	DbQuery query( mysql, 

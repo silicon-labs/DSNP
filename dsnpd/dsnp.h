@@ -208,22 +208,12 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 void fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
 long openInetConnection( const char *hostname, unsigned short port );
-long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
+long fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid );
-long fetch_response_relid_net( RelidEncSig &encsig, const char *site, 
+long fetchResponseRelidNet( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *reqid );
-long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
+long fetchFtokenNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
-char *get_site( const char *identity );
-
-struct CurrentPutKey
-{
-	CurrentPutKey( MYSQL *mysql, const char *user, const char *group );
-
-	long long networkId;
-	long long keyGen;
-	String broadcastKey;
-};
 
 struct PutKey
 {
@@ -384,8 +374,11 @@ struct TlsConnect
 {
 	void connect( const char *host, const char *site );
 	BIO *sbio;
-};
 
+	void publicKey( const char *user );
+
+	String result;
+};
 
 int notify_accept_result_parser( MYSQL *mysql, const char *user, 
 		const char *user_reqid, const char *from_id, 

@@ -174,7 +174,8 @@ void relidResponse( MYSQL *mysql, const char *_user,
 	Keys *idPub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	int fetchRes = fetch_requested_relid_net( encsig, identity.site(), identity.host(), reqid );
+	int fetchRes = fetchRequestedRelidNet( encsig, identity.site(),
+			identity.host(), reqid );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
 		return;
@@ -307,7 +308,8 @@ void friendFinal( MYSQL *mysql, const char *_user,
 	}
 
 	RelidEncSig encsig;
-	int fetchRes = fetch_response_relid_net( encsig, identity.site(), identity.host(), reqid_str );
+	int fetchRes = fetchResponseRelidNet( encsig, identity.site(), 
+			identity.host(), reqid_str );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
 		return;

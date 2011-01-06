@@ -231,27 +231,6 @@ bool gblKeySubmitted = false;
 			} |
 
 		#
-		# Friend management.
-		#
-		'show_network'i ' ' user ' ' network
-			EOL @check_key @{
-				showNetwork( mysql, user, network );
-			} |
-		'unshow_network'i ' ' user ' ' network
-			EOL @check_key @{
-				unshowNetwork( mysql, user, network );
-			} |
-		'add_to_network'i ' ' user ' ' network ' ' identity
-			EOL @check_key @{
-				addToNetwork( mysql, user, network, identity );
-			} |
-		'remove_from_network'i ' ' user ' ' network ' ' identity
-			EOL @check_key @{
-				removeFromNetwork( mysql, user, network, identity );
-			} |
-			
-
-		#
 		# Friend login. 
 		#
 		'ftoken_request'i ' ' user ' ' hash
@@ -706,7 +685,6 @@ long EncryptedBroadcastParser::parse( const char *msg )
 void fetchPublicKeyNet( PublicKey &pub, const char *site, 
 		const char *host, const char *user )
 {
-	static char buf[8192];
 	long cs;
 	const char *p, *pe;
 	bool OK = false;
@@ -716,15 +694,7 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 	TlsConnect tlsConnect;
 	tlsConnect.connect( host, site );
 
-	BIO_printf( tlsConnect.sbio, "public_key %s\r\n", user );
-	(void)BIO_flush( tlsConnect.sbio );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		throw ReadError();
+	tlsConnect.publicKey( user );
 
 	/* Parser for response. */
 	%%{
@@ -738,8 +708,8 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 			'ERROR' EOL;
 	}%%
 
-	p = buf;
-	pe = buf + strlen(buf);
+	p = tlsConnect.result();
+	pe = p + tlsConnect.result.length;
 
 	%% write init;
 	%% write exec;
@@ -756,7 +726,7 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 }
 
 /*
- * fetch_requested_relid_net
+ * fetchRequestedRelidNet
  */
 
 %%{
@@ -765,7 +735,7 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 }%%
 
 
-long fetch_requested_relid_net( RelidEncSig &encsig, const char *site, 
+long fetchRequestedRelidNet( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *fr_reqid )
 {
 	static char buf[8192];
@@ -819,7 +789,7 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 
 
 /*
- * fetch_response_relid_net
+ * fetchResponseRelidNet
  */
 
 %%{
@@ -827,7 +797,7 @@ long fetch_requested_relid_net( RelidEncSig &encsig, const char *site,
 	write data;
 }%%
 
-long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
+long fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *reqid )
 {
 	static char buf[8192];
@@ -879,7 +849,7 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 }
 
 /*
- * fetch_ftoken_net
+ * fetchFtokenNet
  */
 
 %%{
@@ -887,7 +857,7 @@ long fetch_response_relid_net( RelidEncSig &encsig, const char *site,
 	write data;
 }%%
 
-long fetch_ftoken_net( RelidEncSig &encsig, const char *site,
+long fetchFtokenNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid )
 {
 	static char buf[8192];

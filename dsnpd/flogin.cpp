@@ -145,7 +145,8 @@ void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 	Keys *id_pub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	int fetchRes = fetch_ftoken_net( encsig, identity.site(), identity.host(), flogin_reqid_str );
+	int fetchRes = fetchFtokenNet( encsig, identity.site(), 
+			identity.host(), flogin_reqid_str );
 	if ( fetchRes < 0 ) {
 		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_FTOKEN );
 		return;

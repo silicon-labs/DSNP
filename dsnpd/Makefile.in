@@ -19,7 +19,7 @@ CXXFLAGS += -g -Wall
 CC_SRCS = main.cpp parser.cpp string.cpp rcfile.cpp encrypt.cpp \
 	log.cpp db.cpp dsnp.cpp tls.cpp base64.cpp test.cpp broadcast.cpp queue.cpp \
 	friendreq.cpp prefriend.cpp message.cpp network.cpp notification.cpp user.cpp \
-	login.cpp flogin.cpp identity.cpp
+	login.cpp flogin.cpp identity.cpp connect.cpp
 GEN_SRCS = parser.cpp rcfile.cpp base64.cpp
 
 LIBS = @LIBS@

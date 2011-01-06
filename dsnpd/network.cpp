@@ -104,74 +104,6 @@ void sendAllOutProofs( MYSQL *mysql, const char *user, const char *network,
 	}
 }
 
-/*
- * To make group del and friend del instantaneous we need to destroy the tree.
- */
-
-void sendBroadcastKey( MYSQL *mysql, const char *user, 
-		const char *network, long long networkId, const char *friendId,
-		long long friendClaimId, const char *putRelid )
-{
-	CurrentPutKey put( mysql, user, network );
-
-	/* Notify the requester. */
-	String registered( "broadcast_key %s %lld %s\r\n", 
-			network, put.keyGen, put.broadcastKey.data );
-
-	sendMessageNow( mysql, false, user, friendId, putRelid, registered.data, 0 );
-}
-
-void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
-{
-	message("adding %s to %s for %s\n", identity, network, user );
-
-	/* Query the user. */
-	DbQuery findUser( mysql, 
-		"SELECT id FROM user WHERE user = %e", user );
-
-	if ( findUser.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		return;
-	}
-
-	MYSQL_ROW row = findUser.fetchRow();
-	long long userId = strtoll( row[0], 0, 10 );
-
-	/* Make sure we have the network parameters for this user. */
-	long long networkId = addNetwork( mysql, userId, network );
-
-	/* Query the friend claim. */
-	DbQuery findClaim( mysql, 
-		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND iduri = %e", 
-		user, identity );
-
-	if ( findClaim.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR not a friend\r\n" );
-		return;
-	}
-
-	row = findClaim.fetchRow();
-	long long friendClaimId = strtoll( row[0], 0, 10 );
-	const char *putRelid = row[1];
-
-	/* Try to insert the group member. */
-	DbQuery insert( mysql, 
-		"INSERT IGNORE INTO network_member "
-		"( network_id, friend_claim_id  ) "
-		"VALUES ( %L, %L )",
-		networkId, friendClaimId
-	);
-
-	if ( insert.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR friend already in group\r\n" );
-		return;
-	}
-
-	sendBroadcastKey( mysql, user, network, networkId, identity, friendClaimId, putRelid );
-
-	BIO_printf( bioOut, "OK\n" );
-}
-
 long long findPrimaryNetworkId( MYSQL *mysql, User &user )
 {
 	DbQuery query( mysql,
@@ -180,32 +112,6 @@ long long findPrimaryNetworkId( MYSQL *mysql, User &user )
 
 	if ( query.rows() != 1 )
 		throw NoPrimaryNetwork();
-
-	return parseId( query.fetchRow()[0] );
-}
-
-#if 0
-AllocString findPrimaryNetworkName( MYSQL *mysql, User &user )
-{
-	DbQuery query( mysql,
-		"SELECT dist_name FROM network WHERE user_id = %L AND type = %l",
-		user.id(), NET_TYPE_PRIMARY );
-
-	if ( query.rows() != 1 )
-		throw NoPrimaryNetwork();
-
-	return allocString( query.fetchRow()[0] );
-}
-#endif
-
-long long findFriendClaimId( MYSQL *mysql, User &user, Identity &identity )
-{
-	DbQuery query( mysql,
-		"SELECT id FROM friend_claim WHERE user_id = %L AND identity_id = %L",
-		user.id(), identity.id() );
-
-	if ( query.rows() != 1 )
-		throw FriendClaimNotFound();
 
 	return parseId( query.fetchRow()[0] );
 }
@@ -219,9 +125,9 @@ void sendBroadcastKey( MYSQL *mysql, User &user, Identity &identity,
 	String registered( "broadcast_key %s %lld %s\r\n", 
 			put.distName(), put.generation, put.broadcastKey() );
 
-	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid, registered.data, 0 );
+	sendMessageNow( mysql, false, user.user(), identity.iduri(),
+			friendClaim.putRelid, registered.data, 0 );
 }
-
 
 void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity )
 {
@@ -238,115 +144,4 @@ void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity )
 	);
 
 	sendBroadcastKey( mysql, user, identity, friendClaim, networkId );
-}
-
-void invalidateBroadcastKey( MYSQL *mysql, const char *user, long long userId,
-		const char *network, long long networkId, const char *friendId,
-		long long friendClaimId, const char *putRelid )
-{
-}
-
-void invalidateBkProof( MYSQL *mysql, const char *user, long long userId,
-		const char *network, long long networkId, const char *friendId,
-		long long friendClaimId, const char *putRelid )
-{
-	CurrentPutKey put( mysql, user, network );
-
-	String command( "group_member_revocation %s %lld %s\r\n", 
-		network, put.keyGen, friendId );
-	queueBroadcast( mysql, user, network, command.data, command.length );
-}
-
-void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity )
-{
-	message("removing %s from %s for %s\n", identity, network, user );
-
-	/* Query the user. */
-	DbQuery findUser( mysql, 
-		"SELECT id FROM user WHERE user = %e", user );
-
-	if ( findUser.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		return;
-	}
-
-	MYSQL_ROW row = findUser.fetchRow();
-	long long userId = strtoll( row[0], 0, 10 );
-
-	/* Query the network. */
-	DbQuery findNetwork( mysql, 
-		"SELECT network.id FROM network "
-		"WHERE user_id = %L AND network.name = %e", 
-		userId, network );
-
-	if ( findNetwork.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR invalid network\r\n" );
-		return;
-	}
-
-	row = findNetwork.fetchRow();
-	long long networkId = strtoll( row[0], 0, 10 );
-
-	/* Query the friend claim. */
-	DbQuery findClaim( mysql, 
-		"SELECT id, put_relid FROM friend_claim WHERE user = %e AND iduri = %e", 
-		user, identity );
-
-	if ( findClaim.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR not a friend\r\n" );
-		return;
-	}
-
-	row = findClaim.fetchRow();
-	long long friendClaimId = strtoll( row[0], 0, 10 );
-	const char *putRelid = row[1];
-
-	DbQuery del( mysql, 
-		"DELETE FROM network_member "
-		"WHERE network_id = %L AND friend_claim_id = %L",
-		networkId, friendClaimId
-	);
-
-	if ( del.affectedRows() == 0 ) {
-		BIO_printf( bioOut, "ERROR friend not in network\r\n" );
-		return;
-	}
-
-	if ( strcmp( network, "-" ) == 0 ) {
-		invalidateBroadcastKey( mysql, user, userId, network, networkId,
-				identity, friendClaimId, putRelid );
-	}
-	else {
-		invalidateBkProof( mysql, user, userId, network, networkId,
-				identity, friendClaimId, putRelid );
-	}
-
-	BIO_printf( bioOut, "OK\n" );
-}
-
-void showNetwork( MYSQL *mysql, const char *user, const char *network )
-{
-	message("showing network %s for %s\n", network, user );
-
-	/* Query the user. */
-	DbQuery findUser( mysql, 
-		"SELECT id FROM user WHERE user = %e", user );
-
-	if ( findUser.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
-		return;
-	}
-
-	MYSQL_ROW row = findUser.fetchRow();
-	long long userId = strtoll( row[0], 0, 10 );
-
-	/* Make sure we have the network parameters for this user. */
-	addNetwork( mysql, userId, network );
-
-	BIO_printf( bioOut, "OK\n" );
-}
-
-void unshowNetwork( MYSQL *mysql, const char *user, const char *network )
-{
-	BIO_printf( bioOut, "OK\n" );
 }

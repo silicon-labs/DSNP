@@ -124,6 +124,9 @@ bool gblKeySubmitted = false;
 		message_buffer.data[length] = 0;
 	}
 
+	action buf { buf.append( fc ); }
+	action clear { buf.clear(); }
+
 	M_EOL = 
 		EOL @read_message 
 		EOL @term_data;
@@ -677,53 +680,60 @@ long EncryptedBroadcastParser::parse( const char *msg )
  * fetchPublicKeyNet
  */
 
+
 %%{
 	machine public_key;
 	write data;
 }%%
 
-void fetchPublicKeyNet( PublicKey &pub, const char *site, 
-		const char *host, const char *user )
+PublicKeyResult::PublicKeyResult()
 {
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	const char *mark;
-	String n, e;
+	OK = false;
+	%% write init;
+}
 
-	TlsConnect tlsConnect;
-	tlsConnect.connect( host, site );
-
-	tlsConnect.publicKey( user );
-
+void PublicKeyResult::data( char *data, int len )
+{
 	/* Parser for response. */
 	%%{
 		include common;
 
-		n = base64   >{mark = p;} %{n.set(mark, p);};
-		e = base64   >{mark = p;} %{e.set(mark, p);};
+		n = base64 >clear $buf %{ n.set(buf); };
+		e = base64 >clear $buf %{ e.set(buf); };
 
 		main := 
 			'OK ' n ' ' e EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
-	p = tlsConnect.result();
-	pe = p + tlsConnect.result.length;
+	const char *p = data;
+	const char *pe = data + len;
 
-	%% write init;
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
+	if ( cs == %%{ write error; }%% )
 		throw ParseError();
-	
-	if ( ! OK )
-		throw ResponseIsError();
-	
-	pub.n = n.relinquish();
-	pub.e = e.relinquish();
 }
+
+void fetchPublicKeyNet( PublicKey &pub, const char *site, 
+		const char *host, const char *user )
+{
+	TlsConnect tlsConnect;
+	PublicKeyResult parser;
+
+	/* Connect and send the public key request. */
+	tlsConnect.connect( host, site );
+	tlsConnect.printf( "public_key %s\r\n", user );
+
+	/* Parse the result. */
+	tlsConnect.readParse( parser );
+
+	/* Result. */
+	pub.n = parser.n.relinquish();
+	pub.e = parser.e.relinquish();
+}
+
 
 /*
  * fetchRequestedRelidNet

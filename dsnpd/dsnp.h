@@ -369,12 +369,35 @@ struct DbQuery
 
 long long lastInsertId( MYSQL *mysql );
 
+struct Parser
+{
+	virtual void data( char *data, int len ) = 0;
+};
+
+struct PublicKeyResult
+	: public Parser
+{
+	PublicKeyResult();
+
+	int cs;
+	Buffer buf;
+	bool OK;
+	String n, e;
+
+	virtual void data( char *data, int len );
+};
+
 struct TlsConnect
 {
 	void connect( const char *host, const char *site );
 
+	int readParse( Parser &parser );
+
+	int printf( const char *fmt, ... );
+
 	int read( char *buf, long length );
 	void publicKey( const char *user );
+	void publicKey2( const char *user );
 
 	int socketFd;
 	BIO *sbio;

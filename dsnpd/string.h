@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <openssl/bn.h>
 
+#include "buffer.h"
+
 char *allocString( const char *s, const char *e );
 
 struct AllocString
@@ -37,6 +39,7 @@ struct String
 	void allocate( long size );
 	void set( const char *p1, const char *p2 );
 	void set( const char *s );
+	void set( const Buffer &buffer );
 	void format( const char *fmt, ... );
 
 	char *relinquish()

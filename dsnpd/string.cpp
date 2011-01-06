@@ -29,6 +29,14 @@ char *allocString( const char *s, const char *e )
 	return result;
 }
 
+void String::set( const Buffer &buffer )
+{
+	length = buffer.length;
+	data = new char[ length+1 ];
+	memcpy( data, buffer.data, length );
+	data[length] = 0;
+}
+
 void String::set( const char *s, const char *e )
 {
 	if ( data != 0 )

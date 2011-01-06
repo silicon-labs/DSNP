@@ -381,6 +381,7 @@ struct PublicKeyResult
 
 	int cs;
 	Buffer buf;
+
 	bool OK;
 	String n, e;
 
@@ -391,13 +392,11 @@ struct TlsConnect
 {
 	void connect( const char *host, const char *site );
 
-	int readParse( Parser &parser );
-
+	/* Sending. */
 	int printf( const char *fmt, ... );
 
-	int read( char *buf, long length );
-	void publicKey( const char *user );
-	void publicKey2( const char *user );
+	/* Receiving. */
+	int readParse( Parser &parser );
 
 	int socketFd;
 	BIO *sbio;

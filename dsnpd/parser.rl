@@ -309,24 +309,7 @@ bool gblKeySubmitted = false;
 				receiveBroadcast( mysql, recipients, network, generation,
 						message_buffer.data );
 				recipients.clear();
-			} |
-
-
-		#
-		# Testing
-		#
-
-		'send_all'i ' ' user ' ' network ' ' identity EOL @check_key @{
-				//sendAllProofs( mysql, user, network, identity );
-				//sendAllProofs2( mysql, user, network, identity );
-				BIO_printf( bioOut, "OK\r\n" );
-			} |
-
-		( 'quit'i | 'exit'i )
-			EOL @{
-				exit = true;
 			}
-			
 	)*;
 
 	main := 'DSNP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
@@ -759,8 +742,7 @@ long fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 	tlsConnect.connect( host, site );
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "fetch_requested_relid %s\r\n", fr_reqid );
-	(void)BIO_flush( tlsConnect.sbio );
+	tlsConnect.printf( "fetch_requested_relid %s\r\n", fr_reqid );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -821,8 +803,7 @@ long fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
 	tlsConnect.connect( host, site );
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "fetch_response_relid %s\r\n", reqid );
-	(void)BIO_flush( tlsConnect.sbio );
+	tlsConnect.printf( "fetch_response_relid %s\r\n", reqid );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -881,8 +862,7 @@ long fetchFtokenNet( RelidEncSig &encsig, const char *site,
 	tlsConnect.connect( host, site );
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "fetch_ftoken %s\r\n", flogin_reqid );
-	(void)BIO_flush( tlsConnect.sbio );
+	tlsConnect.printf( "fetch_ftoken %s\r\n", flogin_reqid );
 
 	/* Read the result. */
 	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
@@ -1042,16 +1022,15 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	tlsConnect.connect( site.host, toSite );
 	
 	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ ) {
-		BIO_printf( tlsConnect.sbio, 
+		tlsConnect.printf( 
 			"broadcast_recipient %s\r\n", r->c_str() );
-		(void)BIO_flush( tlsConnect.sbio );
 
 		/* Read the result. */
 		BIO_gets( tlsConnect.sbio, buf, 8192 );
 	}
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "broadcast %s %lld %ld\r\n", 
+	tlsConnect.printf( "broadcast %s %lld %ld\r\n", 
 			network, keyGen, mLen );
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
@@ -1126,7 +1105,7 @@ long sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
 	tlsConnect.connect( toIdent.host, toIdent.site );
 
 	/* Send the request. */
-	BIO_printf( tlsConnect.sbio, "%smessage %s %ld\r\n", prefriend ? "prefriend_" : "", relid, mLen );
+	tlsConnect.printf("%smessage %s %ld\r\n", prefriend ? "prefriend_" : "", relid, mLen );
 	BIO_write( tlsConnect.sbio, message, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
 	(void)BIO_flush( tlsConnect.sbio );

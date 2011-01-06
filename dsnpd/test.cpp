@@ -30,50 +30,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define LOGIN_TOKEN_LASTS 86400
-void test_tls()
-{
-	static char buf[8192];
-
-	setConfigByName( "spp" );
-	MYSQL *mysql, *connect_res;
-
-	/* Open the database connection. */
-	mysql = mysql_init(0);
-	connect_res = mysql_real_connect( mysql, c->CFG_DB_HOST, c->CFG_DB_USER, 
-			c->CFG_DB_PASS, c->CFG_DB_DATABASE, 0, 0, 0 );
-
-	if ( connect_res == 0 )
-		fatal( "ERROR failed to connect to the database\r\n");
-
-	long socketFd = openInetConnection( "localhost", 7070 );
-	if ( socketFd < 0 )
-		fatal("connection\n");
-
-	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
-	BIO *bio = BIO_new( BIO_f_buffer() );
-	BIO_push( bio, socketBio );
-
-	/* Send the request. */
-	BIO_printf( bio,
-		"DSNP/0.1 https://localhost/spp/\r\n"
-		"start_tls\r\n" );
-	(void)BIO_flush( bio );
-
-	int len = BIO_gets( bio, buf, 8192 );
-	buf[len] = 0;
-	message( "result: %s\n", buf );
-
-	sslInitClient();
-	bioIn = bioOut = sslStartClient( socketBio, socketBio, "localhost" );
-
-	BIO_printf( bioOut, "public_key age\r\n" );
-	(void)BIO_flush( bioOut );
-	len = BIO_gets( bioIn, buf, 8192 );
-	buf[len] = 0;
-	message( "result: %s\n", buf );
-}
-
 void testBase64()
 {
 	unsigned char out[64];

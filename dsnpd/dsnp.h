@@ -207,7 +207,6 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 
 void fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
-long openInetConnection( const char *hostname, unsigned short port );
 long fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid );
 long fetchResponseRelidNet( RelidEncSig &encsig, const char *site, 
@@ -380,21 +379,13 @@ struct TlsConnect
 	String result;
 };
 
-int notify_accept_result_parser( MYSQL *mysql, const char *user, 
-		const char *user_reqid, const char *from_id, 
-		const char *requested_relid, const char *returned_relid, const char *msg );
-void notify_accept_returned_id_salt( MYSQL *mysql, const char *user, 
-		const char *user_reqid, const char *from_id, const char *requested_relid, 
-		const char *returned_relid, const char *returned_id_salt );
-
-int forward_tree_swap( MYSQL *mysql, const char *user, const char *id1, const char *id2 );
-
 void appNotification( const char *args, const char *data, long length );
 
 void remoteBroadcastResponse( MYSQL *mysql, const char *user, const char *reqid );
 void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
-void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, const char *reqid,
-		const char *network, long long generation, const char *sym );
+void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
+		const char *reqid, const char *network, long long generation,
+		const char *sym );
 
 void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
 

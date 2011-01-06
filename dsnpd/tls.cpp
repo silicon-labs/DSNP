@@ -4,6 +4,25 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/bio.h>
+#include <openssl/sha.h>
+#include <openssl/pem.h>
+#include <openssl/err.h>
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <mysql/mysql.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
 
 #include <iostream>
 
@@ -41,6 +60,39 @@ void sslError( int e )
 			break;
 	}
 }
+
+long openInetConnection( const char *hostname, unsigned short port )
+{
+	sockaddr_in servername;
+	hostent *hostinfo;
+	long socketFd, connectRes;
+
+	/* Create the socket. */
+	socketFd = socket( PF_INET, SOCK_STREAM, 0 );
+	if ( socketFd < 0 )
+		return ERR_SOCKET_ALLOC;
+
+	/* Lookup the host. */
+	servername.sin_family = AF_INET;
+	servername.sin_port = htons(port);
+	hostinfo = gethostbyname (hostname);
+	if ( hostinfo == NULL ) {
+		::close( socketFd );
+		return ERR_RESOLVING_NAME;
+	}
+
+	servername.sin_addr = *(in_addr*)hostinfo->h_addr;
+
+	/* Connect to the listener. */
+	connectRes = connect( socketFd, (sockaddr*)&servername, sizeof(servername) );
+	if ( connectRes < 0 ) {
+		::close( socketFd );
+		return ERR_CONNECTING;
+	}
+
+	return socketFd;
+}
+
 
 void sslInitClient()
 {

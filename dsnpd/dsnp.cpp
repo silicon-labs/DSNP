@@ -62,21 +62,6 @@ void setConfigByName( const char *name )
 	}
 }
 
-char *strend( char *s )
-{
-	return s + strlen(s);
-}
-
-char *get_site( const char *identity )
-{
-	char *res = strdup( identity );
-	char *last = res + strlen(res) - 1;
-	while ( last[-1] != '/' )
-		last--;
-	*last = 0;
-	return res;
-}
-
 char *bin2hex( unsigned char *data, long len )
 {
 	char *res = (char*)malloc( len*2 + 1 );
@@ -203,38 +188,6 @@ void publicKey( MYSQL *mysql, const char *user )
 	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );
 }
 
-long openInetConnection( const char *hostname, unsigned short port )
-{
-	sockaddr_in servername;
-	hostent *hostinfo;
-	long socketFd, connectRes;
-
-	/* Create the socket. */
-	socketFd = socket( PF_INET, SOCK_STREAM, 0 );
-	if ( socketFd < 0 )
-		return ERR_SOCKET_ALLOC;
-
-	/* Lookup the host. */
-	servername.sin_family = AF_INET;
-	servername.sin_port = htons(port);
-	hostinfo = gethostbyname (hostname);
-	if ( hostinfo == NULL ) {
-		::close( socketFd );
-		return ERR_RESOLVING_NAME;
-	}
-
-	servername.sin_addr = *(in_addr*)hostinfo->h_addr;
-
-	/* Connect to the listener. */
-	connectRes = connect( socketFd, (sockaddr*)&servername, sizeof(servername) );
-	if ( connectRes < 0 ) {
-		::close( socketFd );
-		return ERR_CONNECTING;
-	}
-
-	return socketFd;
-}
-
 long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *iduri )
 {
 	DbQuery keys( mysql, 
@@ -287,14 +240,14 @@ long storePublicKey( MYSQL *mysql, long long identityId, PublicKey &pub )
 	return 0;
 }
 
-void makeCertsDir()
+char *get_site( const char *identity )
 {
-	String dir1( "%s/%s", PKGSTATEDIR, c->name );
-	String dir2( "%s/%s/certs", PKGSTATEDIR, c->name );
-
-	/* try each time. */
-	mkdir( dir1.data, 0777 );
-	mkdir( dir2.data, 0777 );
+	char *res = strdup( identity );
+	char *last = res + strlen(res) - 1;
+	while ( last[-1] != '/' )
+		last--;
+	*last = 0;
+	return res;
 }
 
 Keys *fetchPublicKey( MYSQL *mysql, const char *iduri )
@@ -405,8 +358,8 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg) );
 
 	message( "send_message_now sending to: %s\n", to_identity );
-	return sendMessageNet( mysql, prefriend, from_user, to_identity, put_relid, encrypt.sym,
-			strlen(encrypt.sym), result_msg );
+	return sendMessageNet( mysql, prefriend, from_user, to_identity,
+			put_relid, encrypt.sym, strlen(encrypt.sym), result_msg );
 }
 
 AllocString makeIdHash( const char *salt, const char *identity )

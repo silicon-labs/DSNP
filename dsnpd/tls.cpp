@@ -212,7 +212,7 @@ void TlsConnect::connect( const char *host, const char *site )
 {
 	static char buf[8192];
 
-	long socketFd = openInetConnection( host, atoi(c->CFG_PORT) );
+	socketFd = openInetConnection( host, atoi(c->CFG_PORT) );
 	if ( socketFd < 0 )
 		throw SocketConnectFailed( host );
 

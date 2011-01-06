@@ -183,6 +183,8 @@ void publicKey( MYSQL *mysql, const char *user )
 		return;
 	}
 
+//	sleep( 10 );
+
 	/* Everythings okay. */
 	MYSQL_ROW row = query.fetchRow();
 	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );

@@ -372,10 +372,12 @@ long long lastInsertId( MYSQL *mysql );
 struct TlsConnect
 {
 	void connect( const char *host, const char *site );
-	BIO *sbio;
 
+	int read( char *buf, long length );
 	void publicKey( const char *user );
 
+	int socketFd;
+	BIO *sbio;
 	String result;
 };
 

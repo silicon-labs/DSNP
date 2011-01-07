@@ -297,25 +297,17 @@ void friendFinal( MYSQL *mysql, const char *_user,
 	Identity identity( mysql, _iduri );
 
 	/* Get the public key for the identity. */
-	Keys *id_pub = identity.fetchPublicKey();
-	if ( id_pub == 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_PUBLIC_KEY );
-		return;
-	}
+	Keys *idPub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	int fetchRes = fetchResponseRelidNet( encsig, identity.site(), 
+	fetchResponseRelidNet( encsig, identity.site(), 
 			identity.host(), reqid_str );
-	if ( fetchRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_RESPONSE_RELID );
-		return;
-	}
-	
+
 	/* Load the private key for the user the request is for. */
-	Keys *user_priv = loadKey( mysql, user );
+	Keys *userPriv = loadKey( mysql, user );
 
 	Encrypt encrypt;
-	encrypt.load( id_pub, user_priv );
+	encrypt.load( idPub, userPriv );
 
 	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {

@@ -148,7 +148,6 @@ Keys *Identity::fetchPublicKey()
 	keys->rsa = rsa;
 
 	return keys;
-
 }
 
 const char *Identity::host()

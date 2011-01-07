@@ -209,7 +209,7 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
 void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid );
-long fetchResponseRelidNet( RelidEncSig &encsig, const char *site, 
+void fetchResponseRelidNet( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *reqid );
 long fetchFtokenNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
@@ -390,6 +390,18 @@ struct FetchRequestedRelidParser
 	: public Parser
 {
 	FetchRequestedRelidParser();
+	virtual void data( char *data, int len );
+
+	int cs;
+	bool OK;
+	Buffer buf;
+	String sym;
+};
+
+struct FetchResponseRelidParser
+	: public Parser
+{
+	FetchResponseRelidParser();
 	virtual void data( char *data, int len );
 
 	int cs;

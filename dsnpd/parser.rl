@@ -830,8 +830,8 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 
 FetchRequestedRelidParser::FetchRequestedRelidParser()
 {
-	%% write init;
 	OK = false;
+	%% write init;
 }
 
 void FetchRequestedRelidParser::data( char *data, int len )
@@ -873,7 +873,6 @@ void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 	encsig.sym = parser.sym.relinquish();
 }
 
-
 /*
  * fetchResponseRelidNet
  */
@@ -883,54 +882,49 @@ void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 	write data;
 }%%
 
-long fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
-		const char *host, const char *reqid )
+FetchResponseRelidParser::FetchResponseRelidParser()
 {
-	static char buf[8192];
-	long cs;
-	bool OK = false;
-	const char *p, *pe;
-	const char *mark;
-	String sym;
+	OK = false;
+	%% write init;
+}
 
-	TlsConnect tlsConnect;
-	tlsConnect.connect( host, site );
-
-	/* Send the request. */
-	tlsConnect.printf( "fetch_response_relid %s\r\n", reqid );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
+void FetchResponseRelidParser::data( char *data, int len )
+{
 	/* Parser for response. */
 	%%{
-		include common;
+		include common2;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
-	p = buf;
-	pe = buf + strlen(buf);
+	const char *p = data;
+	const char *pe = data + len;
 
-	%% write init;
 	%% write exec;
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( ! OK )
-		return ERR_SERVER_ERROR;
-	
-	encsig.sym = sym.relinquish();
+		throw ParseError();
+}
 
-	return 0;
+void fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
+		const char *host, const char *reqid )
+{
+	TlsConnect tlsConnect;
+	FetchResponseRelidParser parser;
+
+	tlsConnect.connect( host, site );
+
+	/* Send the request. */
+	tlsConnect.printf( "fetch_response_relid %s\r\n", reqid );
+
+	/* Parse the result. */
+	tlsConnect.readParse( parser );
+
+	/* Output. */
+	encsig.sym = parser.sym.relinquish();
 }
 
 /*

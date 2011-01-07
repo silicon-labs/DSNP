@@ -936,56 +936,50 @@ void fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
 	write data;
 }%%
 
-long fetchFtokenNet( RelidEncSig &encsig, const char *site,
-		const char *host, const char *flogin_reqid )
+FetchFtokenParser::FetchFtokenParser()
 {
-	static char buf[8192];
-	long cs;
-	bool OK = false;
-	const char *p, *pe;
-	const char *mark;
-	String sym;
+	OK = false;
+	%% write init;
+}
 
-	TlsConnect tlsConnect;
-	tlsConnect.connect( host, site );
-
-	/* Send the request. */
-	tlsConnect.printf( "fetch_ftoken %s\r\n", flogin_reqid );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
+void FetchFtokenParser::data( char *data, int len )
+{
 	/* Parser for response. */
 	%%{
-		include common;
+		include common2;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
-	p = buf;
-	pe = buf + strlen(buf);
+	const char *p = data;
+	const char *pe = data + len;
 
-	%% write init;
 	%% write exec;
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( ! OK )
-		return ERR_SERVER_ERROR;
-	
-	encsig.sym = sym.relinquish();
-
-	return 0;
+		throw ParseError();
 }
 
+void fetchFtokenNet( RelidEncSig &encsig, const char *site,
+		const char *host, const char *flogin_reqid )
+{
+	TlsConnect tlsConnect;
+	FetchResponseRelidParser parser;
+
+	tlsConnect.connect( host, site );
+
+	/* Send the request. */
+	tlsConnect.printf( "fetch_ftoken %s\r\n", flogin_reqid );
+
+	/* Parse the result. */
+	tlsConnect.readParse( parser );
+
+	/* Output. */
+	encsig.sym = parser.sym.relinquish();
+}
 
 /*
  * IdentityOrig::parse()

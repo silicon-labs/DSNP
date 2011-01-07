@@ -88,7 +88,7 @@ long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 	Encrypt encrypt( idPub, userPriv );
 	encrypt.signEncrypt( (u_char*)resultCommand(), resultCommand.length+1 );
 
-	BIO_printf( bioOut, "RESULT %ld\r\n", strlen(encrypt.sym) );
+	BIO_printf( bioOut, "RESULT %lu\r\n", strlen(encrypt.sym) );
 	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
 
 	return 0;

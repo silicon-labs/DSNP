@@ -65,7 +65,6 @@ char *userIdentityHash( MYSQL *mysql, const char *user )
 	return 0;
 }
 
-
 void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 {
 	/* Load user, identity and friend claim. */
@@ -142,21 +141,16 @@ void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 	FriendClaim friendClaim( mysql, user, identity );
 
 	/* Get the public key for the identity. */
-	Keys *id_pub = identity.fetchPublicKey();
+	Keys *idPub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	int fetchRes = fetchFtokenNet( encsig, identity.site(), 
-			identity.host(), flogin_reqid_str );
-	if ( fetchRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_FTOKEN );
-		return;
-	}
+	fetchFtokenNet( encsig, identity.site(), identity.host(), flogin_reqid_str );
 
 	/* Load the private key for the user the request is for. */
-	Keys *user_priv = loadKey( mysql, user.user() );
+	Keys *userPriv = loadKey( mysql, user.user() );
 
 	Encrypt encrypt;
-	encrypt.load( id_pub, user_priv );
+	encrypt.load( idPub, userPriv );
 
 	/* Decrypt the flogin_token. */
 	int verifyRes = encrypt.decryptVerify( encsig.sym );

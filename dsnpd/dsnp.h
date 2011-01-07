@@ -211,7 +211,7 @@ void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid );
 void fetchResponseRelidNet( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *reqid );
-long fetchFtokenNet( RelidEncSig &encsig, const char *site,
+void fetchFtokenNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *flogin_reqid );
 
 struct PutKey
@@ -402,6 +402,18 @@ struct FetchResponseRelidParser
 	: public Parser
 {
 	FetchResponseRelidParser();
+	virtual void data( char *data, int len );
+
+	int cs;
+	bool OK;
+	Buffer buf;
+	String sym;
+};
+
+struct FetchFtokenParser
+	: public Parser
+{
+	FetchFtokenParser();
 	virtual void data( char *data, int len );
 
 	int cs;

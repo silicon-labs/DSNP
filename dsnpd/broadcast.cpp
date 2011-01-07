@@ -468,37 +468,32 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	MYSQL_ROW row = idQuery.fetchRow();
 	long long seqNum = strtoll( row[0], 0, 10 );
 
-	Keys *user_priv = loadKey( mysql, toUser );
-	Keys *id_pub = fetchPublicKey( mysql, authorId );
+	Keys *userPriv = loadKey( mysql, toUser );
+	Keys *idPub = fetchPublicKey( mysql, authorId );
 
 	Encrypt encrypt;
-	encrypt.load( id_pub, user_priv );
+	encrypt.load( idPub, userPriv );
 	encrypt.signEncrypt( (u_char*)msg, mLen );
 
 	String remotePublishCmd(
 		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
 		token, seqNum, mLen, msg );
 
-	char *result_message;
-	int res = sendMessageNow( mysql, false, toUser, authorId, friendClaim.putRelid(),
-			remotePublishCmd.data, &result_message );
-	if ( res < 0 ) {
-		message("encrypt_remote_broadcast message failed\n");
-		BIO_printf( bioOut, "ERROR\r\n" );
-		return -1;
-	}
+	char *resultMessage;
+	sendMessageNow( mysql, false, toUser, authorId, friendClaim.putRelid(),
+			remotePublishCmd.data, &resultMessage );
 
-	//returned_reqid_parser( mysql, to_user, result_message );
+	//returned_reqid_parser( mysql, to_user, resultMessage );
 	String hash = makeIduriHash( identity.iduri );
 
 	DbQuery( mysql,
 		"INSERT INTO pending_remote_broadcast "
 		"( user_id, identity_id, hash, reqid, seq_num ) "
 		"VALUES ( %L, %L, %e, %e, %L )",
-		user.id(), identity.id(), hash(), result_message, seqNum );
+		user.id(), identity.id(), hash(), resultMessage, seqNum );
 
-	message("send_message_now returned: %s\n", result_message );
-	BIO_printf( bioOut, "OK %s\r\n", result_message );
+	message("send_message_now returned: %s\n", resultMessage );
+	BIO_printf( bioOut, "OK %s\r\n", resultMessage );
 	return 0;
 }
 

@@ -224,7 +224,7 @@ struct PutKey
 };
 
 void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
-long sendMessageNet( MYSQL *mysql, bool prefriend, 
+void sendMessageNet( MYSQL *mysql, bool prefriend, 
 		const char *from_user, const char *to_identity, const char *relid,
 		const char *message, long mLen, char **result_message );
 long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
@@ -422,6 +422,28 @@ struct FetchFtokenParser
 	String sym;
 };
 
+struct TlsConnect;
+
+struct SendMessageParser
+	: public Parser
+{
+	SendMessageParser( char **resultMessage, TlsConnect *tlsConnect, 
+		MYSQL *mysql, const char *from_user, const char *to_identity );
+
+	virtual void data( char *data, int len );
+
+	char **resultMessage;
+	TlsConnect *tlsConnect;
+	MYSQL *mysql;
+	const char *from_user;
+	const char *to_identity;
+	int cs;
+	bool OK;
+	Buffer buf;
+	String length_str, token;
+	long length;
+};
+
 struct TlsConnect
 {
 	void connect( const char *host, const char *site );
@@ -561,7 +583,7 @@ struct NotifyAcceptResultParser
 Keys *fetchPublicKey( MYSQL *mysql, const char *iduri );
 Keys *loadKey( MYSQL *mysql, User &user );
 Keys *loadKey( MYSQL *mysql, const char *user );
-long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
+void sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg );
 int friendProofMessage( MYSQL *mysql, const char *user, const char *friendId,

@@ -146,14 +146,14 @@ bool gblKeySubmitted = false;
 	sym1 = base64             >{mark=p;} %{sym1.set(mark, p);};
 	sym2 = base64             >{mark=p;} %{sym2.set(mark, p);};
 	relid = base64            >{mark=p;} %{relid.set(mark, p);};
-	token = base64            >{mark=p;} %{token.set(mark, p);};
 	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
 	requested_relid = base64  >{mark=p;} %{requestedRelid.set(mark, p);};
 	returned_relid = base64   >{mark=p;} %{returnedRelid.set(mark, p);};
 	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
 	dist_name = base64        >{mark=p;} %{distName.set(mark, p);};
 
-	sym = base64    >clear $buf %{ sym.set(buf);};
+	token = base64  >clear $buf %{ token.set(buf); };
+	sym = base64    >clear $buf %{ sym.set(buf); };
 	n = base64      >clear $buf %{ n.set(buf); };
 	e = base64      >clear $buf %{ e.set(buf); };
 
@@ -188,9 +188,9 @@ bool gblKeySubmitted = false;
 		};
 
 	length = [0-9]+           
-		>{mark=p;}
+		>clear $buf
 		%{
-			length_str.set(mark, p);
+			length_str.set( buf );
 			length = strtol( length_str, 0, 10 );
 		};
 
@@ -1159,69 +1159,46 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	write data;
 }%%
 
-long sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
-		const char *to_identity, const char *relid, const char *message,
-		long mLen, char **result_message )
+SendMessageParser::SendMessageParser( char **resultMessage, TlsConnect *tlsConnect, 
+		MYSQL *mysql, const char *from_user, const char *to_identity )
+:
+	resultMessage(resultMessage),
+	tlsConnect(tlsConnect),
+	mysql(mysql),
+	from_user(from_user),
+	to_identity(to_identity)
 {
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	long pres;
-	const char *mark;
-	String length_str, token;
-	long length;
+	OK = false;
+	%% write init;
+}
 
-	/* Initialize the result. */
-	if ( result_message != 0 ) 
-		*result_message = 0;
-
-	/* Need to parse the identity. */
-	IdentityOrig toIdent( to_identity );
-	pres = toIdent.parse();
-
-	if ( pres < 0 )
-		return pres;
-
-	TlsConnect tlsConnect;
-	tlsConnect.connect( toIdent.host, toIdent.site );
-
-	/* Send the request. */
-	tlsConnect.printf("%smessage %s %ld\r\n", prefriend ? "prefriend_" : "", relid, mLen );
-	BIO_write( tlsConnect.sbio, message, mLen );
-	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	(void)BIO_flush( tlsConnect.sbio );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
+void SendMessageParser::data( char *data, int len )
+{
 	/* Parser for response. */
 	%%{
-		include common;
+		include common2;
 
 		action result {
 			if ( length > MAX_MSG_LEN )
 				fgoto *parser_error;
 
-			char *user_message = new char[length+1];
-			BIO_read( tlsConnect.sbio, user_message, length );
-			user_message[length] = 0;
+			char *userMessage = new char[length+1];
+			BIO_read( tlsConnect->sbio, userMessage, length );
+			userMessage[length] = 0;
 
-			if ( result_message != 0 ) 
-				*result_message = decrypt_result( mysql, from_user, to_identity, user_message );
+			if ( resultMessage != 0 ) {
+				*resultMessage = decrypt_result( mysql, from_user,
+						to_identity, userMessage );
+			}
 
 			OK = true;
 		}
 
 		action token {
-			char *user_message = new char[token.length+1];
-			memcpy( user_message, token.data, token.length );
-			user_message[token.length] = 0;
-			*result_message = user_message;
+			char *userMessage = new char[token.length+1];
+			memcpy( userMessage, token.data, token.length );
+			userMessage[token.length] = 0;
+			*resultMessage = userMessage;
 			OK = true;
 		}
 
@@ -1232,18 +1209,41 @@ long sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
 			'ERROR' EOL;
 	}%%
 
-	p = buf;
-	pe = buf + strlen(buf);
+	const char *p = data;
+	const char *pe = data + len;
 
-	%% write init;
 	%% write exec;
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( !OK )
-		return ERR_SERVER_ERROR;
-	
-	return 0;
+		throw ParseError();
+}
+
+void sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
+		const char *to_identity, const char *relid, const char *message,
+		long mLen, char **resultMessage )
+{
+	/* Initialize the result. */
+	if ( resultMessage != 0 ) 
+		*resultMessage = 0;
+
+	/* Need to parse the identity. */
+	IdentityOrig toIdent( to_identity );
+	toIdent.parse();
+
+	TlsConnect tlsConnect;
+	SendMessageParser parser( resultMessage, &tlsConnect, mysql,
+			from_user, to_identity );
+
+	tlsConnect.connect( toIdent.host, toIdent.site );
+
+	/* Send the request. */
+	tlsConnect.printf("%smessage %s %ld\r\n",
+			prefriend ? "prefriend_" : "", relid, mLen );
+
+	BIO_write( tlsConnect.sbio, message, mLen );
+	BIO_write( tlsConnect.sbio, "\r\n", 2 );
+	(void)BIO_flush( tlsConnect.sbio );
+
+	tlsConnect.readParse( parser );
 }

@@ -343,7 +343,7 @@ Keys *loadKey( MYSQL *mysql, User &user )
 	return keys;
 }
 
-long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
+void sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
 		const char *msg, char **result_msg )
 {
@@ -360,7 +360,7 @@ long sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg) );
 
 	message( "send_message_now sending to: %s\n", to_identity );
-	return sendMessageNet( mysql, prefriend, from_user, to_identity,
+	sendMessageNet( mysql, prefriend, from_user, to_identity,
 			put_relid, encrypt.sym, strlen(encrypt.sym), result_msg );
 }
 

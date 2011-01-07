@@ -219,12 +219,9 @@ void acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
 	String buf( "notify_accept %s %s\r\n", requestedRelid, returnedRelid );
 
 	char *resultMessage = 0;
-	int nfa = sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, buf(), &resultMessage );
 
-	if ( nfa < 0 ) {
-		BIO_printf( bioOut, "ERROR accept failed with %d\r\n", nfa );
-		return;
-	}
+	/* FIXME: try, catch. */
+	sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, buf(), &resultMessage );
 
 	NotifyAcceptResultParser narp;
 	narp.parse( resultMessage, strlen(resultMessage) );

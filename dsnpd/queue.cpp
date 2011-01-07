@@ -215,23 +215,22 @@ bool sendMessage()
 	if ( affected == 1 ) {
 		message("delivering message %lld from %s to %s\n", id, user(), iduri() );
 
-		long send_res = sendMessageNet( mysql, false, user(),
+		/* FIXME: need a catch here. */
+		sendMessageNet( mysql, false, user(), 
 				iduri(), relid, msg, strlen(msg), 0 );
 
-		if ( send_res < 0 ) {
-			error( "trouble sending message: %ld\n", send_res );
+		//error( "trouble sending message: %ld\n", send_res );
 
-			MYSQL *mysql = dbConnect();
+		MYSQL *mysql = dbConnect();
 
-			/* Queue the message. */
-			DbQuery( mysql,
-					"INSERT INTO message_queue "
-					"( user_id, identity_id, relid, message, send_after ) "
-					"VALUES ( %L, %L, %e, %e, DATE_ADD( NOW(), INTERVAL 10 MINUTE ) ) ",
-					userId, identityId, relid, msg );
+		/* Queue the message. */
+		DbQuery( mysql,
+				"INSERT INTO message_queue "
+				"( user_id, identity_id, relid, message, send_after ) "
+				"VALUES ( %L, %L, %e, %e, DATE_ADD( NOW(), INTERVAL 10 MINUTE ) ) ",
+				userId, identityId, relid, msg );
 
-			mysql_close( mysql );
-		}
+		mysql_close( mysql );
 	}
 
 	return true;

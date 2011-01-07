@@ -117,6 +117,43 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
 
 \section{Introduction}
 
+% Fit this in somehow.
+%
+% DSNP uses a similar pattern. A submits its URI to B. B encrypt-signs a
+% challenge to A. The browser visits A to prove it initiated the
+% exchange. A encrypt-signs a response to B. Then friendship exists.
+%
+% There are two other parts of the DSNP protocol that have this flavour:
+% cross-site login and remote publishing. That latter I don't have
+% described anywhere, unfortunately. Just in code.
+%
+% Keys are indeed cheap. I was thinking of using two keys actually. One
+% would be stored in plaintext on the server, the other encrypted using
+% the user's password. The encrypted key would be used to comminicate
+% any major changes concerning the user's identity. It would be a higher
+% privilege key for certain operations. I haven't hashed it out yet
+% though.
+%
+% In DSNP I introduced a symmetric broadcast key. It is distributed to
+% each friend ahead of time using each friend's public keys. It is
+% versioned as well. It must change when unfriending happens.
+% 
+% Status updates (and other activity) can then be encrypted using using
+% the broadcast key (and signed). This can be done once, then the same
+% message delivered to all friends. I took this approach because I
+% wanted to reduce the computation required for a single status
+% update/post/etc. Some quick tests showed that encryption to 2000
+% friends (extreme) when 2000 public keys were used was very costly.
+% Multiply this by however many users are on a mulituser system and I
+% got worried.
+
+% Keys are indeed cheap. I was thinking of using two keys actually. One
+% would be stored in plaintext on the server, the other encrypted using
+% the user's password. The encrypted key would be used to comminicate
+% any major changes concerning the user's identity. It would be a higher
+% privilege key for certain operations. I haven't hashed it out yet
+% though.
+
 DSNP is a protocol for distributed social networking. The goal is to allow you
 to host your profile with a provider that you choose (possibly yourself), give
 you the freedom to maintain control over your personal information, and

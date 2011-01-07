@@ -207,7 +207,7 @@ void storeBroadcastKey( MYSQL *mysql, long long friendClaimId, const char *user,
 
 void fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user );
-long fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
+void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site,
 		const char *host, const char *fr_reqid );
 long fetchResponseRelidNet( RelidEncSig &encsig, const char *site, 
 		const char *host, const char *reqid );
@@ -374,18 +374,28 @@ struct Parser
 	virtual void data( char *data, int len ) = 0;
 };
 
-struct PublicKeyResult
+struct FetchPublicKeyParser
 	: public Parser
 {
-	PublicKeyResult();
+	FetchPublicKeyParser();
+	virtual void data( char *data, int len );
 
 	int cs;
 	Buffer buf;
-
 	bool OK;
 	String n, e;
+};
 
+struct FetchRequestedRelidParser
+	: public Parser
+{
+	FetchRequestedRelidParser();
 	virtual void data( char *data, int len );
+
+	int cs;
+	bool OK;
+	Buffer buf;
+	String sym;
 };
 
 struct TlsConnect

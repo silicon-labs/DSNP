@@ -174,12 +174,8 @@ void relidResponse( MYSQL *mysql, const char *_user,
 	Keys *idPub = identity.fetchPublicKey();
 
 	RelidEncSig encsig;
-	int fetchRes = fetchRequestedRelidNet( encsig, identity.site(),
+	fetchRequestedRelidNet( encsig, identity.site(),
 			identity.host(), reqid );
-	if ( fetchRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_FETCH_REQUESTED_RELID );
-		return;
-	}
 
 	/* Load the private key for the user the request is for. */
 	Keys *userPriv = loadKey( mysql, user );

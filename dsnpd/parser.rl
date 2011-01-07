@@ -124,8 +124,114 @@ bool gblKeySubmitted = false;
 		message_buffer.data[length] = 0;
 	}
 
-	action buf { buf.append( fc ); }
+	M_EOL = 
+		EOL @read_message 
+		EOL @term_data;
+
+}%%
+
+%%{
+	machine common2;
+
 	action clear { buf.clear(); }
+	action buf { buf.append( fc ); }
+
+	base64 = [A-Za-z0-9\-_]+;
+
+	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
+	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
+	reqid = base64            >{mark=p;} %{reqid.set(mark, p);};
+	hash = base64             >{mark=p;} %{hash.set(mark, p);};
+	key = base64              >{mark=p;} %{key.set(mark, p);};
+	sym1 = base64             >{mark=p;} %{sym1.set(mark, p);};
+	sym2 = base64             >{mark=p;} %{sym2.set(mark, p);};
+	relid = base64            >{mark=p;} %{relid.set(mark, p);};
+	token = base64            >{mark=p;} %{token.set(mark, p);};
+	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
+	requested_relid = base64  >{mark=p;} %{requestedRelid.set(mark, p);};
+	returned_relid = base64   >{mark=p;} %{returnedRelid.set(mark, p);};
+	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
+	dist_name = base64        >{mark=p;} %{distName.set(mark, p);};
+
+	sym = base64    >clear $buf %{ sym.set(buf);};
+	n = base64      >clear $buf %{ n.set(buf); };
+	e = base64      >clear $buf %{ e.set(buf); };
+
+
+	date = ( 
+		digit{4} '-' digit{2} '-' digit{2} ' ' 
+		digit{2} ':' digit{2} ':' digit{2} 
+	)
+	>{mark=p;} %{date.set(mark, p);};
+
+	path_part = (graph-'/')+;
+
+	identity_pat = 
+		( 'https://' path_part '/' ( path_part '/' )* );
+
+	identity = identity_pat >{mark=p;} %{identity.set(mark, p);};
+	identity1 = identity_pat >{mark=p;} %{identity1.set(mark, p);};
+	identity2 = identity_pat >{mark=p;} %{identity2.set(mark, p);};
+
+	generation = [0-9]+       
+		>{mark=p;} 
+		%{
+			gen_str.set(mark, p);
+			generation = strtoll( gen_str, 0, 10 );
+		};
+
+	number = [0-9]+           
+		>{mark=p;}
+		%{
+			number_str.set(mark, p);
+			number = strtol( number_str, 0, 10 );
+		};
+
+	length = [0-9]+           
+		>{mark=p;}
+		%{
+			length_str.set(mark, p);
+			length = strtol( length_str, 0, 10 );
+		};
+
+	seq_num = [0-9]+          
+		>{mark=p;}
+		%{
+			seq_str.set(mark, p);
+			seq_num = strtoll( seq_str, 0, 10 );
+		};
+
+	EOL = '\r'? '\n';
+
+	action skip_message {
+		if ( length > MAX_MSG_LEN ) {
+			error("message too large\n");
+			fgoto *parser_error;
+		}
+
+		/* Rest of the input is the msssage. */
+		embeddedMsg = p + 1;
+		p += length;
+	}
+
+	# Reads in a message block plus the terminating EOL.
+	action read_message {
+		/* Validate the length. */
+		if ( length > MAX_MSG_LEN )
+			fgoto *parser_error;
+
+		/* Read in the message and the mandadory \r\r. */
+		BIO_read( bioIn, message_buffer.data, length+2 );
+
+		/* Parse just the \r\r. */
+		p = message_buffer.data + length;
+		pe = message_buffer.data + length + 2;
+	}
+
+	action term_data {
+		message_buffer.data[length] = 0;
+	}
+
 
 	M_EOL = 
 		EOL @read_message 
@@ -663,26 +769,22 @@ long EncryptedBroadcastParser::parse( const char *msg )
  * fetchPublicKeyNet
  */
 
-
 %%{
 	machine public_key;
 	write data;
 }%%
 
-PublicKeyResult::PublicKeyResult()
+FetchPublicKeyParser::FetchPublicKeyParser()
 {
 	OK = false;
 	%% write init;
 }
 
-void PublicKeyResult::data( char *data, int len )
+void FetchPublicKeyParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common;
-
-		n = base64 >clear $buf %{ n.set(buf); };
-		e = base64 >clear $buf %{ e.set(buf); };
+		include common2;
 
 		main := 
 			'OK ' n ' ' e EOL @{ OK = true; } |
@@ -703,7 +805,7 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 		const char *host, const char *user )
 {
 	TlsConnect tlsConnect;
-	PublicKeyResult parser;
+	FetchPublicKeyParser parser;
 
 	/* Connect and send the public key request. */
 	tlsConnect.connect( host, site );
@@ -717,7 +819,6 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 	pub.e = parser.e.relinquish();
 }
 
-
 /*
  * fetchRequestedRelidNet
  */
@@ -727,56 +828,49 @@ void fetchPublicKeyNet( PublicKey &pub, const char *site,
 	write data;
 }%%
 
-
-long fetchRequestedRelidNet( RelidEncSig &encsig, const char *site, 
-		const char *host, const char *fr_reqid )
+FetchRequestedRelidParser::FetchRequestedRelidParser()
 {
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	const char *mark;
-	String sym;
+	%% write init;
+	OK = false;
+}
 
-	TlsConnect tlsConnect;
-	tlsConnect.connect( host, site );
-
-	/* Send the request. */
-	tlsConnect.printf( "fetch_requested_relid %s\r\n", fr_reqid );
-
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
-	message("encrypted return to fetch_requested_relid is %s", buf );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
+void FetchRequestedRelidParser::data( char *data, int len )
+{
 	/* Parser for response. */
 	%%{
-		include common;
+		include common2;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
 			'ERROR' EOL;
 	}%%
 
-	p = buf;
-	pe = buf + strlen(buf);
+	const char *p = data;
+	const char *pe = data + len;
 
-	%% write init;
 	%% write exec;
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( !OK )
-		return ERR_SERVER_ERROR;
-	
-	encsig.sym = sym.relinquish();
+		throw ParseError();
+}
 
-	return 0;
+void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site, 
+		const char *host, const char *fr_reqid )
+{
+	TlsConnect tlsConnect;
+	FetchRequestedRelidParser parser;
+
+	tlsConnect.connect( host, site );
+
+	/* Send the request. */
+	tlsConnect.printf( "fetch_requested_relid %s\r\n", fr_reqid );
+
+	/* Parse the result. */
+	tlsConnect.readParse( parser );
+
+	/* Output. */
+	encsig.sym = parser.sym.relinquish();
 }
 
 

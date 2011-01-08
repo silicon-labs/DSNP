@@ -581,22 +581,6 @@ struct PrefriendParser
 	int parse( const char *msg, long mLen );
 };
 
-struct NotifyAcceptResultParser
-{
-	enum Type
-	{
-		Unknown = 1,
-		NotifyAcceptResult
-	};
-
-	Type type;
-	String token;
-	long long generation;
-	String key, sym;
-
-	int parse( const char *msg, long mLen );
-};
-
 Keys *fetchPublicKey( MYSQL *mysql, const char *iduri );
 Keys *loadKey( MYSQL *mysql, User &user );
 Keys *loadKey( MYSQL *mysql, const char *user );

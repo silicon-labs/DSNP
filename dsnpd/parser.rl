@@ -41,68 +41,71 @@ bool gblKeySubmitted = false;
 %%{
 	machine common;
 
-	action clear { buf2.clear(); }
-	action buf { buf2.append( fc ); }
+	action clear { buf.clear(); }
+	action buf { buf.append( fc ); }
 
 	base64 = [A-Za-z0-9\-_]+;
+	user = [a-zA-Z0-9_.]+       >clear $buf %{ user.set(buf); };
+	pass = graph+               >clear $buf %{ pass.set(buf); };
+	reqid = base64              >clear $buf %{ reqid.set(buf); };
+	hash = base64               >clear $buf %{ hash.set(buf); };
+	key = base64                >clear $buf %{ key.set(buf); };
+	sym = base64                >clear $buf %{ sym.set(buf); };
+	sym1 = base64               >clear $buf %{ sym1.set(buf); };
+	sym2 = base64               >clear $buf %{ sym2.set(buf); };
+	relid = base64              >clear $buf %{ relid.set(buf); };
+	token = base64              >clear $buf %{ token.set(buf); };
+	id_salt = base64            >clear $buf %{ id_salt.set(buf); };
+	requested_relid = base64    >clear $buf %{ requestedRelid.set(buf); };
+	returned_relid = base64     >clear $buf %{ returnedRelid.set(buf); };
+	network = [a-zA-Z0-9_.\-]+  >clear $buf %{ network.set(buf); };
+	dist_name = base64          >clear $buf %{ distName.set(buf); };
 
-	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
-	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
-	reqid = base64            >{mark=p;} %{reqid.set(mark, p);};
-	hash = base64             >{mark=p;} %{hash.set(mark, p);};
-	key = base64              >{mark=p;} %{key.set(mark, p);};
-	sym = base64              >{mark=p;} %{sym.set(mark, p);};
-	sym1 = base64             >{mark=p;} %{sym1.set(mark, p);};
-	sym2 = base64             >{mark=p;} %{sym2.set(mark, p);};
-	relid = base64            >{mark=p;} %{relid.set(mark, p);};
-	token = base64            >{mark=p;} %{token.set(mark, p);};
-	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
-	requested_relid = base64  >{mark=p;} %{requestedRelid.set(mark, p);};
-	returned_relid = base64   >{mark=p;} %{returnedRelid.set(mark, p);};
-	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
-	dist_name = base64        >{mark=p;} %{distName.set(mark, p);};
+	n = base64                  >clear $buf %{ n.set(buf); };
+	e = base64                  >clear $buf %{ e.set(buf); };
+
 
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
 		digit{2} ':' digit{2} ':' digit{2} 
 	)
-	>{mark=p;} %{date.set(mark, p);};
+	>clear $buf %{date.set(buf);};
 
 	path_part = (graph-'/')+;
 
 	identity_pat = 
 		( 'https://' path_part '/' ( path_part '/' )* );
 
-	identity = identity_pat >{mark=p;} %{identity.set(mark, p);};
-	identity1 = identity_pat >{mark=p;} %{identity1.set(mark, p);};
-	identity2 = identity_pat >{mark=p;} %{identity2.set(mark, p);};
+	identity  = identity_pat >clear $buf %{identity.set(buf);};
+	identity1 = identity_pat >clear $buf %{identity1.set(buf);};
+	identity2 = identity_pat >clear $buf %{identity2.set(buf);};
 
 	generation = [0-9]+       
-		>{mark=p;} 
+		>clear $buf
 		%{
-			gen_str.set(mark, p);
+			gen_str.set(buf);
 			generation = strtoll( gen_str, 0, 10 );
 		};
 
 	number = [0-9]+           
-		>{mark=p;}
+		>clear $buf
 		%{
-			number_str.set(mark, p);
+			number_str.set(buf);
 			number = strtol( number_str, 0, 10 );
 		};
 
 	length = [0-9]+           
-		>{mark=p;}
+		>clear $buf
 		%{
-			length_str.set(mark, p);
+			length_str.set(buf);
 			length = counter = strtol( length_str, 0, 10 );
 			message("length: %ld\n", length );
 		};
 
 	seq_num = [0-9]+          
-		>{mark=p;}
+		>clear $buf
 		%{
-			seq_str.set(mark, p);
+			seq_str.set(buf);
 			seq_num = strtoll( seq_str, 0, 10 );
 		};
 
@@ -124,119 +127,11 @@ bool gblKeySubmitted = false;
 	nbytes = ( any when dec )* %when !dec;
 
 	action collect_message {
-		messageBody.set( buf2 );
+		messageBody.set( buf );
 	}
 	
-	M_EOL2 =
+	M_EOL =
 		EOL nbytes >clear $buf %collect_message EOL;
-
-}%%
-
-%%{
-	machine common2;
-
-	action clear { buf.clear(); }
-	action buf { buf.append( fc ); }
-
-	base64 = [A-Za-z0-9\-_]+;
-
-	user = [a-zA-Z0-9_.]+     >{mark=p;} %{user.set(mark, p);};
-	pass = graph+             >{mark=p;} %{pass.set(mark, p);};
-	reqid = base64            >{mark=p;} %{reqid.set(mark, p);};
-	hash = base64             >{mark=p;} %{hash.set(mark, p);};
-	key = base64              >{mark=p;} %{key.set(mark, p);};
-	sym1 = base64             >{mark=p;} %{sym1.set(mark, p);};
-	sym2 = base64             >{mark=p;} %{sym2.set(mark, p);};
-	relid = base64            >{mark=p;} %{relid.set(mark, p);};
-	id_salt = base64          >{mark=p;} %{id_salt.set(mark, p);};
-	requested_relid = base64  >{mark=p;} %{requestedRelid.set(mark, p);};
-	returned_relid = base64   >{mark=p;} %{returnedRelid.set(mark, p);};
-	network = [a-zA-Z0-9_.\-]+  >{mark=p;} %{network.set(mark, p);};
-	dist_name = base64        >{mark=p;} %{distName.set(mark, p);};
-
-	token = base64  >clear $buf %{ token.set(buf); };
-	sym = base64    >clear $buf %{ sym.set(buf); };
-	n = base64      >clear $buf %{ n.set(buf); };
-	e = base64      >clear $buf %{ e.set(buf); };
-
-
-	date = ( 
-		digit{4} '-' digit{2} '-' digit{2} ' ' 
-		digit{2} ':' digit{2} ':' digit{2} 
-	)
-	>{mark=p;} %{date.set(mark, p);};
-
-	path_part = (graph-'/')+;
-
-	identity_pat = 
-		( 'https://' path_part '/' ( path_part '/' )* );
-
-	identity = identity_pat >{mark=p;} %{identity.set(mark, p);};
-	identity1 = identity_pat >{mark=p;} %{identity1.set(mark, p);};
-	identity2 = identity_pat >{mark=p;} %{identity2.set(mark, p);};
-
-	generation = [0-9]+       
-		>{mark=p;} 
-		%{
-			gen_str.set(mark, p);
-			generation = strtoll( gen_str, 0, 10 );
-		};
-
-	number = [0-9]+           
-		>{mark=p;}
-		%{
-			number_str.set(mark, p);
-			number = strtol( number_str, 0, 10 );
-		};
-
-	length = [0-9]+           
-		>clear $buf
-		%{
-			length_str.set( buf );
-			length = counter = strtol( length_str, 0, 10 );
-		};
-
-	seq_num = [0-9]+          
-		>{mark=p;}
-		%{
-			seq_str.set(mark, p);
-			seq_num = strtoll( seq_str, 0, 10 );
-		};
-
-	EOL = '\r'? '\n';
-
-	action skip_message {
-		if ( length > MAX_MSG_LEN ) {
-			error("message too large\n");
-			fgoto *parser_error;
-		}
-
-		/* Rest of the input is the msssage. */
-		embeddedMsg = p + 1;
-		p += length;
-	}
-
-#	# Reads in a message block plus the terminating EOL.
-#	action read_message {
-#		/* Validate the length. */
-#		if ( length > MAX_MSG_LEN )
-#			fgoto *parser_error;
-#
-#		/* Read in the message and the mandadory \r\r. */
-#		BIO_read( bioIn, message_buffer.data, length+2 );
-#
-#		/* Parse just the \r\r. */
-#		p = message_buffer.data + length;
-#		pe = message_buffer.data + length + 2;
-#	}
-#
-#	action term_data {
-#		message_buffer.data[length] = 0;
-#	}
-#
-#	M_EOL = 
-#		EOL @read_message 
-#		EOL @term_data;
 }%%
 
 %%{
@@ -335,7 +230,7 @@ bool gblKeySubmitted = false;
 			} |
 
 		'prefriend_message'i ' ' relid ' ' length 
-			M_EOL2 @check_ssl @{
+			M_EOL @check_ssl @{
 				prefriendMessage( mysql, relid, messageBody.data );
 			} |
 
@@ -366,7 +261,7 @@ bool gblKeySubmitted = false;
 		# Broadcasting
 		#
 		'submit_broadcast'i ' ' user ' ' length 
-			M_EOL2 @check_key @{
+			M_EOL @check_key @{
 				message( "submit_broadcast %ld\n", length );
 				message( "%.*s", (int)length, messageBody() );
 				submitBroadcast( mysql, user, messageBody.data, length );
@@ -376,7 +271,7 @@ bool gblKeySubmitted = false;
 		# Direct messages to friends
 		#
 		'submit_message'i ' ' user ' ' identity ' ' length
-			M_EOL2 @check_key @{
+			M_EOL @check_key @{
 				submitMessage( mysql, user, identity, messageBody.data, length );
 			} |
 
@@ -384,7 +279,7 @@ bool gblKeySubmitted = false;
 		# Remote broadcasting
 		#
 		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
-			M_EOL2 @check_key @{
+			M_EOL @check_key @{
 				remoteBroadcastRequest( mysql, user, identity, hash, 
 						token, messageBody.data, length );
 			} |
@@ -403,7 +298,7 @@ bool gblKeySubmitted = false;
 		# Message sending.
 		#
 		'message'i ' ' relid ' ' length 
-			M_EOL2 @check_ssl @{
+			M_EOL @check_ssl @{
 				receiveMessage( mysql, relid, messageBody.data );
 			} |
 
@@ -414,7 +309,7 @@ bool gblKeySubmitted = false;
 			} |
 
 		'broadcast'i ' ' network ' ' generation ' ' length
-			M_EOL2 @check_ssl @{
+			M_EOL @check_ssl @{
 				message( "cmd: broadcast %s %lld %ld\n", network(), generation, length );
 				message( "   : %ld\n", messageBody.length );
 				receiveBroadcast( mysql, recipients, network, generation, messageBody.data );
@@ -432,7 +327,6 @@ const long linelen = 4096;
 int serverParseLoop()
 {
 	long cs;
-	const char *mark;
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
@@ -441,7 +335,7 @@ int serverParseLoop()
 	long long generation;
 	int retVal = 0;
 	RecipientList recipients;
-	Buffer buf2;
+	Buffer buf;
 	String messageBody;
 
 	MYSQL *mysql = 0;
@@ -457,7 +351,7 @@ int serverParseLoop()
 	fcntl( fd, F_SETFL, flags | O_NONBLOCK );
 
 	while ( true ) {
-		static char buf[linelen];
+		static char input[linelen];
 		fd_set set;
 
 	retry:
@@ -466,7 +360,7 @@ int serverParseLoop()
 		select( fd+1, &set, 0, 0, 0 );
 
 		while ( true ) {
-			nbytes = BIO_read( bioIn, buf, linelen );
+			nbytes = BIO_read( bioIn, input, linelen );
 
 			/* break when client closes the connection. */
 			if ( nbytes <= 0 ) {
@@ -480,8 +374,8 @@ int serverParseLoop()
 			message( "BIO_read returned %d bytes, parsing\n", nbytes );
 			//message( "command: %.*s", (int)lineLen, buf );
 
-			const char *p = buf;
-			const char *pe = buf + nbytes;
+			const char *p = input;
+			const char *pe = input + nbytes;
 			%% write exec;
 
 			(void)BIO_flush( bioOut );
@@ -502,42 +396,6 @@ done:
 		mysql_close( 0 );
 
 	return retVal;
-}
-
-/*
- * notify_accept_result_parser
- */
-
-%%{
-	machine notify_accept_result_parser;
-
-	include common;
-
-	main :=
-		'notify_accept_result'i  EOL @{
-			type = NotifyAcceptResult;
-		};
-}%%
-
-%% write data;
-
-int NotifyAcceptResultParser::parse( const char *msg, long mLen )
-{
-	message("notify accept result message: %.*s", (int)mLen, msg );
-
-	long cs;
-	type = Unknown;
-	%% write init;
-
-	const char *p = msg;
-	const char *pe = msg + strlen( msg );
-
-	%% write exec;
-
-	if ( cs < %%{ write first_final; }%% )
-		throw ParseError();
-
-	return 0;
 }
 
 
@@ -568,7 +426,7 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	message("prefriend message: %.*s", (int)mLen, msg );
 
 	long cs;
-	const char *mark;
+	Buffer buf;
 
 	type = Unknown;
 	%% write init;
@@ -624,7 +482,7 @@ int MessageParser::parse( const char *msg, long mLen )
 	message("friend message: %.*s", (int)mLen, msg );
 
 	long cs;
-	const char *mark;
+	Buffer buf;
 	String gen_str, seq_str, length_str;
 
 	%% write init;
@@ -672,7 +530,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 	message("broadcast message: %.*s", (int)mLen, msg );
 
 	long cs;
-	const char *mark;
+	Buffer buf;
 	String length_str;
 	String seq_str, gen_str;
 
@@ -720,7 +578,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 int RemoteBroadcastParser::parse( const char *msg, long mLen )
 {
 	long cs;
-	const char *mark;
+	Buffer buf;
 	String length_str, seq_str;
 
 	type = Unknown;
@@ -760,7 +618,7 @@ int RemoteBroadcastParser::parse( const char *msg, long mLen )
 long EncryptedBroadcastParser::parse( const char *msg )
 {
 	long cs;
-	const char *mark;
+	Buffer buf;
 	String gen_str;
 
 	type = Unknown;
@@ -800,7 +658,7 @@ void FetchPublicKeyParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		main := 
 			'OK ' n ' ' e EOL @{ OK = true; } |
@@ -854,7 +712,7 @@ void FetchRequestedRelidParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
@@ -908,7 +766,7 @@ void FetchResponseRelidParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
@@ -962,7 +820,7 @@ void FetchFtokenParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		main := 
 			'OK ' sym EOL @{ OK = true; } |
@@ -1111,7 +969,7 @@ void SendBroadcastRecipientParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		main := 
 			'OK' EOL @{ OK = true; } |
@@ -1143,7 +1001,7 @@ void SendBroadcastParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		main := 
 			'OK' EOL @{ OK = true; } |
@@ -1211,7 +1069,7 @@ void SendMessageParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
-		include common2;
+		include common;
 
 		action token {
 			OK = true;

@@ -14,16 +14,25 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "dsnp.h"
+#include "string.h"
+#include "error.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <openssl/bio.h>
-#include "dsnp.h"
-#include "string.h"
-#include "error.h"
+
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define MAX_MSG_LEN 16384
+
+#include <unistd.h>
+#include <fcntl.h>
+
 
 bool gblKeySubmitted = false;
 
@@ -31,6 +40,9 @@ bool gblKeySubmitted = false;
 
 %%{
 	machine common;
+
+	action clear { buf2.clear(); }
+	action buf { buf2.append( fc ); }
 
 	base64 = [A-Za-z0-9\-_]+;
 
@@ -83,7 +95,8 @@ bool gblKeySubmitted = false;
 		>{mark=p;}
 		%{
 			length_str.set(mark, p);
-			length = strtol( length_str, 0, 10 );
+			length = counter = strtol( length_str, 0, 10 );
+			message("length: %ld\n", length );
 		};
 
 	seq_num = [0-9]+          
@@ -106,27 +119,16 @@ bool gblKeySubmitted = false;
 		p += length;
 	}
 
-	# Reads in a message block plus the terminating EOL.
-	action read_message {
-		/* Validate the length. */
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
+	action dec { counter-- }
 
-		/* Read in the message and the mandadory \r\r. */
-		BIO_read( bioIn, message_buffer.data, length+2 );
+	nbytes = ( any when dec )* %when !dec;
 
-		/* Parse just the \r\r. */
-		p = message_buffer.data + length;
-		pe = message_buffer.data + length + 2;
+	action collect_message {
+		messageBody.set( buf2 );
 	}
-
-	action term_data {
-		message_buffer.data[length] = 0;
-	}
-
-	M_EOL = 
-		EOL @read_message 
-		EOL @term_data;
+	
+	M_EOL2 =
+		EOL nbytes >clear $buf %collect_message EOL;
 
 }%%
 
@@ -191,7 +193,7 @@ bool gblKeySubmitted = false;
 		>clear $buf
 		%{
 			length_str.set( buf );
-			length = strtol( length_str, 0, 10 );
+			length = counter = strtol( length_str, 0, 10 );
 		};
 
 	seq_num = [0-9]+          
@@ -214,29 +216,27 @@ bool gblKeySubmitted = false;
 		p += length;
 	}
 
-	# Reads in a message block plus the terminating EOL.
-	action read_message {
-		/* Validate the length. */
-		if ( length > MAX_MSG_LEN )
-			fgoto *parser_error;
-
-		/* Read in the message and the mandadory \r\r. */
-		BIO_read( bioIn, message_buffer.data, length+2 );
-
-		/* Parse just the \r\r. */
-		p = message_buffer.data + length;
-		pe = message_buffer.data + length + 2;
-	}
-
-	action term_data {
-		message_buffer.data[length] = 0;
-	}
-
-
-	M_EOL = 
-		EOL @read_message 
-		EOL @term_data;
-
+#	# Reads in a message block plus the terminating EOL.
+#	action read_message {
+#		/* Validate the length. */
+#		if ( length > MAX_MSG_LEN )
+#			fgoto *parser_error;
+#
+#		/* Read in the message and the mandadory \r\r. */
+#		BIO_read( bioIn, message_buffer.data, length+2 );
+#
+#		/* Parse just the \r\r. */
+#		p = message_buffer.data + length;
+#		pe = message_buffer.data + length + 2;
+#	}
+#
+#	action term_data {
+#		message_buffer.data[length] = 0;
+#	}
+#
+#	M_EOL = 
+#		EOL @read_message 
+#		EOL @term_data;
 }%%
 
 %%{
@@ -335,8 +335,8 @@ bool gblKeySubmitted = false;
 			} |
 
 		'prefriend_message'i ' ' relid ' ' length 
-			M_EOL @check_ssl @{
-				prefriendMessage( mysql, relid, message_buffer.data );
+			M_EOL2 @check_ssl @{
+				prefriendMessage( mysql, relid, messageBody.data );
 			} |
 
 		#
@@ -366,25 +366,27 @@ bool gblKeySubmitted = false;
 		# Broadcasting
 		#
 		'submit_broadcast'i ' ' user ' ' length 
-			M_EOL @check_key @{
-				submitBroadcast( mysql, user, message_buffer.data, length );
+			M_EOL2 @check_key @{
+				message( "submit_broadcast %ld\n", length );
+				message( "%.*s", (int)length, messageBody() );
+				submitBroadcast( mysql, user, messageBody.data, length );
 			} |
 
 		#
 		# Direct messages to friends
 		#
 		'submit_message'i ' ' user ' ' identity ' ' length
-			M_EOL @check_key @{
-				submitMessage( mysql, user, identity, message_buffer.data, length );
+			M_EOL2 @check_key @{
+				submitMessage( mysql, user, identity, messageBody.data, length );
 			} |
 
 		#
 		# Remote broadcasting
 		#
 		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
-			M_EOL @check_key @{
+			M_EOL2 @check_key @{
 				remoteBroadcastRequest( mysql, user, identity, hash, 
-						token, message_buffer.data, length );
+						token, messageBody.data, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
@@ -401,19 +403,21 @@ bool gblKeySubmitted = false;
 		# Message sending.
 		#
 		'message'i ' ' relid ' ' length 
-			M_EOL @check_ssl @{
-				receiveMessage( mysql, relid, message_buffer.data );
+			M_EOL2 @check_ssl @{
+				receiveMessage( mysql, relid, messageBody.data );
 			} |
 
 		'broadcast_recipient'i ' ' relid
 			EOL @{
+				message( "cmd: broadcast_recipient %s\n", relid() );
 				broadcastReceipient( mysql, recipients, relid );
 			} |
 
 		'broadcast'i ' ' network ' ' generation ' ' length
-			M_EOL @check_ssl @{
-				receiveBroadcast( mysql, recipients, network, generation,
-						message_buffer.data );
+			M_EOL2 @check_ssl @{
+				message( "cmd: broadcast %s %lld %ld\n", network(), generation, length );
+				message( "   : %ld\n", messageBody.length );
+				receiveBroadcast( mysql, recipients, network, generation, messageBody.data );
 				recipients.clear();
 			}
 	)*;
@@ -433,12 +437,12 @@ int serverParseLoop()
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
 	String gen_str, seq_str, network;
-	long length;
+	long length, counter;
 	long long generation;
-	String message_buffer;
-	message_buffer.allocate( MAX_MSG_LEN + 2 );
 	int retVal = 0;
 	RecipientList recipients;
+	Buffer buf2;
+	String messageBody;
 
 	MYSQL *mysql = 0;
 	bool ssl = false;
@@ -446,43 +450,54 @@ int serverParseLoop()
 
 	%% write init;
 
+	int nbytes, fd = BIO_get_fd(bioIn, 0);
+
+	/* Make FD non-blocking. */
+	int flags = fcntl( fd, F_GETFL );
+	fcntl( fd, F_SETFL, flags | O_NONBLOCK );
+
 	while ( true ) {
 		static char buf[linelen];
-		int result = BIO_gets( bioIn, buf, linelen );
+		fd_set set;
 
-		/* break when client closes the connection. */
-		if ( result <= 0 )
-			break;
+	retry:
+		FD_ZERO( &set );
+		FD_SET( fd, &set );
+		select( fd+1, &set, 0, 0, 0 );
 
-		/* Did we get a full line? */
-		long lineLen = strlen( buf );
-		if ( buf[lineLen-1] != '\n' ) {
-			error( "incomplete line, exiting\n" );
-			retVal = ERR_LINE_TOO_LONG;
-		}
+		while ( true ) {
+			nbytes = BIO_read( bioIn, buf, linelen );
 
-		message( "command: %.*s", (int)lineLen, buf );
+			/* break when client closes the connection. */
+			if ( nbytes <= 0 ) {
+				if ( BIO_should_retry( bioIn ) )
+					goto retry;
 
-		const char *p = buf, *pe = buf + lineLen;
-		%% write exec;
+				message( "BIO_read returned %d, breaking\n", nbytes );
+				goto done;
+			}
 
-		(void)BIO_flush( bioOut );
+			message( "BIO_read returned %d bytes, parsing\n", nbytes );
+			//message( "command: %.*s", (int)lineLen, buf );
 
-		if ( exit )
-			break;
+			const char *p = buf;
+			const char *pe = buf + nbytes;
+			%% write exec;
 
-		if ( cs == parser_error ) {
-			error( "parse error, exiting\n" );
-			retVal = ERR_PARSE_ERROR;
-			break;
-		}
-		else if ( cs < %%{ write first_final; }%% ) {
-			error( "incomplete line, exiting\n" );
-			retVal = ERR_UNEXPECTED_END;
-			break;
+			(void)BIO_flush( bioOut );
+
+			if ( exit )
+				break;
+
+			if ( cs == parser_error ) {
+				error( "parse error, exiting\n" );
+				retVal = ERR_PARSE_ERROR;
+				goto done;
+			}
 		}
 	}
 
+done:
 	if ( mysql != 0 )
 		mysql_close( 0 );
 
@@ -1168,9 +1183,8 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 
 	/* Send the request. */
 	tlsConnect.printf( "broadcast %s %lld %ld\r\n", network, keyGen, mLen );
-	BIO_write( tlsConnect.sbio, msg, mLen );
-	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	(void)BIO_flush( tlsConnect.sbio );
+	tlsConnect.write( msg, mLen );
+	tlsConnect.closeMessage();
 
 	SendBroadcastParser parser;
 	tlsConnect.readParse( parser );
@@ -1220,7 +1234,7 @@ void SendMessageParser::data( char *data, int len )
 }
 
 void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
-		const char *identity, const char *relid, const char *message,
+		const char *identity, const char *relid, const char *msg,
 		long mLen, char **resultMessage )
 {
 	/* Need to parse the identity. */
@@ -1234,10 +1248,8 @@ void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
 	/* Send the request. */
 	tlsConnect.printf("%smessage %s %ld\r\n",
 			prefriend ? "prefriend_" : "", relid, mLen );
-
-	BIO_write( tlsConnect.sbio, message, mLen );
-	BIO_write( tlsConnect.sbio, "\r\n", 2 );
-	(void)BIO_flush( tlsConnect.sbio );
+	tlsConnect.write( msg, mLen );
+	tlsConnect.closeMessage();
 
 	tlsConnect.readParse( parser );
 

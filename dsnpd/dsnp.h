@@ -465,6 +465,8 @@ struct TlsConnect
 
 	/* Sending. */
 	int printf( const char *fmt, ... );
+	void write( const char *msg, long mLen );
+	void closeMessage();
 
 	/* Receiving. */
 	int readParse( Parser &parser );
@@ -511,7 +513,7 @@ struct RemoteBroadcastParser
 
 	Type type;
 	long long seq_num;
-	long length;
+	long length, counter;
 	String date;
 	const char *embeddedMsg;
 	String identity1, identity2;
@@ -532,7 +534,7 @@ struct BroadcastParser
 	Type type;
 	String date, hash, network, identity;
 	long long generation, seq_num;
-	long length;
+	long length, counter;
 	const char *embeddedMsg;
 
 	int parse( const char *msg, long mLen );
@@ -556,7 +558,7 @@ struct MessageParser
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
 	String date, network, distName, sym1, sym2;
-	long length, number;
+	long length, counter, number;
 	long long seq_num, generation;
 	const char *embeddedMsg;
 

@@ -188,7 +188,7 @@ long long forwardBroadcast( MYSQL *mysql, long long messageId,
 	return lastQueueId;
 }
 
-void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
+void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, 
 		long long keyGen, const char *encrypted )
 {
 	FriendClaim friendClaim( mysql, relid );
@@ -207,6 +207,8 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 		return;
 	}
 
+	message( "encrypted: %ld %s\n", strlen(encrypted), encrypted );
+
 	MYSQL_ROW row = recipient.fetchRow();
 	String broadcastKey = row[0];
 
@@ -217,7 +219,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 
 	if ( decryptRes < 0 ) {
 		error("unable to decrypt broadcast message for %s from "
-			"%s network %s key gen %lld\n", user.user(), friendClaim.id, network, keyGen );
+			"%s network %s key gen %lld\n", user.user(), identity.iduri(), network, keyGen );
 		BIO_printf( bioOut, "ERROR\r\n" );
 		return;
 	}

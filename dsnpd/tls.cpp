@@ -189,11 +189,16 @@ BIO *sslStartServer( BIO *readBio, BIO *writeBio )
 	SSL *ssl = SSL_new( ctx );
 	SSL_set_mode( ssl, SSL_MODE_AUTO_RETRY );
 	SSL_set_bio( ssl, readBio, writeBio );
+	int connResult;
 
-	/* Start the SSL process. */
-	int connResult = SSL_accept( ssl );
+	/* Start the SSL process. THIS IS UGLY. Need select. */
+again:
+	connResult = SSL_accept( ssl );
 	if ( connResult <= 0 ) {
 		connResult = SSL_get_error( ssl, connResult );
+		if ( connResult == SSL_ERROR_WANT_READ ) 
+			goto again;
+
 		sslError( connResult );
 		fatal( "SSL_accept failed: %s\n",  ERR_error_string( ERR_get_error( ), 0 ) );
 	}

@@ -19,6 +19,18 @@ int TlsConnect::readParse( Parser &parser )
 	return readRes;
 }
 
+void TlsConnect::write( const char *msg, long mLen )
+{
+	BIO_write( sbio, msg, mLen );
+	(void)BIO_flush( sbio );
+}
+
+void TlsConnect::closeMessage()
+{
+	BIO_write( sbio, "\r\n", 2 );
+	(void)BIO_flush( sbio );
+}
+
 int TlsConnect::printf( const char *fmt, ... )
 {
 	va_list args;

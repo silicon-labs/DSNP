@@ -1075,28 +1075,82 @@ long Identity::parse()
 	return result;
 }
 
+
+
 /*
  * send_broadcast_net
  */
+
+%%{
+	machine send_broadcast_recipient_net;
+	write data;
+}%%
+
+SendBroadcastRecipientParser::SendBroadcastRecipientParser()
+{
+	OK = false;
+	%% write init;
+}
+
+void SendBroadcastRecipientParser::data( char *data, int len )
+{
+	/* Parser for response. */
+	%%{
+		include common2;
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	const char *p = data;
+	const char *pe = data + len;
+
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
+}
 
 %%{
 	machine send_broadcast_net;
 	write data;
 }%%
 
+SendBroadcastParser::SendBroadcastParser()
+{
+	OK = false;
+	%% write init;
+}
+
+void SendBroadcastParser::data( char *data, int len )
+{
+	/* Parser for response. */
+	%%{
+		include common2;
+
+		main := 
+			'OK' EOL @{ OK = true; } |
+			'ERROR' EOL;
+	}%%
+
+	const char *p = data;
+	const char *pe = data + len;
+
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
+}
+
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
 		const char *network, long long keyGen, const char *msg, long mLen )
 {
-	static char buf[8192];
-	long cs;
-	const char *p, *pe;
-	bool OK = false;
-	long pres;
-	String relid, gen_str, seq_str;
-
 	/* Need to parse the identity. */
 	IdentityOrig site( toSite );
-	pres = site.parse();
+	long pres = site.parse();
 
 	if ( pres < 0 )
 		return pres;
@@ -1108,46 +1162,19 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 		tlsConnect.printf( 
 			"broadcast_recipient %s\r\n", r->c_str() );
 
-		/* Read the result. */
-		BIO_gets( tlsConnect.sbio, buf, 8192 );
+		SendBroadcastRecipientParser parser;
+		tlsConnect.readParse( parser );
 	}
 
 	/* Send the request. */
-	tlsConnect.printf( "broadcast %s %lld %ld\r\n", 
-			network, keyGen, mLen );
+	tlsConnect.printf( "broadcast %s %lld %ld\r\n", network, keyGen, mLen );
 	BIO_write( tlsConnect.sbio, msg, mLen );
 	BIO_write( tlsConnect.sbio, "\r\n", 2 );
 	(void)BIO_flush( tlsConnect.sbio );
 
-	/* Read the result. */
-	int readRes = BIO_gets( tlsConnect.sbio, buf, 8192 );
+	SendBroadcastParser parser;
+	tlsConnect.readParse( parser );
 
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		return ERR_READ_ERROR;
-
-	/* Parser for response. */
-	%%{
-		include common;
-
-		main := 
-			'OK' EOL @{ OK = true; } |
-			'ERROR' EOL;
-	}%%
-
-	p = buf;
-	pe = buf + strlen(buf);
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	if ( !OK )
-		return ERR_SERVER_ERROR;
-	
 	return 0;
 }
 
@@ -1196,15 +1223,13 @@ void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
 		const char *identity, const char *relid, const char *message,
 		long mLen, char **resultMessage )
 {
-
 	/* Need to parse the identity. */
-	IdentityOrig toIdent( identity );
-	toIdent.parse();
+	Identity toIdent( mysql, identity );
 
 	TlsConnect tlsConnect;
 	SendMessageParser parser;
 
-	tlsConnect.connect( toIdent.host, toIdent.site );
+	tlsConnect.connect( toIdent.host(), toIdent.site() );
 
 	/* Send the request. */
 	tlsConnect.printf("%smessage %s %ld\r\n",

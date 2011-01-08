@@ -437,6 +437,28 @@ struct SendMessageParser
 	String token;
 };
 
+struct SendBroadcastRecipientParser
+	: public Parser
+{
+	SendBroadcastRecipientParser();
+
+	virtual void data( char *data, int len );
+
+	int cs;
+	bool OK;
+};
+
+struct SendBroadcastParser
+	: public Parser
+{
+	SendBroadcastParser();
+
+	virtual void data( char *data, int len );
+
+	int cs;
+	bool OK;
+};
+
 struct TlsConnect
 {
 	void connect( const char *host, const char *site );

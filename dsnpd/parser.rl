@@ -64,7 +64,6 @@ bool gblKeySubmitted = false;
 	n = base64                  >clear $buf %{ n.set(buf); };
 	e = base64                  >clear $buf %{ e.set(buf); };
 
-
 	date = ( 
 		digit{4} '-' digit{2} '-' digit{2} ' ' 
 		digit{2} ':' digit{2} ':' digit{2} 

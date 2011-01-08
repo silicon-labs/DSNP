@@ -427,21 +427,14 @@ struct TlsConnect;
 struct SendMessageParser
 	: public Parser
 {
-	SendMessageParser( char **resultMessage, TlsConnect *tlsConnect, 
-		MYSQL *mysql, const char *from_user, const char *to_identity );
+	SendMessageParser();
 
 	virtual void data( char *data, int len );
 
-	char **resultMessage;
-	TlsConnect *tlsConnect;
-	MYSQL *mysql;
-	const char *from_user;
-	const char *to_identity;
 	int cs;
 	bool OK;
 	Buffer buf;
-	String length_str, token;
-	long length;
+	String token;
 };
 
 struct TlsConnect

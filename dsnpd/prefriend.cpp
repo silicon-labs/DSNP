@@ -66,9 +66,6 @@ long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 	if ( checkSentRequest.rows() != 1 )
 		throw FriendRequestInvalid();
 
-	Keys *userPriv = loadKey( mysql, user.user() );
-	Keys *idPub = identity.fetchPublicKey();
-
 	/* The relid is the one we made on this end. It becomes the put_relid. */
 	const char *putRelid = requestedRelid;
 	const char *getRelid = returnedRelid;
@@ -82,14 +79,7 @@ long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 		"VALUES ( %L, %L, %L, %e, %e );",
 		user.id(), identity.id(), relationship.id(), putRelid, getRelid );
 
-	/* Currently nothing to put in here. Should it be removed? */
-	String resultCommand( "notify_accept_result\r\n" );
-
-	Encrypt encrypt( idPub, userPriv );
-	encrypt.signEncrypt( (u_char*)resultCommand(), resultCommand.length+1 );
-
-	BIO_printf( bioOut, "RESULT %lu\r\n", strlen(encrypt.sym) );
-	BIO_write( bioOut, encrypt.sym, strlen(encrypt.sym) );
+	BIO_printf( bioOut, "OK\r\n" );
 
 	return 0;
 }
@@ -218,20 +208,9 @@ void acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
 	/* Notify the requester. */
 	String buf( "notify_accept %s %s\r\n", requestedRelid, returnedRelid );
 
-	char *resultMessage = 0;
-
 	/* FIXME: try, catch. */
-	sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, buf(), &resultMessage );
+	sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, buf(), 0 );
 
-	NotifyAcceptResultParser narp;
-	narp.parse( resultMessage, strlen(resultMessage) );
-	switch ( narp.type ) {
-		case NotifyAcceptResultParser::NotifyAcceptResult:
-			notifyAcceptResult( mysql, user, identity, 
-				userReqid, requestedRelid, returnedRelid );
-			break;
-		default:
-			break;
-	}
+	notifyAcceptResult( mysql, user, identity, userReqid, requestedRelid, returnedRelid );
 }
 

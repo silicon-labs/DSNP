@@ -343,27 +343,6 @@ Keys *loadKey( MYSQL *mysql, User &user )
 	return keys;
 }
 
-void sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
-		const char *to_identity, const char *put_relid,
-		const char *msg, char **result_msg )
-{
-	Keys *id_pub, *user_priv;
-	Encrypt encrypt;
-	int encrypt_res;
-
-	id_pub = fetchPublicKey( mysql, to_identity );
-	user_priv = loadKey( mysql, from_user );
-
-	encrypt.load( id_pub, user_priv );
-
-	/* Include the null in the message. */
-	encrypt_res = encrypt.signEncrypt( (u_char*)msg, strlen(msg) );
-
-	message( "send_message_now sending to: %s\n", to_identity );
-	sendMessageNet( mysql, prefriend, from_user, to_identity,
-			put_relid, encrypt.sym, strlen(encrypt.sym), result_msg );
-}
-
 AllocString makeIdHash( const char *salt, const char *identity )
 {
 	/* Make a hash for the identity. */

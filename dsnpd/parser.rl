@@ -508,8 +508,9 @@ int serverParseLoop()
 
 int NotifyAcceptResultParser::parse( const char *msg, long mLen )
 {
-	long cs;
+	message("notify accept result message: %.*s", (int)mLen, msg );
 
+	long cs;
 	type = Unknown;
 	%% write init;
 
@@ -1159,14 +1160,7 @@ long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipien
 	write data;
 }%%
 
-SendMessageParser::SendMessageParser( char **resultMessage, TlsConnect *tlsConnect, 
-		MYSQL *mysql, const char *from_user, const char *to_identity )
-:
-	resultMessage(resultMessage),
-	tlsConnect(tlsConnect),
-	mysql(mysql),
-	from_user(from_user),
-	to_identity(to_identity)
+SendMessageParser::SendMessageParser()
 {
 	OK = false;
 	%% write init;
@@ -1178,33 +1172,12 @@ void SendMessageParser::data( char *data, int len )
 	%%{
 		include common2;
 
-		action result {
-			if ( length > MAX_MSG_LEN )
-				fgoto *parser_error;
-
-			char *userMessage = new char[length+1];
-			BIO_read( tlsConnect->sbio, userMessage, length );
-			userMessage[length] = 0;
-
-			if ( resultMessage != 0 ) {
-				*resultMessage = decrypt_result( mysql, from_user,
-						to_identity, userMessage );
-			}
-
-			OK = true;
-		}
-
 		action token {
-			char *userMessage = new char[token.length+1];
-			memcpy( userMessage, token.data, token.length );
-			userMessage[token.length] = 0;
-			*resultMessage = userMessage;
 			OK = true;
 		}
 
 		main := 
 			'OK' EOL @{ OK = true; } |
-			'RESULT' ' ' length EOL @result |
 			'REQID' ' ' token EOL @token |
 			'ERROR' EOL;
 	}%%
@@ -1219,21 +1192,17 @@ void SendMessageParser::data( char *data, int len )
 		throw ParseError();
 }
 
-void sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
-		const char *to_identity, const char *relid, const char *message,
+void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
+		const char *identity, const char *relid, const char *message,
 		long mLen, char **resultMessage )
 {
-	/* Initialize the result. */
-	if ( resultMessage != 0 ) 
-		*resultMessage = 0;
 
 	/* Need to parse the identity. */
-	IdentityOrig toIdent( to_identity );
+	IdentityOrig toIdent( identity );
 	toIdent.parse();
 
 	TlsConnect tlsConnect;
-	SendMessageParser parser( resultMessage, &tlsConnect, mysql,
-			from_user, to_identity );
+	SendMessageParser parser;
 
 	tlsConnect.connect( toIdent.host, toIdent.site );
 
@@ -1246,4 +1215,10 @@ void sendMessageNet( MYSQL *mysql, bool prefriend, const char *from_user,
 	(void)BIO_flush( tlsConnect.sbio );
 
 	tlsConnect.readParse( parser );
+
+	if ( resultMessage != 0 ) {
+		*resultMessage = new char[parser.token.length+1];
+		memcpy( *resultMessage, parser.token.data, parser.token.length );
+		resultMessage[parser.token.length] = 0;
+	}
 }

@@ -28,6 +28,25 @@ void userMessage( MYSQL *mysql, const char *user, const char *friendId,
 	appNotification( args, msg, length );
 }
 
+void sendMessageNow( MYSQL *mysql, bool prefriend, const char *user,
+		const char *toIdentity, const char *putRelid,
+		const char *msg, char **resultMsg )
+{
+	Keys *idPub = fetchPublicKey( mysql, toIdentity );
+	Keys *userPriv = loadKey( mysql, user );
+
+	Encrypt encrypt;
+	encrypt.load( idPub, userPriv );
+
+	/* Include the null in the message. */
+	encrypt.signEncrypt( (u_char*)msg, strlen(msg) );
+
+	message( "send_message_now sending to: %s\n", toIdentity );
+	sendMessageNet( mysql, prefriend, user, toIdentity,
+			putRelid, encrypt.sym, strlen(encrypt.sym), resultMsg );
+}
+
+
 void addGetBroadcastKey( MYSQL *mysql, long long friendClaimId, long long networkId, long long generation )
 {
 	DbQuery check( mysql,

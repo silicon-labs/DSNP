@@ -22,7 +22,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <openssl/bio.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -321,80 +320,38 @@ bool gblKeySubmitted = false;
 
 %% write data;
 
-const long linelen = 4096;
+ServerParser::ServerParser()
+{
+	retVal = 0;
+	mysql = 0;
+	ssl = false;
+	exit = false;
+
+	%% write init;
+}
+
+void ServerParser::data( char *data, int len )
+{
+	const char *p = data;
+	const char *pe = data + len;
+
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
+}
 
 int serverParseLoop()
 {
-	long cs;
-	String user, pass, email, identity; 
-	String length_str, reqid;
-	String hash, key, relid, token, sym;
-	String gen_str, seq_str, network;
-	long length, counter;
-	long long generation;
-	int retVal = 0;
-	RecipientList recipients;
-	Buffer buf;
-	String messageBody;
+	BioSocket bioSocket;
+	bioSocket.sbio = bioIn;
 
-	MYSQL *mysql = 0;
-	bool ssl = false;
-	bool exit = false;
+	ServerParser parser;
 
-	%% write init;
+	bioSocket.readParse2( parser );
 
-	int nbytes, fd = BIO_get_fd(bioIn, 0);
-
-	/* Make FD non-blocking. */
-	int flags = fcntl( fd, F_GETFL );
-	fcntl( fd, F_SETFL, flags | O_NONBLOCK );
-
-	while ( true ) {
-		static char input[linelen];
-		fd_set set;
-
-	retry:
-		FD_ZERO( &set );
-		FD_SET( fd, &set );
-		select( fd+1, &set, 0, 0, 0 );
-
-		while ( true ) {
-			nbytes = BIO_read( bioIn, input, linelen );
-
-			/* break when client closes the connection. */
-			if ( nbytes <= 0 ) {
-				if ( BIO_should_retry( bioIn ) )
-					goto retry;
-
-				message( "BIO_read returned %d, breaking\n", nbytes );
-				goto done;
-			}
-
-			message( "BIO_read returned %d bytes, parsing\n", nbytes );
-			//message( "command: %.*s", (int)lineLen, buf );
-
-			const char *p = input;
-			const char *pe = input + nbytes;
-			%% write exec;
-
-			(void)BIO_flush( bioOut );
-
-			if ( exit )
-				break;
-
-			if ( cs == parser_error ) {
-				error( "parse error, exiting\n" );
-				retVal = ERR_PARSE_ERROR;
-				goto done;
-			}
-		}
-	}
-
-done:
-	if ( mysql != 0 )
-		mysql_close( 0 );
-
-	return retVal;
+	return 0;
 }
 
 

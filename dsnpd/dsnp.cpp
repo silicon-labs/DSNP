@@ -38,6 +38,18 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
+BioSocket::BioSocket()
+:
+	linelen(4096)
+{
+	input = new char[linelen];
+}
+
+BioSocket::~BioSocket()
+{
+	delete[] input;
+}
+
 void setConfigByUri( const char *uri )
 {
 	c = config_first;

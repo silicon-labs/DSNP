@@ -31,6 +31,8 @@
 #define NET_TYPE_PRIMARY 1
 #define NET_TYPE_GROUP   2
 
+typedef std::list<std::string> RecipientList;
+
 /* Wraps up RSA struct and private key/x509. Useful for transition to CMS. */
 struct Keys
 {
@@ -422,10 +424,12 @@ struct FetchFtokenParser
 	String sym;
 };
 
+struct BioSocket;
 struct TlsConnect;
 
 struct SendMessageParser
-	: public Parser
+:
+	public Parser
 {
 	SendMessageParser();
 
@@ -438,7 +442,8 @@ struct SendMessageParser
 };
 
 struct SendBroadcastRecipientParser
-	: public Parser
+:
+	public Parser
 {
 	SendBroadcastRecipientParser();
 
@@ -449,7 +454,8 @@ struct SendBroadcastRecipientParser
 };
 
 struct SendBroadcastParser
-	: public Parser
+:
+	public Parser
 {
 	SendBroadcastParser();
 
@@ -459,21 +465,57 @@ struct SendBroadcastParser
 	bool OK;
 };
 
-struct TlsConnect
+struct ServerParser
+:
+	public Parser
 {
-	void connect( const char *host, const char *site );
+	ServerParser();
+
+	virtual void data( char *data, int len );
+
+	long cs;
+	String user, pass, email, identity; 
+	String length_str, reqid;
+	String hash, key, relid, token, sym;
+	String gen_str, seq_str, network;
+	long length, counter;
+	long long generation;
+	int retVal;
+	RecipientList recipients;
+	Buffer buf;
+	String messageBody;
+
+	MYSQL *mysql;
+	bool ssl;
+	bool exit;
+};
+
+struct BioSocket
+{
+	BioSocket();
+	~BioSocket();
+
+	int socketFd;
+	BIO *sbio;
+	String result;
+
+	const long linelen;
+	char *input;
+
+	/* Receiving. */
+	int readParse( Parser &parser );
+	int readParse2( Parser &parser );
 
 	/* Sending. */
 	int printf( const char *fmt, ... );
 	void write( const char *msg, long mLen );
 	void closeMessage();
+};
 
-	/* Receiving. */
-	int readParse( Parser &parser );
-
-	int socketFd;
-	BIO *sbio;
-	String result;
+struct TlsConnect
+	: BioSocket
+{
+	void connect( const char *host, const char *site );
 };
 
 void appNotification( const char *args, const char *data, long length );
@@ -603,8 +645,6 @@ void unshowNetwork( MYSQL *mysql, const char *user, const char *network );
 void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
 void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity );
 void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
-
-typedef std::list<std::string> RecipientList;
 
 void broadcastReceipient( MYSQL *mysql, RecipientList &recipientList, const char *relid );
 void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, const char *group,

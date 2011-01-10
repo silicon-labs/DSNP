@@ -341,7 +341,7 @@ BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host );
 BIO *sslStartServer( BIO *readBio, BIO *writeBio );
 void sslInitClient();
 void sslInitServer();
-void startTls();
+BIO *startTls();
 long base64ToBin( unsigned char *out, const char *src, long len );
 AllocString binToBase64( const u_char *data, long len );
 AllocString bnToBase64( const BIGNUM *n );
@@ -371,16 +371,18 @@ struct DbQuery
 
 long long lastInsertId( MYSQL *mysql );
 
+struct BioWrap;
 struct Parser
 {
-	virtual void data( char *data, int len ) = 0;
+	virtual void data( BioWrap *bioWrap, char *data, int len ) = 0;
 };
 
 struct FetchPublicKeyParser
-	: public Parser
+:
+	public Parser
 {
 	FetchPublicKeyParser();
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	Buffer buf;
@@ -389,10 +391,11 @@ struct FetchPublicKeyParser
 };
 
 struct FetchRequestedRelidParser
-	: public Parser
+:
+	public Parser
 {
 	FetchRequestedRelidParser();
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	bool OK;
@@ -401,10 +404,11 @@ struct FetchRequestedRelidParser
 };
 
 struct FetchResponseRelidParser
-	: public Parser
+:
+	public Parser
 {
 	FetchResponseRelidParser();
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	bool OK;
@@ -416,7 +420,7 @@ struct FetchFtokenParser
 	: public Parser
 {
 	FetchFtokenParser();
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	bool OK;
@@ -424,7 +428,7 @@ struct FetchFtokenParser
 	String sym;
 };
 
-struct BioSocket;
+struct BioWrap;
 struct TlsConnect;
 
 struct SendMessageParser
@@ -433,7 +437,7 @@ struct SendMessageParser
 {
 	SendMessageParser();
 
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	bool OK;
@@ -447,7 +451,7 @@ struct SendBroadcastRecipientParser
 {
 	SendBroadcastRecipientParser();
 
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	bool OK;
@@ -459,7 +463,7 @@ struct SendBroadcastParser
 {
 	SendBroadcastParser();
 
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	int cs;
 	bool OK;
@@ -471,7 +475,7 @@ struct ServerParser
 {
 	ServerParser();
 
-	virtual void data( char *data, int len );
+	virtual void data( BioWrap *bioWrap, char *data, int len );
 
 	long cs;
 	String user, pass, email, identity; 
@@ -490,13 +494,13 @@ struct ServerParser
 	bool exit;
 };
 
-struct BioSocket
+struct BioWrap
 {
-	BioSocket();
-	~BioSocket();
+	BioWrap();
+	~BioWrap();
 
 	int socketFd;
-	BIO *sbio;
+	BIO *bio;
 	String result;
 
 	const long linelen;
@@ -513,7 +517,7 @@ struct BioSocket
 };
 
 struct TlsConnect
-	: BioSocket
+	: BioWrap
 {
 	void connect( const char *host, const char *site );
 };

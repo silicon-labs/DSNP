@@ -38,14 +38,14 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
-BioSocket::BioSocket()
+BioWrap::BioWrap()
 :
 	linelen(4096)
 {
 	input = new char[linelen];
 }
 
-BioSocket::~BioSocket()
+BioWrap::~BioWrap()
 {
 	delete[] input;
 }

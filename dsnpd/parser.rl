@@ -170,7 +170,7 @@ bool gblKeySubmitted = false;
 
 		'start_tls'i 
 			EOL @{
-				startTls();
+				bioWrap->bio = startTls();
 				ssl = true;
 			} |
 
@@ -348,7 +348,7 @@ ServerParser::ServerParser()
 	%% write init;
 }
 
-void ServerParser::data( char *data, int len )
+void ServerParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	const char *p = data;
 	const char *pe = data + len;
@@ -362,12 +362,12 @@ void ServerParser::data( char *data, int len )
 
 int serverParseLoop()
 {
-	BioSocket bioSocket;
-	bioSocket.sbio = bioIn;
+	BioWrap bioWrap;
+	bioWrap.bio = bioIn;
 
 	ServerParser parser;
 
-	bioSocket.readParse2( parser );
+	bioWrap.readParse2( parser );
 
 	return 0;
 }
@@ -628,7 +628,7 @@ FetchPublicKeyParser::FetchPublicKeyParser()
 	%% write init;
 }
 
-void FetchPublicKeyParser::data( char *data, int len )
+void FetchPublicKeyParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -682,7 +682,7 @@ FetchRequestedRelidParser::FetchRequestedRelidParser()
 	%% write init;
 }
 
-void FetchRequestedRelidParser::data( char *data, int len )
+void FetchRequestedRelidParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -736,7 +736,7 @@ FetchResponseRelidParser::FetchResponseRelidParser()
 	%% write init;
 }
 
-void FetchResponseRelidParser::data( char *data, int len )
+void FetchResponseRelidParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -790,7 +790,7 @@ FetchFtokenParser::FetchFtokenParser()
 	%% write init;
 }
 
-void FetchFtokenParser::data( char *data, int len )
+void FetchFtokenParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -939,7 +939,7 @@ SendBroadcastRecipientParser::SendBroadcastRecipientParser()
 	%% write init;
 }
 
-void SendBroadcastRecipientParser::data( char *data, int len )
+void SendBroadcastRecipientParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -971,7 +971,7 @@ SendBroadcastParser::SendBroadcastParser()
 	%% write init;
 }
 
-void SendBroadcastParser::data( char *data, int len )
+void SendBroadcastParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -1039,7 +1039,7 @@ SendMessageParser::SendMessageParser()
 	%% write init;
 }
 
-void SendMessageParser::data( char *data, int len )
+void SendMessageParser::data( BioWrap *bioWrap, char *data, int len )
 {
 	/* Parser for response. */
 	%%{

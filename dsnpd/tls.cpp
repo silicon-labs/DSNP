@@ -238,10 +238,10 @@ void TlsConnect::connect( const char *host, const char *site )
 	/* Verify the result here. */
 
 	sslInitClient();
-	sbio = sslStartClient( socketBio, socketBio, host );
+	bio = sslStartClient( socketBio, socketBio, host );
 }
 
-void startTls()
+BIO *startTls()
 {
 	BIO_printf( bioOut, "OK\r\n" );
 	(void) BIO_flush( bioOut );
@@ -252,4 +252,5 @@ void startTls()
 
 	sslInitServer();
 	bioIn = bioOut = sslStartServer( bioIn, bioOut );
+	return bioIn;
 }

@@ -55,7 +55,7 @@ void addGetBroadcastKey( MYSQL *mysql, long long friendClaimId, long long networ
 		friendClaimId, networkId, generation );
 }
 
-void storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, FriendClaim &friendClaim,
+void Server::storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, FriendClaim &friendClaim,
 		const char *distName, long long generation, const char *broadcastKey )
 {
 	DbQuery( mysql, 
@@ -67,7 +67,7 @@ void storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, FriendClai
 			"VALUES ( %L, %e, %L, %e )",
 			friendClaim.id, distName, generation, broadcastKey );
 
-	BIO_printf( bioOut, "OK\n" );
+	BIO_printf( bioWrap->wbio, "OK\n" );
 }
 
 int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const char *friend_id,
@@ -78,12 +78,11 @@ int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const 
 //	long long networkId = addNetwork( mysql, userId, network );
 //
 //	remoteBroadcast( mysql, user, friend_id, hash, network, networkId, generation, sym, strlen(sym) );
-//	BIO_printf( bioOut, "OK\r\n" );
+//	BIO_printf( bioWrap->wbio, "OK\r\n" );
 	return 0;
 }
 
-
-void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
+void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	FriendClaim friendClaim( mysql, relid );
 
@@ -98,7 +97,7 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 
 	if ( decryptRes < 0 ) {
 		error("message receipt: decryption failed\n" );
-		BIO_printf( bioOut, "ERROR %s\r\n", encrypt.err );
+		BIO_printf( bioWrap->wbio, "ERROR %s\r\n", encrypt.err );
 		return;
 	}
 
@@ -126,12 +125,12 @@ void receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 //			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
 			break;
 		default:
-			BIO_printf( bioOut, "ERROR\r\n" );
+			BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 			break;
 	}
 }
 
-long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen )
+long Server::submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 
@@ -141,11 +140,11 @@ long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, cons
 
 	long sendResult = queueMessage( mysql, user, toIdentity, full.data, full.length );
 	if ( sendResult < 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 		return -1;
 	}
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 	return 0;
 }
 

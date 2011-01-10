@@ -167,7 +167,7 @@ FriendClaim::FriendClaim( MYSQL *mysql, const char *getRelid )
 	getRelid = row[5];
 }
 
-void newUser( MYSQL *mysql, const char *user, const char *pass )
+void Server::newUser( MYSQL *mysql, const char *user, const char *pass )
 {
 	String iduri( "%s%s/", c->CFG_URI, user );
 
@@ -279,6 +279,6 @@ void newUser( MYSQL *mysql, const char *user, const char *pass )
 	if ( res < 0 )
 		error( "photo dir creation failed with %s\n", strerror(errno) );
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 }
 

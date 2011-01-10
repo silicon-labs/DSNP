@@ -4,7 +4,7 @@
 #include <string.h>
 #include <openssl/rand.h>
 
-void login( MYSQL *mysql, const char *user, const char *pass )
+void Server::login( MYSQL *mysql, const char *user, const char *pass )
 {
 	const long lasts = LOGIN_TOKEN_LASTS;
 
@@ -45,7 +45,7 @@ void login( MYSQL *mysql, const char *user, const char *pass )
 	String identity( "%s%s/", c->CFG_URI, user );
 	String idHashStr = makeIduriHash( identity );
 
-	BIO_printf( bioOut, "OK %s %s %ld\r\n", idHashStr.data, tokenStr.data, lasts );
+	BIO_printf( bioWrap->wbio, "OK %s %s %ld\r\n", idHashStr.data, tokenStr.data, lasts );
 
 	message("login of %s successful\n", user );
 }

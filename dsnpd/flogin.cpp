@@ -65,7 +65,7 @@ char *userIdentityHash( MYSQL *mysql, const char *user )
 	return 0;
 }
 
-void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
+void Server::ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 {
 	/* Load user, identity and friend claim. */
 	User user( mysql, _user );
@@ -89,7 +89,7 @@ void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 	/* Encrypt it. */
 	int sigRes = encrypt.signEncrypt( flogin_token, TOKEN_SIZE );
 	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
@@ -107,24 +107,24 @@ void ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 	String userHash = makeIduriHash( userIduri );
 
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s %s %s\r\n", identity.iduri(), userHash(), reqid() );
+	BIO_printf( bioWrap->wbio, "OK %s %s %s\r\n", identity.iduri(), userHash(), reqid() );
 }
 
-void fetchFtoken( MYSQL *mysql, const char *reqid )
+void Server::fetchFtoken( MYSQL *mysql, const char *reqid )
 {
 	DbQuery ftoken( mysql,
 		"SELECT msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
 
 	if ( ftoken.rows() > 0 ) {
 		MYSQL_ROW row = ftoken.fetchRow();
-		BIO_printf( bioOut, "OK %s\r\n", row[0] );
+		BIO_printf( bioWrap->wbio, "OK %s\r\n", row[0] );
 	}
 	else {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_NO_FTOKEN );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_NO_FTOKEN );
 	}
 }
 
-void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash, 
+void Server::ftokenResponse( MYSQL *mysql, const char *_user, const char *hash, 
 		const char *flogin_reqid_str )
 {
 	/*
@@ -156,13 +156,13 @@ void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		message("ftoken_response: ERROR_DECRYPT_VERIFY\n" );
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		return;
 	}
 
 	/* Check the size. */
 	if ( encrypt.decLen != REQID_SIZE ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		return;
 	}
 
@@ -176,10 +176,10 @@ void ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 		user.id(), identity.id(), flogin_token_str );
 
 	/* Return the login token for the requester to use. */
-	BIO_printf( bioOut, "OK %s %s\r\n", identity.iduri(), flogin_token_str );
+	BIO_printf( bioWrap->wbio, "OK %s %s\r\n", identity.iduri(), flogin_token_str );
 }
 
-void submitFtoken( MYSQL *mysql, const char *token )
+void Server::submitFtoken( MYSQL *mysql, const char *token )
 {
 	long lasts = LOGIN_TOKEN_LASTS;
 
@@ -190,7 +190,7 @@ void submitFtoken( MYSQL *mysql, const char *token )
 		token );
 
 	if ( request.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 		return;
 	}
 	MYSQL_ROW row = request.fetchRow();
@@ -206,7 +206,7 @@ void submitFtoken( MYSQL *mysql, const char *token )
 
 	String hash = makeIduriHash( identity.iduri() );
 
-	BIO_printf( bioOut, "OK %s %s %ld\r\n", identity.iduri(), hash(), lasts );
+	BIO_printf( bioWrap->wbio, "OK %s %s %ld\r\n", identity.iduri(), hash(), lasts );
 }
 
 

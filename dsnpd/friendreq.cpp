@@ -66,7 +66,7 @@ bool checkFriendRequestExists( MYSQL *mysql, User &user, Identity &identity )
 	return false;
 }
 
-void relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
+void Server::relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -115,7 +115,7 @@ void relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 	encrypt.load( idPub, userPriv );
 	int sigRes = encrypt.signEncrypt( relidBin, RELID_SIZE );
 	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 	
@@ -132,10 +132,10 @@ void relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 		user.id(), identity.id(), relid.data, reqid.data, encrypt.sym );
 
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s\r\n", reqid.data );
+	BIO_printf( bioWrap->wbio, "OK %s\r\n", reqid.data );
 }
 
-void fetchRequestedRelid( MYSQL *mysql, const char *reqid )
+void Server::fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 {
 	DbQuery request( mysql,
 		"SELECT msg_sym FROM relid_request WHERE reqid = %e", reqid );
@@ -143,14 +143,14 @@ void fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 	/* Check for a result. */
 	if ( request.rows() > 0 ) {
 		MYSQL_ROW row = request.fetchRow();
-		BIO_printf( bioOut, "OK %s\r\n", row[0] );
+		BIO_printf( bioWrap->wbio, "OK %s\r\n", row[0] );
 	}
 	else {
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 	}
 }
 
-void relidResponse( MYSQL *mysql, const char *_user, 
+void Server::relidResponse( MYSQL *mysql, const char *_user, 
 		const char *reqid, const char *_iduri )
 {
 	/*  a) verifies browser is logged in as owner
@@ -188,13 +188,13 @@ void relidResponse( MYSQL *mysql, const char *_user,
 	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		::message("relid_response: ERROR_DECRYPT_VERIFY\n" );
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		return;
 	}
 
 	/* Verify the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		return;
 	}
 
@@ -213,7 +213,7 @@ void relidResponse( MYSQL *mysql, const char *_user,
 	/* Encrypt and sign using the same credentials. */
 	int sigRes = encrypt.signEncrypt( message, RELID_SIZE*2 );
 	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
@@ -245,14 +245,14 @@ void relidResponse( MYSQL *mysql, const char *_user,
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK %s\r\n", response_reqid_str );
+	BIO_printf( bioWrap->wbio, "OK %s\r\n", response_reqid_str );
 
 	delete[] requested_relid_str;
 	delete[] response_relid_str;
 	delete[] response_reqid_str;
 }
 
-void fetchResponseRelid( MYSQL *mysql, const char *reqid )
+void Server::fetchResponseRelid( MYSQL *mysql, const char *reqid )
 {
 	/* Execute the query. */
 	DbQuery response( mysql,
@@ -261,10 +261,10 @@ void fetchResponseRelid( MYSQL *mysql, const char *reqid )
 	/* Check for a result. */
 	if ( response.rows() ) {
 		MYSQL_ROW row = response.fetchRow();
-		BIO_printf( bioOut, "OK %s\r\n", row[0] );
+		BIO_printf( bioWrap->wbio, "OK %s\r\n", row[0] );
 	}
 	else {
-		BIO_printf( bioOut, "ERR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERR\r\n" );
 	}
 }
 
@@ -282,7 +282,7 @@ long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 	return 0;
 }
 
-void friendFinal( MYSQL *mysql, const char *_user, 
+void Server::friendFinal( MYSQL *mysql, const char *_user, 
 		const char *reqid_str, const char *_iduri )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 
@@ -312,13 +312,13 @@ void friendFinal( MYSQL *mysql, const char *_user,
 	int verifyRes = encrypt.decryptVerify( encsig.sym );
 	if ( verifyRes < 0 ) {
 		::message("friend_final: ERROR_DECRYPT_VERIFY\n" );
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
 		return;
 	}
 
 	/* Verify that the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE*2 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
 		return;
 	}
 
@@ -330,7 +330,7 @@ void friendFinal( MYSQL *mysql, const char *_user,
 
 	verifyRes = verifyReturnedFrRelid( mysql, requested_relid );
 	if ( verifyRes != 1 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_REQUESTED_RELID_MATCH );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_REQUESTED_RELID_MATCH );
 		return;
 	}
 		
@@ -355,7 +355,7 @@ void friendFinal( MYSQL *mysql, const char *_user,
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 
 	delete[] requested_relid_str;
 	delete[] returned_relid_str;

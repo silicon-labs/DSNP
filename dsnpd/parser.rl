@@ -170,11 +170,11 @@ bool gblKeySubmitted = false;
 
 		'start_tls'i 
 			EOL @{
-				bioWrap->rbio = bioWrap->wbio = 
-					startTls( bioWrap->rbio, bioWrap->wbio );
+				server->bioWrap->rbio = server->bioWrap->wbio = 
+					startTls( server->bioWrap->rbio, server->bioWrap->wbio );
 
-				bioIn = bioWrap->rbio;
-				bioOut = bioWrap->wbio;
+				//bioIn = server->bioWrap->rbio;
+				//bioOut = server->bioWrap->wbio;
 
 				ssl = true;
 			} |
@@ -182,21 +182,21 @@ bool gblKeySubmitted = false;
 		'login'i ' ' user ' ' pass 
 			EOL @check_key @{
 				message( "command: login %s %s\n", user(), pass() );
-				login( mysql, user, pass );
+				server->login( mysql, user, pass );
 			} |
 
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass
 			EOL @check_key @{
 				message( "command: new_user %s %s\n", user(), pass() );
-				newUser( mysql, user, pass );
+				server->newUser( mysql, user, pass );
 			} |
 
 		# Public key sharing.
 		'public_key'i ' ' user
 			EOL @check_ssl @{
 				message( "command: public_key %s\n", user() );
-				publicKey( mysql, user );
+				server->publicKey( mysql, user );
 			} |
 
 		# 
@@ -205,31 +205,31 @@ bool gblKeySubmitted = false;
 		'relid_request'i ' ' user ' ' identity
 			EOL @check_key @{
 				message( "command: relid_request %s %s\n", user(), identity() );
-				relidRequest( mysql, user, identity );
+				server->relidRequest( mysql, user, identity );
 			} |
 
 		'relid_response'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
 				message( "command: relid_response %s %s %s\n", user(), reqid(), identity() );
-				relidResponse( mysql, user, reqid, identity );
+				server->relidResponse( mysql, user, reqid, identity );
 			} |
 
 		'friend_final'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
 				message( "command: friend_final %s %s %s\n", user(), reqid(), identity() );
-				friendFinal( mysql, user, reqid, identity );
+				server->friendFinal( mysql, user, reqid, identity );
 			} |
 
 		'fetch_requested_relid'i ' ' reqid
 			EOL @check_ssl @{
 				message( "command: fetch_requested_relid %s\n", reqid() );
-				fetchRequestedRelid( mysql, reqid );
+				server->fetchRequestedRelid( mysql, reqid );
 			} |
 
 		'fetch_response_relid'i ' ' reqid
 			EOL @check_ssl @{
 				message( "command: fetch_response_relid %s\n", reqid() ) ;
-				fetchResponseRelid( mysql, reqid );
+				server->fetchResponseRelid( mysql, reqid );
 			} |
 
 		#
@@ -238,13 +238,13 @@ bool gblKeySubmitted = false;
 		'accept_friend'i ' ' user ' ' reqid
 			EOL @check_key @{
 				message( "command: accept_friend %s %s\n", user(), reqid() );
-				acceptFriend( mysql, user, reqid );
+				server->acceptFriend( mysql, user, reqid );
 			} |
 
 		'prefriend_message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
 				message( "command: prefriend_mesage %s %lld\n", relid(), length );
-				prefriendMessage( mysql, relid, messageBody.data );
+				server->prefriendMessage( mysql, relid, messageBody.data );
 			} |
 
 		#
@@ -253,25 +253,25 @@ bool gblKeySubmitted = false;
 		'ftoken_request'i ' ' user ' ' hash
 			EOL @check_key @{
 				message( "command: ftoken_request %s %s\n", user(), hash() );
-				ftokenRequest( mysql, user, hash );
+				server->ftokenRequest( mysql, user, hash );
 			} |
 
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
 			EOL @check_key @{
 				message( "command: ftoken_response %s %s %s\n", user(), hash(), reqid() );
-				ftokenResponse( mysql, user, hash, reqid );
+				server->ftokenResponse( mysql, user, hash, reqid );
 			} |
 
 		'fetch_ftoken'i ' ' reqid
 			EOL @check_ssl @{
 				message( "command: fetch_ftoken %s\n", reqid() );
-				fetchFtoken( mysql, reqid );
+				server->fetchFtoken( mysql, reqid );
 			} |
 
 		'submit_ftoken'i ' ' token
 			EOL @check_key @{
 				message( "command: submit_ftoken %s\n", token() );
-				submitFtoken( mysql, token );
+				server->submitFtoken( mysql, token );
 			} |
 
 		#
@@ -280,7 +280,7 @@ bool gblKeySubmitted = false;
 		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
 				message( "command: submit_broadcast %lld\n", length );
-				submitBroadcast( mysql, user, messageBody.data, length );
+				server->submitBroadcast( mysql, user, messageBody.data, length );
 			} |
 
 		#
@@ -289,7 +289,7 @@ bool gblKeySubmitted = false;
 		'submit_message'i ' ' user ' ' identity ' ' length
 			M_EOL @check_key @{
 				message( "command: submit_message %s %s %lld\n", user(), identity(), length );
-				submitMessage( mysql, user, identity, messageBody.data, length );
+				server->submitMessage( mysql, user, identity, messageBody.data, length );
 			} |
 
 		#
@@ -299,20 +299,20 @@ bool gblKeySubmitted = false;
 			M_EOL @check_key @{
 				message( "command: remote_broadcast_request %s %s %s %s %lld\n",
 						user(), identity(), hash(), token(), length );
-				remoteBroadcastRequest( mysql, user, identity, hash, 
+				server->remoteBroadcastRequest( mysql, user, identity, hash, 
 						token, messageBody.data, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
 			EOL @check_key @{
 				message( "command: remote_broadcast_response %s %s\n", user(), reqid() );
-				remoteBroadcastResponse( mysql, user, reqid );
+				server->remoteBroadcastResponse( mysql, user, reqid );
 			} |
 
 		'remote_broadcast_final'i ' ' user ' ' reqid
 			EOL @check_key @{
 				message( "command: remote_broadcast_final %s %s\n", user(), reqid() );
-				remoteBroadcastFinal( mysql, user, reqid );
+				server->remoteBroadcastFinal( mysql, user, reqid );
 			} |
 
 		#
@@ -321,19 +321,19 @@ bool gblKeySubmitted = false;
 		'message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
 				message( "command: message %s %lld\n", relid(), length );
-				receiveMessage( mysql, relid, messageBody.data );
+				server->receiveMessage( mysql, relid, messageBody.data );
 			} |
 
 		'broadcast_recipient'i ' ' relid
 			EOL @{
 				message( "command: broadcast_recipient %s\n", relid() );
-				broadcastReceipient( mysql, recipients, relid );
+				server->broadcastReceipient( mysql, recipients, relid );
 			} |
 
 		'broadcast'i ' ' network ' ' generation ' ' length
 			M_EOL @check_ssl @{
 				message( "command: broadcast %s %lld %ld\n", network(), generation, length );
-				receiveBroadcast( mysql, recipients, network, generation, messageBody.data );
+				server->receiveBroadcast( mysql, recipients, network, generation, messageBody.data );
 				recipients.clear();
 			}
 	)*;
@@ -353,7 +353,7 @@ ServerParser::ServerParser()
 	%% write init;
 }
 
-void ServerParser::data( BioWrap *bioWrap, char *data, int len )
+void ServerParser::data( char *data, int len )
 {
 	const char *p = data;
 	const char *pe = data + len;
@@ -371,7 +371,11 @@ int serverParseLoop( BIO *rbio, BIO *wbio )
 	bioWrap.rbio = rbio;
 	bioWrap.wbio = wbio;
 
+	Server server;
+	server.bioWrap = &bioWrap;
+
 	ServerParser parser;
+	parser.server = &server;
 
 	bioWrap.readParse2( parser );
 
@@ -634,7 +638,7 @@ FetchPublicKeyParser::FetchPublicKeyParser()
 	%% write init;
 }
 
-void FetchPublicKeyParser::data( BioWrap *bioWrap, char *data, int len )
+void FetchPublicKeyParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -688,7 +692,7 @@ FetchRequestedRelidParser::FetchRequestedRelidParser()
 	%% write init;
 }
 
-void FetchRequestedRelidParser::data( BioWrap *bioWrap, char *data, int len )
+void FetchRequestedRelidParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -742,7 +746,7 @@ FetchResponseRelidParser::FetchResponseRelidParser()
 	%% write init;
 }
 
-void FetchResponseRelidParser::data( BioWrap *bioWrap, char *data, int len )
+void FetchResponseRelidParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -796,7 +800,7 @@ FetchFtokenParser::FetchFtokenParser()
 	%% write init;
 }
 
-void FetchFtokenParser::data( BioWrap *bioWrap, char *data, int len )
+void FetchFtokenParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -945,7 +949,7 @@ SendBroadcastRecipientParser::SendBroadcastRecipientParser()
 	%% write init;
 }
 
-void SendBroadcastRecipientParser::data( BioWrap *bioWrap, char *data, int len )
+void SendBroadcastRecipientParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -977,7 +981,7 @@ SendBroadcastParser::SendBroadcastParser()
 	%% write init;
 }
 
-void SendBroadcastParser::data( BioWrap *bioWrap, char *data, int len )
+void SendBroadcastParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -1045,7 +1049,7 @@ SendMessageParser::SendMessageParser()
 	%% write init;
 }
 
-void SendMessageParser::data( BioWrap *bioWrap, char *data, int len )
+void SendMessageParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{

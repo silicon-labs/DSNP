@@ -29,9 +29,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-BIO *bioIn = 0;
-BIO *bioOut = 0;
-
 Global gbl;
 
 void read_rcfile( const char *confFile )
@@ -103,12 +100,12 @@ int serverMain()
 
 	/* Set up the input BIO to wrap stdin. */
 	BIO *bioFdIn = BIO_new_fd( 0, BIO_NOCLOSE );
-	bioIn = BIO_new( BIO_f_buffer() );
+	BIO *bioIn = BIO_new( BIO_f_buffer() );
 	BIO_push( bioIn, bioFdIn );
 
 	/* Set up the output bio to wrap stdout. */
 	BIO *bioFdOut = BIO_new_fd( 1, BIO_NOCLOSE );
-	bioOut = BIO_new( BIO_f_buffer() );
+	BIO *bioOut = BIO_new( BIO_f_buffer() );
 	BIO_push( bioOut, bioFdOut );
 
 	/* Close standard error. */

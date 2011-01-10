@@ -54,7 +54,7 @@ int BioWrap::readParse( Parser &parser )
 	if ( readRes <= 0 )
 		throw ReadError();
 
-	parser.data( this, input, readRes );
+	parser.data( input, readRes );
 
 	return readRes;
 }
@@ -97,7 +97,7 @@ int BioWrap::readParse2( Parser &parser )
 				message( "BIO_read returned %d bytes, parsing\n", nbytes );
 				message( "data: %.*s", (int)nbytes, input );
 
-				parser.data( this, input, nbytes );
+				parser.data( input, nbytes );
 
 				/* FIXME: eventually remove this. All output commands should do their own flushing. */
 				(void)BIO_flush( wbio );

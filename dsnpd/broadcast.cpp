@@ -21,10 +21,10 @@
 
 #include <string.h>
 
-void broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *relid )
+void Server::broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *relid )
 {
 	recipients.push_back( std::string(relid) );
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 }
 
 void directBroadcast( MYSQL *mysql, const char *relid, const char *user, 
@@ -105,7 +105,7 @@ void friendProofBroadcast( MYSQL *mysql, const char *user,
 		storeFriendLink( mysql, user, networkId, fromId, toId );
 }
 
-void remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
+void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen )
 {
@@ -139,7 +139,7 @@ void remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 
 		if ( decryptRes < 0 ) {
 			error("second level broadcast decrypt verify failed with %s\n", encrypt.err);
-			BIO_printf( bioOut, "ERROR\r\n" );
+			BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 			return;
 		}
 
@@ -188,7 +188,7 @@ long long forwardBroadcast( MYSQL *mysql, long long messageId,
 	return lastQueueId;
 }
 
-void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, 
+void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, 
 		long long keyGen, const char *encrypted )
 {
 	FriendClaim friendClaim( mysql, relid );
@@ -203,7 +203,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 		friendClaim.id, network, keyGen );
 
 	if ( recipient.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR bad recipient\r\n");
+		BIO_printf( bioWrap->wbio, "ERROR bad recipient\r\n");
 		return;
 	}
 
@@ -220,7 +220,7 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 	if ( decryptRes < 0 ) {
 		error("unable to decrypt broadcast message for %s from "
 			"%s network %s key gen %lld\n", user.user(), identity.iduri(), network, keyGen );
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 		return;
 	}
 
@@ -252,10 +252,10 @@ void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network,
 		}
 	}
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 }
 
-void receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group,
+void Server::receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group,
 		long long keyGen, const char *encrypted )
 {
 	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ )
@@ -388,7 +388,7 @@ long queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
 }
 
 
-long submitBroadcast( MYSQL *mysql, const char *_user, 
+long Server::submitBroadcast( MYSQL *mysql, const char *_user, 
 		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
@@ -414,11 +414,11 @@ long submitBroadcast( MYSQL *mysql, const char *_user,
 
 	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
 	if ( sendResult < 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 		return -1;
 	}
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 	return 0;
 }
 
@@ -442,7 +442,7 @@ long sendRemoteBroadcast( MYSQL *mysql, User &user,
 	return 0;
 }
 
-long remoteBroadcastRequest( MYSQL *mysql, const char *toUser, 
+long Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser, 
 		const char *authorId, const char *authorHash, 
 		const char *token, const char *msg, long mLen )
 {
@@ -495,11 +495,11 @@ long remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		user.id(), identity.id(), hash(), resultMessage, seqNum );
 
 	message("send_message_now returned: %s\n", resultMessage );
-	BIO_printf( bioOut, "OK %s\r\n", resultMessage );
+	BIO_printf( bioWrap->wbio, "OK %s\r\n", resultMessage );
 	return 0;
 }
 
-void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
+void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
 {
 	User user( mysql, _user );
 
@@ -510,7 +510,7 @@ void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid
 		user.id(), reqid );
 	
 	if ( recipient.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 		return;
 	}
 
@@ -535,10 +535,10 @@ void remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid
 		"WHERE user_id = %L AND reqid = %e",
 		user.id(), reqid );
 
-	BIO_printf( bioOut, "OK %s\r\n", result );
+	BIO_printf( bioWrap->wbio, "OK %s\r\n", result );
 }
 
-void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 
+void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 
 		const char *reqid, const char *networkDist, long long generation, const char *sym )
 {
 	message("return_remote_broadcast\n");
@@ -553,10 +553,10 @@ void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		"WHERE user_id = %L AND identity_id = %L AND reqid = %e ",
 		networkDist, generation, sym, reqid_final_str, user.id(), identity.id(), reqid );
 
-	BIO_printf( bioOut, "REQID %s\r\n", reqid_final_str );
+	BIO_printf( bioWrap->wbio, "REQID %s\r\n", reqid_final_str );
 }
 
-void remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
+void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
 {
 	User user( mysql, _user );
 
@@ -580,7 +580,7 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
 		long res = sendRemoteBroadcast( mysql, user, hash, network,
 				strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
 		if ( res < 0 ) {
-			BIO_printf( bioOut, "ERROR\r\n" );
+			BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 			return;
 		}
 
@@ -591,10 +591,10 @@ void remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
 			user.id(), reqid );
 	}
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 }
 
-void encryptRemoteBroadcast( MYSQL *mysql, User &user,
+void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
 		Identity &subjectId, const char *token,
 		long long seqNum, const char *msg, long mLen )
 {
@@ -605,7 +605,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, User &user,
 
 	if ( flogin.rows() == 0 ) {
 		error("failed to find user from provided login token\n");
-		BIO_printf( bioOut, "ERROR\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
 		return;
 	}
 
@@ -634,7 +634,7 @@ void encryptRemoteBroadcast( MYSQL *mysql, User &user,
 	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey, 
 			(u_char*)full.data, full.length );
 	if ( sigRes < 0 ) {
-		BIO_printf( bioOut, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
+		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
 		return;
 	}
 
@@ -649,6 +649,6 @@ void encryptRemoteBroadcast( MYSQL *mysql, User &user,
 		user.id(), subjectId.id(), reqidStr,
 		put.distName(), put.generation, encrypt.sym );
 
-	BIO_printf( bioOut, "REQID %s\r\n", reqidStr );
+	BIO_printf( bioWrap->wbio, "REQID %s\r\n", reqidStr );
 }
 

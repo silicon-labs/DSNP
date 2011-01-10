@@ -171,7 +171,7 @@ void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 		networkId, generation, bk );
 }
 
-void publicKey( MYSQL *mysql, const char *user )
+void Server::publicKey( MYSQL *mysql, const char *user )
 {
 	DbQuery query( mysql, 
 		"SELECT rsa_n, rsa_e "
@@ -179,7 +179,7 @@ void publicKey( MYSQL *mysql, const char *user )
 		"JOIN user_keys ON user.user_keys_id = user_keys.id "
 		"WHERE user.user = %e", user );
 	if ( query.rows() == 0 ) {
-		BIO_printf( bioOut, "ERROR user not found\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR user not found\r\n" );
 		return;
 	}
 
@@ -187,7 +187,7 @@ void publicKey( MYSQL *mysql, const char *user )
 
 	/* Everythings okay. */
 	MYSQL_ROW row = query.fetchRow();
-	BIO_printf( bioOut, "OK %s %s\n", row[0], row[1] );
+	BIO_printf( bioWrap->wbio, "OK %s %s\n", row[0], row[1] );
 }
 
 long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *iduri )

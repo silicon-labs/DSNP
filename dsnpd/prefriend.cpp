@@ -54,7 +54,7 @@ long long storeFriendClaim( MYSQL *mysql, const char *user,
 	return strtoll( lastInsertId.fetchRow()[0], 0, 10 );
 }
 
-long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
+long Server::notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 		const String &requestedRelid, const String &returnedRelid )
 {
 	/* Verify that there is a friend request. */
@@ -79,12 +79,12 @@ long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 		"VALUES ( %L, %L, %L, %e, %e );",
 		user.id(), identity.id(), relationship.id(), putRelid, getRelid );
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 
 	return 0;
 }
 
-long registered( MYSQL *mysql, User &user, Identity &identity,
+long Server::registered( MYSQL *mysql, User &user, Identity &identity,
 		const char *requestedRelid, const char *returnedRelid )
 {
 	DbQuery( mysql, 
@@ -98,12 +98,12 @@ long registered( MYSQL *mysql, User &user, Identity &identity,
 
 	addToPrimaryNetwork( mysql, user, identity );
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 
 	return 0;
 }
 
-void notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
+void Server::notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
 		const char *userReqid, const char *requestedRelid,
 		const char *returnedRelid )
 {
@@ -133,10 +133,10 @@ void notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
 
 	addToPrimaryNetwork( mysql, user, identity );
 
-	BIO_printf( bioOut, "OK\r\n" );
+	BIO_printf( bioWrap->wbio, "OK\r\n" );
 }
 
-void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
+void Server::prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 {
 	DbQuery sent( mysql, 
 		"SELECT user_id, identity_id FROM sent_friend_request "
@@ -145,7 +145,7 @@ void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 
 	if ( sent.rows() == 0 ) {
 		error("prefriend_message: could not locate friend via sent_friend_request\n");
-		BIO_printf( bioOut, "ERROR finding friend\r\n" );
+		BIO_printf( bioWrap->wbio, "ERROR finding friend\r\n" );
 		return;
 	}
 
@@ -181,7 +181,7 @@ void prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
 	}
 }
 
-void acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
+void Server::acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
 {
 	User user( mysql, _user );
 	if ( user.id() < 0 )

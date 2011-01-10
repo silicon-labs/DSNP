@@ -97,7 +97,7 @@ bool gblKeySubmitted = false;
 		%{
 			length_str.set(buf);
 			length = counter = strtol( length_str, 0, 10 );
-			message("length: %ld\n", length );
+			//message("length: %ld\n", length );
 		};
 
 	seq_num = [0-9]+          
@@ -146,14 +146,6 @@ bool gblKeySubmitted = false;
 			fgoto *parser_error;
 	}
 
-	action comm_key {
-		/* Check the authentication. */
-		if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
-			gblKeySubmitted = true;
-		else
-			fgoto *parser_error;
-	}
-
 	action check_key {
 		if ( !gblKeySubmitted )
 			fgoto *parser_error;
@@ -166,28 +158,39 @@ bool gblKeySubmitted = false;
 		}
 	}
 
-	action start_tls {
-		startTls();
-		ssl = true;
-	}
-
 	commands := (
-		'comm_key'i ' ' key EOL @comm_key |
-		'start_tls'i EOL @start_tls |
+		'comm_key'i ' ' key
+			EOL @{
+				/* Check the authentication. */
+				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
+					gblKeySubmitted = true;
+				else
+					fgoto *parser_error;
+			} |
+
+		'start_tls'i 
+			EOL @{
+				startTls();
+				ssl = true;
+			} |
+
 		'login'i ' ' user ' ' pass 
 			EOL @check_key @{
+				message( "command: login %s %s\n", user(), pass() );
 				login( mysql, user, pass );
 			} |
 
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass
 			EOL @check_key @{
+				message( "command: new_user %s %s\n", user(), pass() );
 				newUser( mysql, user, pass );
 			} |
 
 		# Public key sharing.
 		'public_key'i ' ' user
 			EOL @check_ssl @{
+				message( "command: public_key %s\n", user() );
 				publicKey( mysql, user );
 			} |
 
@@ -196,26 +199,31 @@ bool gblKeySubmitted = false;
 		#
 		'relid_request'i ' ' user ' ' identity
 			EOL @check_key @{
+				message( "command: relid_request %s %s\n", user(), identity() );
 				relidRequest( mysql, user, identity );
 			} |
 
 		'relid_response'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
+				message( "command: relid_response %s %s %s\n", user(), reqid(), identity() );
 				relidResponse( mysql, user, reqid, identity );
 			} |
 
 		'friend_final'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
+				message( "command: friend_final %s %s %s\n", user(), reqid(), identity() );
 				friendFinal( mysql, user, reqid, identity );
 			} |
 
 		'fetch_requested_relid'i ' ' reqid
 			EOL @check_ssl @{
+				message( "command: fetch_requested_relid %s\n", reqid() );
 				fetchRequestedRelid( mysql, reqid );
 			} |
 
 		'fetch_response_relid'i ' ' reqid
 			EOL @check_ssl @{
+				message( "command: fetch_response_relid %s\n", reqid() ) ;
 				fetchResponseRelid( mysql, reqid );
 			} |
 
@@ -224,11 +232,13 @@ bool gblKeySubmitted = false;
 		#
 		'accept_friend'i ' ' user ' ' reqid
 			EOL @check_key @{
+				message( "command: accept_friend %s %s\n", user(), reqid() );
 				acceptFriend( mysql, user, reqid );
 			} |
 
 		'prefriend_message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
+				message( "command: prefriend_mesage %s %lld\n", relid(), length );
 				prefriendMessage( mysql, relid, messageBody.data );
 			} |
 
@@ -237,21 +247,25 @@ bool gblKeySubmitted = false;
 		#
 		'ftoken_request'i ' ' user ' ' hash
 			EOL @check_key @{
+				message( "command: ftoken_request %s %s\n", user(), hash() );
 				ftokenRequest( mysql, user, hash );
 			} |
 
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
 			EOL @check_key @{
+				message( "command: ftoken_response %s %s %s\n", user(), hash(), reqid() );
 				ftokenResponse( mysql, user, hash, reqid );
 			} |
 
 		'fetch_ftoken'i ' ' reqid
 			EOL @check_ssl @{
+				message( "command: fetch_ftoken %s\n", reqid() );
 				fetchFtoken( mysql, reqid );
 			} |
 
 		'submit_ftoken'i ' ' token
 			EOL @check_key @{
+				message( "command: submit_ftoken %s\n", token() );
 				submitFtoken( mysql, token );
 			} |
 
@@ -260,8 +274,7 @@ bool gblKeySubmitted = false;
 		#
 		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
-				message( "submit_broadcast %ld\n", length );
-				message( "%.*s", (int)length, messageBody() );
+				message( "command: submit_broadcast %lld\n", length );
 				submitBroadcast( mysql, user, messageBody.data, length );
 			} |
 
@@ -270,6 +283,7 @@ bool gblKeySubmitted = false;
 		#
 		'submit_message'i ' ' user ' ' identity ' ' length
 			M_EOL @check_key @{
+				message( "command: submit_message %s %s %lld\n", user(), identity(), length );
 				submitMessage( mysql, user, identity, messageBody.data, length );
 			} |
 
@@ -278,17 +292,21 @@ bool gblKeySubmitted = false;
 		#
 		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
 			M_EOL @check_key @{
+				message( "command: remote_broadcast_request %s %s %s %s %lld\n",
+						user(), identity(), hash(), token(), length );
 				remoteBroadcastRequest( mysql, user, identity, hash, 
 						token, messageBody.data, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
 			EOL @check_key @{
+				message( "command: remote_broadcast_response %s %s\n", user(), reqid() );
 				remoteBroadcastResponse( mysql, user, reqid );
 			} |
 
 		'remote_broadcast_final'i ' ' user ' ' reqid
 			EOL @check_key @{
+				message( "command: remote_broadcast_final %s %s\n", user(), reqid() );
 				remoteBroadcastFinal( mysql, user, reqid );
 			} |
 
@@ -297,19 +315,19 @@ bool gblKeySubmitted = false;
 		#
 		'message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
+				message( "command: message %s %lld\n", relid(), length );
 				receiveMessage( mysql, relid, messageBody.data );
 			} |
 
 		'broadcast_recipient'i ' ' relid
 			EOL @{
-				message( "cmd: broadcast_recipient %s\n", relid() );
+				message( "command: broadcast_recipient %s\n", relid() );
 				broadcastReceipient( mysql, recipients, relid );
 			} |
 
 		'broadcast'i ' ' network ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				message( "cmd: broadcast %s %lld %ld\n", network(), generation, length );
-				message( "   : %ld\n", messageBody.length );
+				message( "command: broadcast %s %lld %ld\n", network(), generation, length );
 				receiveBroadcast( mysql, recipients, network, generation, messageBody.data );
 				recipients.clear();
 			}
@@ -338,7 +356,7 @@ void ServerParser::data( char *data, int len )
 	%% write exec;
 
 	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
+	if ( cs == %%{ write error; }%% )
 		throw ParseError();
 }
 

@@ -3,6 +3,10 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <errno.h>
 
 void BioSocket::write( const char *msg, long mLen )
 {
@@ -43,37 +47,46 @@ int BioSocket::readParse( Parser &parser )
 int BioSocket::readParse2( Parser &parser )
 {
 	fd_set set;
-	int nbytes, fd = BIO_get_fd(sbio, 0);
+	int res, nbytes, fd = BIO_get_fd(sbio, 0);
 
 	/* Make FD non-blocking. */
 	int flags = fcntl( fd, F_GETFL );
 	fcntl( fd, F_SETFL, flags | O_NONBLOCK );
 
 	while ( true ) {
-
-	retry:
 		FD_ZERO( &set );
 		FD_SET( fd, &set );
-		select( fd+1, &set, 0, 0, 0 );
+		res = select( fd+1, &set, 0, 0, 0 );
 
-		while ( true ) {
-			nbytes = BIO_read( sbio, input, linelen );
+		if ( res == EBADFD )
+			break;
 
-			/* break when client closes the connection. */
-			if ( nbytes <= 0 ) {
-				if ( BIO_should_retry( sbio ) )
-					goto retry;
+		if ( FD_ISSET( fd, &set ) ) {
+			while ( true ) {
+				nbytes = BIO_read( sbio, input, linelen );
 
-				message( "BIO_read returned %d, breaking\n", nbytes );
-				goto done;
+				/* break when client closes the connection. */
+				if ( nbytes <= 0 ) {
+					/* If the BIO is saying it we should retry later, go back into
+					 * select. */
+					if ( BIO_should_retry( sbio ) ) {
+						message( "BIO_should_retry\n" );
+						break;
+					}
+
+					message( "BIO_read returned %d, breaking\n", nbytes );
+					goto done;
+				}
+
+				message( "BIO_read returned %d bytes, parsing\n", nbytes );
+				message( "data: %.*s", (int)nbytes, input );
+
+				parser.data( input, nbytes );
+				
+				sbio = bioIn;
+
+				(void)BIO_flush( bioOut );
 			}
-
-			message( "BIO_read returned %d bytes, parsing\n", nbytes );
-			//message( "command: %.*s", (int)lineLen, buf );
-
-			parser.data( input, nbytes );
-
-			(void)BIO_flush( bioOut );
 		}
 	}
 

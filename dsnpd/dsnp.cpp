@@ -38,18 +38,6 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
-BioWrap::BioWrap()
-:
-	linelen(4096)
-{
-	input = new char[linelen];
-}
-
-BioWrap::~BioWrap()
-{
-	delete[] input;
-}
-
 void setConfigByUri( const char *uri )
 {
 	c = config_first;

@@ -115,7 +115,7 @@ int serverMain()
 	close( 2 );
 
 	try {
-		serverParseLoop();
+		serverParseLoop( bioIn, bioOut );
 	}
 	catch ( UserError &e ) {
 		e.print( bioOut );

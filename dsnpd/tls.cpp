@@ -238,19 +238,19 @@ void TlsConnect::connect( const char *host, const char *site )
 	/* Verify the result here. */
 
 	sslInitClient();
-	bio = sslStartClient( socketBio, socketBio, host );
+	rbio = wbio = sslStartClient( socketBio, socketBio, host );
 }
 
-BIO *startTls()
+BIO *startTls( BIO *rbio, BIO *wbio )
 {
-	BIO_printf( bioOut, "OK\r\n" );
-	(void) BIO_flush( bioOut );
+	BIO_printf( wbio, "OK\r\n" );
+	(void) BIO_flush( wbio );
 
 	/* Don't need the buffering wrappers anymore. */
-	bioIn = BIO_pop( bioIn );
-	bioOut = BIO_pop( bioOut );
+	rbio = BIO_pop( rbio );
+	wbio = BIO_pop( wbio );
 
 	sslInitServer();
-	bioIn = bioOut = sslStartServer( bioIn, bioOut );
-	return bioIn;
+	rbio = wbio = sslStartServer( rbio, wbio );
+	return rbio;
 }

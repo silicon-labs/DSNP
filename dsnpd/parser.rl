@@ -170,7 +170,12 @@ bool gblKeySubmitted = false;
 
 		'start_tls'i 
 			EOL @{
-				bioWrap->bio = startTls();
+				bioWrap->rbio = bioWrap->wbio = 
+					startTls( bioWrap->rbio, bioWrap->wbio );
+
+				bioIn = bioWrap->rbio;
+				bioOut = bioWrap->wbio;
+
 				ssl = true;
 			} |
 
@@ -360,10 +365,11 @@ void ServerParser::data( BioWrap *bioWrap, char *data, int len )
 		throw ParseError();
 }
 
-int serverParseLoop()
+int serverParseLoop( BIO *rbio, BIO *wbio )
 {
 	BioWrap bioWrap;
-	bioWrap.bio = bioIn;
+	bioWrap.rbio = rbio;
+	bioWrap.wbio = wbio;
 
 	ServerParser parser;
 

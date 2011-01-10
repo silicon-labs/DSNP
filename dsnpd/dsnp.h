@@ -161,7 +161,7 @@ void runQueue( const char *siteName );
 long runBroadcastQueue();
 long runMessageQueue();
 
-int serverParseLoop();
+int serverParseLoop( BIO *rbio, BIO *wbio );
 int parseRcFile( const char *data, long length );
 
 struct Global
@@ -337,11 +337,12 @@ void openLogFile();
 
 extern BIO *bioIn;
 extern BIO *bioOut;
-BIO *sslStartClient( BIO *readBio, BIO *writeBio, const char *host );
-BIO *sslStartServer( BIO *readBio, BIO *writeBio );
+
+BIO *sslStartClient( BIO *rbio, BIO *wbio, const char *host );
+BIO *sslStartServer( BIO *rbio, BIO *wbio );
 void sslInitClient();
 void sslInitServer();
-BIO *startTls();
+BIO *startTls( BIO *rbio, BIO *wbio );
 long base64ToBin( unsigned char *out, const char *src, long len );
 AllocString binToBase64( const u_char *data, long len );
 AllocString bnToBase64( const BIGNUM *n );
@@ -500,7 +501,10 @@ struct BioWrap
 	~BioWrap();
 
 	int socketFd;
-	BIO *bio;
+
+	BIO *rbio;
+	BIO *wbio;
+
 	String result;
 
 	const long linelen;

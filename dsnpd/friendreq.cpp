@@ -132,7 +132,7 @@ void Server::relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 		user.id(), identity.id(), relid.data, reqid.data, encrypt.sym );
 
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioWrap->wbio, "OK %s\r\n", reqid.data );
+	bioWrap->printf( "OK %s\r\n", reqid.data );
 }
 
 void Server::fetchRequestedRelid( MYSQL *mysql, const char *reqid )
@@ -141,13 +141,13 @@ void Server::fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 		"SELECT msg_sym FROM relid_request WHERE reqid = %e", reqid );
 
 	/* Check for a result. */
-	if ( request.rows() > 0 ) {
-		MYSQL_ROW row = request.fetchRow();
-		BIO_printf( bioWrap->wbio, "OK %s\r\n", row[0] );
-	}
-	else {
+	if ( request.rows() == 0 ) {
 		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
+		return;
 	}
+
+	MYSQL_ROW row = request.fetchRow();
+	bioWrap->printf( "OK %s\r\n", row[0] );
 }
 
 void Server::relidResponse( MYSQL *mysql, const char *_user, 
@@ -183,14 +183,7 @@ void Server::relidResponse( MYSQL *mysql, const char *_user,
 	/* Decrypt and verify the requested_relid. */
 	Encrypt encrypt;
 	encrypt.load( idPub, userPriv );
-
-
-	int verifyRes = encrypt.decryptVerify( encsig.sym );
-	if ( verifyRes < 0 ) {
-		::message("relid_response: ERROR_DECRYPT_VERIFY\n" );
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
-		return;
-	}
+	encrypt.decryptVerify( encsig.sym );
 
 	/* Verify the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE ) {
@@ -211,11 +204,7 @@ void Server::relidResponse( MYSQL *mysql, const char *_user,
 	memcpy( message+RELID_SIZE, response_relid, RELID_SIZE );
 
 	/* Encrypt and sign using the same credentials. */
-	int sigRes = encrypt.signEncrypt( message, RELID_SIZE*2 );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
+	encrypt.signEncrypt( message, RELID_SIZE*2 );
 
 	/* Store the request. */
 	char *requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
@@ -245,7 +234,7 @@ void Server::relidResponse( MYSQL *mysql, const char *_user,
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioWrap->wbio, "OK %s\r\n", response_reqid_str );
+	bioWrap->printf( "OK %s\r\n", response_reqid_str );
 
 	delete[] requested_relid_str;
 	delete[] response_relid_str;
@@ -259,13 +248,13 @@ void Server::fetchResponseRelid( MYSQL *mysql, const char *reqid )
 		"SELECT msg_sym FROM relid_response WHERE reqid = %e;", reqid );
 	
 	/* Check for a result. */
-	if ( response.rows() ) {
-		MYSQL_ROW row = response.fetchRow();
-		BIO_printf( bioWrap->wbio, "OK %s\r\n", row[0] );
+	if ( response.rows() == 0 ) {
+		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
+		return;
 	}
-	else {
-		BIO_printf( bioWrap->wbio, "ERR\r\n" );
-	}
+
+	MYSQL_ROW row = response.fetchRow();
+	bioWrap->printf( "OK %s\r\n", row[0] );
 }
 
 long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
@@ -309,12 +298,7 @@ void Server::friendFinal( MYSQL *mysql, const char *_user,
 	Encrypt encrypt;
 	encrypt.load( idPub, userPriv );
 
-	int verifyRes = encrypt.decryptVerify( encsig.sym );
-	if ( verifyRes < 0 ) {
-		::message("friend_final: ERROR_DECRYPT_VERIFY\n" );
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPT_VERIFY );
-		return;
-	}
+	encrypt.decryptVerify( encsig.sym );
 
 	/* Verify that the message is the right size. */
 	if ( encrypt.decLen != RELID_SIZE*2 ) {
@@ -328,7 +312,7 @@ void Server::friendFinal( MYSQL *mysql, const char *_user,
 	memcpy( requested_relid, message, RELID_SIZE );
 	memcpy( returned_relid, message+RELID_SIZE, RELID_SIZE );
 
-	verifyRes = verifyReturnedFrRelid( mysql, requested_relid );
+	int verifyRes = verifyReturnedFrRelid( mysql, requested_relid );
 	if ( verifyRes != 1 ) {
 		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_REQUESTED_RELID_MATCH );
 		return;
@@ -355,7 +339,7 @@ void Server::friendFinal( MYSQL *mysql, const char *_user,
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 
 	delete[] requested_relid_str;
 	delete[] returned_relid_str;

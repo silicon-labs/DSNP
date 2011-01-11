@@ -24,7 +24,7 @@
 void Server::broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *relid )
 {
 	recipients.push_back( std::string(relid) );
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 }
 
 void directBroadcast( MYSQL *mysql, const char *relid, const char *user, 
@@ -252,7 +252,7 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 		}
 	}
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 }
 
 void Server::receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group,
@@ -418,7 +418,7 @@ long Server::submitBroadcast( MYSQL *mysql, const char *_user,
 		return -1;
 	}
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 	return 0;
 }
 
@@ -495,7 +495,7 @@ long Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		user.id(), identity.id(), hash(), resultMessage, seqNum );
 
 	message("send_message_now returned: %s\n", resultMessage );
-	BIO_printf( bioWrap->wbio, "OK %s\r\n", resultMessage );
+	bioWrap->printf( "OK %s\r\n", resultMessage );
 	return 0;
 }
 
@@ -535,7 +535,7 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 		"WHERE user_id = %L AND reqid = %e",
 		user.id(), reqid );
 
-	BIO_printf( bioWrap->wbio, "OK %s\r\n", result );
+	bioWrap->printf( "OK %s\r\n", result );
 }
 
 void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 
@@ -553,7 +553,7 @@ void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity
 		"WHERE user_id = %L AND identity_id = %L AND reqid = %e ",
 		networkDist, generation, sym, reqid_final_str, user.id(), identity.id(), reqid );
 
-	BIO_printf( bioWrap->wbio, "REQID %s\r\n", reqid_final_str );
+	bioWrap->printf( "REQID %s\r\n", reqid_final_str );
 }
 
 void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
@@ -591,7 +591,7 @@ void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *
 			user.id(), reqid );
 	}
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 }
 
 void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
@@ -649,6 +649,6 @@ void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
 		user.id(), subjectId.id(), reqidStr,
 		put.distName(), put.generation, encrypt.sym );
 
-	BIO_printf( bioWrap->wbio, "REQID %s\r\n", reqidStr );
+	bioWrap->printf( "OK %s\r\n", reqidStr );
 }
 

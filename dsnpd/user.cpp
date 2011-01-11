@@ -279,6 +279,6 @@ void Server::newUser( MYSQL *mysql, const char *user, const char *pass )
 	if ( res < 0 )
 		error( "photo dir creation failed with %s\n", strerror(errno) );
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 }
 

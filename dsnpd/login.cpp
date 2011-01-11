@@ -45,7 +45,7 @@ void Server::login( MYSQL *mysql, const char *user, const char *pass )
 	String identity( "%s%s/", c->CFG_URI, user );
 	String idHashStr = makeIduriHash( identity );
 
-	BIO_printf( bioWrap->wbio, "OK %s %s %ld\r\n", idHashStr.data, tokenStr.data, lasts );
+	bioWrap->printf( "OK %s %s %ld\r\n", idHashStr.data, tokenStr.data, lasts );
 
 	message("login of %s successful\n", user );
 }

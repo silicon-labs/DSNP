@@ -631,8 +631,6 @@ struct MessageParser
 		BroadcastKey,
 		EncryptRemoteBroadcast,
 		ReturnRemoteBroadcast,
-		FriendProofRequest,
-		FriendProof,
 		UserMessage
 	};
 

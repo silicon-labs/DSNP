@@ -448,10 +448,6 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @{
 				type = ReturnRemoteBroadcast;
 			} |
-		'friend_proof'i ' ' hash ' ' network ' ' generation ' ' sym
-			EOL @{
-				type = FriendProof;
-			} |
 		'user_message'i ' ' date ' ' length 
 			EOL @skip_message EOL @{
 				type = UserMessage;
@@ -1061,7 +1057,7 @@ void SendMessageParser::data( char *data, int len )
 
 		main := 
 			'OK' EOL @{ OK = true; } |
-			'REQID' ' ' token EOL @token |
+			'OK' ' ' token EOL @token |
 			'ERROR' EOL;
 	}%%
 

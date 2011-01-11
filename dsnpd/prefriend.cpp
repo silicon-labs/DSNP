@@ -79,7 +79,7 @@ long Server::notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 		"VALUES ( %L, %L, %L, %e, %e );",
 		user.id(), identity.id(), relationship.id(), putRelid, getRelid );
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 
 	return 0;
 }
@@ -98,7 +98,7 @@ long Server::registered( MYSQL *mysql, User &user, Identity &identity,
 
 	addToPrimaryNetwork( mysql, user, identity );
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 
 	return 0;
 }
@@ -133,7 +133,7 @@ void Server::notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
 
 	addToPrimaryNetwork( mysql, user, identity );
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 }
 
 void Server::prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )

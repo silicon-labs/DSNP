@@ -67,19 +67,7 @@ void Server::storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, Fr
 			"VALUES ( %L, %e, %L, %e )",
 			friendClaim.id, distName, generation, broadcastKey );
 
-	BIO_printf( bioWrap->wbio, "OK\n" );
-}
-
-int friendProofMessage( MYSQL *mysql, const char *user, long long userId, const char *friend_id,
-		const char *hash, const char *network, long long generation, const char *sym )
-{
-//	message("calling remote broadcast from friend proof symLen %d sym %s\n", strlen(sym), sym );
-//
-//	long long networkId = addNetwork( mysql, userId, network );
-//
-//	remoteBroadcast( mysql, user, friend_id, hash, network, networkId, generation, sym, strlen(sym) );
-//	BIO_printf( bioWrap->wbio, "OK\r\n" );
-	return 0;
+	bioWrap->printf( "OK\n" );
 }
 
 void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
@@ -117,10 +105,6 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			returnRemoteBroadcast( mysql, user, identity, mp.reqid,
 					mp.network, mp.generation, mp.sym );
 			break;
-		case MessageParser::FriendProof:
-//			friendProofMessage( mysql, user, userId, friendId, mp.hash,
-//					mp.network, mp.generation, mp.sym );
-			break;
 		case MessageParser::UserMessage:
 //			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
 			break;
@@ -144,7 +128,7 @@ long Server::submitMessage( MYSQL *mysql, const char *user, const char *toIdenti
 		return -1;
 	}
 
-	BIO_printf( bioWrap->wbio, "OK\r\n" );
+	bioWrap->printf( "OK\r\n" );
 	return 0;
 }
 

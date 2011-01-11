@@ -54,6 +54,9 @@
 #define EC_PUT_KEY_FETCH_ERROR       130
 #define EC_INVALID_RELID             131
 #define EC_IDENTITY_HASH_INVALID     132
+#define EC_INVALID_FTOKEN            133
+#define EC_INVALID_FTOKEN_REQUEST    134
+#define EC_FLOGIN_TOKEN_WRONG_SIZE   135
 
 struct UserError
 {
@@ -543,6 +546,51 @@ struct IdentityHashInvalid
 
 		error( "%d identity hash not valid\n",
 				EC_IDENTITY_HASH_INVALID );
+	}
+
+};
+
+struct FtokenInvalid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_INVALID_FTOKEN );
+
+		error( "%d supplied ftoken is not valid\n",
+				EC_INVALID_FTOKEN );
+	}
+
+};
+
+struct FtokenRequestInvalid
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_INVALID_FTOKEN_REQUEST );
+
+		error( "%d supplied ftoken is not valid\n",
+				EC_INVALID_FTOKEN_REQUEST );
+	}
+
+};
+
+struct FloginTokenWrongSize
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_FLOGIN_TOKEN_WRONG_SIZE );
+
+		error( "%d flogin token is the wrong size\n",
+				EC_FLOGIN_TOKEN_WRONG_SIZE );
 	}
 
 };

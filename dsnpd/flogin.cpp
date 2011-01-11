@@ -17,6 +17,7 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
+#include "error.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -33,37 +34,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
-long checkFriendClaim( IdentityOrig &identity, MYSQL *mysql, const char *user, 
-		const char *friendHash )
-{
-	DbQuery check( mysql,
-		"SELECT iduri FROM friend_claim WHERE user = %e AND friend_hash = %e",
-		user, friendHash );
-
-	if ( check.rows() != 0 ) {
-		MYSQL_ROW row = check.fetchRow();
-		identity.identity = strdup( row[0] );
-		identity.parse();
-		return 1;
-	}
-
-	return 0;
-}
-
-char *userIdentityHash( MYSQL *mysql, const char *user )
-{
-	DbQuery salt( mysql,
-		"SELECT id_salt FROM user WHERE user = %e", user );
-
-	if ( salt.rows() > 0  ) {
-		MYSQL_ROW row = salt.fetchRow();
-		String identity( "%s%s/", c->CFG_URI, user );
-		return makeIdHash( row[0], identity.data );
-	}
-
-	return 0;
-}
 
 void Server::ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 {
@@ -111,11 +81,8 @@ void Server::fetchFtoken( MYSQL *mysql, const char *reqid )
 	DbQuery ftoken( mysql,
 		"SELECT msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
 
-	if ( ftoken.rows() == 0 ) {
-		/* FIXME: throw. */
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_NO_FTOKEN );
-		return;
-	}
+	if ( ftoken.rows() == 0 )
+		throw FtokenRequestInvalid();
 	
 	MYSQL_ROW row = ftoken.fetchRow();
 	bioWrap->printf( "OK %s\r\n", row[0] );
@@ -153,10 +120,8 @@ void Server::ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 	encrypt.decryptVerify( encsig.sym );
 
 	/* Check the size. */
-	if ( encrypt.decLen != REQID_SIZE ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
-		return;
-	}
+	if ( encrypt.decLen != REQID_SIZE )
+		throw FloginTokenWrongSize();
 
 	unsigned char *flogin_token = encrypt.decrypted;
 	char *flogin_token_str = binToBase64( flogin_token, RELID_SIZE );
@@ -181,10 +146,9 @@ void Server::submitFtoken( MYSQL *mysql, const char *token )
 		"WHERE token = %e",
 		token );
 
-	if ( request.rows() == 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return;
-	}
+	if ( request.rows() == 0 )
+		throw FtokenInvalid();
+
 	MYSQL_ROW row = request.fetchRow();
 	long long userId = parseId( row[0] );
 	long long identityId = parseId( row[1] );
@@ -200,6 +164,3 @@ void Server::submitFtoken( MYSQL *mysql, const char *token )
 
 	bioWrap->printf( "OK %s %s %ld\r\n", identity.iduri(), hash(), lasts );
 }
-
-
-

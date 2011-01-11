@@ -275,21 +275,23 @@ bool gblKeySubmitted = false;
 			} |
 
 		#
+		# Direct messages to friends
+		#
+
+		# Not currently used?
+		'submit_message'i ' ' user ' ' identity ' ' length
+			M_EOL @check_key @{
+				message( "command: submit_message %s %s %lld\n", user(), identity(), length );
+				server->submitMessage( mysql, user, identity, messageBody.data, length );
+			} |
+
+		#
 		# Broadcasting
 		#
 		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
 				message( "command: submit_broadcast %lld\n", length );
 				server->submitBroadcast( mysql, user, messageBody.data, length );
-			} |
-
-		#
-		# Direct messages to friends
-		#
-		'submit_message'i ' ' user ' ' identity ' ' length
-			M_EOL @check_key @{
-				message( "command: submit_message %s %s %lld\n", user(), identity(), length );
-				server->submitMessage( mysql, user, identity, messageBody.data, length );
 			} |
 
 		#

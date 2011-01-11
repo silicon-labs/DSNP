@@ -61,7 +61,7 @@
 #define EC_REQUEST_ID_INVALID           137
 #define EC_LOGIN_TOKEN_INVALID          138
 #define EC_TOKEN_WRONG_SIZE             139
-#define EC_NOT_IMPLEMENTED				140
+#define EC_NOT_IMPLEMENTED              140
 
 struct UserError
 {

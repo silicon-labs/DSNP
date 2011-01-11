@@ -229,7 +229,83 @@ messages are also digitally signed with your private key. Your friends can then
 use your public key to verify that you wrote the message, uploaded the photo,
 commented on someone else's post, etc.
 
-\section{Identity Initialization}
+\subsection{Broadcast Keys}
+
+DSNP uses a broadcast key for encrypting messages broadcast to all friends.
+It requires that keys be delivered to friends ahead of time.
+
+Broadcast keys reduce the cost of broadcasting, by allowing a message to be
+encrypted only once, then copied to each recipient. Use of SSL for message
+delivery is optional. If it is not used, only a relationship identifier is
+revealed in the broadcast. This identifier has meaning only to the sender and
+recipient. A snooper is able to discover that pairs are repeatedly
+communicating, but cannot discover who. This is in contrast with schemes such
+as PGP or CMS, where senders and recipients are identified in each
+communication.
+
+Use of broadcast keys also allows a third party message broker to deliver
+messages on behalf of a user. This feature allows more possible architecture
+configurations. One server that is capable of many high-volume transactions can
+serve as the message broker for a number of smaller systems.
+
+\subsection{Characteristics}
+
+Your list of friends can be treated as private information. It is impossible
+for someone to probe your list of friends if you don't want to publish it. The
+list must be explictly granted, even to current friends (see next point for a
+minor exception). This makes it possible to partition your relationships into
+differnet groups, such as family, close friends, co-workers, and people you
+hardly know but might like to get to know better.
+
+The user must trust the server that is hosting their identity. But like email,
+blogs, and other forms of internet identity, we are free to choose our service
+providers and the truely paranoid and technically inclined are free to host
+their own identity on their own server. Perhaps a more difficult problem is
+that the user must trust the server that is hosting their friend's identities.
+However, this is not a problem unique to DSNP. This is true of email as well.
+
+\section{Protocol}
+\subsection{Common elements and first line}
+
+\begin{verbatim}
+    base64 = [A-Za-z0-9\-_]+;
+    user = [a-zA-Z0-9_.]+;
+    pass = graph+;
+    dist_name = base64;
+
+    date = (
+        digit{4} '-' digit{2} '-' digit{2} ' ' 
+        digit{2} ':' digit{2} ':' digit{2} 
+    )
+
+    path_part = ( graph - '/' )+;
+
+    identity = 
+        ( 'https://' path_part '/' ( path_part '/' )* );
+
+    number = [0-9]+           
+
+    EOL = '\r'? '\n';
+
+	main := 'DSNP/0.1'i ' ' identity 
+\end{verbatim}
+
+\subsection{Communication Channel Authentication and Authorization}
+
+For local connection.
+
+\begin{verbatim}
+    key = base64;
+    'comm_key'i ' ' key EOL;
+\end{verbatim}
+
+For remote Connections.
+
+\begin{verbatim}
+    'start_tls'i EOL
+\end{verbatim}
+
+\subsection{Creating Users}
 
 A user name and password is requested. These credentials will be used by the
 user to login as the owner of the identity.
@@ -244,12 +320,19 @@ The public portion of the key is made publically available. The key must always
 be fetched using SSL. This guarantees that a key has been provided by the
 server hosting the identity and has not been tampered with.
 
-\section{Owner Login}
+\begin{verbatim}
+    'new_user'i ' ' user ' ' pass EOL
+\end{verbatim}
+
+
+\subsection{Owner Login}
 
 User submits credentials via a web form underneath URI and recieves a session
 cookie that indicates to the server that the user is logged in.
 
-\section{Establishing Relationships}
+\begin{verbatim}
+		'login'i ' ' user ' ' pass EOL
+\end{verbatim}
 
 \subsection{Friendship Request}
 
@@ -295,6 +378,18 @@ The person who is receiving the request is the friendee, with FR-URI
 	\end{enumerate}
 \end{enumerate}
 
+\begin{verbatim}
+    'relid_request'i ' ' user ' ' identity EOL
+
+    'relid_response'i ' ' user ' ' reqid ' ' identity EOL
+
+    'friend_final'i ' ' user ' ' reqid ' ' identity EOL
+
+    'fetch_requested_relid'i ' ' reqid EOL
+
+    'fetch_response_relid'i ' ' reqid EOL
+\end{verbatim}
+
 \subsection{Friendship Accept/Deny}
 
 The next time the friendee logs in they are presented with the friendship
@@ -306,43 +401,13 @@ then registers the friendship and sends a registered message. It can can now
 send broadcast key and broadcast tree insertion messages. The other end can
 send these messages after it receives the registered message.
 
-\section{Publishing to Friends}
+\begin{verbatim}
+    'accept_friend'i ' ' user ' ' reqid EOL
 
-\subsection{Direct Messages}
+    'prefriend_message'i ' ' relid ' ' length EOL message EOL
+\end{verbatim}
 
-\subsection{Broadcast to all Friends}
-
-\subsubsection{Broadcast Encryption Keys}
-
-DSNP uses a broadcast key for encrypting messages broadcast to all friends.
-It requires that keys be delivered to friends ahead of time.
-
-Broadcast keys reduce the cost of broadcasting, by allowing a message to be
-encrypted only once, then copied to each recipient. Use of SSL for message
-delivery is optional. If it is not used, only a relationship identifier is
-revealed in the broadcast. This identifier has meaning only to the sender and
-recipient. A snooper is able to discover that pairs are repeatedly
-communicating, but cannot discover who. This is in contrast with schemes such
-as PGP or CMS, where senders and recipients are identified in each
-communication.
-
-Use of broadcast keys also allows a third party message broker to deliver
-messages on behalf of a user. This feature allows more possible architecture
-configurations. One server that is capable of many high-volume transactions can
-serve as the message broker for a number of smaller systems.
-
-\section{Roles and Friendship Types}
-
-The different roles poeple play in their lives are often reflected in a
-categorization of their relationships. It would be useful in DSNP to support
-friendship categories. Each category should have it's own broadcast key and the
-distribution trees should not be disconnected. The categories should not
-necessarily be comprised of disjoint sets of friends however. Your brother can
-be both in your friend category and your family category. You grandmonther,
-however, can just be in your family category so you can shelter her from the
-details of that crazy weekend in Montreal.
-
-\section{Login as a Friend}
+\subsection{Login as a Friend}
 
 This allows people to login to a friend's page to see the content that has been
 summarized by their feed. It is an open-id style login.
@@ -382,21 +447,48 @@ Friend:   FR-URI, FR-RELID
 	\end{enumerate}
 \end{enumerate}
 
-\section{Characteristics}
+\begin{verbatim}
+    'ftoken_request'i ' ' user ' ' hash EOL 
 
-Your list of friends can be treated as private information. It is impossible
-for someone to probe your list of friends if you don't want to publish it. The
-list must be explictly granted, even to current friends (see next point for a
-minor exception). This makes it possible to partition your relationships into
-differnet groups, such as family, close friends, co-workers, and people you
-hardly know but might like to get to know better.
+    'ftoken_response'i ' ' user ' ' hash ' ' reqid EOL 
 
-The user must trust the server that is hosting their identity. But like email,
-blogs, and other forms of internet identity, we are free to choose our service
-providers and the truely paranoid and technically inclined are free to host
-their own identity on their own server. Perhaps a more difficult problem is
-that the user must trust the server that is hosting their friend's identities.
-However, this is not a problem unique to DSNP. This is true of email as well.
+    'fetch_ftoken'i ' ' reqid EOL
+
+    'submit_ftoken'i ' ' token EOL 
+\end{verbatim}
+
+\subsection{Publishing to Friends}
+
+\begin{verbatim}
+     'submit_message'i ' ' user ' ' identity ' ' length EOL
+\end{verbatim}
+
+\begin{verbatim}
+     'submit_broadcast'i ' ' user ' ' length EOL message EOL
+\end{verbatim}
+
+\subsection{Message Sending}
+
+
+\begin{verbatim}
+    'message'i ' ' relid ' ' length EOL message EOL
+
+    'broadcast_recipient'i ' ' relid EOL
+
+    'broadcast'i ' ' network ' ' generation ' ' length EOL message EOL
+\end{verbatim}
+
+\subsection{Remote Broadcasting}
+
+\begin{verbatim}
+    'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length EOL message EOL
+
+    'remote_broadcast_response'i ' ' user ' ' reqid EOL 
+
+    'remote_broadcast_final'i ' ' user ' ' reqid EOL 
+\end{verbatim}
+
+
 
 \section{Software Architecture}
 
@@ -408,7 +500,7 @@ broadcast, initiating friend requests, etc. The expectation is that a number of
 different web UI implementations can utilize the reference DSNPd
 implementation.
 
-\section{Notifications}
+\subsection{Notifications}
 
 \begin{itemize}
 \item notification\_broadcast           (user message to a group)
@@ -418,3 +510,16 @@ implementation.
 \end{itemize}
 
 \end{document}
+
+
+
+% \section{Roles and Friendship Types}
+% The different roles poeple play in their lives are often reflected in a
+% categorization of their relationships. It would be useful in DSNP to support
+% friendship categories. Each category should have it's own broadcast key and the
+% distribution trees should not be disconnected. The categories should not
+% necessarily be comprised of disjoint sets of friends however. Your brother can
+% be both in your friend category and your family category. You grandmonther,
+% however, can just be in your family category so you can shelter her from the
+% details of that crazy weekend in Montreal.
+

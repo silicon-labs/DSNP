@@ -375,14 +375,14 @@ struct Server
 	void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str,
 			const char *identity );
 	void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
-	long remoteBroadcastRequest( MYSQL *mysql, const char *user, 
+	void remoteBroadcastRequest( MYSQL *mysql, const char *user, 
 			const char *identity, const char *hash, const char *token,
 			const char *msg, long mLen );
 	void remoteBroadcastResponse( MYSQL *mysql, const char *user, const char *reqid );
-	long submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
+	void submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
 	void submitFtoken( MYSQL *mysql, const char *token );
 
-	long submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
+	void submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
 
 
 private:
@@ -611,7 +611,6 @@ struct BroadcastParser
 		Unknown = 1,
 		Direct,
 		Remote,
-		GroupMemberRevocation
 	};
 
 	Type type;

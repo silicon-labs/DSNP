@@ -496,10 +496,6 @@ int MessageParser::parse( const char *msg, long mLen )
 		'remote_broadcast'i ' ' hash ' ' network ' ' generation ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
 				type = Remote;
-			} |
-		'group_member_revocation'i ' ' network ' ' generation ' ' identity
-			EOL @{
-				type = GroupMemberRevocation;
 			};
 }%%
 

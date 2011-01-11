@@ -143,11 +143,8 @@ void Server::prefriendMessage( MYSQL *mysql, const char *relid, const char *msg 
 		"WHERE requested_relid = %e",
 		relid );
 
-	if ( sent.rows() == 0 ) {
-		error("prefriend_message: could not locate friend via sent_friend_request\n");
-		BIO_printf( bioWrap->wbio, "ERROR finding friend\r\n" );
-		return;
-	}
+	if ( sent.rows() == 0 )
+		throw RequestIdInvalid();
 
 	MYSQL_ROW row = sent.fetchRow();
 	long long userId = strtoll( row[0], 0, 10 );

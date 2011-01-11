@@ -36,29 +36,6 @@ void directBroadcast( MYSQL *mysql, const char *relid, const char *user,
 	appNotification( args, msg, mLen );
 }
 
-void groupMemberRevocation( MYSQL *mysql, const char *user, 
-		const char *friendId, const char *network, long long networkId,
-		long long generation, const char *revokedId )
-{
-	DbQuery findFrom( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND iduri = %e",
-		user, friendId );
-
-	DbQuery findTo( mysql,
-		"SELECT id FROM friend_claim WHERE user = %e AND iduri = %e",
-		user, revokedId );
-
-	if ( findFrom.rows() > 0 && findTo.rows() > 0 ) {
-		long long fromId = strtoll( findFrom.fetchRow()[0], 0, 10 );
-		long long toId = strtoll( findTo.fetchRow()[0], 0, 10 );
-
-		DbQuery remove( mysql,
-			"DELETE FROM friend_link "
-			"WHERE network_id = %L AND from_fc_id = %L AND to_fc_id = %L ",
-			networkId, fromId, toId );
-	}
-}
-
 void remoteInner( MYSQL *mysql, const char *user, const char *network,
 		const char *subjectId, const char *authorId, long long seqNum,
 		const char *date, const char *msg, long mLen )
@@ -135,13 +112,7 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		/* Do the decryption. */
 		Keys *idPub = innerIdentity.fetchPublicKey();
 		Encrypt encrypt( idPub, 0 );
-		int decryptRes = encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
-
-		if ( decryptRes < 0 ) {
-			error("second level broadcast decrypt verify failed with %s\n", encrypt.err);
-			BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-			return;
-		}
+		encrypt.bkDecryptVerify( broadcastKey, msg, mLen );
 
 		RemoteBroadcastParser rbp;
 		rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
@@ -202,12 +173,8 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 		"WHERE friend_claim_id = %L AND network_dist = %e AND generation = %L ",
 		friendClaim.id, network, keyGen );
 
-	if ( recipient.rows() == 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR bad recipient\r\n");
-		return;
-	}
-
-	message( "encrypted: %ld %s\n", strlen(encrypted), encrypted );
+	if ( recipient.rows() == 0 )
+		throw BroadcastRecipientInvalid();
 
 	MYSQL_ROW row = recipient.fetchRow();
 	String broadcastKey = row[0];
@@ -215,14 +182,7 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 	/* Do the decryption. */
 	Keys *idPub = identity.fetchPublicKey();
 	Encrypt encrypt( idPub, 0 );
-	int decryptRes = encrypt.bkDecryptVerify( broadcastKey, encrypted, strlen(encrypted) );
-
-	if ( decryptRes < 0 ) {
-		error("unable to decrypt broadcast message for %s from "
-			"%s network %s key gen %lld\n", user.user(), identity.iduri(), network, keyGen );
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return;
-	}
+	encrypt.bkDecryptVerify( broadcastKey, encrypted, strlen(encrypted) );
 
 	/* Take a copy of the decrypted message. */
 	char *decrypted = new char[encrypt.decLen+1];
@@ -231,25 +191,18 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 	int decLen = encrypt.decLen;
 
 	BroadcastParser bp;
-	int parseRes = bp.parse( decrypted, decLen );
-	if ( parseRes < 0 )
-		error("broadcast_parser failed\n");
-	else {
-		switch ( bp.type ) {
-			case BroadcastParser::Direct:
-				directBroadcast( mysql, relid, user.user(), network, identity.iduri, 
-						bp.seq_num, bp.date, bp.embeddedMsg, bp.length );
-				break;
-			case BroadcastParser::Remote:
-				remoteBroadcast( mysql, user, identity, bp.hash, 
-						bp.network, 1, bp.generation, bp.embeddedMsg, bp.length );
-				break;
-			case BroadcastParser::GroupMemberRevocation:
-	//			groupMemberRevocation( mysql, user, friendId,
-	//					bp.network, networkId, bp.generation, bp.identity );
-			default:
-				break;
-		}
+	bp.parse( decrypted, decLen );
+	switch ( bp.type ) {
+		case BroadcastParser::Direct:
+			directBroadcast( mysql, relid, user.user(), network, identity.iduri, 
+					bp.seq_num, bp.date, bp.embeddedMsg, bp.length );
+			break;
+		case BroadcastParser::Remote:
+			remoteBroadcast( mysql, user, identity, bp.hash, 
+					bp.network, 1, bp.generation, bp.embeddedMsg, bp.length );
+			break;
+		default:
+			break;
 	}
 
 	bioWrap->printf( "OK\r\n" );
@@ -349,7 +302,7 @@ long storeBroadcastRecipients( MYSQL *mysql, User &user,
 	return count;
 }
 
-long queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
+void queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
 {
 	/* Get the latest put session key. */
 	long long networkId = findPrimaryNetworkId( mysql, user );
@@ -383,12 +336,10 @@ long queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
 		user.id(), networkId );
 
 	storeBroadcastRecipients( mysql, user, messageId, outOfTree );
-
-	return 0;
 }
 
 
-long Server::submitBroadcast( MYSQL *mysql, const char *_user, 
+void Server::submitBroadcast( MYSQL *mysql, const char *_user, 
 		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
@@ -412,18 +363,12 @@ long Server::submitBroadcast( MYSQL *mysql, const char *_user,
 		seqNum, timeStr.data, mLen );
 	String full = addMessageData( broadcastCmd, msg, mLen );
 
-	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
-	if ( sendResult < 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return -1;
-	}
-
+	queueBroadcast( mysql, user, full.data, full.length );
 	bioWrap->printf( "OK\r\n" );
-	return 0;
 }
 
 
-long sendRemoteBroadcast( MYSQL *mysql, User &user,
+void sendRemoteBroadcast( MYSQL *mysql, User &user,
 		const char *authorHash, const char *network, long long generation,
 		long long seqNum, const char *encMessage )
 {
@@ -435,14 +380,10 @@ long sendRemoteBroadcast( MYSQL *mysql, User &user,
 		authorHash, network, generation, seqNum, encMessageLen );
 	String full = addMessageData( command, encMessage, encMessageLen );
 
-	long sendResult = queueBroadcast( mysql, user, full.data, full.length );
-	if ( sendResult < 0 )
-		return -1;
-
-	return 0;
+	queueBroadcast( mysql, user, full.data, full.length );
 }
 
-long Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser, 
+void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser, 
 		const char *authorId, const char *authorHash, 
 		const char *token, const char *msg, long mLen )
 {
@@ -455,6 +396,7 @@ long Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 
 	String subjectId( "%s%s/", c->CFG_URI, toUser );
 
+	/* FIXME: sequence number is not right. */
 //	/* Insert the broadcast message into the published table. */
 //	DbQuery( mysql,
 //		"INSERT INTO broadcasted "
@@ -463,12 +405,7 @@ long Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 //		toUser, authorId, subjectId.data, timeStr.data, msg, mLen );
 
 	/* Get the id that was assigned to the message. */
-	DbQuery idQuery( mysql, "SELECT LAST_INSERT_ID()" );
-	if ( idQuery.rows() == 0 )
-		return -1;
-
-	MYSQL_ROW row = idQuery.fetchRow();
-	long long seqNum = strtoll( row[0], 0, 10 );
+	long long seqNum = lastInsertId( mysql );
 
 	Keys *userPriv = loadKey( mysql, toUser );
 	Keys *idPub = fetchPublicKey( mysql, authorId );
@@ -496,7 +433,6 @@ long Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 
 	message("send_message_now returned: %s\n", resultMessage );
 	bioWrap->printf( "OK %s\r\n", resultMessage );
-	return 0;
 }
 
 void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
@@ -509,10 +445,8 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 		"WHERE user_id = %L AND reqid = %e",
 		user.id(), reqid );
 	
-	if ( recipient.rows() == 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return;
-	}
+	if ( recipient.rows() == 0 )
+		throw RequestIdInvalid();
 
 	MYSQL_ROW row = recipient.fetchRow();
 	long long identityId = parseId( row[0] );
@@ -577,12 +511,8 @@ void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *
 
 		Identity identity( mysql, identityId );
 
-		long res = sendRemoteBroadcast( mysql, user, hash, network,
+		sendRemoteBroadcast( mysql, user, hash, network,
 				strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
-		if ( res < 0 ) {
-			BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-			return;
-		}
 
 		/* Clear the pending remote broadcast. */
 		DbQuery clear( mysql, 
@@ -603,11 +533,8 @@ void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
 		"WHERE user_id = %L AND identity_id = %L AND login_token = %e",
 		user.id(), subjectId.id(), token );
 
-	if ( flogin.rows() == 0 ) {
-		error("failed to find user from provided login token\n");
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return;
-	}
+	if ( flogin.rows() == 0 )
+		throw LoginTokenNotValid();
 
 	/* Get the current time. */
 	String timeStr = timeNow();
@@ -631,12 +558,8 @@ void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
 
 	Encrypt encrypt;
 	encrypt.load( idPub, userPriv );
-	int sigRes = encrypt.bkSignEncrypt( put.broadcastKey, 
+	encrypt.bkSignEncrypt( put.broadcastKey, 
 			(u_char*)full.data, full.length );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
 
 	u_char reqid[REQID_SIZE];
 	RAND_bytes( reqid, REQID_SIZE );

@@ -178,12 +178,8 @@ void Server::publicKey( MYSQL *mysql, const char *user )
 		"FROM user "
 		"JOIN user_keys ON user.user_keys_id = user_keys.id "
 		"WHERE user.user = %e", user );
-	if ( query.rows() == 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR user not found\r\n" );
-		return;
-	}
-
-//	sleep( 10 );
+	if ( query.rows() == 0 )
+		throw InvalidUser( user );
 
 	/* Everythings okay. */
 	MYSQL_ROW row = query.fetchRow();

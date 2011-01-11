@@ -113,11 +113,7 @@ void Server::relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 	/* Encrypt and sign the relationship id. */
 	Encrypt encrypt;
 	encrypt.load( idPub, userPriv );
-	int sigRes = encrypt.signEncrypt( relidBin, RELID_SIZE );
-	if ( sigRes < 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_ENCRYPT_SIGN );
-		return;
-	}
+	encrypt.signEncrypt( relidBin, RELID_SIZE );
 	
 	/* Store the request. */
 	String relid = binToBase64( relidBin, RELID_SIZE );
@@ -141,10 +137,8 @@ void Server::fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 		"SELECT msg_sym FROM relid_request WHERE reqid = %e", reqid );
 
 	/* Check for a result. */
-	if ( request.rows() == 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return;
-	}
+	if ( request.rows() == 0 )
+		throw RequestIdInvalid();
 
 	MYSQL_ROW row = request.fetchRow();
 	bioWrap->printf( "OK %s\r\n", row[0] );
@@ -186,10 +180,8 @@ void Server::relidResponse( MYSQL *mysql, const char *_user,
 	encrypt.decryptVerify( encsig.sym );
 
 	/* Verify the message is the right size. */
-	if ( encrypt.decLen != RELID_SIZE ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
-		return;
-	}
+	if ( encrypt.decLen != RELID_SIZE )
+		TokenWrongSize();
 
 	/* This should not be deleted as long as we don't do any more decryption. */
 	unsigned char *requested_relid = encrypt.decrypted;
@@ -245,19 +237,17 @@ void Server::fetchResponseRelid( MYSQL *mysql, const char *reqid )
 {
 	/* Execute the query. */
 	DbQuery response( mysql,
-		"SELECT msg_sym FROM relid_response WHERE reqid = %e;", reqid );
+		"SELECT msg_sym FROM relid_response WHERE reqid = %e", reqid );
 	
 	/* Check for a result. */
-	if ( response.rows() == 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return;
-	}
+	if ( response.rows() == 0 )
+		throw RequestIdInvalid();
 
 	MYSQL_ROW row = response.fetchRow();
 	bioWrap->printf( "OK %s\r\n", row[0] );
 }
 
-long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
+void verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 {
 	char *requested_relid_str = binToBase64( fr_relid, RELID_SIZE );
 	DbQuery request( mysql,
@@ -265,10 +255,8 @@ long verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 		requested_relid_str );
 
 	/* Check for a result. */
-	if ( request.rows() )
-		return 1;
-
-	return 0;
+	if ( request.rows() == 0 )
+		throw RequestIdInvalid();
 }
 
 void Server::friendFinal( MYSQL *mysql, const char *_user, 
@@ -301,10 +289,8 @@ void Server::friendFinal( MYSQL *mysql, const char *_user,
 	encrypt.decryptVerify( encsig.sym );
 
 	/* Verify that the message is the right size. */
-	if ( encrypt.decLen != RELID_SIZE*2 ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_DECRYPTED_SIZE );
-		return;
-	}
+	if ( encrypt.decLen != RELID_SIZE*2 )
+		throw TokenWrongSize();
 
 	unsigned char *message = encrypt.decrypted;
 
@@ -312,14 +298,10 @@ void Server::friendFinal( MYSQL *mysql, const char *_user,
 	memcpy( requested_relid, message, RELID_SIZE );
 	memcpy( returned_relid, message+RELID_SIZE, RELID_SIZE );
 
-	int verifyRes = verifyReturnedFrRelid( mysql, requested_relid );
-	if ( verifyRes != 1 ) {
-		BIO_printf( bioWrap->wbio, "ERROR %d\r\n", ERROR_REQUESTED_RELID_MATCH );
-		return;
-	}
+	verifyReturnedFrRelid( mysql, requested_relid );
 		
-	char *requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
-	char *returned_relid_str = binToBase64( returned_relid, RELID_SIZE );
+	String requested_relid_str = binToBase64( requested_relid, RELID_SIZE );
+	String returned_relid_str = binToBase64( returned_relid, RELID_SIZE );
 
 	/* Make a user request id. */
 	unsigned char user_reqid[REQID_SIZE];
@@ -332,15 +314,12 @@ void Server::friendFinal( MYSQL *mysql, const char *_user,
 		"INSERT INTO friend_request "
 		" ( user_id, identity_id, relationship_id, reqid, requested_relid, returned_relid ) "
 		" VALUES ( %L, %L, %L, %e, %e, %e ) ",
-		user.id(), identity.id(), relationship.id(), user_reqid_str, requested_relid_str, returned_relid_str );
+		user.id(), identity.id(), relationship.id(), user_reqid_str, requested_relid_str(), returned_relid_str() );
 	
 	String args( "friend_request %s %s %s %s %s",
-		user.user(), identity.iduri(), user_reqid_str, requested_relid_str, returned_relid_str );
+		user.user(), identity.iduri(), user_reqid_str, requested_relid_str(), returned_relid_str() );
 	appNotification( args, 0, 0 );
 	
 	/* Return the request id for the requester to use. */
 	bioWrap->printf( "OK\r\n" );
-
-	delete[] requested_relid_str;
-	delete[] returned_relid_str;
 }

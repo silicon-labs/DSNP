@@ -17,6 +17,7 @@
 #include "dsnp.h"
 #include "encrypt.h"
 #include "string.h"
+#include "error.h"
 
 #include <string.h>
 
@@ -81,13 +82,7 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	Keys *idPub = identity.fetchPublicKey();
 
 	Encrypt encrypt( idPub, userPriv );
-	int decryptRes = encrypt.decryptVerify( msg );
-
-	if ( decryptRes < 0 ) {
-		error("message receipt: decryption failed\n" );
-		BIO_printf( bioWrap->wbio, "ERROR %s\r\n", encrypt.err );
-		return;
-	}
+	encrypt.decryptVerify( msg );
 
 	MessageParser mp;
 	mp.parse( (char*)encrypt.decrypted, encrypt.decLen );
@@ -106,15 +101,14 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 					mp.network, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
-//			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
-			break;
 		default:
-			BIO_printf( bioWrap->wbio, "ERROR\r\n" );
+//			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
+			throw NotImplemented();
 			break;
 	}
 }
 
-long Server::submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen )
+void Server::submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 
@@ -122,13 +116,7 @@ long Server::submitMessage( MYSQL *mysql, const char *user, const char *toIdenti
 	String command( "user_message %s %ld\r\n", timeStr.data, mLen );
 	String full = addMessageData( command, msg, mLen );
 
-	long sendResult = queueMessage( mysql, user, toIdentity, full.data, full.length );
-	if ( sendResult < 0 ) {
-		BIO_printf( bioWrap->wbio, "ERROR\r\n" );
-		return -1;
-	}
-
+	queueMessage( mysql, user, toIdentity, full.data, full.length );
 	bioWrap->printf( "OK\r\n" );
-	return 0;
 }
 

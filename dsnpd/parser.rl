@@ -112,7 +112,7 @@ bool gblKeySubmitted = false;
 	action skip_message {
 		if ( length > MAX_MSG_LEN ) {
 			error("message too large\n");
-			fgoto *parser_error;
+			fgoto *server_loop_error;
 		}
 
 		/* Rest of the input is the msssage. */
@@ -132,8 +132,105 @@ bool gblKeySubmitted = false;
 		EOL nbytes >clear $buf %collect_message EOL;
 }%%
 
+/*
+ * IdentityOrig::parse()
+ */
+
 %%{
-	machine parser;
+	machine identity_orig;
+	write data;
+}%%
+
+long IdentityOrig::parse()
+{
+	long result = 0, cs;
+	const char *p, *pe, *eof;
+	const char *i1, *i2;
+	const char *h1, *h2;
+	const char *pp1, *pp2;
+
+	/* Parser for response. */
+	%%{
+		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
+
+		main :=
+			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
+			>{i1=p;} %{i2=p;};
+	}%%
+
+	p = identity;
+	pe = p + strlen(identity);
+	eof = pe;
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
+	
+	host = allocString( h1, h2 );
+	user = allocString( pp1, pp2 );
+
+	/* We can use the start of the last path part to get the site. */
+	site = allocString( identity, pp1 );
+
+	return result;
+}
+
+/*
+ * Identity::parse()
+ */
+
+%%{
+	machine identity;
+	write data;
+}%%
+
+long Identity::parse()
+{
+	const char *p = iduri;
+	const char *pe = p + strlen(iduri);
+	const char *eof = pe;
+
+	const char *i1, *i2;
+	const char *h1, *h2;
+	const char *pp1, *pp2;
+
+	/* Parser for response. */
+	%%{
+		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
+
+		main :=
+			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
+			>{i1=p;} %{i2=p;};
+	}%%
+
+
+	long result = 0, cs;
+
+	%% write init;
+	%% write exec;
+
+	/* Did parsing succeed? */
+	if ( cs < %%{ write first_final; }%% )
+		return ERR_PARSE_ERROR;
+	
+	_host.set( h1, h2 );
+	_user.set( pp1, pp2 );
+
+	/* We can use the start of the last path part to get the site. */
+	_site.set( iduri, pp1 );
+	parsed = true;
+	return result;
+}
+
+/*
+ * Server Loop
+ */
+
+%%{
+	machine server_loop;
 
 	include common;
 
@@ -143,18 +240,18 @@ bool gblKeySubmitted = false;
 		/* Now that we have a config connect to the database. */
 		mysql = dbConnect();
 		if ( mysql == 0 )
-			fgoto *parser_error;
+			fgoto *server_loop_error;
 	}
 
 	action check_key {
 		if ( !gblKeySubmitted )
-			fgoto *parser_error;
+			fgoto *server_loop_error;
 	}
 
 	action check_ssl {
 		if ( !ssl ) {
 			message("ssl check failed\n");
-			fgoto *parser_error;
+			fgoto *server_loop_error;
 		}
 	}
 
@@ -165,16 +262,13 @@ bool gblKeySubmitted = false;
 				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
 					gblKeySubmitted = true;
 				else
-					fgoto *parser_error;
+					fgoto *server_loop_error;
 			} |
 
 		'start_tls'i 
 			EOL @{
 				server->bioWrap->rbio = server->bioWrap->wbio = 
 					startTls( server->bioWrap->rbio, server->bioWrap->wbio );
-
-				//bioIn = server->bioWrap->rbio;
-				//bioOut = server->bioWrap->wbio;
 
 				ssl = true;
 			} |
@@ -355,19 +449,24 @@ ServerParser::ServerParser()
 	%% write init;
 }
 
-void ServerParser::data( char *data, int len )
+Parser::Control ServerParser::data( char *data, int len )
 {
 	const char *p = data;
 	const char *pe = data + len;
 
 	%% write exec;
 
+	if ( exit && cs >= %%{ write first_final; }%% )
+		return Stop;
+
 	/* Did parsing succeed? */
 	if ( cs == %%{ write error; }%% )
 		throw ParseError();
+
+	return Ok;
 }
 
-int serverParseLoop( BIO *rbio, BIO *wbio )
+void serverParseLoop( BIO *rbio, BIO *wbio )
 {
 	BioWrap bioWrap;
 	bioWrap.rbio = rbio;
@@ -379,11 +478,8 @@ int serverParseLoop( BIO *rbio, BIO *wbio )
 	ServerParser parser;
 	parser.server = &server;
 
-	bioWrap.readParse2( parser );
-
-	return 0;
+	bioWrap.readParse( parser );
 }
-
 
 /*
  * prefriend_message_parser
@@ -521,7 +617,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
+		if ( cs == server_loop_error )
 			return ERR_PARSE_ERROR;
 		else
 			return ERR_UNEXPECTED_END;
@@ -568,47 +664,7 @@ int RemoteBroadcastParser::parse( const char *msg, long mLen )
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
-
-	return 0;
-}
-
-/*
- * encrypted_broadcast_parser
- */
-
-%%{
-	machine encrypted_broadcast_parser;
-
-	include common;
-
-	main :=
-		'encrypted_broadcast' ' ' generation ' ' sym EOL @{
-		};
-}%%
-
-%% write data;
-
-long EncryptedBroadcastParser::parse( const char *msg )
-{
-	long cs;
-	Buffer buf;
-	String gen_str;
-
-	type = Unknown;
-	%% write init;
-
-	const char *p = msg;
-	const char *pe = msg + strlen( msg );
-
-	%% write exec;
-
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == parser_error )
+		if ( cs == server_loop_error )
 			return ERR_PARSE_ERROR;
 		else
 			return ERR_UNEXPECTED_END;
@@ -632,14 +688,14 @@ FetchPublicKeyParser::FetchPublicKeyParser()
 	%% write init;
 }
 
-void FetchPublicKeyParser::data( char *data, int len )
+Parser::Control FetchPublicKeyParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
 		include common;
 
 		main := 
-			'OK ' n ' ' e EOL @{ OK = true; } |
+			'OK ' n ' ' e EOL @{ OK = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -651,6 +707,11 @@ void FetchPublicKeyParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs == %%{ write error; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 void fetchPublicKeyNet( PublicKey &pub, const char *site, 
@@ -686,14 +747,14 @@ FetchRequestedRelidParser::FetchRequestedRelidParser()
 	%% write init;
 }
 
-void FetchRequestedRelidParser::data( char *data, int len )
+Parser::Control FetchRequestedRelidParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
 		include common;
 
 		main := 
-			'OK ' sym EOL @{ OK = true; } |
+			'OK ' sym EOL @{ OK = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -705,6 +766,11 @@ void FetchRequestedRelidParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site, 
@@ -740,14 +806,14 @@ FetchResponseRelidParser::FetchResponseRelidParser()
 	%% write init;
 }
 
-void FetchResponseRelidParser::data( char *data, int len )
+Parser::Control FetchResponseRelidParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
 		include common;
 
 		main := 
-			'OK ' sym EOL @{ OK = true; } |
+			'OK ' sym EOL @{ OK = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -759,6 +825,11 @@ void FetchResponseRelidParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 void fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
@@ -794,14 +865,14 @@ FetchFtokenParser::FetchFtokenParser()
 	%% write init;
 }
 
-void FetchFtokenParser::data( char *data, int len )
+Parser::Control FetchFtokenParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
 		include common;
 
 		main := 
-			'OK ' sym EOL @{ OK = true; } |
+			'OK ' sym EOL @{ OK = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -813,6 +884,11 @@ void FetchFtokenParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 void fetchFtokenNet( RelidEncSig &encsig, const char *site,
@@ -834,101 +910,6 @@ void fetchFtokenNet( RelidEncSig &encsig, const char *site,
 }
 
 /*
- * IdentityOrig::parse()
- */
-
-%%{
-	machine identity_orig;
-	write data;
-}%%
-
-long IdentityOrig::parse()
-{
-	long result = 0, cs;
-	const char *p, *pe, *eof;
-	const char *i1, *i2;
-	const char *h1, *h2;
-	const char *pp1, *pp2;
-
-	/* Parser for response. */
-	%%{
-		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
-
-		main :=
-			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
-			>{i1=p;} %{i2=p;};
-	}%%
-
-	p = identity;
-	pe = p + strlen(identity);
-	eof = pe;
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	host = allocString( h1, h2 );
-	user = allocString( pp1, pp2 );
-
-	/* We can use the start of the last path part to get the site. */
-	site = allocString( identity, pp1 );
-
-	return result;
-}
-
-/*
- * Identity::parse()
- */
-
-%%{
-	machine identity;
-	write data;
-}%%
-
-long Identity::parse()
-{
-	const char *p = iduri;
-	const char *pe = p + strlen(iduri);
-	const char *eof = pe;
-
-	const char *i1, *i2;
-	const char *h1, *h2;
-	const char *pp1, *pp2;
-
-	/* Parser for response. */
-	%%{
-		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
-
-		main :=
-			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
-			>{i1=p;} %{i2=p;};
-	}%%
-
-
-	long result = 0, cs;
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
-	
-	_host.set( h1, h2 );
-	_user.set( pp1, pp2 );
-
-	/* We can use the start of the last path part to get the site. */
-	_site.set( iduri, pp1 );
-	parsed = true;
-	return result;
-}
-
-
-
-/*
  * send_broadcast_net
  */
 
@@ -943,14 +924,14 @@ SendBroadcastRecipientParser::SendBroadcastRecipientParser()
 	%% write init;
 }
 
-void SendBroadcastRecipientParser::data( char *data, int len )
+Parser::Control SendBroadcastRecipientParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
 		include common;
 
 		main := 
-			'OK' EOL @{ OK = true; } |
+			'OK' EOL @{ OK = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -962,6 +943,11 @@ void SendBroadcastRecipientParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 %%{
@@ -975,14 +961,14 @@ SendBroadcastParser::SendBroadcastParser()
 	%% write init;
 }
 
-void SendBroadcastParser::data( char *data, int len )
+Parser::Control SendBroadcastParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
 		include common;
 
 		main := 
-			'OK' EOL @{ OK = true; } |
+			'OK' EOL @{ OK = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -994,6 +980,11 @@ void SendBroadcastParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
@@ -1043,7 +1034,7 @@ SendMessageParser::SendMessageParser()
 	%% write init;
 }
 
-void SendMessageParser::data( char *data, int len )
+Parser::Control SendMessageParser::data( char *data, int len )
 {
 	/* Parser for response. */
 	%%{
@@ -1051,10 +1042,11 @@ void SendMessageParser::data( char *data, int len )
 
 		action token {
 			OK = true;
+			fbreak;
 		}
 
 		main := 
-			'OK' EOL @{ OK = true; } |
+			'OK' EOL @{ OK = true; fbreak; } |
 			'OK' ' ' token EOL @token |
 			'ERROR' EOL;
 	}%%
@@ -1067,6 +1059,11 @@ void SendMessageParser::data( char *data, int len )
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
+
+	if ( cs >= %%{ write first_final; }%% )
+		return Stop;
+
+	return Ok;
 }
 
 void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,

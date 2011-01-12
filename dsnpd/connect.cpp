@@ -48,20 +48,6 @@ int BioWrap::printf( const char *fmt, ... )
 
 int BioWrap::readParse( Parser &parser )
 {
-	int readRes = BIO_gets( rbio, input, linelen );
-
-	/* If there was an error then fail the fetch. */
-	if ( readRes <= 0 )
-		throw ReadError();
-
-	parser.data( input, readRes );
-
-	return readRes;
-}
-
-
-int BioWrap::readParse2( Parser &parser )
-{
 	fd_set set;
 	int res, nbytes, fd = BIO_get_fd( rbio, 0 );
 
@@ -97,10 +83,9 @@ int BioWrap::readParse2( Parser &parser )
 				message( "BIO_read returned %d bytes, parsing\n", nbytes );
 				message( "data: %.*s", (int)nbytes, input );
 
-				parser.data( input, nbytes );
-
-				/* FIXME: eventually remove this. All output commands should do their own flushing. */
-				(void)BIO_flush( wbio );
+				Parser::Control control = parser.data( input, nbytes );
+				if ( control == Parser::Stop )
+					goto done;
 			}
 		}
 	}

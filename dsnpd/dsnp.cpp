@@ -183,7 +183,7 @@ void Server::publicKey( MYSQL *mysql, const char *user )
 
 	/* Everythings okay. */
 	MYSQL_ROW row = query.fetchRow();
-	bioWrap->printf( "OK %s %s\n", row[0], row[1] );
+	bioWrap->printf( "OK %s %s\r\n", row[0], row[1] );
 }
 
 long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *iduri )

@@ -5,7 +5,12 @@ require( ROOT . DS . 'controller/cred.php' );
 class OwnerCredController extends CredController
 {
 	var $function = array(
-		'login' => array(),
+		'login' => array(
+			array( 
+				get => 'd',
+				optional => true
+			),
+		),
 		'logout' => array(),
 		'retftok' => array(
 			array( 
@@ -30,8 +35,8 @@ class OwnerCredController extends CredController
 
 	function login()
 	{
-		/* Login when already logged in. Most likely because user went back. */
-		$this->userRedirect( '/' );
+		if ( isset( $this->args['d'] ) )	
+			$this->vars['dest'] = $this->args['d'];
 	}
 
 	function logout()

@@ -39,7 +39,7 @@ bool sendBroadcastMessage()
 
 	/* Try to find a message. */
 	DbQuery queue( mysql, 
-		"SELECT id, message_id, to_site "
+		"SELECT id, message_id, to_host, to_site "
 		"FROM broadcast_queue "
 		"WHERE now() >= send_after ORDER by id LIMIT 1"
 	);
@@ -50,7 +50,8 @@ bool sendBroadcastMessage()
 	MYSQL_ROW row = queue.fetchRow();
 	long long queueId = strtoll( row[0], 0, 10 );
 	long long messageId = strtoll( row[1], 0, 10 );
-	char *toSite = row[2];
+	char *toHost = row[2];
+	char *toSite = row[3];
 
 	/* Remove it. */
 	DbQuery remove( mysql, "DELETE FROM broadcast_queue WHERE id = %L", queueId );
@@ -106,7 +107,7 @@ bool sendBroadcastMessage()
 
 
 	/* If failed. */
-	long sendRes = sendBroadcastNet( mysql, toSite, recipientList, group,
+	long sendRes = sendBroadcastNet( mysql, toHost, toSite, recipientList, group,
 			keyGen, msg, strlen(msg) );
 
 	if ( sendRes < 0 ) {
@@ -114,9 +115,9 @@ bool sendBroadcastMessage()
 
 		DbQuery( mysql,
 			"INSERT INTO broadcast_queue "
-			"( message_id, send_after, to_site ) "
-			"VALUES ( %L, DATE_ADD( NOW(), INTERVAL 10 MINUTE ), %e ) ",
-			messageId, toSite );
+			"( message_id, send_after, to_host, to_site ) "
+			"VALUES ( %L, DATE_ADD( NOW(), INTERVAL 10 MINUTE ), %e, %e ) ",
+			messageId, toHost, toSite );
 
 		long long newQueueId = lastInsertId( mysql );
 
@@ -132,32 +133,32 @@ bool sendBroadcastMessage()
 	return true;
 }
 
-long queueMessageDb( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *relid, const char *msg )
+long queueMessageDb( MYSQL *mysql, const char *user,
+		const char *toIdentity, const char *relid, const char *msg )
 {
 	DbQuery( mysql,
 		"INSERT INTO message_queue "
 		"( from_user, to_id, relid, message, send_after ) "
 		"VALUES ( %e, %e, %e, %e, NOW() ) ",
-		from_user, to_identity, relid, msg );
+		user, toIdentity, relid, msg );
 
 	/* Get the id that was assigned to the message. */
 	DbQuery lastId( mysql, "SELECT LAST_INSERT_ID()" );
 	if ( lastId.rows() > 0 ) {
 		MYSQL_ROW row = lastId.fetchRow();
-		message( "queued message %s from %s to %s\n", row[0], from_user, to_identity );
+		message( "queued message %s from %s to %s\n", row[0], user, toIdentity );
 	}
 
 	return 0;
 }
 
-long queueMessage( MYSQL *mysql, const char *from_user,
-		const char *to_identity, const char *msg, long mLen )
+long queueMessage( MYSQL *mysql, const char *user,
+		const char *toIdentity, const char *msg, long mLen )
 {
 	DbQuery claim( mysql, 
 		"SELECT put_relid FROM friend_claim "
 		"WHERE user = %e AND iduri = %e ",
-		from_user, to_identity );
+		user, toIdentity );
 
 	if ( claim.rows() == 0 )
 		return -1;
@@ -165,13 +166,14 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 	MYSQL_ROW row = claim.fetchRow();
 	const char *relid = row[0];
 
-	Keys *id_pub = fetchPublicKey( mysql, to_identity );
-	Keys *user_priv = loadKey( mysql, from_user );
+	Identity identity( mysql, toIdentity );
+	Keys *idPub = identity.fetchPublicKey();
+	Keys *userPriv = loadKey( mysql, user );
 
-	Encrypt encrypt( id_pub, user_priv );
+	Encrypt encrypt( idPub, userPriv );
 
 	encrypt.signEncrypt( (u_char*)msg, mLen );
-	queueMessageDb( mysql, from_user, to_identity, relid, encrypt.sym );
+	queueMessageDb( mysql, user, toIdentity, relid, encrypt.sym );
 	return 0;
 }
 

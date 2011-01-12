@@ -21,37 +21,12 @@
 
 #include <string.h>
 
-void deleteFriendRequest( MYSQL *mysql, const char *user, const char *user_reqid )
+void deleteFriendRequest( MYSQL *mysql, const char *user, const char *userReqid )
 {
 	/* Insert the friend claim. */
 	DbQuery( mysql, 
 		"DELETE FROM friend_request WHERE for_user = %e AND reqid = %e;",
-		user, user_reqid );
-}
-
-long long storeFriendClaim( MYSQL *mysql, const char *user, 
-		const char *identity, const char *putRelid, const char *getRelid )
-{
-	char *friendHashStr = makeIduriHash( identity );
-	IdentityOrig fr(identity);
-	fr.parse();
-
-	DbQuery findUser( mysql, "SELECT id FROM user WHERE user = %e", user );
-	long long userId = strtoll( findUser.fetchRow()[0], 0, 10 );
-
-	/* Insert the friend claim. */
-	DbQuery( mysql, "INSERT INTO friend_claim "
-		"( user, user_id, iduri, "
-		"	friend_hash, put_relid, get_relid, name ) "
-		"VALUES ( %e, %L, %e, %e, %e, %e, %e );",
-		user, userId, identity, friendHashStr, putRelid, getRelid, fr.user );
-
-	/* Get the id that was assigned to the message. */
-	DbQuery lastInsertId( mysql, "SELECT last_insert_id()" );
-	if ( lastInsertId.rows() != 1 )
-		return -1;
-
-	return strtoll( lastInsertId.fetchRow()[0], 0, 10 );
+		user, userReqid );
 }
 
 long Server::notifyAccept( MYSQL *mysql, User &user, Identity &identity,

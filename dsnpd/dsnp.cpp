@@ -248,35 +248,6 @@ char *get_site( const char *identity )
 	return res;
 }
 
-Keys *fetchPublicKey( MYSQL *mysql, const char *iduri )
-{
-	IdentityOrig identity(iduri);
-	identity.parse();
-
-	/* First try to fetch the public key from the database. */
-	PublicKey pub;
-	long result = fetchPublicKeyDb( pub, mysql, iduri );
-	if ( result < 0 )
-		return 0;
-
-	/* If the db fetch failed, get the public key off the net. */
-	if ( result == 0 ) {
-		char *site = get_site( iduri );
-		fetchPublicKeyNet( pub, site, identity.host, identity.user );
-
-		/* Store it in the db. */
-		storePublicKey( mysql, identity.identity, pub );
-	}
-
-	RSA *rsa = RSA_new();
-	rsa->n = base64ToBn( pub.n );
-	rsa->e = base64ToBn( pub.e );
-
-	Keys *keys = new Keys;
-	keys->rsa = rsa;
-
-	return keys;
-}
 
 Keys *loadKey( MYSQL *mysql, const char *user )
 {
@@ -355,26 +326,3 @@ AllocString makeIduriHash( const char *identity )
 	SHA1( (unsigned char*)identity, strlen(identity), hash );
 	return binToBase64( hash, SHA_DIGEST_LENGTH );
 }
-
-char *decrypt_result( MYSQL *mysql, const char *from_user, 
-		const char *to_identity, const char *user_message )
-{
-	Keys *id_pub, *user_priv;
-	Encrypt encrypt;
-	int decrypt_res;
-
-	user_priv = loadKey( mysql, from_user );
-	id_pub = fetchPublicKey( mysql, to_identity );
-
-	encrypt.load( id_pub, user_priv );
-	message( "about to\n");
-	decrypt_res = encrypt.decryptVerify( user_message );
-
-	if ( decrypt_res < 0 ) {
-		message( "decrypt_verify failed\n");
-		return 0;
-	}
-
-	return strdup((char*)encrypt.decrypted);
-}
-

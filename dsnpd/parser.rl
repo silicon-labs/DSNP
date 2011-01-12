@@ -133,52 +133,6 @@ bool gblKeySubmitted = false;
 }%%
 
 /*
- * IdentityOrig::parse()
- */
-
-%%{
-	machine identity_orig;
-	write data;
-}%%
-
-long IdentityOrig::parse()
-{
-	long result = 0, cs;
-	const char *p, *pe, *eof;
-	const char *i1, *i2;
-	const char *h1, *h2;
-	const char *pp1, *pp2;
-
-	/* Parser for response. */
-	%%{
-		path_part = (graph-'/')+ >{pp1=p;} %{pp2=p;};
-
-		main :=
-			( 'https://' path_part >{h1=p;} %{h2=p;} '/' ( path_part '/' )* )
-			>{i1=p;} %{i2=p;};
-	}%%
-
-	p = identity;
-	pe = p + strlen(identity);
-	eof = pe;
-
-	%% write init;
-	%% write exec;
-
-	/* Did parsing succeed? */
-	if ( cs < %%{ write first_final; }%% )
-		throw ParseError();
-	
-	host = allocString( h1, h2 );
-	user = allocString( pp1, pp2 );
-
-	/* We can use the start of the last path part to get the site. */
-	site = allocString( identity, pp1 );
-
-	return result;
-}
-
-/*
  * Identity::parse()
  */
 
@@ -978,20 +932,15 @@ Parser::Control SendBroadcastParser::data( char *data, int len )
 	return Ok;
 }
 
-long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
+long sendBroadcastNet( MYSQL *mysql, const char *toHost,
+		const char *toSite, RecipientList &recipients,
 		const char *network, long long keyGen, const char *msg, long mLen )
 {
-	/* Need to parse the identity. */
-	IdentityOrig site( toSite );
-	long pres = site.parse();
-
-	if ( pres < 0 )
-		return pres;
-
 	TlsConnect tlsConnect;
-	tlsConnect.connect( site.host, toSite );
+	tlsConnect.connect( toHost, toSite );
 	
 	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ ) {
+		/* FIXME: catch errors here. */
 		tlsConnect.printf( 
 			"broadcast_recipient %s\r\n", r->c_str() );
 

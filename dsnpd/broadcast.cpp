@@ -133,32 +133,6 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 	}
 }
 
-/* This could be optimized to only store into broadcast_queue when sites differ. */
-long long forwardBroadcast( MYSQL *mysql, long long messageId, 
-		String lastSite, long long &lastQueueId,
-		const char *site, const char *relid )
-{
-	if ( lastSite.length == 0 || strcmp( lastSite.data, site ) != 0 ) {
-		DbQuery( mysql,
-			"INSERT INTO broadcast_queue "
-			"( message_id, send_after, to_site, forward ) "
-			"VALUES ( %L, NOW(), %e, true ) ",
-			messageId, site );
-
-		lastQueueId = lastInsertId( mysql );
-		lastSite.set( site );
-	}
-
-	/* Insert the recipient. */
-	DbQuery( mysql,
-		"INSERT INTO broadcast_recipient "
-		"( queue_id, relid ) "
-		"VALUES ( %L, %e ) ",
-		lastQueueId, relid );
-
-	return lastQueueId;
-}
-
 void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, 
 		long long keyGen, const char *encrypted )
 {
@@ -215,49 +189,6 @@ void Server::receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const ch
 		receiveBroadcast( mysql, r->c_str(), group, keyGen, encrypted );
 }
 
-long storeBroadcastRecipients( MYSQL *mysql, const char *user, 
-	long long messageId, DbQuery &recipients )
-{
-	String lastSite;
-	long long lastQueueId = -1;
-	long count = 0;
-
-	while ( true ) {
-		MYSQL_ROW row = recipients.fetchRow();
-		if ( !row )
-			break;
-		
-		char *friendId = row[0];
-		char *putRelid = row[1];
-		message( "send to %s %s\n", friendId, putRelid );
-
-		IdentityOrig id( friendId );
-		id.parse();
-
-		/* If we need a new host then add it. */
-		if ( lastSite.length == 0 || strcmp( lastSite.data, id.site ) != 0 ) {
-			DbQuery( mysql,
-				"INSERT INTO broadcast_queue "
-				"( message_id, send_after, to_site ) "
-				"VALUES ( %L, NOW(), %e ) ",
-				messageId, id.site );
-
-			lastQueueId = lastInsertId( mysql );
-			lastSite.set( id.site );
-		}
-
-		/* Insert the recipient. */
-		DbQuery( mysql,
-			"INSERT INTO broadcast_recipient "
-			"( queue_id, relid ) "
-			"VALUES ( %L, %e ) ",
-			lastQueueId, putRelid );
-
-		count += 1;
-	}
-	return count;
-}
-
 long storeBroadcastRecipients( MYSQL *mysql, User &user,
 	long long messageId, DbQuery &recipients )
 {
@@ -270,24 +201,23 @@ long storeBroadcastRecipients( MYSQL *mysql, User &user,
 		if ( !row )
 			break;
 		
-		char *friendId = row[0];
-		char *putRelid = row[1];
+		long long id = parseId( row[0] );
+		char *iduri = row[1];
+		char *putRelid = row[2];
 
-		message( "send to %s %s\n", friendId, putRelid );
-
-		IdentityOrig id( friendId );
-		id.parse();
+		message( "send to %s %s\n", iduri, putRelid );
+		Identity identity( id, iduri );
 
 		/* If we need a new host then add it. */
-		if ( lastSite.length == 0 || strcmp( lastSite.data, id.site ) != 0 ) {
+		if ( lastSite.length == 0 || strcmp( lastSite(), identity.site() ) != 0 ) {
 			DbQuery( mysql,
 				"INSERT INTO broadcast_queue "
-				"( message_id, send_after, to_site ) "
-				"VALUES ( %L, NOW(), %e ) ",
-				messageId, id.site );
+				"( message_id, send_after, to_host, to_site ) "
+				"VALUES ( %L, NOW(), %e, %e ) ",
+				messageId, identity.host(), identity.site() );
 
 			lastQueueId = lastInsertId( mysql );
-			lastSite.set( id.site );
+			lastSite.set( identity.site() );
 		}
 
 		/* Insert the recipient. */
@@ -322,12 +252,11 @@ void queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
 
 	long long messageId = lastInsertId( mysql );
 
-
 	/*
 	 * Out-of-tree broadcasts.
 	 */
 	DbQuery outOfTree( mysql,
-		"SELECT identity.iduri, friend_claim.put_relid "
+		"SELECT identity.id, identity.iduri, friend_claim.put_relid "
 		"FROM friend_claim "
 		"JOIN identity ON friend_claim.identity_id = identity.id "
 		"JOIN network_member "
@@ -408,7 +337,7 @@ void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	long long seqNum = lastInsertId( mysql );
 
 	Keys *userPriv = loadKey( mysql, toUser );
-	Keys *idPub = fetchPublicKey( mysql, authorId );
+	Keys *idPub = identity.fetchPublicKey();
 
 	Encrypt encrypt;
 	encrypt.load( idPub, userPriv );
@@ -540,7 +469,7 @@ void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
 	String timeStr = timeNow();
 
 	Keys *userPriv = loadKey( mysql, user.user() );
-	Keys *idPub = fetchPublicKey( mysql, subjectId.iduri );
+	Keys *idPub = subjectId.fetchPublicKey();
 
 	/* Notifiy the frontend. */
 	String args( "notification_remote_publication %s %s %ld", 

@@ -86,6 +86,16 @@ Identity::Identity( MYSQL *mysql, long long _id )
 	iduri = strdup( row[0] );
 }
 
+Identity::Identity( long long _id, const char *iduri )
+:
+	mysql(0),
+	iduri(iduri),
+	haveId(true),
+	parsed(false),
+	_id(_id)
+{
+}
+
 AllocString Identity::hash()
 {
 	return makeIduriHash( iduri );

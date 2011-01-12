@@ -33,7 +33,8 @@ void sendMessageNow( MYSQL *mysql, bool prefriend, const char *user,
 		const char *toIdentity, const char *putRelid,
 		const char *msg, char **resultMsg )
 {
-	Keys *idPub = fetchPublicKey( mysql, toIdentity );
+	Identity to( mysql, toIdentity );
+	Keys *idPub = to.fetchPublicKey();
 	Keys *userPriv = loadKey( mysql, user );
 
 	Encrypt encrypt;

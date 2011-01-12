@@ -54,32 +54,6 @@ struct RelidEncSig
 	char *sym;
 };
 
-struct IdentityOrig
-{
-	IdentityOrig( const char *identity ) :
-		identity(identity),
-		haveId(false)
-	{}
-
-	IdentityOrig() {}
-
-	void load( const char *identity )
-		{ this->identity = identity; }
-
-	long parse();
-
-	const char *identity;
-	const char *host;
-	const char *user;
-	const char *site;
-
-	long long fetchId( MYSQL *mysql );
-
-private:
-	bool haveId;
-	long long id;
-};
-
 struct User
 {
 	User( MYSQL *mysql, const char *user );
@@ -101,6 +75,7 @@ struct Identity
 	Identity( MYSQL *mysql, const char *iduri );
 	Identity( MYSQL *mysql, ByHash, const char *hash );
 	Identity( MYSQL *mysql, long long _id );
+	Identity( long long _id, const char *iduri );
 
 	MYSQL *mysql;
 	String iduri;
@@ -585,7 +560,6 @@ void appNotification( const char *args, const char *data, long length );
 
 void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
 
-Keys *fetchPublicKey( MYSQL *mysql, const char *iduri );
 Keys *loadKey( MYSQL *mysql, User &user );
 Keys *loadKey( MYSQL *mysql, const char *user );
 void sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
@@ -608,8 +582,8 @@ void addToNetwork( MYSQL *mysql, const char *user, const char *network, const ch
 void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity );
 void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
 
-long sendBroadcastNet( MYSQL *mysql, const char *toSite, RecipientList &recipients,
-		const char *group, long long keyGen, const char *msg, long mLen );
+long sendBroadcastNet( MYSQL *mysql, const char *toHost, const char *toSite,
+		RecipientList &recipients, const char *group, long long keyGen, const char *msg, long mLen );
 void newBroadcastKey( MYSQL *mysql, long long friendGroupId, long long generation );
 
 long sendRemoteBroadcast( MYSQL *mysql, const char *user,

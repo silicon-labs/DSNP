@@ -257,17 +257,6 @@ int remote_broadcast_parser( MYSQL *mysql, const char *user,
 /* Note: decrypted will be written to. */
 int store_message( MYSQL *mysql, const char *relid, char *decrypted );
 
-#define ERR_READ_ERROR         -1
-#define ERR_LINE_TOO_LONG      -2
-#define ERR_PARSE_ERROR        -3
-#define ERR_UNEXPECTED_END     -4
-#define ERR_CONNECTION_FAILED  -5
-#define ERR_SERVER_ERROR       -6
-#define ERR_SOCKET_ALLOC       -7
-#define ERR_RESOLVING_NAME     -8
-#define ERR_CONNECTING         -9
-#define ERR_QUERY_ERROR        -10
-
 #define RELID_SIZE  16
 #define REQID_SIZE  16
 #define TOKEN_SIZE  16
@@ -294,19 +283,6 @@ void warning( const char *fmt, ... );
 void message( const char *fmt, ... );
 void debug( const char *fmt, ... );
 void openLogFile();
-
-#define ERROR_PUBLIC_KEY                3
-#define ERROR_FETCH_REQUESTED_RELID     4
-#define ERROR_DECRYPT_VERIFY            5
-#define ERROR_ENCRYPT_SIGN              6
-#define ERROR_DECRYPTED_SIZE            7
-#define ERROR_FETCH_RESPONSE_RELID      8
-#define ERROR_REQUESTED_RELID_MATCH     9
-#define ERROR_FETCH_FTOKEN             10
-#define ERROR_NOT_A_FRIEND             11
-#define ERROR_NO_FTOKEN                12
-#define ERROR_DB_ERROR                 13
-#define ERROR_FRIEND_OURSELVES         14
 
 BIO *sslStartClient( BIO *rbio, BIO *wbio, const char *host );
 BIO *sslStartServer( BIO *rbio, BIO *wbio );

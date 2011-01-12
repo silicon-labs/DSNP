@@ -167,7 +167,7 @@ long IdentityOrig::parse()
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
+		throw ParseError();
 	
 	host = allocString( h1, h2 );
 	user = allocString( pp1, pp2 );
@@ -206,7 +206,6 @@ long Identity::parse()
 			>{i1=p;} %{i2=p;};
 	}%%
 
-
 	long result = 0, cs;
 
 	%% write init;
@@ -214,7 +213,7 @@ long Identity::parse()
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
-		return ERR_PARSE_ERROR;
+		throw ParseError();
 	
 	_host.set( h1, h2 );
 	_user.set( pp1, pp2 );
@@ -616,12 +615,8 @@ int BroadcastParser::parse( const char *msg, long mLen )
 
 	%% write exec;
 
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == server_loop_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
 
 	return 0;
 }
@@ -663,12 +658,8 @@ int RemoteBroadcastParser::parse( const char *msg, long mLen )
 
 	%% write exec;
 
-	if ( cs < %%{ write first_final; }%% ) {
-		if ( cs == server_loop_error )
-			return ERR_PARSE_ERROR;
-		else
-			return ERR_UNEXPECTED_END;
-	}
+	if ( cs < %%{ write first_final; }%% )
+		throw ParseError();
 
 	return 0;
 }

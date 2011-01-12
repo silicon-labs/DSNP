@@ -70,7 +70,7 @@ long openInetConnection( const char *hostname, unsigned short port )
 	/* Create the socket. */
 	socketFd = socket( PF_INET, SOCK_STREAM, 0 );
 	if ( socketFd < 0 )
-		return ERR_SOCKET_ALLOC;
+		throw SocketConnectFailed( hostname );
 
 	/* Lookup the host. */
 	servername.sin_family = AF_INET;
@@ -78,7 +78,7 @@ long openInetConnection( const char *hostname, unsigned short port )
 	hostinfo = gethostbyname (hostname);
 	if ( hostinfo == NULL ) {
 		::close( socketFd );
-		return ERR_RESOLVING_NAME;
+		throw SocketConnectFailed( hostname );
 	}
 
 	servername.sin_addr = *(in_addr*)hostinfo->h_addr;
@@ -87,7 +87,7 @@ long openInetConnection( const char *hostname, unsigned short port )
 	connectRes = connect( socketFd, (sockaddr*)&servername, sizeof(servername) );
 	if ( connectRes < 0 ) {
 		::close( socketFd );
-		return ERR_CONNECTING;
+		throw SocketConnectFailed( hostname );
 	}
 
 	return socketFd;

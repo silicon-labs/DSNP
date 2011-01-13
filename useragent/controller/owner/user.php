@@ -40,7 +40,7 @@ class OwnerUserController extends Controller
 		$message->broadcast( $text );
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->submitBroadcast( 
 			$this->USER['USER'], $message->message );
 
@@ -54,7 +54,7 @@ class OwnerUserController extends Controller
 		$backto = $this->args['backto'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->remoteBroadcastResponse(
 			$this->USER['USER'], $reqid );
@@ -90,7 +90,7 @@ class OwnerUserController extends Controller
 		$message->nameChange( $name );
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->submitBroadcast( 
 				$this->USER['USER'], $message->message );
 

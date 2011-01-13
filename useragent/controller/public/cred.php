@@ -46,7 +46,7 @@ class PublicCredController extends CredController
 		$dest = $this->args['d'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->login( $this->USER[USER], $pass );
 
@@ -73,7 +73,7 @@ class PublicCredController extends CredController
 		$ftoken = $this->args['ftoken'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->submitFtoken( $ftoken );
 

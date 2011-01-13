@@ -57,7 +57,7 @@ class SiteIndexController extends Controller
 			$this->userError( "password mismatch", "" );
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->newUser( $user, $pass1 );
 
 		$this->siteRedirect( "/" );

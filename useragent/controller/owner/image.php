@@ -78,7 +78,7 @@ class OwnerImageController extends ImageController
 		$message->photoUpload( $id, $thumb );
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->submitBroadcast( 
 			$this->USER[USER], '-', $message->message );

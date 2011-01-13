@@ -20,14 +20,6 @@ class Connection
 		fwrite( $this->fp, $send );
 	}
 
-	function openLocalPriv()
-	{
-		global $CFG;
-		$this->openLocal();
-		$send = "comm_key " . $CFG[COMM_KEY] . "\r\n";
-		fwrite( $this->fp, $send );
-	}
-
 	function command( $cmd )
 	{
 		fwrite( $this->fp, $cmd );

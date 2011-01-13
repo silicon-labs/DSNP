@@ -34,7 +34,7 @@ class FriendUserController extends Controller
 		$message->boardPost( $text );
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->remoteBroadcastRequest( 
 			$this->USER['USER'], $identity, 
 			$hash, $token,
@@ -53,7 +53,7 @@ class FriendUserController extends Controller
 		$reqid = $this->args['reqid'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->remoteBroadcastFinal( $this->USER['USER'], $reqid );
 		$this->userRedirect( "/" );
 	}

@@ -48,7 +48,7 @@ class PublicFreqController extends Controller
 		}
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->relidRequest( $this->USER[USER], $identity );
 
 		$arg_identity = 'identity=' . urlencode( $this->USER['iduri']);
@@ -62,7 +62,7 @@ class PublicFreqController extends Controller
 		$reqid = $_GET['reqid'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 		$connection->frFinal( $this->USER['USER'], $reqid, $iduri );
 
 		$this->redirect( $this->USER['iduri'] );

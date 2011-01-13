@@ -6,7 +6,7 @@ class CredController extends Controller
 	{
 		/* This login routine is used by a diferent cred controllers. */
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->ftokenRequest( $this->USER['USER'], $hash );
 

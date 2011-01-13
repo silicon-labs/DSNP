@@ -16,7 +16,7 @@ class OwnerFreqController extends Controller
 		$fr_reqid = $this->args['fr_reqid'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->relidResponse( 
 			$this->USER[USER], $fr_reqid, $identity );
@@ -32,7 +32,7 @@ class OwnerFreqController extends Controller
 		$reqid = $_GET['reqid'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->acceptFriend( 
 			$this->USER[USER], $reqid );

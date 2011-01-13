@@ -51,7 +51,7 @@ class OwnerCredController extends CredController
 		$reqid = $this->args['reqid'];
 
 		$connection = new Connection;
-		$connection->openLocalPriv();
+		$connection->openLocal();
 
 		$connection->ftokenResponse( $this->USER[USER], $hash, $reqid );
 

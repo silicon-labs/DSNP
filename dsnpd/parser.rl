@@ -1009,7 +1009,7 @@ Parser::Control SendMessageParser::data( char *data, int len )
 
 void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
 		const char *identity, const char *relid, const char *msg,
-		long mLen, char **resultMessage )
+		long mLen, String &result )
 {
 	/* Need to parse the identity. */
 	Identity toIdent( mysql, identity );
@@ -1027,10 +1027,6 @@ void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
 
 	tlsConnect.readParse( parser );
 
-	if ( resultMessage != 0 && parser.hasToken ) {
-		message("parser.token.length: %ld\n", parser.token.length );
-		*resultMessage = new char[parser.token.length+1];
-		memcpy( *resultMessage, parser.token.data, parser.token.length );
-		(*resultMessage)[parser.token.length] = 0;
-	}
+	if ( parser.hasToken )
+		result.set( parser.token );
 }

@@ -31,7 +31,7 @@ void userMessage( MYSQL *mysql, const char *user, const char *friendId,
 
 void sendMessageNow( MYSQL *mysql, bool prefriend, const char *user,
 		const char *toIdentity, const char *putRelid,
-		const char *msg, char **resultMsg )
+		const char *msg, String &result )
 {
 	Identity to( mysql, toIdentity );
 	Keys *idPub = to.fetchPublicKey();
@@ -45,7 +45,7 @@ void sendMessageNow( MYSQL *mysql, bool prefriend, const char *user,
 
 	message( "send_message_now sending to: %s\n", toIdentity );
 	sendMessageNet( mysql, prefriend, user, toIdentity,
-			putRelid, encrypt.sym, strlen(encrypt.sym), resultMsg );
+			putRelid, encrypt.sym, strlen(encrypt.sym), result );
 }
 
 

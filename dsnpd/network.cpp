@@ -122,11 +122,11 @@ void sendBroadcastKey( MYSQL *mysql, User &user, Identity &identity,
 	PutKey put( mysql, networkId );
 
 	/* Notify the requester. */
-	String registered( "broadcast_key %s %lld %s\r\n", 
+	String result, registered( "broadcast_key %s %lld %s\r\n", 
 			put.distName(), put.generation, put.broadcastKey() );
 
 	sendMessageNow( mysql, false, user.user(), identity.iduri(),
-			friendClaim.putRelid, registered.data, 0 );
+			friendClaim.putRelid, registered.data, result );
 }
 
 void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity )

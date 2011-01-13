@@ -218,8 +218,9 @@ bool sendMessage()
 		message("delivering message %lld from %s to %s\n", id, user(), iduri() );
 
 		/* FIXME: need a catch here. */
+		String result;
 		sendMessageNet( mysql, false, user(), 
-				iduri(), relid, msg, strlen(msg), 0 );
+				iduri(), relid, msg, strlen(msg), result );
 
 		//error( "trouble sending message: %ld\n", send_res );
 

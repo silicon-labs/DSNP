@@ -208,10 +208,7 @@ struct PutKey
 
 void sendMessageNet( MYSQL *mysql, bool prefriend, 
 		const char *from_user, const char *to_identity, const char *relid,
-		const char *message, long mLen, char **result_message );
-long send_message_now( MYSQL *mysql, bool prefriend, const char *from_user,
-		const char *to_identity, const char *put_relid,
-		const char *msg, char **result_msg );
+		const char *message, long mLen, String &result );
 long queueMessage( MYSQL *mysql, const char *from_user,
 		const char *to_identity, const char *msg, long mLen );
 void encryptRemoteBroadcast( MYSQL *mysql, User &user,
@@ -564,7 +561,7 @@ Keys *loadKey( MYSQL *mysql, User &user );
 Keys *loadKey( MYSQL *mysql, const char *user );
 void sendMessageNow( MYSQL *mysql, bool prefriend, const char *from_user,
 		const char *to_identity, const char *put_relid,
-		const char *msg, char **result_msg );
+		const char *msg, String &result );
 int friendProofMessage( MYSQL *mysql, const char *user, const char *friendId,
 		const char *hash, const char *group, long long generation, const char *sym );
 

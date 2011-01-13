@@ -334,11 +334,11 @@ void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
 		token, seqNum, mLen, msg );
 	
-	char *result = 0;
+	String result;
 	sendMessageNow( mysql, false, toUser, authorId, friendClaim.putRelid(),
-			remotePublishCmd, &result );
+			remotePublishCmd, result );
 	
-	if ( result == 0 )
+	if ( result() == 0 )
 		throw ParseError();
 	
 	//returned_reqid_parser( mysql, to_user, result );
@@ -348,10 +348,10 @@ void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 		"INSERT INTO pending_remote_broadcast "
 		"( user_id, identity_id, hash, reqid, seq_num ) "
 		"VALUES ( %L, %L, %e, %e, %L )",
-		user.id(), identity.id(), hash(), result, seqNum );
+		user.id(), identity.id(), hash(), result(), seqNum );
 
-	message("send_message_now returned: %s\n", result );
-	bioWrap->printf( "OK %s\r\n", result );
+	message("send_message_now returned: %s\n", result() );
+	bioWrap->printf( "OK %s\r\n", result() );
 }
 
 void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
@@ -377,14 +377,10 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 	Identity identity( mysql, identityId );
 	FriendClaim friendClaim( mysql, user, identity );
 
-	String returnCmd( "return_remote_broadcast %s %s %s %s\r\n", reqid, networkDist, generation, sym );
+	String result, returnCmd( "return_remote_broadcast %s %s %s %s\r\n", reqid, networkDist, generation, sym );
+	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid(), returnCmd.data, result );
 
-	message("lengths %ld %ld\n", strlen(returnCmd.data), returnCmd.length );
-
-	char *result = 0;
-	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid(), returnCmd.data, &result );
-
-	if ( result == 0 )
+	if ( result() == 0 )
 		throw ParseError();
 
 	/* Clear the pending remote broadcast. */
@@ -393,7 +389,7 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 		"WHERE user_id = %L AND reqid = %e",
 		user.id(), reqid );
 
-	bioWrap->printf( "OK %s\r\n", result );
+	bioWrap->printf( "OK %s\r\n", result() );
 }
 
 void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 

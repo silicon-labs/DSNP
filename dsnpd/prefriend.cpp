@@ -96,8 +96,8 @@ void Server::notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
 		user.id(), identity.id(), relationship.id(), putRelid, getRelid );
 
 	/* Notify the requester. */
-	String registered( "registered %s %s\r\n", requestedRelid, returnedRelid );
-	sendMessageNow( mysql, true, user.user(), identity.iduri(), requestedRelid, registered(), 0 );
+	String result, registered( "registered %s %s\r\n", requestedRelid, returnedRelid );
+	sendMessageNow( mysql, true, user.user(), identity.iduri(), requestedRelid, registered(), result );
 
 	DbQuery( mysql, 
 		"DELETE FROM friend_request WHERE user_id = %L AND reqid = %e;",
@@ -178,10 +178,10 @@ void Server::acceptFriend( MYSQL *mysql, const char *_user, const char *userReqi
 	Identity identity( mysql, identityId );
 
 	/* Notify the requester. */
-	String buf( "notify_accept %s %s\r\n", requestedRelid, returnedRelid );
+	String result, notifyAccept( "notify_accept %s %s\r\n", requestedRelid, returnedRelid );
 
 	/* FIXME: try, catch. */
-	sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, buf(), 0 );
+	sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, notifyAccept(), result );
 
 	notifyAcceptResult( mysql, user, identity, userReqid, requestedRelid, returnedRelid );
 }

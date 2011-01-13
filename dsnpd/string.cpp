@@ -53,10 +53,33 @@ void String::set( const char *s )
 	if ( data != 0 )
 		delete[] data;
 
-	length = strlen( s );
-	data = new char[ length+1 ];
-	memcpy( data, s, length );
-	data[length] = 0;
+	if ( s == 0 ) {
+		length = 0;
+		data = 0;
+	}
+	else {
+		length = strlen( s );
+		data = new char[ length+1 ];
+		memcpy( data, s, length );
+		data[length] = 0;
+	}
+}
+
+void String::set( const String &s )
+{
+	if ( data != 0 )
+		delete[] data;
+
+	if ( s.data == 0 ) {
+		length = 0;
+		data = 0;
+	}
+	else {
+		length = s.length;
+		data = new char[length+1];
+		memcpy( data, s.data, length );
+		data[length] = 0;
+	}
 }
 
 String::String( const AllocString &as )

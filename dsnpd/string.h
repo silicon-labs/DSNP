@@ -29,6 +29,8 @@ struct String
 	const char* operator()() const { return data; }
 
 	void operator=(const char *src) { set(src); }
+	void operator=(const String &s) { set(s); }
+	void operator=(const Buffer &b) { set(b); }
 
 	String( const char *fmt, ... );
 	String( const AllocString &as );
@@ -40,6 +42,7 @@ struct String
 	void set( const char *p1, const char *p2 );
 	void set( const char *s );
 	void set( const Buffer &buffer );
+	void set( const String &s );
 	void format( const char *fmt, ... );
 
 	char *relinquish()

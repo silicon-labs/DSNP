@@ -72,16 +72,16 @@ int BioWrap::readParse( Parser &parser )
 					/* If the BIO is saying it we should retry later, go back into
 					 * select. */
 					if ( BIO_should_retry( rbio ) ) {
-						message( "BIO_should_retry\n" );
+						//message( "BIO_should_retry\n" );
 						break;
 					}
 
-					message( "BIO_read returned %d, breaking\n", nbytes );
+					//message( "BIO_read returned %d, breaking\n", nbytes );
 					goto done;
 				}
 
-				message( "BIO_read returned %d bytes, parsing\n", nbytes );
-				message( "data: %.*s", (int)nbytes, input );
+				//message( "BIO_read returned %d bytes, parsing\n", nbytes );
+				//message( "data: %.*s", (int)nbytes, input );
 
 				Parser::Control control = parser.data( input, nbytes );
 				if ( control == Parser::Stop )

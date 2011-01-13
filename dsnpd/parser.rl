@@ -57,7 +57,6 @@ bool gblKeySubmitted = false;
 	id_salt = base64            >clear $buf %{ id_salt.set(buf); };
 	requested_relid = base64    >clear $buf %{ requestedRelid.set(buf); };
 	returned_relid = base64     >clear $buf %{ returnedRelid.set(buf); };
-	network = [a-zA-Z0-9_.\-]+  >clear $buf %{ network.set(buf); };
 	dist_name = base64          >clear $buf %{ distName.set(buf); };
 
 	n = base64                  >clear $buf %{ n.set(buf); };
@@ -228,7 +227,7 @@ long Identity::parse()
 
 		'login'i ' ' user ' ' pass 
 			EOL @check_key @{
-				message( "command: login %s %s\n", user(), pass() );
+				message( "command: login %s <pass>\n", user() );
 				server->login( mysql, user, pass );
 			} |
 
@@ -379,10 +378,10 @@ long Identity::parse()
 				server->broadcastReceipient( mysql, recipients, relid );
 			} |
 
-		'broadcast'i ' ' network ' ' generation ' ' length
+		'broadcast'i ' ' dist_name ' ' generation ' ' length
 			M_EOL @check_ssl @{
-				message( "command: broadcast %s %lld %ld\n", network(), generation, length );
-				server->receiveBroadcast( mysql, recipients, network, generation, messageBody.data );
+				message( "command: broadcast %s %lld %ld\n", distName(), generation, length );
+				server->receiveBroadcast( mysql, recipients, distName, generation, messageBody.data );
 				recipients.clear();
 			}
 	)*;
@@ -495,8 +494,10 @@ int PrefriendParser::parse( const char *msg, long mLen )
 			EOL @skip_message EOL @{
 				type = EncryptRemoteBroadcast;
 			} |
-		'return_remote_broadcast'i ' ' reqid ' ' network ' ' generation ' ' sym
+		'return_remote_broadcast'i ' ' reqid ' ' dist_name ' ' generation ' ' sym
 			EOL @{
+				message("friend message: return_remote_broadcast %s %s %lld %s\n",
+						reqid(), distName(), generation, sym() );
 				type = ReturnRemoteBroadcast;
 			} |
 		'user_message'i ' ' date ' ' length 
@@ -510,7 +511,6 @@ int PrefriendParser::parse( const char *msg, long mLen )
 
 int MessageParser::parse( const char *msg, long mLen )
 {
-	message("friend message: %.*s", (int)mLen, msg );
 
 	long cs;
 	Buffer buf;
@@ -544,7 +544,7 @@ int MessageParser::parse( const char *msg, long mLen )
 			EOL @skip_message EOL @{
 				type = Direct;
 			} |
-		'remote_broadcast'i ' ' hash ' ' network ' ' generation ' ' seq_num ' ' length 
+		'remote_broadcast'i ' ' hash ' ' dist_name ' ' generation ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
 				type = Remote;
 			};
@@ -588,10 +588,6 @@ int BroadcastParser::parse( const char *msg, long mLen )
 		'remote_inner'i ' ' seq_num ' ' date ' ' length 
 			EOL @skip_message EOL @{
 				type = RemoteInner;
-			} |
-		'friend_proof'i ' ' identity1 ' ' identity2 ' ' date 
-			EOL @{
-				type = FriendProof;
 			};
 
 }%%
@@ -971,6 +967,7 @@ long sendBroadcastNet( MYSQL *mysql, const char *toHost,
 SendMessageParser::SendMessageParser()
 {
 	OK = false;
+	hasToken = false;
 	%% write init;
 }
 
@@ -980,14 +977,9 @@ Parser::Control SendMessageParser::data( char *data, int len )
 	%%{
 		include common;
 
-		action token {
-			OK = true;
-			fbreak;
-		}
-
 		main := 
 			'OK' EOL @{ OK = true; fbreak; } |
-			'OK' ' ' token EOL @token |
+			'OK' ' ' token EOL @{ OK = true; hasToken = true; fbreak; } |
 			'ERROR' EOL;
 	}%%
 
@@ -995,6 +987,8 @@ Parser::Control SendMessageParser::data( char *data, int len )
 	const char *pe = data + len;
 
 	%% write exec;
+
+	message("has token: %d %s\n", hasToken, hasToken ? token() : 0 );
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
@@ -1026,9 +1020,10 @@ void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,
 
 	tlsConnect.readParse( parser );
 
-	if ( resultMessage != 0 ) {
+	if ( resultMessage != 0 && parser.hasToken ) {
+		message("parser.token.length: %ld\n", parser.token.length );
 		*resultMessage = new char[parser.token.length+1];
 		memcpy( *resultMessage, parser.token.data, parser.token.length );
-		resultMessage[parser.token.length] = 0;
+		(*resultMessage)[parser.token.length] = 0;
 	}
 }

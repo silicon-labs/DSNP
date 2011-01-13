@@ -206,14 +206,6 @@ long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, const char *iduri )
 	return 0;
 }
 
-long storePublicKey( MYSQL *mysql, const char *identity, PublicKey &pub )
-{
-	DbQuery( mysql,
-		"INSERT INTO public_key ( identity, rsa_n, rsa_e ) "
-		"VALUES ( %e, %e, %e ) ", identity, pub.n, pub.e );
-	return 0;
-}
-
 long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, long long identityId )
 {
 	DbQuery keys( mysql, 
@@ -233,22 +225,6 @@ long fetchPublicKeyDb( PublicKey &pub, MYSQL *mysql, long long identityId )
 	return 0;
 }
 
-long storePublicKey( MYSQL *mysql, long long identityId, PublicKey &pub )
-{
-	return 0;
-}
-
-char *get_site( const char *identity )
-{
-	char *res = strdup( identity );
-	char *last = res + strlen(res) - 1;
-	while ( last[-1] != '/' )
-		last--;
-	*last = 0;
-	return res;
-}
-
-
 Keys *loadKey( MYSQL *mysql, const char *user )
 {
 	Keys *keys = 0;
@@ -259,22 +235,23 @@ Keys *loadKey( MYSQL *mysql, const char *user )
 		"JOIN user_keys ON user.user_keys_id = user_keys.id "
 		"WHERE user = %e", user );
 
-	if ( keyQuery.rows() > 0 ) {
-		MYSQL_ROW row = keyQuery.fetchRow();
+	if ( keyQuery.rows() < 1 )
+		throw MissingKeys();
 
-		RSA *rsa = RSA_new();
-		rsa->n =    base64ToBn( row[0] );
-		rsa->e =    base64ToBn( row[1] );
-		rsa->d =    base64ToBn( row[2] );
-		rsa->p =    base64ToBn( row[3] );
-		rsa->q =    base64ToBn( row[4] );
-		rsa->dmp1 = base64ToBn( row[5] );
-		rsa->dmq1 = base64ToBn( row[6] );
-		rsa->iqmp = base64ToBn( row[7] );
+	MYSQL_ROW row = keyQuery.fetchRow();
 
-		keys = new Keys;
-		keys->rsa = rsa;
-	}
+	RSA *rsa = RSA_new();
+	rsa->n =    base64ToBn( row[0] );
+	rsa->e =    base64ToBn( row[1] );
+	rsa->d =    base64ToBn( row[2] );
+	rsa->p =    base64ToBn( row[3] );
+	rsa->q =    base64ToBn( row[4] );
+	rsa->dmp1 = base64ToBn( row[5] );
+	rsa->dmq1 = base64ToBn( row[6] );
+	rsa->iqmp = base64ToBn( row[7] );
+
+	keys = new Keys;
+	keys->rsa = rsa;
 
 	return keys;
 }
@@ -290,7 +267,7 @@ Keys *loadKey( MYSQL *mysql, User &user )
 		"WHERE user.id = %L", user.id() );
 
 	if ( keyQuery.rows() < 1 )
-		fatal( "user %s is missing keys", user.user() );
+		throw MissingKeys();
 
 	MYSQL_ROW row = keyQuery.fetchRow();
 

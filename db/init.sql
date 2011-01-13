@@ -229,6 +229,7 @@ CREATE TABLE broadcast_queue
 
 	message_id BIGINT,
 	send_after DATETIME,
+	to_host TEXT,
 	to_site TEXT,
 	forward BOOLEAN,
 

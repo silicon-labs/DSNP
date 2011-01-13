@@ -308,7 +308,7 @@ struct ServerParser
 	String user, pass, email, identity; 
 	String length_str, reqid;
 	String hash, key, relid, token, sym;
-	String gen_str, seq_str, network;
+	String gen_str, seq_str, distName;
 	long length, counter;
 	long long generation;
 	int retVal;
@@ -333,6 +333,7 @@ struct SendMessageParser
 
 	int cs;
 	bool OK;
+	bool hasToken;
 	Buffer buf;
 	String token;
 };
@@ -419,8 +420,7 @@ struct RemoteBroadcastParser
 	enum Type
 	{
 		Unknown = 1,
-		RemoteInner,
-		FriendProof
+		RemoteInner
 	};
 
 	Type type;
@@ -443,7 +443,7 @@ struct BroadcastParser
 	};
 
 	Type type;
-	String date, hash, network, identity;
+	String date, hash, distName, identity;
 	long long generation, seq_num;
 	long length, counter;
 	const char *embeddedMsg;
@@ -466,7 +466,7 @@ struct MessageParser
 
 	String identity, number_str, key, relid;
 	String sym, token, reqid, hash;
-	String date, network, distName, sym1, sym2;
+	String date, distName, sym1, sym2;
 	long length, counter, number;
 	long long seq_num, generation;
 	const char *embeddedMsg;

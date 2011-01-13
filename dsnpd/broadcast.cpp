@@ -86,8 +86,6 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen )
 {
-	message( "remote broadcast: user %s hash %s network %s generation %lld\n", user.user(), hash, network, generation );
-
 	Identity innerIdentity( mysql, Identity::ByHash(), hash );
 
 	DbQuery recipient( mysql,
@@ -95,13 +93,6 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		"FROM friend_claim "
 		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
 		"WHERE user_id = %L AND identity_id = %L AND network_dist = %e AND generation = %L",
-		user.id(), innerIdentity.id(), network, generation );
-
-	message(
-		"SELECT broadcast_key "
-		"FROM friend_claim "
-		"JOIN get_broadcast_key ON friend_claim.id = get_broadcast_key.friend_claim_id "
-		"WHERE user_id = %lld AND identity_id = %lld AND network_dist = '%s' AND generation = %lld\n",
 		user.id(), innerIdentity.id(), network, generation );
 
 	if ( recipient.rows() > 0 ) {
@@ -121,10 +112,6 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 				remoteInner( mysql, user.user(), network, identity.iduri, innerIdentity.iduri, rbp.seq_num, 
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
-			case RemoteBroadcastParser::FriendProof:
-//				friendProofBroadcast( mysql, user, network, networkId, friendId, authorId,
-//						rbp.seq_num, rbp.identity1, rbp.identity2, rbp.date );
-//				break;
 			default:
 				error("remote broadcast parse failed: %.*s\n", 
 						(int)encrypt.decLen, (char*)encrypt.decrypted );
@@ -173,7 +160,7 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 			break;
 		case BroadcastParser::Remote:
 			remoteBroadcast( mysql, user, identity, bp.hash, 
-					bp.network, 1, bp.generation, bp.embeddedMsg, bp.length );
+					bp.distName, 1, bp.generation, bp.embeddedMsg, bp.length );
 			break;
 		default:
 			break;
@@ -346,22 +333,25 @@ void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	String remotePublishCmd(
 		"encrypt_remote_broadcast %s %lld %ld\r\n%s\r\n", 
 		token, seqNum, mLen, msg );
-
-	char *resultMessage;
+	
+	char *result = 0;
 	sendMessageNow( mysql, false, toUser, authorId, friendClaim.putRelid(),
-			remotePublishCmd.data, &resultMessage );
-
-	//returned_reqid_parser( mysql, to_user, resultMessage );
+			remotePublishCmd, &result );
+	
+	if ( result == 0 )
+		throw ParseError();
+	
+	//returned_reqid_parser( mysql, to_user, result );
 	String hash = makeIduriHash( identity.iduri );
 
 	DbQuery( mysql,
 		"INSERT INTO pending_remote_broadcast "
 		"( user_id, identity_id, hash, reqid, seq_num ) "
 		"VALUES ( %L, %L, %e, %e, %L )",
-		user.id(), identity.id(), hash(), resultMessage, seqNum );
+		user.id(), identity.id(), hash(), result, seqNum );
 
-	message("send_message_now returned: %s\n", resultMessage );
-	bioWrap->printf( "OK %s\r\n", resultMessage );
+	message("send_message_now returned: %s\n", result );
+	bioWrap->printf( "OK %s\r\n", result );
 }
 
 void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
@@ -389,8 +379,13 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 
 	String returnCmd( "return_remote_broadcast %s %s %s %s\r\n", reqid, networkDist, generation, sym );
 
+	message("lengths %ld %ld\n", strlen(returnCmd.data), returnCmd.length );
+
 	char *result = 0;
 	sendMessageNow( mysql, false, user.user(), identity.iduri(), friendClaim.putRelid(), returnCmd.data, &result );
+
+	if ( result == 0 )
+		throw ParseError();
 
 	/* Clear the pending remote broadcast. */
 	DbQuery clear( mysql, 
@@ -404,8 +399,6 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 
 		const char *reqid, const char *networkDist, long long generation, const char *sym )
 {
-	message("return_remote_broadcast\n");
-
 	u_char reqid_final[REQID_SIZE];
 	RAND_bytes( reqid_final, REQID_SIZE );
 	const char *reqid_final_str = binToBase64( reqid_final, REQID_SIZE );
@@ -416,7 +409,7 @@ void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity
 		"WHERE user_id = %L AND identity_id = %L AND reqid = %e ",
 		networkDist, generation, sym, reqid_final_str, user.id(), identity.id(), reqid );
 
-	bioWrap->printf( "REQID %s\r\n", reqid_final_str );
+	bioWrap->printf( "OK %s\r\n", reqid_final_str );
 }
 
 void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )

@@ -99,7 +99,7 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			returnRemoteBroadcast( mysql, user, identity, mp.reqid,
-					mp.network, mp.generation, mp.sym );
+					mp.distName, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
 		default:

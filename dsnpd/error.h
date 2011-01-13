@@ -62,6 +62,7 @@
 #define EC_LOGIN_TOKEN_INVALID          138
 #define EC_TOKEN_WRONG_SIZE             139
 #define EC_NOT_IMPLEMENTED              140
+#define EC_MISSING_KEYS                 141
 
 struct UserError
 {
@@ -668,6 +669,20 @@ struct NotImplemented
 
 		error( "%d function not implemented\n",
 				EC_NOT_IMPLEMENTED );
+	}
+};
+
+struct MissingKeys
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_MISSING_KEYS );
+
+		error( "%d missing keys\n",
+				EC_MISSING_KEYS );
 	}
 };
 

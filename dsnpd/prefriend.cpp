@@ -171,7 +171,7 @@ void Server::acceptFriend( MYSQL *mysql, const char *_user, const char *userReqi
 		throw FriendRequestInvalid();
 
 	MYSQL_ROW row = friendRequest.fetchRow();
-	long long identityId = strtoll( row[0], 0, 10 );
+	long long identityId = parseId( row[0] );
 	char *requestedRelid = row[1];
 	char *returnedRelid = row[2];
 

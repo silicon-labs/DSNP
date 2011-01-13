@@ -109,7 +109,7 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		rbp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 		switch ( rbp.type ) {
 			case RemoteBroadcastParser::RemoteInner:
-				remoteInner( mysql, user.user(), network, identity.iduri, innerIdentity.iduri, rbp.seq_num, 
+				remoteInner( mysql, user.user(), network, identity.iduri, innerIdentity.iduri, rbp.seqNum, 
 						rbp.date, rbp.embeddedMsg, rbp.length );
 				break;
 			default:
@@ -156,7 +156,7 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 	switch ( bp.type ) {
 		case BroadcastParser::Direct:
 			directBroadcast( mysql, relid, user.user(), network, identity.iduri, 
-					bp.seq_num, bp.date, bp.embeddedMsg, bp.length );
+					bp.seqNum, bp.date, bp.embeddedMsg, bp.length );
 			break;
 		case BroadcastParser::Remote:
 			remoteBroadcast( mysql, user, identity, bp.hash, 
@@ -426,7 +426,7 @@ void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *
 		MYSQL_ROW row = recipient.fetchRow();
 		long long identityId = parseId( row[0] );
 		const char *hash = row[1];
-		const char *seq_num = row[2];
+		const char *seqNum = row[2];
 		const char *network = row[3];
 		const char *generation = row[4];
 		const char *sym = row[5];
@@ -434,7 +434,7 @@ void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *
 		Identity identity( mysql, identityId );
 
 		sendRemoteBroadcast( mysql, user, hash, network,
-				strtoll(generation, 0, 10), strtoll(seq_num, 0, 10), sym );
+				strtoll(generation, 0, 10), strtoll(seqNum, 0, 10), sym );
 
 		/* Clear the pending remote broadcast. */
 		DbQuery clear( mysql, 

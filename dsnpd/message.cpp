@@ -95,7 +95,7 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
 			encryptRemoteBroadcast( mysql, user, identity, mp.token,
-					mp.seq_num, mp.embeddedMsg, mp.length );
+					mp.seqNum, mp.embeddedMsg, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			returnRemoteBroadcast( mysql, user, identity, mp.reqid,

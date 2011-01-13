@@ -223,9 +223,9 @@ long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
 		const char *id_salt, const char *requested_relid, const char *returned_relid );
 
 void remoteInner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
-               long long seq_num, const char *date, const char *msg, long mLen );
+               long long seqNum, const char *date, const char *msg, long mLen );
 void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
-		long long seq_num, const char *date );
+		long long seqNum, const char *date );
 int remote_broadcast_parser( MYSQL *mysql, const char *user, 
 		const char *friend_id, const char *author_id, const char *msg, long mLen );
 
@@ -424,7 +424,7 @@ struct RemoteBroadcastParser
 	};
 
 	Type type;
-	long long seq_num;
+	long long seqNum;
 	long length, counter;
 	String date;
 	const char *embeddedMsg;
@@ -444,7 +444,7 @@ struct BroadcastParser
 
 	Type type;
 	String date, hash, distName, identity;
-	long long generation, seq_num;
+	long long generation, seqNum;
 	long length, counter;
 	const char *embeddedMsg;
 
@@ -468,7 +468,7 @@ struct MessageParser
 	String sym, token, reqid, hash;
 	String date, distName, sym1, sym2;
 	long length, counter, number;
-	long long seq_num, generation;
+	long long seqNum, generation;
 	const char *embeddedMsg;
 
 	int parse( const char *smg, long mLen );

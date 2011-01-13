@@ -103,7 +103,7 @@ bool gblKeySubmitted = false;
 		>clear $buf
 		%{
 			seq_str.set(buf);
-			seq_num = strtoll( seq_str, 0, 10 );
+			seqNum = strtoll( seq_str, 0, 10 );
 		};
 
 	EOL = '\r'? '\n';
@@ -210,6 +210,7 @@ long Identity::parse()
 	commands := (
 		'comm_key'i ' ' key
 			EOL @{
+				message( "command: comm_key %s\n", key() );
 				/* Check the authentication. */
 				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
 					gblKeySubmitted = true;
@@ -219,6 +220,7 @@ long Identity::parse()
 
 		'start_tls'i 
 			EOL @{
+				message( "command: start_tls\n" );
 				server->bioWrap->rbio = server->bioWrap->wbio = 
 					startTls( server->bioWrap->rbio, server->bioWrap->wbio );
 
@@ -289,7 +291,7 @@ long Identity::parse()
 
 		'prefriend_message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
-				message( "command: prefriend_mesage %s %lld\n", relid(), length );
+				message( "command: prefriend_mesage %s %ld\n", relid(), length );
 				server->prefriendMessage( mysql, relid, messageBody.data );
 			} |
 
@@ -327,7 +329,7 @@ long Identity::parse()
 		# Not currently used?
 		'submit_message'i ' ' user ' ' identity ' ' length
 			M_EOL @check_key @{
-				message( "command: submit_message %s %s %lld\n", user(), identity(), length );
+				message( "command: submit_message %s %s %ld\n", user(), identity(), length );
 				server->submitMessage( mysql, user, identity, messageBody.data, length );
 			} |
 
@@ -336,7 +338,7 @@ long Identity::parse()
 		#
 		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
-				message( "command: submit_broadcast %lld\n", length );
+				message( "command: submit_broadcast %s %ld\n", user(), length );
 				server->submitBroadcast( mysql, user, messageBody.data, length );
 			} |
 
@@ -345,7 +347,7 @@ long Identity::parse()
 		#
 		'remote_broadcast_request'i ' ' user ' ' identity ' ' hash ' ' token ' ' length
 			M_EOL @check_key @{
-				message( "command: remote_broadcast_request %s %s %s %s %lld\n",
+				message( "command: remote_broadcast_request %s %s %s %s %ld\n",
 						user(), identity(), hash(), token(), length );
 				server->remoteBroadcastRequest( mysql, user, identity, hash, 
 						token, messageBody.data, length );
@@ -368,12 +370,12 @@ long Identity::parse()
 		#
 		'message'i ' ' relid ' ' length 
 			M_EOL @check_ssl @{
-				message( "command: message %s %lld\n", relid(), length );
+				message( "command: message %s %ld\n", relid(), length );
 				server->receiveMessage( mysql, relid, messageBody.data );
 			} |
 
 		'broadcast_recipient'i ' ' relid
-			EOL @{
+			EOL @check_ssl @{
 				message( "command: broadcast_recipient %s\n", relid() );
 				server->broadcastReceipient( mysql, recipients, relid );
 			} |
@@ -444,9 +446,13 @@ void serverParseLoop( BIO *rbio, BIO *wbio )
 
 	main :=
 		'notify_accept'i ' ' requested_relid ' ' returned_relid EOL @{
+			message("prefriend_message: notify_accept %s %s\n",
+					requestedRelid(), returnedRelid() );
 			type = NotifyAccept;
 		} |
 		'registered'i ' ' requested_relid ' ' returned_relid EOL @{
+			message("prefriend_message: registered %s %s\n",
+					requestedRelid(), returnedRelid() );
 			type = Registered;
 		};
 
@@ -456,9 +462,6 @@ void serverParseLoop( BIO *rbio, BIO *wbio )
 
 int PrefriendParser::parse( const char *msg, long mLen )
 {
-	/* Did we get a full line? */
-	message("prefriend message: %.*s", (int)mLen, msg );
-
 	long cs;
 	Buffer buf;
 
@@ -488,20 +491,23 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	main := (
 		'broadcast_key'i ' ' dist_name ' ' generation ' ' key
 			EOL @{
+				message( "message: broadcast_key %s %lld %s\n", distName(), generation, key() );
 				type = BroadcastKey;
 			} |
 		'encrypt_remote_broadcast'i ' ' token ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
+				message( "message: encrypt_remote_broadcast %s %lld %ld\n", token(), seqNum, length );
 				type = EncryptRemoteBroadcast;
 			} |
 		'return_remote_broadcast'i ' ' reqid ' ' dist_name ' ' generation ' ' sym
 			EOL @{
-				message("friend message: return_remote_broadcast %s %s %lld %s\n",
+				message( "message: return_remote_broadcast %s %s %ld %s\n",
 						reqid(), distName(), generation, sym() );
 				type = ReturnRemoteBroadcast;
 			} |
 		'user_message'i ' ' date ' ' length 
 			EOL @skip_message EOL @{
+				message( "message: user_message\n" );
 				type = UserMessage;
 			}
 	)*;
@@ -511,7 +517,6 @@ int PrefriendParser::parse( const char *msg, long mLen )
 
 int MessageParser::parse( const char *msg, long mLen )
 {
-
 	long cs;
 	Buffer buf;
 	String gen_str, seq_str, length_str;
@@ -542,10 +547,13 @@ int MessageParser::parse( const char *msg, long mLen )
 	main :=
 		'direct_broadcast'i ' ' seq_num ' ' date ' ' length 
 			EOL @skip_message EOL @{
+				message("broadcast: direct_broadcast %lld %s %ld\n", seqNum, date(), length );
 				type = Direct;
 			} |
 		'remote_broadcast'i ' ' hash ' ' dist_name ' ' generation ' ' seq_num ' ' length 
 			EOL @skip_message EOL @{
+				message("broadcast: remote_broadcast %s %s %lld %ld %lld\n", 
+						hash(), distName(), generation, seqNum, length );
 				type = Remote;
 			};
 }%%
@@ -554,8 +562,6 @@ int MessageParser::parse( const char *msg, long mLen )
 
 int BroadcastParser::parse( const char *msg, long mLen )
 {
-	message("broadcast message: %.*s", (int)mLen, msg );
-
 	long cs;
 	Buffer buf;
 	String length_str;
@@ -587,6 +593,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 	main :=
 		'remote_inner'i ' ' seq_num ' ' date ' ' length 
 			EOL @skip_message EOL @{
+				message("remote_broadcast: remote_inner %lld %s %ld\n", seqNum, date(), length );
 				type = RemoteInner;
 			};
 

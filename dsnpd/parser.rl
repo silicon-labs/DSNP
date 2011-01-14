@@ -80,30 +80,29 @@ bool gblKeySubmitted = false;
 	generation = [0-9]+       
 		>clear $buf
 		%{
-			gen_str.set(buf);
-			generation = strtoll( gen_str, 0, 10 );
+			buf.append( 0 );
+			generation = parseId( buf.data );
 		};
 
 	number = [0-9]+           
 		>clear $buf
 		%{
-			number_str.set(buf);
-			number = strtol( number_str, 0, 10 );
+			buf.append( 0 );
+			number = parseId( buf.data );
 		};
 
 	length = [0-9]+           
 		>clear $buf
 		%{
-			length_str.set(buf);
-			length = counter = strtol( length_str, 0, 10 );
-			//message("length: %ld\n", length );
+			buf.append(0);
+			length = counter = strtol( buf.data, 0, 10 );
 		};
 
 	seq_num = [0-9]+          
 		>clear $buf
 		%{
-			seq_str.set(buf);
-			seqNum = strtoll( seq_str, 0, 10 );
+			buf.append( 0 );
+			seqNum = parseId( buf.data );
 		};
 
 	EOL = '\r'? '\n';
@@ -519,7 +518,6 @@ int MessageParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	Buffer buf;
-	String gen_str, seq_str, length_str;
 
 	%% write init;
 
@@ -564,8 +562,6 @@ int BroadcastParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	Buffer buf;
-	String length_str;
-	String seq_str, gen_str;
 
 	type = Unknown;
 	%% write init;
@@ -605,7 +601,6 @@ int RemoteBroadcastParser::parse( const char *msg, long mLen )
 {
 	long cs;
 	Buffer buf;
-	String length_str, seq_str;
 
 	type = Unknown;
 	%% write init;

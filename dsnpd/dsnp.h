@@ -303,9 +303,9 @@ struct ServerParser
 
 	long cs;
 	String user, pass, email, identity; 
-	String length_str, reqid;
+	String reqid;
 	String hash, key, relid, token, sym;
-	String gen_str, seq_str, distName;
+	String distName;
 	long length, counter;
 	long long generation;
 	int retVal;
@@ -461,7 +461,7 @@ struct MessageParser
 
 	Type type;
 
-	String identity, number_str, key, relid;
+	String identity, key, relid;
 	String sym, token, reqid, hash;
 	String date, distName, sym1, sym2;
 	long length, counter, number;
@@ -502,14 +502,14 @@ struct Server
 	void friendFinal( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
 	void ftokenRequest( MYSQL *mysql, const char *user, const char *hash );
 	void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 
-			const char *flogin_reqid_str );
+			const char *floginReqid );
 	void login( MYSQL *mysql, const char *user, const char *pass );
 	void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
 	void newUser( MYSQL *mysql, const char *user, const char *pass );
 	void prefriendMessage( MYSQL *mysql, const char *relid, const char *message );
 	void publicKey( MYSQL *mysql, const char *identity );
 	void relidRequest( MYSQL *mysql, const char *user, const char *iduri );
-	void relidResponse( MYSQL *mysql, const char *user, const char *fr_reqid_str,
+	void relidResponse( MYSQL *mysql, const char *user, const char *frReqid,
 			const char *identity );
 	void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
 	void remoteBroadcastRequest( MYSQL *mysql, const char *user, 

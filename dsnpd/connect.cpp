@@ -8,6 +8,11 @@
 #include <sys/time.h>
 #include <errno.h>
 
+void Parser::parse( const char *data, int len )
+{
+	this->data( data, len );
+}
+
 BioWrap::BioWrap()
 :
 	socketFd(-1),

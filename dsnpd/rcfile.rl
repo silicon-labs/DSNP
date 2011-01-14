@@ -122,3 +122,27 @@ int parseRcFile( const char *data, long length )
 		fprintf( stderr, "sppd: parse error\n" );
 	return 0;
 }
+
+void setConfigByUri( const char *uri )
+{
+	c = config_first;
+	while ( c != 0 && strcmp( c->CFG_URI, uri ) != 0 )
+		c = c->next;
+
+	if ( c == 0 ) {
+		fatal( "bad site\n" );
+		exit(1);
+	}
+}
+
+void setConfigByName( const char *name )
+{
+	c = config_first;
+	while ( c != 0 && strcmp( c->name, name ) != 0 )
+		c = c->next;
+
+	if ( c == 0 ) {
+		fatal( "bad site\n" );
+		exit(1);
+	}
+}

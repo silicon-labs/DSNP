@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2009, Adrian Thurston <thurston@complang.org>
+ * Copyright (c) 2008-2011, Adrian Thurston <thurston@complang.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -31,9 +31,18 @@
 #define NET_TYPE_PRIMARY 1
 #define NET_TYPE_GROUP   2
 
-struct Server;
+#define RELID_SIZE  16
+#define REQID_SIZE  16
+#define TOKEN_SIZE  16
+#define SK_SIZE     16
+#define SK_SIZE_HEX 33
+#define SALT_SIZE   18
 
-typedef std::list<std::string> RecipientList;
+#define MAX_BRD_PHOTO_SIZE 16384
+
+struct BioWrap;
+struct TlsConnect;
+struct Server;
 
 /* Wraps up RSA struct and private key/x509. Useful for transition to CMS. */
 struct Keys
@@ -135,12 +144,14 @@ struct FriendClaim
 struct Parser
 {
 	enum Control {
-		Ok = 1,
-		Stop,
-		Error
+		Continue = 1,
+		Stop
 	};
 
-	virtual Control data( char *data, int len ) = 0;
+	virtual Control data( const char *data, int dlen ) = 0;
+
+	/* Run the whole thing at once. */
+	void parse( const char *data, int dlen );
 };
 
 struct BioWrap
@@ -214,38 +225,9 @@ long queueMessage( MYSQL *mysql, const char *from_user,
 void encryptRemoteBroadcast( MYSQL *mysql, User &user,
 		Identity &identity, const char *token,
 		long long seqNum, const char *msg, long mLen );
-char *decrypt_result( MYSQL *mysql, const char *from_user, 
-		const char *to_identity, const char *user_message );
-long notify_accept( MYSQL *mysql, const char *for_user, const char *from_id,
-		const char *id_salt, const char *requested_relid, const char *returned_relid );
 
 void remoteInner( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
                long long seqNum, const char *date, const char *msg, long mLen );
-void friend_proof( MYSQL *mysql, const char *user, const char *subject_id, const char *author_id,
-		long long seqNum, const char *date );
-int remote_broadcast_parser( MYSQL *mysql, const char *user, 
-		const char *friend_id, const char *author_id, const char *msg, long mLen );
-
-/* Note: decrypted will be written to. */
-int store_message( MYSQL *mysql, const char *relid, char *decrypted );
-
-#define RELID_SIZE  16
-#define REQID_SIZE  16
-#define TOKEN_SIZE  16
-#define SK_SIZE     16
-#define SK_SIZE_HEX 33
-#define SALT_SIZE   18
-
-#define MAX_BRD_PHOTO_SIZE 16384
-
-char *bin2hex( unsigned char *data, long len );
-long hex2bin( unsigned char *dest, long len, const char *src );
-
-int exec_query( MYSQL *mysql, const char *fmt, ... );
-int message_parser( MYSQL *mysql, const char *relid,
-		long long friend_claim_id, const char *user, const char *from_user, const char *message );
-int prefriend_message_parser( MYSQL *mysql, const char *relid,
-		const char *user, const char *friend_id, const char *message );
 
 MYSQL *dbConnect();
 
@@ -261,9 +243,20 @@ BIO *sslStartServer( BIO *rbio, BIO *wbio );
 void sslInitClient();
 void sslInitServer();
 BIO *startTls( BIO *rbio, BIO *wbio );
+
+/*
+ * Conversion
+ */
+
 long base64ToBin( unsigned char *out, const char *src, long len );
 AllocString binToBase64( const u_char *data, long len );
 AllocString bnToBase64( const BIGNUM *n );
+char *bin2hex( unsigned char *data, long len );
+long hex2bin( unsigned char *dest, long len, const char *src );
+AllocString passHash( const u_char *pass_salt, const char *pass );
+BIGNUM *base64ToBn( const char *base64 );
+long long parseId( const char *id );
+long long parseLength( const char *length );
 
 struct DbQuery
 {
@@ -290,8 +283,7 @@ struct DbQuery
 
 long long lastInsertId( MYSQL *mysql );
 
-struct BioWrap;
-struct TlsConnect;
+typedef std::list<std::string> RecipientList;
 
 struct ServerParser
 :
@@ -299,7 +291,7 @@ struct ServerParser
 {
 	ServerParser();
 
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	long cs;
 	String user, pass, email, identity; 
@@ -326,7 +318,7 @@ struct SendMessageParser
 {
 	SendMessageParser();
 
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	bool OK;
@@ -341,7 +333,7 @@ struct SendBroadcastRecipientParser
 {
 	SendBroadcastRecipientParser();
 
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	bool OK;
@@ -353,7 +345,7 @@ struct SendBroadcastParser
 {
 	SendBroadcastParser();
 
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	bool OK;
@@ -365,7 +357,7 @@ struct FetchPublicKeyParser
 	public Parser
 {
 	FetchPublicKeyParser();
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	Buffer buf;
@@ -378,7 +370,7 @@ struct FetchRequestedRelidParser
 	public Parser
 {
 	FetchRequestedRelidParser();
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	bool OK;
@@ -391,7 +383,7 @@ struct FetchResponseRelidParser
 	public Parser
 {
 	FetchResponseRelidParser();
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	bool OK;
@@ -400,10 +392,11 @@ struct FetchResponseRelidParser
 };
 
 struct FetchFtokenParser
-	: public Parser
+:
+	public Parser
 {
 	FetchFtokenParser();
-	virtual Parser::Control data( char *data, int len );
+	virtual Parser::Control data( const char *data, int dlen );
 
 	int cs;
 	bool OK;
@@ -411,8 +404,9 @@ struct FetchFtokenParser
 	String sym;
 };
 
-
 struct RemoteBroadcastParser
+:
+	public Parser
 {
 	enum Type
 	{
@@ -427,10 +421,12 @@ struct RemoteBroadcastParser
 	String body;
 	String identity1, identity2;
 
-	int parse( const char *msg, long mLen );
+	virtual Control data( const char *data, int dlen );
 };
 
 struct BroadcastParser
+:
+	public Parser
 {
 	enum Type
 	{
@@ -445,10 +441,12 @@ struct BroadcastParser
 	long length, counter;
 	String body;
 
-	int parse( const char *msg, long mLen );
+	virtual Control data( const char *data, int dlen );
 };
 
 struct MessageParser
+:
+	public Parser
 {
 	enum Type
 	{
@@ -468,10 +466,12 @@ struct MessageParser
 	long long seqNum, generation;
 	String body;
 
-	int parse( const char *smg, long mLen );
+	virtual Control data( const char *data, int dlen );
 };
 
 struct PrefriendParser
+:
+	public Parser
 {
 	enum Type
 	{
@@ -484,9 +484,8 @@ struct PrefriendParser
 	String requestedRelid;
 	String returnedRelid;
 
-	int parse( const char *msg, long mLen );
+	virtual Control data( const char *data, int dlen );
 };
-
 
 struct Server
 {
@@ -552,10 +551,7 @@ private:
 			long long keyGen, const char *encrypted );
 };
 
-
 void appNotification( const char *args, const char *data, long length );
-
-void friendProofRequest( MYSQL *mysql, const char *user, const char *friend_id );
 
 Keys *loadKey( MYSQL *mysql, User &user );
 Keys *loadKey( MYSQL *mysql, const char *user );
@@ -573,11 +569,7 @@ AllocString makeIdHash( const char *salt, const char *identity );
 AllocString makeIduriHash( const char *identity );
 long queueBroadcast( MYSQL *mysql, const char *user, const char *group, const char *msg, long mLen );
 
-void showNetwork( MYSQL *mysql, const char *user, const char *network );
-void unshowNetwork( MYSQL *mysql, const char *user, const char *network );
-void addToNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
 void addToPrimaryNetwork( MYSQL *mysql, User &user, Identity &identity );
-void removeFromNetwork( MYSQL *mysql, const char *user, const char *network, const char *identity );
 
 long sendBroadcastNet( MYSQL *mysql, const char *toHost, const char *toSite,
 		RecipientList &recipients, const char *group, long long keyGen, const char *msg, long mLen );
@@ -593,23 +585,6 @@ void remoteBroadcast( MYSQL *mysql, const char *user, const char *friendId,
 
 long long addNetwork( MYSQL *mysql, long long userId, const char *privateName );
 
-AllocString passHash( const u_char *pass_salt, const char *pass );
-
-void startPreFriend( MYSQL *mysql, char *reqid );
-
-BIGNUM *base64ToBn( const char *base64 );
-
-inline long long parseId( const char *id )
-{
-	/* FIXME: overflow check. */
-	return strtoll( id, 0, 10 );
-}
-
-inline long long parseLength( const char *length )
-{
-	/* FIXME: overflow check. */
-	return strtol( length, 0, 10 );
-}
 
 long long findPrimaryNetworkId( MYSQL *mysql, User &user );
 AllocString findPrimaryNetworkName( MYSQL *mysql, User &user );

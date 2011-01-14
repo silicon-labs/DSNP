@@ -394,10 +394,10 @@ ServerParser::ServerParser()
 	%% write init;
 }
 
-Parser::Control ServerParser::data( char *data, int len )
+Parser::Control ServerParser::data( const char *data, int dlen )
 {
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -408,7 +408,7 @@ Parser::Control ServerParser::data( char *data, int len )
 	if ( cs == %%{ write error; }%% )
 		throw ParseError();
 
-	return Ok;
+	return Continue;
 }
 
 void serverParseLoop( BIO *rbio, BIO *wbio )
@@ -451,7 +451,7 @@ void serverParseLoop( BIO *rbio, BIO *wbio )
 
 %% write data;
 
-int PrefriendParser::parse( const char *msg, long mLen )
+Parser::Control PrefriendParser::data( const char *data, int dlen )
 {
 	long cs;
 	Buffer buf;
@@ -459,15 +459,15 @@ int PrefriendParser::parse( const char *msg, long mLen )
 	type = Unknown;
 	%% write init;
 
-	const char *p = msg;
-	const char *pe = msg + mLen;
+	const char *p = data;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
 
-	return 0;
+	return Continue;
 }
 
 /*
@@ -506,15 +506,15 @@ int PrefriendParser::parse( const char *msg, long mLen )
 
 %% write data;
 
-int MessageParser::parse( const char *msg, long mLen )
+Parser::Control MessageParser::data( const char *data, int dlen )
 {
 	long cs;
 	Buffer buf;
 
 	%% write init;
 
-	const char *p = msg;
-	const char *pe = msg + mLen;
+	const char *p = data;
+	const char *pe = data + dlen;
 	type = Unknown;
 
 	%% write exec;
@@ -522,7 +522,7 @@ int MessageParser::parse( const char *msg, long mLen )
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
 
-	return 0;
+	return Continue;
 }
 
 /*
@@ -550,7 +550,7 @@ int MessageParser::parse( const char *msg, long mLen )
 
 %% write data;
 
-int BroadcastParser::parse( const char *msg, long mLen )
+Parser::Control BroadcastParser::data( const char *data, int dLen )
 {
 	long cs;
 	Buffer buf;
@@ -558,15 +558,15 @@ int BroadcastParser::parse( const char *msg, long mLen )
 	type = Unknown;
 	%% write init;
 
-	const char *p = msg;
-	const char *pe = msg + mLen;
+	const char *p = data;
+	const char *pe = data + dLen;
 
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
 
-	return 0;
+	return Continue;
 }
 
 /*
@@ -588,7 +588,7 @@ int BroadcastParser::parse( const char *msg, long mLen )
 
 %% write data;
 
-int RemoteBroadcastParser::parse( const char *msg, long mLen )
+Parser::Control RemoteBroadcastParser::data( const char *data, int dLen )
 {
 	long cs;
 	Buffer buf;
@@ -596,15 +596,15 @@ int RemoteBroadcastParser::parse( const char *msg, long mLen )
 	type = Unknown;
 	%% write init;
 
-	const char *p = msg;
-	const char *pe = msg + mLen;
+	const char *p = data;
+	const char *pe = data + dLen;
 
 	%% write exec;
 
 	if ( cs < %%{ write first_final; }%% )
 		throw ParseError();
 
-	return 0;
+	return Continue;
 }
 
 /*
@@ -622,7 +622,7 @@ FetchPublicKeyParser::FetchPublicKeyParser()
 	%% write init;
 }
 
-Parser::Control FetchPublicKeyParser::data( char *data, int len )
+Parser::Control FetchPublicKeyParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -634,7 +634,7 @@ Parser::Control FetchPublicKeyParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -645,7 +645,7 @@ Parser::Control FetchPublicKeyParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 void fetchPublicKeyNet( PublicKey &pub, const char *site, 
@@ -681,7 +681,7 @@ FetchRequestedRelidParser::FetchRequestedRelidParser()
 	%% write init;
 }
 
-Parser::Control FetchRequestedRelidParser::data( char *data, int len )
+Parser::Control FetchRequestedRelidParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -693,7 +693,7 @@ Parser::Control FetchRequestedRelidParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -704,7 +704,7 @@ Parser::Control FetchRequestedRelidParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 void fetchRequestedRelidNet( RelidEncSig &encsig, const char *site, 
@@ -740,7 +740,7 @@ FetchResponseRelidParser::FetchResponseRelidParser()
 	%% write init;
 }
 
-Parser::Control FetchResponseRelidParser::data( char *data, int len )
+Parser::Control FetchResponseRelidParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -752,7 +752,7 @@ Parser::Control FetchResponseRelidParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -763,7 +763,7 @@ Parser::Control FetchResponseRelidParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 void fetchResponseRelidNet( RelidEncSig &encsig, const char *site,
@@ -799,7 +799,7 @@ FetchFtokenParser::FetchFtokenParser()
 	%% write init;
 }
 
-Parser::Control FetchFtokenParser::data( char *data, int len )
+Parser::Control FetchFtokenParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -811,7 +811,7 @@ Parser::Control FetchFtokenParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -822,7 +822,7 @@ Parser::Control FetchFtokenParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 void fetchFtokenNet( RelidEncSig &encsig, const char *site,
@@ -858,7 +858,7 @@ SendBroadcastRecipientParser::SendBroadcastRecipientParser()
 	%% write init;
 }
 
-Parser::Control SendBroadcastRecipientParser::data( char *data, int len )
+Parser::Control SendBroadcastRecipientParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -870,7 +870,7 @@ Parser::Control SendBroadcastRecipientParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -881,7 +881,7 @@ Parser::Control SendBroadcastRecipientParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 %%{
@@ -895,7 +895,7 @@ SendBroadcastParser::SendBroadcastParser()
 	%% write init;
 }
 
-Parser::Control SendBroadcastParser::data( char *data, int len )
+Parser::Control SendBroadcastParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -907,7 +907,7 @@ Parser::Control SendBroadcastParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
 
@@ -918,7 +918,7 @@ Parser::Control SendBroadcastParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 long sendBroadcastNet( MYSQL *mysql, const char *toHost,
@@ -964,7 +964,7 @@ SendMessageParser::SendMessageParser()
 	%% write init;
 }
 
-Parser::Control SendMessageParser::data( char *data, int len )
+Parser::Control SendMessageParser::data( const char *data, int dlen )
 {
 	/* Parser for response. */
 	%%{
@@ -977,11 +977,9 @@ Parser::Control SendMessageParser::data( char *data, int len )
 	}%%
 
 	const char *p = data;
-	const char *pe = data + len;
+	const char *pe = data + dlen;
 
 	%% write exec;
-
-	message("has token: %d %s\n", hasToken, hasToken ? token() : 0 );
 
 	/* Did parsing succeed? */
 	if ( cs < %%{ write first_final; }%% )
@@ -990,7 +988,7 @@ Parser::Control SendMessageParser::data( char *data, int len )
 	if ( cs >= %%{ write first_final; }%% )
 		return Stop;
 
-	return Ok;
+	return Continue;
 }
 
 void sendMessageNet( MYSQL *mysql, bool prefriend, const char *user,

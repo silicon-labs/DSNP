@@ -110,7 +110,7 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 		switch ( rbp.type ) {
 			case RemoteBroadcastParser::RemoteInner:
 				remoteInner( mysql, user.user(), network, identity.iduri, innerIdentity.iduri, rbp.seqNum, 
-						rbp.date, rbp.embeddedMsg, rbp.length );
+						rbp.date, rbp.body, rbp.length );
 				break;
 			default:
 				error("remote broadcast parse failed: %.*s\n", 
@@ -156,11 +156,11 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 	switch ( bp.type ) {
 		case BroadcastParser::Direct:
 			directBroadcast( mysql, relid, user.user(), network, identity.iduri, 
-					bp.seqNum, bp.date, bp.embeddedMsg, bp.length );
+					bp.seqNum, bp.date, bp.body, bp.length );
 			break;
 		case BroadcastParser::Remote:
 			remoteBroadcast( mysql, user, identity, bp.hash, 
-					bp.distName, 1, bp.generation, bp.embeddedMsg, bp.length );
+					bp.distName, 1, bp.generation, bp.body, bp.length );
 			break;
 		default:
 			break;

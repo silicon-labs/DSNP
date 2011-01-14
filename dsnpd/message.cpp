@@ -95,7 +95,7 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
 			encryptRemoteBroadcast( mysql, user, identity, mp.token,
-					mp.seqNum, mp.embeddedMsg, mp.length );
+					mp.seqNum, mp.body, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
 			returnRemoteBroadcast( mysql, user, identity, mp.reqid,
@@ -103,7 +103,7 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 			break;
 		case MessageParser::UserMessage:
 		default:
-//			userMessage( mysql, user, friendId, mp.date, mp.embeddedMsg, mp.length );
+//			userMessage( mysql, user, friendId, mp.date, mp.body, mp.length );
 			throw NotImplemented();
 			break;
 	}

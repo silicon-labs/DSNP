@@ -311,7 +311,7 @@ struct ServerParser
 	int retVal;
 	RecipientList recipients;
 	Buffer buf;
-	String messageBody;
+	String body;
 
 	MYSQL *mysql;
 	bool ssl;
@@ -424,7 +424,7 @@ struct RemoteBroadcastParser
 	long long seqNum;
 	long length, counter;
 	String date;
-	const char *embeddedMsg;
+	String body;
 	String identity1, identity2;
 
 	int parse( const char *msg, long mLen );
@@ -443,7 +443,7 @@ struct BroadcastParser
 	String date, hash, distName, identity;
 	long long generation, seqNum;
 	long length, counter;
-	const char *embeddedMsg;
+	String body;
 
 	int parse( const char *msg, long mLen );
 };
@@ -466,7 +466,7 @@ struct MessageParser
 	String date, distName, sym1, sym2;
 	long length, counter, number;
 	long long seqNum, generation;
-	const char *embeddedMsg;
+	String body;
 
 	int parse( const char *smg, long mLen );
 };
@@ -601,7 +601,14 @@ BIGNUM *base64ToBn( const char *base64 );
 
 inline long long parseId( const char *id )
 {
+	/* FIXME: overflow check. */
 	return strtoll( id, 0, 10 );
+}
+
+inline long long parseLength( const char *length )
+{
+	/* FIXME: overflow check. */
+	return strtol( length, 0, 10 );
 }
 
 long long findPrimaryNetworkId( MYSQL *mysql, User &user );

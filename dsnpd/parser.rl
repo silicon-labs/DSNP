@@ -203,8 +203,10 @@ long Identity::parse()
 			EOL @{
 				message( "command: comm_key %s\n", key() );
 				/* Check the authentication. */
-				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 )
+				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 ) {
 					gblKeySubmitted = true;
+					server->bioWrap->printf( "OK\r\n" );
+				}
 				else
 					fgoto *server_loop_error;
 			} |
@@ -379,7 +381,12 @@ long Identity::parse()
 			}
 	)*;
 
-	main := 'DSNP/0.1'i ' ' identity %set_config EOL @{ fgoto commands; };
+	main := 
+		'DSNP/0.1'i ' ' identity %set_config 
+			EOL @{
+				server->bioWrap->printf( "OK\r\n" );
+				fgoto commands;
+			};
 }%%
 
 %% write data;

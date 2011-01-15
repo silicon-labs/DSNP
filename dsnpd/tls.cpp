@@ -224,18 +224,25 @@ void TlsConnect::connect( const char *host, const char *site )
 	BIO *socketBio = BIO_new_fd( socketFd, BIO_NOCLOSE );
 	BIO *buffer = BIO_new( BIO_f_buffer() );
 	BIO_push( buffer, socketBio );
+	rbio = wbio = socketBio;
+
+	/* FIXME: need to parse results. */
 
 	/* Send the request. */
-	BIO_printf( buffer,
-		"DSNP/0.1 %s\r\n"
-		"start_tls\r\n",
-		site );
-	(void) BIO_flush( buffer ); 
+	printf( "DSNP/0.1 %s\r\n", site );
 
 	/* Read the result. */
 	BIO_gets( buffer, buf, 8192 );
 
-	/* Verify the result here. */
+	/* Send the request. */
+	printf( "start_tls\r\n" );
+
+	/* Read the result. */
+	BIO_gets( buffer, buf, 8192 );
+
+	/* FIXME: Verify the results (twice). */
+
+	/* FIXME: pop the buffer'd IO off the socketBio? Seems to be just ignored. */
 
 	sslInitClient();
 	rbio = wbio = sslStartClient( socketBio, socketBio, host );

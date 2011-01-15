@@ -14,10 +14,18 @@ class Connection
 		if ( ! $this->fp )
 			exit(1);
 		
-		$send = 
-			"DSNP/0.1 " . $CFG['URI'] . "\r\n" .
-			"comm_key " . $CFG['COMM_KEY'] . "\r\n";
-		fwrite( $this->fp, $send );
+		$this->command( "DSNP/0.1 " . $CFG['URI'] . "\r\n" );
+
+		$this->success = ereg(
+			"^OK",
+			$this->result );
+		$this->checkResult();
+
+		$this->command( "comm_key " . $CFG['COMM_KEY'] . "\r\n" );
+		$this->success = ereg(
+			"^OK",
+			$this->result );
+		$this->checkResult();
 	}
 
 	function command( $cmd )

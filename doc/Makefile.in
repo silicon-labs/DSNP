@@ -46,4 +46,4 @@ dsnp-spec.pdf: dsnp-spec.tex
 	pdflatex -interaction=nonstopmode $< >/dev/null
 
 clean:
-	rm dsnp-spec.pdf dsnp-spec.log
+	rm -f dsnp-spec.pdf dsnp-spec.log

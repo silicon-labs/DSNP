@@ -265,7 +265,8 @@ that the user must trust the server that is hosting their friend's identities.
 However, this is not a problem unique to DSNP. This is true of email as well.
 
 \section{Protocol}
-\subsection{Common elements and first line}
+
+\subsection{Common Elements}
 
 \begin{verbatim}
     base64 = [A-Za-z0-9\-_]+;
@@ -287,10 +288,13 @@ However, this is not a problem unique to DSNP. This is true of email as well.
 
     EOL = '\r'? '\n';
 
-	main := 'DSNP/0.1'i ' ' identity 
 \end{verbatim}
 
-\subsection{Communication Channel Authentication and Authorization}
+\subsection{Connection Negotiation}
+
+\begin{verbatim}
+	main := 'DSNP/0.1'i ' ' identity 
+\end{verbatim}
 
 For local connection.
 

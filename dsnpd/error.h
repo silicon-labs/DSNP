@@ -63,6 +63,11 @@
 #define EC_TOKEN_WRONG_SIZE             139
 #define EC_NOT_IMPLEMENTED              140
 #define EC_MISSING_KEYS                 141
+#define EC_VERSION_ALREADY_GIVEN        142
+#define EC_DATABASE_CONNECTION_FAILED   143
+#define EC_NO_COMMON_VERSION            144
+#define EC_INVALID_COMM_KEY             145
+#define EC_BAD_SITE                     146
 
 struct UserError
 {
@@ -683,6 +688,76 @@ struct MissingKeys
 
 		error( "%d missing keys\n",
 				EC_MISSING_KEYS );
+	}
+};
+
+struct VersionAlreadyGiven
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_VERSION_ALREADY_GIVEN );
+
+		error( "%d version already given\n",
+				EC_VERSION_ALREADY_GIVEN );
+	}
+};
+
+struct DatabaseConnectionFailed
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_DATABASE_CONNECTION_FAILED );
+
+		error( "%d failed to connect to the database\n",
+				EC_DATABASE_CONNECTION_FAILED );
+	}
+};
+
+struct NoCommonVersion
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_NO_COMMON_VERSION );
+
+		error( "%d no common version\n",
+				EC_NO_COMMON_VERSION );
+	}
+};
+
+struct InvalidCommKey
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_INVALID_COMM_KEY );
+
+		error( "%d invalid communication key\n",
+				EC_INVALID_COMM_KEY );
+	}
+};
+
+struct BadSite
+	: public UserError
+{
+	virtual void print( BIO *bio )
+	{
+		BIO_printf( bio,
+				"ERROR %d\r\n",
+				EC_BAD_SITE );
+
+		error( "%d bad site\n",
+				EC_BAD_SITE );
 	}
 };
 

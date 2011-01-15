@@ -66,7 +66,7 @@ bool checkFriendRequestExists( MYSQL *mysql, User &user, Identity &identity )
 	return false;
 }
 
-void Server::relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
+void Server::relidRequest( const char *_user, const char *_iduri )
 {
 	/* a) verifies challenge response
 	 * b) fetches $URI/id.asc (using SSL)
@@ -131,7 +131,7 @@ void Server::relidRequest( MYSQL *mysql, const char *_user, const char *_iduri )
 	bioWrap->printf( "OK %s\r\n", reqid.data );
 }
 
-void Server::fetchRequestedRelid( MYSQL *mysql, const char *reqid )
+void Server::fetchRequestedRelid( const char *reqid )
 {
 	DbQuery request( mysql,
 		"SELECT msg_sym FROM relid_request WHERE reqid = %e", reqid );
@@ -144,7 +144,7 @@ void Server::fetchRequestedRelid( MYSQL *mysql, const char *reqid )
 	bioWrap->printf( "OK %s\r\n", row[0] );
 }
 
-void Server::relidResponse( MYSQL *mysql, const char *_user, 
+void Server::relidResponse( const char *_user, 
 		const char *reqid, const char *_iduri )
 {
 	/*  a) verifies browser is logged in as owner
@@ -233,7 +233,7 @@ void Server::relidResponse( MYSQL *mysql, const char *_user,
 	delete[] response_reqid_str;
 }
 
-void Server::fetchResponseRelid( MYSQL *mysql, const char *reqid )
+void Server::fetchResponseRelid( const char *reqid )
 {
 	/* Execute the query. */
 	DbQuery response( mysql,
@@ -259,7 +259,7 @@ void verifyReturnedFrRelid( MYSQL *mysql, unsigned char *fr_relid )
 		throw RequestIdInvalid();
 }
 
-void Server::friendFinal( MYSQL *mysql, const char *_user, 
+void Server::friendFinal( const char *_user, 
 		const char *reqid_str, const char *_iduri )
 {
 	/* a) fetches $URI/request-return/$REQID.asc 

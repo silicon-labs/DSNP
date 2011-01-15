@@ -17,7 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "dsnp.h"
+#include "error.h"
 
 Config *c = 0, *config_first = 0, *config_last = 0;
 
@@ -129,10 +131,8 @@ void setConfigByUri( const char *uri )
 	while ( c != 0 && strcmp( c->CFG_URI, uri ) != 0 )
 		c = c->next;
 
-	if ( c == 0 ) {
-		fatal( "bad site\n" );
-		exit(1);
-	}
+	if ( c == 0 )
+		throw BadSite();
 }
 
 void setConfigByName( const char *name )
@@ -141,8 +141,6 @@ void setConfigByName( const char *name )
 	while ( c != 0 && strcmp( c->name, name ) != 0 )
 		c = c->next;
 
-	if ( c == 0 ) {
-		fatal( "bad site\n" );
-		exit(1);
-	}
+	if ( c == 0 )
+		throw BadSite();
 }

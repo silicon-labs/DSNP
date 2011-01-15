@@ -177,67 +177,58 @@ long Identity::parse()
 
 	include common;
 
-	action set_config {
-		setConfigByUri( identity );
-
-		/* Now that we have a config connect to the database. */
-		mysql = dbConnect();
-		if ( mysql == 0 )
-			fgoto *server_loop_error;
-	}
-
 	action check_key {
 		if ( !gblKeySubmitted )
 			fgoto *server_loop_error;
 	}
 
-	action check_ssl {
-		if ( !ssl ) {
-			message("ssl check failed\n");
+	action check_tls {
+		if ( !tls ) {
+			message("tls check failed\n");
 			fgoto *server_loop_error;
 		}
 	}
 
 	commands := (
-		'comm_key'i ' ' key
-			EOL @{
-				message( "command: comm_key %s\n", key() );
-				/* Check the authentication. */
-				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 ) {
-					gblKeySubmitted = true;
-					server->bioWrap->printf( "OK\r\n" );
-				}
-				else
-					fgoto *server_loop_error;
-			} |
-
-		'start_tls'i 
-			EOL @{
-				message( "command: start_tls\n" );
-				server->bioWrap->rbio = server->bioWrap->wbio = 
-					startTls( server->bioWrap->rbio, server->bioWrap->wbio );
-
-				ssl = true;
-			} |
+#		'comm_key'i ' ' key
+#			EOL @{
+#				message( "command: comm_key %s\n", key() );
+#				/* Check the authentication. */
+#				if ( strcmp( key, c->CFG_COMM_KEY ) == 0 ) {
+#					gblKeySubmitted = true;
+#					server->bioWrap->printf( "OK\r\n" );
+#				}
+#				else
+#					fgoto *server_loop_error;
+#			} |
+#
+#		'start_tls'i 
+#			EOL @{
+#				message( "command: start_tls\n" );
+#				server->bioWrap->rbio = server->bioWrap->wbio = 
+#					startTls( server->bioWrap->rbio, server->bioWrap->wbio );
+#
+#				tls = true;
+#			} |
 
 		'login'i ' ' user ' ' pass 
 			EOL @check_key @{
 				message( "command: login %s <pass>\n", user() );
-				server->login( mysql, user, pass );
+				server->login( user, pass );
 			} |
 
 		# Admin commands.
 		'new_user'i ' ' user ' ' pass
 			EOL @check_key @{
 				message( "command: new_user %s %s\n", user(), pass() );
-				server->newUser( mysql, user, pass );
+				server->newUser( user, pass );
 			} |
 
 		# Public key sharing.
 		'public_key'i ' ' user
-			EOL @check_ssl @{
+			EOL @check_tls @{
 				message( "command: public_key %s\n", user() );
-				server->publicKey( mysql, user );
+				server->publicKey( user );
 			} |
 
 		# 
@@ -246,31 +237,31 @@ long Identity::parse()
 		'relid_request'i ' ' user ' ' identity
 			EOL @check_key @{
 				message( "command: relid_request %s %s\n", user(), identity() );
-				server->relidRequest( mysql, user, identity );
+				server->relidRequest( user, identity );
 			} |
 
 		'relid_response'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
 				message( "command: relid_response %s %s %s\n", user(), reqid(), identity() );
-				server->relidResponse( mysql, user, reqid, identity );
+				server->relidResponse( user, reqid, identity );
 			} |
 
 		'friend_final'i ' ' user ' ' reqid ' ' identity
 			EOL @check_key @{
 				message( "command: friend_final %s %s %s\n", user(), reqid(), identity() );
-				server->friendFinal( mysql, user, reqid, identity );
+				server->friendFinal( user, reqid, identity );
 			} |
 
 		'fetch_requested_relid'i ' ' reqid
-			EOL @check_ssl @{
+			EOL @check_tls @{
 				message( "command: fetch_requested_relid %s\n", reqid() );
-				server->fetchRequestedRelid( mysql, reqid );
+				server->fetchRequestedRelid( reqid );
 			} |
 
 		'fetch_response_relid'i ' ' reqid
-			EOL @check_ssl @{
+			EOL @check_tls @{
 				message( "command: fetch_response_relid %s\n", reqid() ) ;
-				server->fetchResponseRelid( mysql, reqid );
+				server->fetchResponseRelid( reqid );
 			} |
 
 		#
@@ -279,13 +270,13 @@ long Identity::parse()
 		'accept_friend'i ' ' user ' ' reqid
 			EOL @check_key @{
 				message( "command: accept_friend %s %s\n", user(), reqid() );
-				server->acceptFriend( mysql, user, reqid );
+				server->acceptFriend( user, reqid );
 			} |
 
 		'prefriend_message'i ' ' relid ' ' length 
-			M_EOL @check_ssl @{
+			M_EOL @check_tls @{
 				message( "command: prefriend_mesage %s %ld\n", relid(), length );
-				server->prefriendMessage( mysql, relid, body );
+				server->prefriendMessage( relid, body );
 			} |
 
 		#
@@ -294,25 +285,25 @@ long Identity::parse()
 		'ftoken_request'i ' ' user ' ' hash
 			EOL @check_key @{
 				message( "command: ftoken_request %s %s\n", user(), hash() );
-				server->ftokenRequest( mysql, user, hash );
+				server->ftokenRequest( user, hash );
 			} |
 
 		'ftoken_response'i ' ' user ' ' hash ' ' reqid
 			EOL @check_key @{
 				message( "command: ftoken_response %s %s %s\n", user(), hash(), reqid() );
-				server->ftokenResponse( mysql, user, hash, reqid );
+				server->ftokenResponse( user, hash, reqid );
 			} |
 
 		'fetch_ftoken'i ' ' reqid
-			EOL @check_ssl @{
+			EOL @check_tls @{
 				message( "command: fetch_ftoken %s\n", reqid() );
-				server->fetchFtoken( mysql, reqid );
+				server->fetchFtoken( reqid );
 			} |
 
 		'submit_ftoken'i ' ' token
 			EOL @check_key @{
 				message( "command: submit_ftoken %s\n", token() );
-				server->submitFtoken( mysql, token );
+				server->submitFtoken( token );
 			} |
 
 		#
@@ -323,7 +314,7 @@ long Identity::parse()
 		'submit_message'i ' ' user ' ' identity ' ' length
 			M_EOL @check_key @{
 				message( "command: submit_message %s %s %ld\n", user(), identity(), length );
-				server->submitMessage( mysql, user, identity, body, length );
+				server->submitMessage( user, identity, body, length );
 			} |
 
 		#
@@ -332,7 +323,7 @@ long Identity::parse()
 		'submit_broadcast'i ' ' user ' ' length 
 			M_EOL @check_key @{
 				message( "command: submit_broadcast %s %ld\n", user(), length );
-				server->submitBroadcast( mysql, user, body, length );
+				server->submitBroadcast( user, body, length );
 			} |
 
 		#
@@ -342,49 +333,81 @@ long Identity::parse()
 			M_EOL @check_key @{
 				message( "command: remote_broadcast_request %s %s %s %s %ld\n",
 						user(), identity(), hash(), token(), length );
-				server->remoteBroadcastRequest( mysql, user, identity, hash, 
+				server->remoteBroadcastRequest( user, identity, hash, 
 						token, body, length );
 			} |
 
 		'remote_broadcast_response'i ' ' user ' ' reqid
 			EOL @check_key @{
 				message( "command: remote_broadcast_response %s %s\n", user(), reqid() );
-				server->remoteBroadcastResponse( mysql, user, reqid );
+				server->remoteBroadcastResponse( user, reqid );
 			} |
 
 		'remote_broadcast_final'i ' ' user ' ' reqid
 			EOL @check_key @{
 				message( "command: remote_broadcast_final %s %s\n", user(), reqid() );
-				server->remoteBroadcastFinal( mysql, user, reqid );
+				server->remoteBroadcastFinal( user, reqid );
 			} |
 
 		#
 		# Message sending.
 		#
 		'message'i ' ' relid ' ' length 
-			M_EOL @check_ssl @{
+			M_EOL @check_tls @{
 				message( "command: message %s %ld\n", relid(), length );
-				server->receiveMessage( mysql, relid, body );
+				server->receiveMessage( relid, body );
 			} |
 
 		'broadcast_recipient'i ' ' relid
-			EOL @check_ssl @{
+			EOL @check_tls @{
 				message( "command: broadcast_recipient %s\n", relid() );
-				server->broadcastReceipient( mysql, recipients, relid );
+				server->broadcastReceipient( recipients, relid );
 			} |
 
 		'broadcast'i ' ' dist_name ' ' generation ' ' length
-			M_EOL @check_ssl @{
+			M_EOL @check_tls @{
 				message( "command: broadcast %s %lld %ld\n", distName(), generation, length );
-				server->receiveBroadcast( mysql, recipients, distName, generation, body );
+				server->receiveBroadcast( recipients, distName, generation, body );
 				recipients.clear();
 			}
 	)*;
 
+	#
+	# Suppored Versions
+	#
+	version_0_1 = 
+		'0.1' %{
+			v = VERSION_MASK_0_1;
+		};
+
+	version = ( version_0_1 )
+		%{
+			if ( versions & v )
+				throw VersionAlreadyGiven();
+
+			versions |= v;
+		};
+
+	supported_versions =  version ( '|' version )*;
+
+	#
+	# Site selection, can use the identity defintiion for this. 
+	#
+	site = identity;
+
+	#
+	# Authentication methods, rely on SSL, or accept a key on a local
+	# connection. 
+	#
+	auth = ( 
+		'start_tls'i @{ tls = true; } | 
+		'local'i ' ' key
+	);
+
 	main := 
-		'DSNP/0.1'i ' ' identity %set_config 
+		'DSNP ' supported_versions ' ' site ' ' auth
 			EOL @{
-				server->bioWrap->printf( "OK\r\n" );
+				server->negotiation( versions, identity, tls, key );
 				fgoto commands;
 			};
 }%%
@@ -392,11 +415,13 @@ long Identity::parse()
 %% write data;
 
 ServerParser::ServerParser()
+:
+	retVal(0),
+	mysql(0),
+	tls(false),
+	exit(false),
+	versions(0)
 {
-	retVal = 0;
-	mysql = 0;
-	ssl = false;
-	exit = false;
 
 	%% write init;
 }
@@ -978,8 +1003,15 @@ Parser::Control SendMessageParser::data( const char *data, int dlen )
 		include common;
 
 		main := 
-			'OK' EOL @{ OK = true; fbreak; } |
-			'OK' ' ' token EOL @{ OK = true; hasToken = true; fbreak; } |
+			'OK' EOL @{ 
+				OK = true; 
+				fbreak;
+			} |
+			'OK' ' ' token EOL @{ 
+				OK = true;
+				hasToken = true;
+				fbreak;
+			} |
 			'ERROR' EOL;
 	}%%
 

@@ -75,7 +75,7 @@ void newBroadcastKey( MYSQL *mysql, long long networkId, long long generation )
 		networkId, generation, bk );
 }
 
-void Server::publicKey( MYSQL *mysql, const char *user )
+void Server::publicKey( const char *user )
 {
 	DbQuery query( mysql, 
 		"SELECT rsa_n, rsa_e "

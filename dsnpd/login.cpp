@@ -4,7 +4,7 @@
 #include <string.h>
 #include <openssl/rand.h>
 
-void Server::login( MYSQL *mysql, const char *user, const char *pass )
+void Server::login( const char *user, const char *pass )
 {
 	const long lasts = LOGIN_TOKEN_LASTS;
 

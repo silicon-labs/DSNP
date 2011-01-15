@@ -37,11 +37,16 @@ define( 'EC_INVALID_FTOKEN',                133 );
 define( 'EC_INVALID_FTOKEN_REQUEST',        134 );
 define( 'EC_FLOGIN_TOKEN_WRONG_SIZE',       135 );
 define( 'EC_BROADCAST_RECIPIENT_INVALID',   136 );
-define( 'EC_REQUEST_ID_INVALID',			137 );
+define( 'EC_REQUEST_ID_INVALID',            137 );
 define( 'EC_LOGIN_TOKEN_INVALID',           138 );
 define( 'EC_TOKEN_WRONG_SIZE',              139 );
-define( 'EC_NOT_IMPLEMENTED',				140 );
-define( 'EC_MISSING_KEYS',				    141 );
+define( 'EC_NOT_IMPLEMENTED',               140 );
+define( 'EC_MISSING_KEYS',                  141 );
+define( 'EC_VERSION_ALREADY_GIVEN',         142 );
+define( 'EC_DATABASE_CONNECTION_FAILED',    143 );
+define( 'EC_NO_COMMON_VERSION',             144 );
+define( 'EC_INVALID_COMM_KEY',              145 );
+define( 'EC_BAD_SITE',                      146 );
 
 function userError( $code, $args )
 {

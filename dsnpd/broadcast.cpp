@@ -21,7 +21,7 @@
 
 #include <string.h>
 
-void Server::broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *relid )
+void Server::broadcastReceipient( RecipientList &recipients, const char *relid )
 {
 	recipients.push_back( std::string(relid) );
 	bioWrap->printf( "OK\r\n" );
@@ -82,7 +82,7 @@ void friendProofBroadcast( MYSQL *mysql, const char *user,
 		storeFriendLink( mysql, user, networkId, fromId, toId );
 }
 
-void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
+void Server::remoteBroadcast( User &user, Identity &identity,
 		const char *hash, const char *network, long long networkId, long long generation,
 		const char *msg, long mLen )
 {
@@ -120,7 +120,7 @@ void Server::remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
 	}
 }
 
-void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, 
+void Server::receiveBroadcast( const char *relid, const char *network, 
 		long long keyGen, const char *encrypted )
 {
 	FriendClaim friendClaim( mysql, relid );
@@ -159,7 +159,7 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 					bp.seqNum, bp.date, bp.body, bp.length );
 			break;
 		case BroadcastParser::Remote:
-			remoteBroadcast( mysql, user, identity, bp.hash, 
+			remoteBroadcast( user, identity, bp.hash, 
 					bp.distName, 1, bp.generation, bp.body, bp.length );
 			break;
 		default:
@@ -169,11 +169,11 @@ void Server::receiveBroadcast( MYSQL *mysql, const char *relid, const char *netw
 	bioWrap->printf( "OK\r\n" );
 }
 
-void Server::receiveBroadcast( MYSQL *mysql, RecipientList &recipients, const char *group,
+void Server::receiveBroadcast( RecipientList &recipients, const char *group,
 		long long keyGen, const char *encrypted )
 {
 	for ( RecipientList::iterator r = recipients.begin(); r != recipients.end(); r++ )
-		receiveBroadcast( mysql, r->c_str(), group, keyGen, encrypted );
+		receiveBroadcast( r->c_str(), group, keyGen, encrypted );
 }
 
 long storeBroadcastRecipients( MYSQL *mysql, User &user,
@@ -255,7 +255,7 @@ void queueBroadcast( MYSQL *mysql, User &user, const char *msg, long mLen )
 }
 
 
-void Server::submitBroadcast( MYSQL *mysql, const char *_user, 
+void Server::submitBroadcast( const char *_user, 
 		const char *msg, long mLen )
 {
 	String timeStr = timeNow();
@@ -299,7 +299,7 @@ void sendRemoteBroadcast( MYSQL *mysql, User &user,
 	queueBroadcast( mysql, user, full.data, full.length );
 }
 
-void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser, 
+void Server::remoteBroadcastRequest( const char *toUser, 
 		const char *authorId, const char *authorHash, 
 		const char *token, const char *msg, long mLen )
 {
@@ -354,7 +354,7 @@ void Server::remoteBroadcastRequest( MYSQL *mysql, const char *toUser,
 	bioWrap->printf( "OK %s\r\n", result() );
 }
 
-void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const char *reqid )
+void Server::remoteBroadcastResponse( const char *_user, const char *reqid )
 {
 	User user( mysql, _user );
 
@@ -392,7 +392,7 @@ void Server::remoteBroadcastResponse( MYSQL *mysql, const char *_user, const cha
 	bioWrap->printf( "OK %s\r\n", result() );
 }
 
-void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity, 
+void Server::returnRemoteBroadcast( User &user, Identity &identity, 
 		const char *reqid, const char *networkDist, long long generation, const char *sym )
 {
 	u_char reqid_final[REQID_SIZE];
@@ -408,7 +408,7 @@ void Server::returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity
 	bioWrap->printf( "OK %s\r\n", reqid_final_str );
 }
 
-void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *reqid )
+void Server::remoteBroadcastFinal( const char *_user, const char *reqid )
 {
 	User user( mysql, _user );
 
@@ -442,7 +442,7 @@ void Server::remoteBroadcastFinal( MYSQL *mysql, const char *_user, const char *
 	bioWrap->printf( "OK\r\n" );
 }
 
-void Server::encryptRemoteBroadcast( MYSQL *mysql, User &user,
+void Server::encryptRemoteBroadcast( User &user,
 		Identity &subjectId, const char *token,
 		long long seqNum, const char *msg, long mLen )
 {

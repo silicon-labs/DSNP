@@ -57,7 +57,7 @@ void addGetBroadcastKey( MYSQL *mysql, long long friendClaimId, long long networ
 		friendClaimId, networkId, generation );
 }
 
-void Server::storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, FriendClaim &friendClaim,
+void Server::storeBroadcastKey( User &user, Identity &identity, FriendClaim &friendClaim,
 		const char *distName, long long generation, const char *broadcastKey )
 {
 	DbQuery( mysql, 
@@ -72,7 +72,7 @@ void Server::storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, Fr
 	bioWrap->printf( "OK\n" );
 }
 
-void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
+void Server::receiveMessage( const char *relid, const char *msg )
 {
 	FriendClaim friendClaim( mysql, relid );
 
@@ -90,15 +90,15 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 
 	switch ( mp.type ) {
 		case MessageParser::BroadcastKey:
-			storeBroadcastKey( mysql, user, identity, friendClaim,
+			storeBroadcastKey( user, identity, friendClaim,
 					mp.distName, mp.generation, mp.key );
 			break;
 		case MessageParser::EncryptRemoteBroadcast: 
-			encryptRemoteBroadcast( mysql, user, identity, mp.token,
+			encryptRemoteBroadcast( user, identity, mp.token,
 					mp.seqNum, mp.body, mp.length );
 			break;
 		case MessageParser::ReturnRemoteBroadcast:
-			returnRemoteBroadcast( mysql, user, identity, mp.reqid,
+			returnRemoteBroadcast( user, identity, mp.reqid,
 					mp.distName, mp.generation, mp.sym );
 			break;
 		case MessageParser::UserMessage:
@@ -109,7 +109,7 @@ void Server::receiveMessage( MYSQL *mysql, const char *relid, const char *msg )
 	}
 }
 
-void Server::submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen )
+void Server::submitMessage( const char *user, const char *toIdentity, const char *msg, long mLen )
 {
 	String timeStr = timeNow();
 

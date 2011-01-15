@@ -167,7 +167,7 @@ FriendClaim::FriendClaim( MYSQL *mysql, const char *getRelid )
 	getRelid = row[5];
 }
 
-void Server::newUser( MYSQL *mysql, const char *user, const char *pass )
+void Server::newUser( const char *user, const char *pass )
 {
 	String iduri( "%s%s/", c->CFG_URI, user );
 

@@ -40,6 +40,9 @@
 
 #define MAX_BRD_PHOTO_SIZE 16384
 
+#define VERSION_MASK_0_1 0x1
+#define VERSION_MASK_0_2 0x2
+
 struct BioWrap;
 struct TlsConnect;
 struct Server;
@@ -306,8 +309,10 @@ struct ServerParser
 	String body;
 
 	MYSQL *mysql;
-	bool ssl;
+	bool tls;
 	bool exit;
+
+	long v, versions;
 
 	Server *server;
 };
@@ -491,64 +496,68 @@ struct Server
 {
 	BioWrap *bioWrap;
 
-	void broadcastReceipient( MYSQL *mysql, RecipientList &recipients, const char *relid );
-	void acceptFriend( MYSQL *mysql, const char *user, const char *user_reqid );
-	void receiveBroadcast( MYSQL *mysql, RecipientList &recipientList, const char *group,
+	void negotiation( long versions, const String &site, bool tls, const String &key );
+
+	void broadcastReceipient( RecipientList &recipients, const char *relid );
+	void acceptFriend( const char *user, const char *user_reqid );
+	void receiveBroadcast( RecipientList &recipientList, const char *group,
 			long long keyGen, const char *encrypted ); 
-	void fetchFtoken( MYSQL *mysql, const char *reqid );
-	void fetchRequestedRelid( MYSQL *mysql, const char *reqid );
-	void fetchResponseRelid( MYSQL *mysql, const char *reqid );
-	void friendFinal( MYSQL *mysql, const char *user, const char *reqid, const char *identity );
-	void ftokenRequest( MYSQL *mysql, const char *user, const char *hash );
-	void ftokenResponse( MYSQL *mysql, const char *user, const char *hash, 
+	void fetchFtoken( const char *reqid );
+	void fetchRequestedRelid( const char *reqid );
+	void fetchResponseRelid( const char *reqid );
+	void friendFinal( const char *user, const char *reqid, const char *identity );
+	void ftokenRequest( const char *user, const char *hash );
+	void ftokenResponse( const char *user, const char *hash, 
 			const char *floginReqid );
-	void login( MYSQL *mysql, const char *user, const char *pass );
-	void receiveMessage( MYSQL *mysql, const char *relid, const char *message );
-	void newUser( MYSQL *mysql, const char *user, const char *pass );
-	void prefriendMessage( MYSQL *mysql, const char *relid, const char *message );
-	void publicKey( MYSQL *mysql, const char *identity );
-	void relidRequest( MYSQL *mysql, const char *user, const char *iduri );
-	void relidResponse( MYSQL *mysql, const char *user, const char *frReqid,
+	void login( const char *user, const char *pass );
+	void receiveMessage( const char *relid, const char *message );
+	void newUser( const char *user, const char *pass );
+	void prefriendMessage( const char *relid, const char *message );
+	void publicKey( const char *identity );
+	void relidRequest( const char *user, const char *iduri );
+	void relidResponse( const char *user, const char *frReqid,
 			const char *identity );
-	void remoteBroadcastFinal( MYSQL *mysql, const char *user, const char *nonce );
-	void remoteBroadcastRequest( MYSQL *mysql, const char *user, 
+	void remoteBroadcastFinal( const char *user, const char *nonce );
+	void remoteBroadcastRequest( const char *user, 
 			const char *identity, const char *hash, const char *token,
 			const char *msg, long mLen );
-	void remoteBroadcastResponse( MYSQL *mysql, const char *user, const char *reqid );
-	void submitBroadcast( MYSQL *mysql, const char *user, const char *msg, long mLen );
-	void submitFtoken( MYSQL *mysql, const char *token );
+	void remoteBroadcastResponse( const char *user, const char *reqid );
+	void submitBroadcast( const char *user, const char *msg, long mLen );
+	void submitFtoken( const char *token );
 
-	void submitMessage( MYSQL *mysql, const char *user, const char *toIdentity, const char *msg, long mLen );
+	void submitMessage( const char *user, const char *toIdentity, const char *msg, long mLen );
 
 
 private:
-	void notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
+	void notifyAcceptResult( User &user, Identity &identity,
 			const char *userReqid, const char *requestedRelid,
 			const char *returnedRelid );
 
-	void encryptRemoteBroadcast( MYSQL *mysql, User &user,
+	void encryptRemoteBroadcast( User &user,
 			Identity &subjectId, const char *token,
 			long long seqNum, const char *msg, long mLen );
 
-	void returnRemoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
+	void returnRemoteBroadcast( User &user, Identity &identity,
 			const char *reqid, const char *network, long long generation,
 			const char *sym );
 
-	long registered( MYSQL *mysql, User &user, Identity &identity,
+	long registered( User &user, Identity &identity,
 			const char *requestedRelid, const char *returnedRelid );
 
-	void remoteBroadcast( MYSQL *mysql, User &user, Identity &identity,
+	void remoteBroadcast( User &user, Identity &identity,
 			const char *hash, const char *network, long long networkId, long long generation,
 			const char *msg, long mLen );
 
-	void storeBroadcastKey( MYSQL *mysql, User &user, Identity &identity, FriendClaim &friendClaim,
+	void storeBroadcastKey( User &user, Identity &identity, FriendClaim &friendClaim,
 			const char *distName, long long generation, const char *broadcastKey );
 
-	long notifyAccept( MYSQL *mysql, User &user, Identity &identity,
+	long notifyAccept( User &user, Identity &identity,
 			const String &requestedRelid, const String &returnedRelid );
 
-	void receiveBroadcast( MYSQL *mysql, const char *relid, const char *network, 
+	void receiveBroadcast( const char *relid, const char *network, 
 			long long keyGen, const char *encrypted );
+
+	MYSQL *mysql;
 };
 
 void appNotification( const char *args, const char *data, long length );

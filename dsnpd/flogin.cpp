@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-void Server::ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
+void Server::ftokenRequest( const char *_user, const char *hash )
 {
 	/* Load user, identity and friend claim. */
 	User user( mysql, _user );
@@ -76,7 +76,7 @@ void Server::ftokenRequest( MYSQL *mysql, const char *_user, const char *hash )
 	bioWrap->printf( "OK %s %s %s\r\n", identity.iduri(), userHash(), reqid() );
 }
 
-void Server::fetchFtoken( MYSQL *mysql, const char *reqid )
+void Server::fetchFtoken( const char *reqid )
 {
 	DbQuery ftoken( mysql,
 		"SELECT msg_sym FROM ftoken_request WHERE reqid = %e", reqid );
@@ -88,7 +88,7 @@ void Server::fetchFtoken( MYSQL *mysql, const char *reqid )
 	bioWrap->printf( "OK %s\r\n", row[0] );
 }
 
-void Server::ftokenResponse( MYSQL *mysql, const char *_user, const char *hash, 
+void Server::ftokenResponse( const char *_user, const char *hash, 
 		const char *flogin_reqid_str )
 {
 	/*
@@ -136,7 +136,7 @@ void Server::ftokenResponse( MYSQL *mysql, const char *_user, const char *hash,
 	bioWrap->printf( "OK %s %s\r\n", identity.iduri(), flogin_token_str );
 }
 
-void Server::submitFtoken( MYSQL *mysql, const char *token )
+void Server::submitFtoken( const char *token )
 {
 	long lasts = LOGIN_TOKEN_LASTS;
 

@@ -229,18 +229,12 @@ void TlsConnect::connect( const char *host, const char *site )
 	/* FIXME: need to parse results. */
 
 	/* Send the request. */
-	printf( "DSNP/0.1 %s\r\n", site );
+	printf( "DSNP 0.1 %s start_tls\r\n", site );
 
 	/* Read the result. */
 	BIO_gets( buffer, buf, 8192 );
 
-	/* Send the request. */
-	printf( "start_tls\r\n" );
-
-	/* Read the result. */
-	BIO_gets( buffer, buf, 8192 );
-
-	/* FIXME: Verify the results (twice). */
+	/* FIXME: Verify the results. */
 
 	/* FIXME: pop the buffer'd IO off the socketBio? Seems to be just ignored. */
 
@@ -250,9 +244,6 @@ void TlsConnect::connect( const char *host, const char *site )
 
 BIO *startTls( BIO *rbio, BIO *wbio )
 {
-	BIO_printf( wbio, "OK\r\n" );
-	(void) BIO_flush( wbio );
-
 	/* Don't need the buffering wrappers anymore. */
 	rbio = BIO_pop( rbio );
 	wbio = BIO_pop( wbio );

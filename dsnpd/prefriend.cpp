@@ -29,7 +29,7 @@ void deleteFriendRequest( MYSQL *mysql, const char *user, const char *userReqid 
 		user, userReqid );
 }
 
-long Server::notifyAccept( MYSQL *mysql, User &user, Identity &identity,
+long Server::notifyAccept( User &user, Identity &identity,
 		const String &requestedRelid, const String &returnedRelid )
 {
 	/* Verify that there is a friend request. */
@@ -59,7 +59,7 @@ long Server::notifyAccept( MYSQL *mysql, User &user, Identity &identity,
 	return 0;
 }
 
-long Server::registered( MYSQL *mysql, User &user, Identity &identity,
+long Server::registered( User &user, Identity &identity,
 		const char *requestedRelid, const char *returnedRelid )
 {
 	DbQuery( mysql, 
@@ -78,7 +78,7 @@ long Server::registered( MYSQL *mysql, User &user, Identity &identity,
 	return 0;
 }
 
-void Server::notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
+void Server::notifyAcceptResult( User &user, Identity &identity,
 		const char *userReqid, const char *requestedRelid,
 		const char *returnedRelid )
 {
@@ -111,7 +111,7 @@ void Server::notifyAcceptResult( MYSQL *mysql, User &user, Identity &identity,
 	bioWrap->printf( "OK\r\n" );
 }
 
-void Server::prefriendMessage( MYSQL *mysql, const char *relid, const char *msg )
+void Server::prefriendMessage( const char *relid, const char *msg )
 {
 	DbQuery sent( mysql, 
 		"SELECT user_id, identity_id FROM sent_friend_request "
@@ -141,11 +141,11 @@ void Server::prefriendMessage( MYSQL *mysql, const char *relid, const char *msg 
 	pfp.parse( (char*)encrypt.decrypted, encrypt.decLen );
 	switch ( pfp.type ) {
 		case PrefriendParser::NotifyAccept:
-			notifyAccept( mysql, user, identity,
+			notifyAccept( user, identity,
 					pfp.requestedRelid, pfp.returnedRelid );
 			break;
 		case PrefriendParser::Registered:
-			registered( mysql, user, identity,
+			registered( user, identity,
 					pfp.requestedRelid, pfp.returnedRelid  );
 			break;
 		default:
@@ -153,7 +153,7 @@ void Server::prefriendMessage( MYSQL *mysql, const char *relid, const char *msg 
 	}
 }
 
-void Server::acceptFriend( MYSQL *mysql, const char *_user, const char *userReqid )
+void Server::acceptFriend( const char *_user, const char *userReqid )
 {
 	User user( mysql, _user );
 	if ( user.id() < 0 )
@@ -183,6 +183,6 @@ void Server::acceptFriend( MYSQL *mysql, const char *_user, const char *userReqi
 	/* FIXME: try, catch. */
 	sendMessageNow( mysql, true, user.user, identity.iduri, requestedRelid, notifyAccept(), result );
 
-	notifyAcceptResult( mysql, user, identity, userReqid, requestedRelid, returnedRelid );
+	notifyAcceptResult( user, identity, userReqid, requestedRelid, returnedRelid );
 }
 

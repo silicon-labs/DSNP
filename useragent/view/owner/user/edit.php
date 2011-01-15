@@ -18,10 +18,12 @@
 	value="<?php echo htmlspecialchars( $USER['name'] )?>" 
 	id="UserName" />
 </div>
+<!--
 <div class="input text">
 	<label for="UserEmail">Email</label>
 	<input name="email" type="text" maxlength="50" value="" id="UserEmail" />
 </div>
+-->
 <div class="submit">
 <input type="submit" value="Update" />
 </div>

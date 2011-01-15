@@ -20,7 +20,8 @@ class OwnerUserController extends Controller
 		'edit' => array(),
 		'sedit' => array(
 			array( post => 'name' ),
-			array( post => 'email' ),
+			# Disabled until it can do something useful.
+			# array( post => 'email' ),
 		),
 	);
 

@@ -505,7 +505,7 @@ send these messages after it receives the registered message.
 
     PREFRIEND_MESSAGE relid length EOL message EOL
 
-    returns: message-dependent (see below).
+    returns: message dependent (see below).
     context: TLS connection
 \end{verbatim}
 \vspace{10pt}
@@ -614,10 +614,12 @@ by the sender.
 \begin{verbatim}
     SUBMIT_MESSAGE user identity length EOL
 
+    returns: OK EOL
     context: local connection
 
     MESSAGE relid length EOL message EOL
 
+    returns: message dependent (see below)
     context: TLS connection
 \end{verbatim}
 
@@ -632,22 +634,27 @@ group within the sender's collection of groups.
 \begin{verbatim}
     SUBMIT_BROADCAST user length EOL message EOL
 
+    returns: OK EOL
     context: local connection
 
     BROADCAST_KEY dist_name generation key EOL
 
+    returns: OK EOL
     context: TLS connection
 
     BROADCAST_RECIPIENT relid EOL
 
+    returns: OK EOL
     context: TLS connection
 
     BROADCAST network generation length EOL message EOL
 
+    returns: message dependent
     context: TLS connection
 
     DIRECT_BROADCAST seq_num date length EOL message EOL
 
+    returns: OK EOL
     context: broadcasted message
 \end{verbatim}
 
@@ -665,30 +672,37 @@ allow others outside of the common friend group to view messages.
 \begin{verbatim}
     REMOTE_BROADCAST_REQUEST user identity hash token length EOL message EOL
 
+    returns: OK reqid EOL
     context: local connection
 
     REMOTE_BROADCAST_RESPONSE user reqid EOL 
 
+    returns: OK reqid EOL
     context: TLS connection
 
     REMOTE_BROADCAST_FINAL user reqid EOL 
 
+    returns: OK EOL
     context: local conection
 
     ENCRYPT_REMOTE_BROADCAST token seq_num length EOL message EOL
 
+    returns: OK reqid EOL
     context: TLS connection
 
     RETURN_REMOTE_BROADCAST reqid dist_name generation sym EOL
 
+    returns OK reqid EOL
     context: TLS connection
 
     REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
 
+    returns: message dependent (see below)
     context: broadcasted message
     
     REMOTE_INNER seq_num date length EOL
 
+    returns: OK EOL
     context: remote broadcast message
 \end{verbatim}
 

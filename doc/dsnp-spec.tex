@@ -1,0 +1,654 @@
+%
+%   Copyright 2011 Adrian Thurston <thurston@complang.org>
+%
+
+%   This file is part of Ragel.
+%
+%   Ragel is free software; you can redistribute it and/or modify
+%   it under the terms of the GNU General Public License as published by
+%   the Free Software Foundation; either version 2 of the License, or
+%   (at your option) any later version.
+%
+%   Ragel is distributed in the hope that it will be useful,
+%   but WITHOUT ANY WARRANTY; without even the implied warranty of
+%   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%   GNU General Public License for more details.
+%
+%   You should have received a copy of the GNU General Public License
+%   along with Ragel; if not, write to the Free Software
+%   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
+
+% TODO: Need a section on the different strategies for handline recursion.
+
+\documentclass[letterpaper,11pt,oneside]{article}
+\usepackage{comment}
+
+%\usepackage{graphicx}
+%\usepackage{multicol}
+%\usepackage[
+%	colorlinks=true,
+%	linkcolor=black,
+%	citecolor=green,
+%	filecolor=black,
+%	urlcolor=black]{hyperref}
+
+\topmargin -0.20in
+\oddsidemargin 0in
+\textwidth 6.5in
+\textheight 9in
+
+\setlength{\parskip}{0pt}
+\setlength{\topsep}{0pt}
+\setlength{\partopsep}{0pt}
+\setlength{\itemsep}{0pt}
+
+%% \input{version}
+%% 
+%% \newcommand{\verbspace}{\vspace{10pt}}
+%% \newcommand{\graphspace}{\vspace{10pt}}
+%% 
+%% \renewcommand\floatpagefraction{.99}
+%% \renewcommand\topfraction{.99}
+%% \renewcommand\bottomfraction{.99}
+%% \renewcommand\textfraction{.01}   
+%% \setcounter{totalnumber}{50}
+%% \setcounter{topnumber}{50}
+%% \setcounter{bottomnumber}{50}
+%% 
+%% \newenvironment{inline_code}{\def\baselinestretch{1}\vspace{12pt}\small}{}
+
+\begin{document}
+
+%
+% Title page
+%
+\thispagestyle{empty}
+\begin{center}
+{\huge DSNP: Distributed Social Networking Protocol}\\
+\vspace*{12pt}
+{\Large Specification and Software Documentation}\\
+\vspace{12pt}
+by\\
+\vspace{12pt}
+{\large Dr. Adrian D. Thurston}\\
+\end{center}
+
+\pagenumbering{roman}
+
+\section*{License}
+
+Copyright \copyright\ 2007-2011 Dr. Adrian D. Thurston
+
+\vspace{5pt}
+
+{\bf\it\noindent Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.}
+
+\vspace{5pt}
+
+{\bf\it\noindent THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
+
+\vspace{15pt}
+{\noindent\bf\large DISCLAIMER: This document is woefully incomplete,
+inconsistent and in some cases, incomprehensible. I blame gainful full-time
+employment that does not involve distributed social networking. If you would
+like it finished, please complain loudly and publicly.}
+
+\tableofcontents
+
+%
+% Chapter 1
+%
+
+
+% Topics:
+% RSA Keys allocated to each identity
+%
+% Broadcast Keys
+%
+% Properties.
+%  Forgery
+%  Privacy
+%
+% Protocol
+%  Friendship Initialization
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+% Fit this in somehow.
+%
+% DSNP uses a similar pattern. A submits its URI to B. B encrypt-signs a
+% challenge to A. The browser visits A to prove it initiated the
+% exchange. A encrypt-signs a response to B. Then friendship exists.
+%
+% There are two other parts of the DSNP protocol that have this flavour:
+% cross-site login and remote publishing. That latter I don't have
+% described anywhere, unfortunately. Just in code.
+%
+% Keys are indeed cheap. I was thinking of using two keys actually. One
+% would be stored in plaintext on the server, the other encrypted using
+% the user's password. The encrypted key would be used to communicate
+% any major changes concerning the user's identity. It would be a higher
+% privilege key for certain operations. I haven't hashed it out yet
+% though.
+%
+% In DSNP I introduced a symmetric broadcast key. It is distributed to
+% each friend ahead of time using each friend's public keys. It is
+% versioned as well. It must change when unfriending happens.
+% 
+% Status updates (and other activity) can then be encrypted using using
+% the broadcast key (and signed). This can be done once, then the same
+% message delivered to all friends. I took this approach because I
+% wanted to reduce the computation required for a single status
+% update/post/etc. Some quick tests showed that encryption to 2000
+% friends (extreme) when 2000 public keys were used was very costly.
+% Multiply this by however many users are on a mulituser system and I
+% got worried.
+
+% Keys are indeed cheap. I was thinking of using two keys actually. One
+% would be stored in plaintext on the server, the other encrypted using
+% the user's password. The encrypted key would be used to comminicate
+% any major changes concerning the user's identity. It would be a higher
+% privilege key for certain operations. I haven't hashed it out yet
+% though.
+
+DSNP is a protocol for distributed social networking. The goal is to allow you
+to host your profile with a provider that you choose (possibly yourself), give
+you the freedom to maintain control over your personal information, and
+interact with your friends and family in a secure manner.
+
+DSNP aims to cover any use case that can be described as first creating a
+profile for yourself, establishing connections to people you know, then
+broadcasting private information to these people. The information that we share
+are the artifacts of our lives. No single provider should house this for
+everyone.
+
+\subsection{Properties of DSNP}
+
+\begin{enumerate}
+
+\item Identities are URI-based.
+
+\item The system is distributed at the level of identities, as opposed to
+collections of identities. Authentication and authorization mechanisms are
+based on the credentials of the two users who are interacting.
+
+\item There is a single sign-on. Once a user has logged into her profile, she
+is able to get access to her friend's profiles without submitting any password.
+
+\item DSNP is secure against forgery by non-friends and friends. It is secure
+against eavesdropping by non-friends.
+
+\item DSNP allows friendship claims to be verified by trusted third parties.
+False friendships can be claimed easily, but they can also be discredited
+easily.
+
+\item Security does not rely on DNS or SSL alone. If ownership of a domain is
+lost to an attacker who is able to secure an SSL cert for the domain, the
+attacker does not gain control of the identities on the domain.
+
+\item DSNP allows unfriending. Once a user is unfriended, they no longer have
+access to the user's broadcasts, even if they are able to snoop the broadcast
+traffic.
+
+\item Identities can be exported and migrated to another provider.
+
+\end{enumerate}
+
+\subsection{Security Model}
+
+DSNP leverages RSA public key cryptography for identity, the sharing of secrets
+and the declaration of relationships. It can be described as a public-key
+cryptosystem for web-based identities. Each identity gets a public/private key
+pair. The public portion of the key must be fetched over SSL. By requiring SSL
+for public key fetches we eliminate the need for a web of trust. Each public
+key is fetched once and trusted from then on.
+
+Use of SSL makes sense for us because it is already needed to protect the HTTP
+interface to the system. We simply use the same cert to solve the problem of
+securely transmitting public keys.
+
+Since public keys are securely exchanged, direct communication between friends
+can be protected in the usual asymmetric manner, where a session key is
+encrypted using the peer's public key, then content is encrypted using the
+session key.
+
+Messages broadcasted to all friends are handled using a pre-shared broadcast
+key. Using a pre-shared key means that messages do not need to crafted for each
+recipient. The message can be computed by the sender, stored once, then a copy
+sent to each recipient. If desired, messages can be handed to a third party and
+delivered on behalf of the user, without the third party being privy to the
+message. Only the recipient list is revealed.
+
+Since users can be expected to have very large friend lists, it is desirable to
+omit the use of SSL when delivering messages. DNSP allows this, without
+explicitly identifying the sender or recipient. Instead, pre-shared relationship
+identifiers are transmitted.
+
+When you send messages to your friends, either directly or by broadcast,
+messages are also signed with your private key. Your friends can then use your
+public key to verify that you wrote the message, uploaded the photo, commented
+on someone else's post, etc.
+
+\subsection{Broadcast Keys}
+
+DSNP uses a broadcast key for encrypting messages broadcast to all friends.
+It requires that keys be delivered to friends ahead of time.
+
+Broadcast keys reduce the cost of broadcasting by allowing a message to be
+encrypted only once, then copied to each recipient. Use of SSL for message
+delivery is optional. If it is not used, only a relationship identifier is
+revealed in the broadcast. This identifier has meaning only to the sender and
+recipient. A snooper is able to discover that pairs are repeatedly
+communicating, but cannot discover who. This is in contrast with schemes such
+as PGP or CMS, where senders and recipients are identified in each
+communication.
+
+Use of broadcast keys also allows a third party message broker to deliver
+messages on behalf of a user. This feature allows more possible architecture
+configurations. One server that is capable of many high-volume transactions can
+serve as the message broker for a number of smaller systems.
+
+%\subsection{Characteristics}
+%
+%Your list of friends can be treated as private information. It is impossible
+%for someone to probe your list of friends if you don't want to publish it. The
+%list must be explictly granted, even to current friends (see next point for a
+%minor exception). This makes it possible to partition your relationships into
+%different groups, such as family, close friends, co-workers, and people you
+%hardly know but might like to get to know better.
+%
+%The user must trust the server that is hosting their identity. But like email,
+%blogs, and other forms of internet identity, we are free to choose our service
+%providers and the truly paranoid and technically inclined are free to host
+%their own identity on their own server. Perhaps a more difficult problem is
+%that the user must trust the server that is hosting their friend's identities.
+%However, this is not a problem unique to DSNP. This is true of email as well.
+
+\subsection{Software Architecture}
+
+The system is divided into two subsystems. There is a daemon in C++ that
+handles server-server communication and all encryption facilities. There is a
+web frontent written in PHP that provides the user experience. It defers to the
+local DSNPd for all protocol-related tasks, such as submitting messages for
+broadcast, initiating friend requests, etc. The expectation is that a number of
+different web UI implementations can utilize the reference DSNPd
+implementation.
+
+\section{Protocol}
+
+\subsection{Common Elements}
+
+In the section, Ragel notation is used to describe the terminal elements of the
+grammar. In subsequent sections, a less formal notation is used.
+
+\vspace{10pt}
+\begin{verbatim}
+    base64 = [A-Za-z0-9\-_]+;
+    user = [a-zA-Z0-9_.]+;
+    pass = graph+;
+    dist_name = base64;
+
+    date = (
+        digit{4} '-' digit{2} '-' digit{2} ' ' 
+        digit{2} ':' digit{2} ':' digit{2} 
+    )
+
+    path_part = ( graph - '/' )+;
+
+    identity = 
+        ( 'https://' path_part '/' ( path_part '/' )* );
+
+    site = identity;
+
+    number = [0-9]+           
+
+    auth = ( 
+        'local'i ' ' key |
+        'start_tls'i
+    );
+
+    version = '0.1'
+    supported_versions =  version ( '|' version )*;
+    key = base64;
+
+    EOL = '\r'? '\n';
+\end{verbatim}
+
+\subsection{Connection Negotiation}
+
+The client first sends a negotiation command. It it includes a literal string
+identifying this as DSNP, a list of proptocol versions the client is willing to
+talk, the site the client expects to communicate with, and an authorization
+type. The auth type must indicate either a local connection, in which case the
+communication authorization key must be sent, or it must indicate that TLS will
+be used.
+
+\vspace{10pt}
+\begin{verbatim}
+    DSNP supported_versions site auth EOL
+\end{verbatim}
+
+\subsection{Creating Users}
+
+\vspace{10pt}
+A user name and password is requested. These credentials will be used by the
+user to login as the owner of the identity.
+
+A URI consisting of the site root name, followed by the user name as the last
+component is assigned. This is an internet facing web address that the user has
+control of. It represents their identity.
+
+An RSA key pair is created. The key has no password. (In future versions of the
+protocol we may generate two key pairs, one with no password,  another with a
+password. The encrypted key will be required at times when the user is logged
+in.
+
+The public portion of the key is made available. The key must always be fetched
+using SSL. This guarantees that a key has been provided by the server hosting
+the identity and has not been altered.
+
+\vspace{10pt}
+\begin{verbatim}
+    NEW_USER user pass EOL
+\end{verbatim}
+
+\subsection{Owner Login}
+
+To login, the user agent submits credentials to the LOGIN command. key that
+will be used to verify with the server that the user is logged in when commands
+are issued (not yet added to the protocol).
+
+\vspace{10pt}
+\begin{verbatim}
+    LOGIN user pass EOL
+
+    returns: OK hash token lasts EOL
+    context: TLS connection
+\end{verbatim}
+\vspace{10pt}
+
+On success, the login commands returns the owner's URI hash, a login token, and
+the number of seconds the token is valid for. The URI hash can be computed
+independently, but is returned here for convenience.
+
+Note that as of version 0.1 of DSNP, the token is not yet made use of. It
+should be!
+
+\subsection{Friendship Request}
+
+The friendship request has two purposes. The primary purpose is the obvious,
+for remote user to indicate to a local user that she wishes to establish a
+connection. The secondary purpose is to securely exchange random identifiers
+that will be used by the two parties to identify the relationship, should it
+proceed.
+
+It is important that the user who is recieving the friend request be assured
+that the person controlling the browser that has submitted the friend request
+be the actual owner of the identity submitted. To guarantee this, we must send
+the browser home, where it can answer to a challenge to decrypt a randomly
+selected token, then send the token back.
+
+The person requesting friendship is the friender, with identity URI. The person
+who is receiving the request is the friendee, with FR-URI
+
+\begin{enumerate}
+\item The friender fills in a friend request form at FR-URI
+	\begin{enumerate}
+	\item friender answers a challenge (generic CAPTCHA, or personalized)
+	\item friender submits URI
+	\end{enumerate}
+
+\item Friendee server processes the request:
+	\begin{enumerate}
+	\item verifies challenge response
+	\item fetches the public key for URI (using SSL)
+	\item randomly generates a one-way relationship id (REQUESTED-RELID)
+	\item randomly generates a one-way request id (REQUESTED-REQID)
+	\item encrypts REQUESTED-RELID to friender and signs it
+	\item makes message available to be fetched using REQUESTED-REQID to identify it
+	\item redirects the user's browser to https://URI/return-relid?uri=FR-URI\&reqid=REQUESTED-REQID
+	\end{enumerate}
+
+\item Friender server processes the return-relid request:
+	\begin{enumerate}
+	\item verifies browser is logged in as owner
+	\item fetches public key for FR-URI (using SSL)
+	\item fetches encrypted REQUESTED-RELID from FR-URI using REQUESTED-REQID
+	\item decrypts and verifies REQUESTED-RELID
+	\item randomly generates RETURNED-RELID
+	\item randomly generates RETURNED-REQID
+	\item encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
+	\item makes message available at to be fetched using RETURNED-REQID to identify it
+	\item redirects the friender to https://FR-URI/friend-final?uri=URI\&reqid=REQID
+	\end{enumerate}
+
+\item Friendee server processes the friend-final request:
+	\begin{enumerate}
+	\item fetches encrypted RETURNED-RELID using RETURNED-REQID
+	\item decrypts and verifies message, must contain correct REQUESTED-RELID
+	\item stores request for friendee to accept/deny
+	\end{enumerate}
+\end{enumerate}
+
+There are five commands related to friendship request. The first three are the
+commands used by the user agent on behalf of the browser for the three major
+steps of friendship request. The last two are commands used by DSNPd to fetch
+the encrypted relids.
+
+\vspace{10pt}
+\begin{verbatim}
+    RELID_REQUEST user identity EOL
+
+    returns: OK reqid EOL
+    context: local connection
+
+    RELID_RESPONSE user reqid identity EOL
+
+    returns: OK reqid EOL
+    context: local connection
+
+    FRIEND_FINAL user reqid identity EOL
+
+    returns: OK EOL
+    context: local connection
+
+    FETCH_REQUESTED_RELID reqid EOL
+
+    returns: OK message EOL
+    context: TLS connection
+
+    FETCH_RESPONSE_RELID reqid EOL
+
+    returns: OK message EOL
+    context: TLS connection
+\end{verbatim}
+
+\subsection{Encrypted User-User Prefriend Messages}
+
+\vspace{10pt}
+\begin{verbatim}
+    NOTIFY_ACCEPT requested_relid returned_relid EOL
+
+    REGISTERED requested_relid returned_relid EOL
+\end{verbatim}
+
+\subsection{Friendship Accept/Deny}
+
+The next time the friendee logs in they are presented with the friendship
+request. They can either accept or deny the request. 
+
+The acceptor sends accept notification with both relids. They are sent back
+indicating that the friendship was registered on the other end. The acceptor
+then registers the friendship and sends a registered message. It can can now
+send broadcast key and broadcast tree insertion messages. The other end can
+send these messages after it receives the registered message.
+
+\vspace{10pt}
+\begin{verbatim}
+    ACCEPT_FRIEND user reqid EOL
+
+    PREFRIEND_MESSAGE relid length EOL message EOL
+\end{verbatim}
+
+\subsection{Login as a Friend}
+
+Once a user is logged in to her page, she is able to login to her friend's
+pages without submitting any credentials. The friend's site requests that she
+go to her own page to fetch the answer to a crypto challenge that is posed
+directly to her identity. At her own site it is verified that she is is the
+owner, and the login token is returned to the friend's site. Note that this
+pattern identical to friendship request, and is repeated throughout DSNP.
+
+The user wishing to login to the friend's site is identified as URI, with
+put-relid RELID The friend whose site will be logged into is identified as
+FR-URI, with put-relid FR-RELID.
+
+\begin{enumerate}
+\item User fills in a login-as-friend form
+	\begin{enumerate}
+	\item User visits https://FR-URI/login-as-friend
+	\item submits URI
+	\end{enumerate}
+
+\item The friend's server processes the request.
+	\begin{enumerate}
+	\item verifies that URI is a friend
+	\item randomly generates a token
+	\item encrypts the token to the user and signs it.
+	\item makes it available under to be fetched with FR-RELID as identifier
+	\item redirects user to https://URI/return-token?uri=FR-URI
+	\end{enumerate}
+
+\item  The user's server verifies the user owns the identity.
+	\begin{enumerate}
+	\item checks that FR-URI is a friend
+	\item if browser is not logged in, fails the process (possibly with redirect to loging screen)
+	\item fetches the token using from FR-URI using FR-RELID to identify it
+	\item decrypts and verifies the token
+	\item redirects the browser to https://FP-URI/submit-token?uri=URI\&token=TOK
+	\end{enumerate}
+
+\item Friend login final
+	\begin{enumerate}
+	\item Verifies (URI, TOK)
+	\item grants friend credentials to the browser using cookie-based session.
+	\end{enumerate}
+\end{enumerate}
+
+There are four commands related to friend login. The first three are used by
+the user-agent on behalf of the user in the primary challenge-response scheme.
+The fourth is used by the friend logging in to fetch the encrypted challenge.
+
+\vspace{10pt}
+\begin{verbatim}
+    FTOKEN_REQUEST user hash EOL 
+
+    returns: OK identity hash reqid EOL
+    context: local connection
+
+    FTOKEN_RESPONSE user hash reqid EOL 
+
+    returns: OK identity token EOL
+    context: local connection
+
+    SUBMIT_FTOKEN token EOL 
+
+    returns: OK identity hash lasts EOL
+    context: local connection
+
+    FETCH_FTOKEN reqid EOL
+
+    returns: OK message EOL
+    context: TLS connection
+\end{verbatim}
+
+\subsection{Publishing to Friends}
+
+\vspace{10pt}
+\begin{verbatim}
+    SUBMIT_MESSAGE user identity length EOL
+
+    SUBMIT_BROADCAST user length EOL message EOL
+\end{verbatim}
+
+\subsection{Message Sending}
+
+\vspace{10pt}
+\begin{verbatim}
+    MESSAGE relid length EOL message EOL
+
+    BROADCAST_RECIPIENT relid EOL
+
+    BROADCAST network generation length EOL message EOL
+\end{verbatim}
+
+\subsection{Encrypted User-User Friend Messages}
+
+\vspace{10pt}
+\begin{verbatim}
+    BROADCAST_KEY dist_name generation key EOL
+
+    ENCRYPT_REMOTE_BROADCAST token seq_num length EOL message EOL
+
+    RETURN_REMOTE_BROADCAST reqid dist_name generation sym EOL
+\end{verbatim}
+
+\subsection{Broadcasting to Friends}
+
+\vspace{10pt}
+\begin{verbatim}
+    DIRECT_BROADCAST seq_num date length EOL message EOL
+
+    REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
+\end{verbatim}
+
+\subsection{Remote Broadcasting}
+
+Remote broadcasting (or remote publishing) covers activity that a user makes on
+a friend's site, such as commenting on a photo or, writing a public message on
+a user's message board. This activity has to be authorized by both the author
+of the message and the subject. It must be encrypted and signed by both parties
+to prove to the message was not forged, and to ensure that only common friends
+are able to view such messages. The encryption requirement may be relaxed to
+allow others outside of the common friend group to view messages.
+
+\vspace{10pt}
+\begin{verbatim}
+    REMOTE_BROADCAST_REQUEST user identity hash token length EOL message EOL
+
+    REMOTE_BROADCAST_RESPONSE user reqid EOL 
+
+    REMOTE_BROADCAST_FINAL user reqid EOL 
+\end{verbatim}
+
+\end{document}
+
+%\subsection{Notifications}
+%
+%\begin{itemize}
+%\item notification\_broadcast           (user message to a group)
+%\item notification\_message             (user message direct)
+%\item notification\_remote\_message     (author-subject message to a group)
+%\item notification\_remote\_publication (author-subject message to the author)
+%\end{itemize}
+
+
+% \section{Roles and Friendship Types}
+% The different roles people play in their lives are often reflected in a
+% categorization of their relationships. It would be useful in DSNP to support
+% friendship categories. Each category should have it's own broadcast key and the
+% distribution trees should not be disconnected. The categories should not
+% necessarily be comprised of disjoint sets of friends however. Your brother can
+% be both in your friend category and your family category. You grandmonther,
+% however, can just be in your family category so you can shelter her from the
+% details of that crazy weekend in Montreal.

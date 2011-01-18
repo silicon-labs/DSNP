@@ -360,6 +360,9 @@ the identity and has not been altered.
 \vspace{10pt}
 \begin{verbatim}
     NEW_USER user pass EOL
+
+	returns: OK EOL
+	context: local connection
 \end{verbatim}
 
 \subsection{Owner Login}
@@ -473,15 +476,6 @@ the encrypted relids.
     context: TLS connection
 \end{verbatim}
 
-\subsection{Encrypted User-User Prefriend Messages}
-
-\vspace{10pt}
-\begin{verbatim}
-    NOTIFY_ACCEPT requested_relid returned_relid EOL
-
-    REGISTERED requested_relid returned_relid EOL
-\end{verbatim}
-
 \subsection{Friendship Accept/Deny}
 
 The next time the friendee logs in they are presented with the friendship
@@ -497,7 +491,36 @@ send these messages after it receives the registered message.
 \begin{verbatim}
     ACCEPT_FRIEND user reqid EOL
 
+    returns: OK EOL
+    context: local connection
+
     PREFRIEND_MESSAGE relid length EOL message EOL
+
+    returns: message-dependent (see below).
+    context: TLS connection
+\end{verbatim}
+\vspace{10pt}
+
+During the friend accept exchange, these messages arrive as the payload to
+prefriend messages. Notify accept is used to indicate to the requestor that the
+reciever intends to accept the friendship request. If the requestor still
+considers the request valid, it indicates so and registers the friendship. The
+friendee then registers the friendship and sends the REGISTERED message to
+indicate that the process is now complete, and friend-friend messages can be
+sent. This is how the friender knows it is safe to begin sending messages and
+otherwise broadcast information.
+
+\vspace{10pt}
+\begin{verbatim}
+    NOTIFY_ACCEPT requested_relid returned_relid EOL
+
+    returns: OK EOL
+    context: prefriend message
+
+    REGISTERED requested_relid returned_relid EOL
+
+    returns: OK EOL
+    context: prefriend message
 \end{verbatim}
 
 \subsection{Login as a Friend}
@@ -532,7 +555,8 @@ FR-URI, with put-relid FR-RELID.
 \item  The user's server verifies the user owns the identity.
 	\begin{enumerate}
 	\item checks that FR-URI is a friend
-	\item if browser is not logged in, fails the process (possibly with redirect to loging screen)
+	\item if browser is not logged in, fails the process
+			(possibly with redirect to loging screen)
 	\item fetches the token using from FR-URI using FR-RELID to identify it
 	\item decrypts and verifies the token
 	\item redirects the browser to https://FP-URI/submit-token?uri=URI\&token=TOK
@@ -578,7 +602,7 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 \begin{verbatim}
     SUBMIT_MESSAGE user identity length EOL
 
-    SUBMIT_BROADCAST user length EOL message EOL
+
 \end{verbatim}
 
 \subsection{Message Sending}
@@ -586,6 +610,9 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 \vspace{10pt}
 \begin{verbatim}
     MESSAGE relid length EOL message EOL
+
+    SUBMIT_BROADCAST user length EOL message EOL
+
 
     BROADCAST_RECIPIENT relid EOL
 
@@ -609,8 +636,19 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 \begin{verbatim}
     DIRECT_BROADCAST seq_num date length EOL message EOL
 
+	context: boadcasted message
+
     REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
+
+	context: boadcasted message
 \end{verbatim}
+	
+\begin{verbatim}
+	REMOTE_INNER seq_num date length EOL
+
+	context: remote broadcast message
+\end{verbatim}
+
 
 \subsection{Remote Broadcasting}
 
@@ -628,7 +666,12 @@ allow others outside of the common friend group to view messages.
 
     REMOTE_BROADCAST_RESPONSE user reqid EOL 
 
+	context
+
     REMOTE_BROADCAST_FINAL user reqid EOL 
+
+	context: local conection
+
 \end{verbatim}
 
 \end{document}

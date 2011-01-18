@@ -18,6 +18,8 @@
 %   along with Ragel; if not, write to the Free Software
 %   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
 
+% vim:expandtab:
+
 % TODO: Need a section on the different strategies for handline recursion.
 
 \documentclass[letterpaper,11pt,oneside]{article}
@@ -26,11 +28,11 @@
 %\usepackage{graphicx}
 %\usepackage{multicol}
 %\usepackage[
-%	colorlinks=true,
-%	linkcolor=black,
-%	citecolor=green,
-%	filecolor=black,
-%	urlcolor=black]{hyperref}
+%   colorlinks=true,
+%   linkcolor=black,
+%   citecolor=green,
+%   filecolor=black,
+%   urlcolor=black]{hyperref}
 
 \topmargin -0.20in
 \oddsidemargin 0in
@@ -59,6 +61,7 @@
 
 \begin{document}
 
+
 %
 % Title page
 %
@@ -75,19 +78,22 @@ by\\
 
 \pagenumbering{roman}
 
+\vspace{1.5in}
+
 \section*{License}
 
 Copyright \copyright\ 2007-2011 Dr. Adrian D. Thurston
 
 \vspace{5pt}
 
-{\bf\it\noindent Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.}
+{\bf\it\noindent Permission to use, copy, modify, and/or distribute this
+software for any purpose with or without fee is hereby granted, provided that
+the above copyright notice and this permission notice appear in all copies.}
 
 \vspace{5pt}
 
-{\bf\it\noindent THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+{\bf\it\noindent
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
 WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
 ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
@@ -95,11 +101,14 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
 
-\vspace{15pt}
+
+\vspace{2in}
 {\noindent\bf\large DISCLAIMER: This document is woefully incomplete,
 inconsistent and in some cases, incomprehensible. I blame gainful full-time
 employment that does not involve distributed social networking. If you would
 like it finished, please complain loudly and publicly.}
+
+\newpage
 
 \tableofcontents
 
@@ -361,8 +370,8 @@ the identity and has not been altered.
 \begin{verbatim}
     NEW_USER user pass EOL
 
-	returns: OK EOL
-	context: local connection
+    returns: OK EOL
+    context: local connection
 \end{verbatim}
 
 \subsection{Owner Login}
@@ -406,41 +415,41 @@ who is receiving the request is the friendee, with FR-URI
 
 \begin{enumerate}
 \item The friender fills in a friend request form at FR-URI
-	\begin{enumerate}
-	\item friender answers a challenge (generic CAPTCHA, or personalized)
-	\item friender submits URI
-	\end{enumerate}
+    \begin{enumerate}
+    \item friender answers a challenge (generic CAPTCHA, or personalized)
+    \item friender submits URI
+    \end{enumerate}
 
 \item Friendee server processes the request:
-	\begin{enumerate}
-	\item verifies challenge response
-	\item fetches the public key for URI (using SSL)
-	\item randomly generates a one-way relationship id (REQUESTED-RELID)
-	\item randomly generates a one-way request id (REQUESTED-REQID)
-	\item encrypts REQUESTED-RELID to friender and signs it
-	\item makes message available to be fetched using REQUESTED-REQID to identify it
-	\item redirects the user's browser to https://URI/return-relid?uri=FR-URI\&reqid=REQUESTED-REQID
-	\end{enumerate}
+    \begin{enumerate}
+    \item verifies challenge response
+    \item fetches the public key for URI (using SSL)
+    \item randomly generates a one-way relationship id (REQUESTED-RELID)
+    \item randomly generates a one-way request id (REQUESTED-REQID)
+    \item encrypts REQUESTED-RELID to friender and signs it
+    \item makes message available to be fetched using REQUESTED-REQID to identify it
+    \item redirects the user's browser to https://URI/return-relid?uri=FR-URI\&reqid=REQUESTED-REQID
+    \end{enumerate}
 
 \item Friender server processes the return-relid request:
-	\begin{enumerate}
-	\item verifies browser is logged in as owner
-	\item fetches public key for FR-URI (using SSL)
-	\item fetches encrypted REQUESTED-RELID from FR-URI using REQUESTED-REQID
-	\item decrypts and verifies REQUESTED-RELID
-	\item randomly generates RETURNED-RELID
-	\item randomly generates RETURNED-REQID
-	\item encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
-	\item makes message available at to be fetched using RETURNED-REQID to identify it
-	\item redirects the friender to https://FR-URI/friend-final?uri=URI\&reqid=REQID
-	\end{enumerate}
+    \begin{enumerate}
+    \item verifies browser is logged in as owner
+    \item fetches public key for FR-URI (using SSL)
+    \item fetches encrypted REQUESTED-RELID from FR-URI using REQUESTED-REQID
+    \item decrypts and verifies REQUESTED-RELID
+    \item randomly generates RETURNED-RELID
+    \item randomly generates RETURNED-REQID
+    \item encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
+    \item makes message available at to be fetched using RETURNED-REQID to identify it
+    \item redirects the friender to https://FR-URI/friend-final?uri=URI\&reqid=REQID
+    \end{enumerate}
 
 \item Friendee server processes the friend-final request:
-	\begin{enumerate}
-	\item fetches encrypted RETURNED-RELID using RETURNED-REQID
-	\item decrypts and verifies message, must contain correct REQUESTED-RELID
-	\item stores request for friendee to accept/deny
-	\end{enumerate}
+    \begin{enumerate}
+    \item fetches encrypted RETURNED-RELID using RETURNED-REQID
+    \item decrypts and verifies message, must contain correct REQUESTED-RELID
+    \item stores request for friendee to accept/deny
+    \end{enumerate}
 \end{enumerate}
 
 There are five commands related to friendship request. The first three are the
@@ -538,35 +547,35 @@ FR-URI, with put-relid FR-RELID.
 
 \begin{enumerate}
 \item User fills in a login-as-friend form
-	\begin{enumerate}
-	\item User visits https://FR-URI/login-as-friend
-	\item submits URI
-	\end{enumerate}
+    \begin{enumerate}
+    \item User visits https://FR-URI/login-as-friend
+    \item submits URI
+    \end{enumerate}
 
 \item The friend's server processes the request.
-	\begin{enumerate}
-	\item verifies that URI is a friend
-	\item randomly generates a token
-	\item encrypts the token to the user and signs it.
-	\item makes it available under to be fetched with FR-RELID as identifier
-	\item redirects user to https://URI/return-token?uri=FR-URI
-	\end{enumerate}
+    \begin{enumerate}
+    \item verifies that URI is a friend
+    \item randomly generates a token
+    \item encrypts the token to the user and signs it.
+    \item makes it available under to be fetched with FR-RELID as identifier
+    \item redirects user to https://URI/return-token?uri=FR-URI
+    \end{enumerate}
 
 \item  The user's server verifies the user owns the identity.
-	\begin{enumerate}
-	\item checks that FR-URI is a friend
-	\item if browser is not logged in, fails the process
-			(possibly with redirect to loging screen)
-	\item fetches the token using from FR-URI using FR-RELID to identify it
-	\item decrypts and verifies the token
-	\item redirects the browser to https://FP-URI/submit-token?uri=URI\&token=TOK
-	\end{enumerate}
+    \begin{enumerate}
+    \item checks that FR-URI is a friend
+    \item if browser is not logged in, fails the process
+            (possibly with redirect to loging screen)
+    \item fetches the token using from FR-URI using FR-RELID to identify it
+    \item decrypts and verifies the token
+    \item redirects the browser to https://FP-URI/submit-token?uri=URI\&token=TOK
+    \end{enumerate}
 
 \item Friend login final
-	\begin{enumerate}
-	\item Verifies (URI, TOK)
-	\item grants friend credentials to the browser using cookie-based session.
-	\end{enumerate}
+    \begin{enumerate}
+    \item Verifies (URI, TOK)
+    \item grants friend credentials to the browser using cookie-based session.
+    \end{enumerate}
 \end{enumerate}
 
 There are four commands related to friend login. The first three are used by
@@ -596,59 +605,51 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
     context: TLS connection
 \end{verbatim}
 
-\subsection{Publishing to Friends}
+\subsection{Messages to Friends}
+
+Sending friend-friend messages that are encrypted to the recipient and signed
+by the sender. 
 
 \vspace{10pt}
 \begin{verbatim}
     SUBMIT_MESSAGE user identity length EOL
 
+    context: local connection
 
+    MESSAGE relid length EOL message EOL
+
+    context: TLS connection
 \end{verbatim}
 
-\subsection{Message Sending}
+\subsection{Broadcasting to a Group}
+
+As previously mentioned, DSNP uses a broadcast key for the sending of messages
+to groups. The key has an ID and a generation. The ID is a base64 encoded
+random string assigned by the owner and used by the recipients to identify the
+group within the sender's collection of groups.
 
 \vspace{10pt}
 \begin{verbatim}
-    MESSAGE relid length EOL message EOL
-
     SUBMIT_BROADCAST user length EOL message EOL
 
+    context: local connection
+
+    BROADCAST_KEY dist_name generation key EOL
+
+    context: TLS connection
 
     BROADCAST_RECIPIENT relid EOL
 
+    context: TLS connection
+
     BROADCAST network generation length EOL message EOL
-\end{verbatim}
 
-\subsection{Encrypted User-User Friend Messages}
+    context: TLS connection
 
-\vspace{10pt}
-\begin{verbatim}
-    BROADCAST_KEY dist_name generation key EOL
-
-    ENCRYPT_REMOTE_BROADCAST token seq_num length EOL message EOL
-
-    RETURN_REMOTE_BROADCAST reqid dist_name generation sym EOL
-\end{verbatim}
-
-\subsection{Broadcasting to Friends}
-
-\vspace{10pt}
-\begin{verbatim}
     DIRECT_BROADCAST seq_num date length EOL message EOL
 
-	context: boadcasted message
-
-    REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
-
-	context: boadcasted message
+    context: broadcasted message
 \end{verbatim}
-	
-\begin{verbatim}
-	REMOTE_INNER seq_num date length EOL
-
-	context: remote broadcast message
-\end{verbatim}
-
 
 \subsection{Remote Broadcasting}
 
@@ -664,14 +665,31 @@ allow others outside of the common friend group to view messages.
 \begin{verbatim}
     REMOTE_BROADCAST_REQUEST user identity hash token length EOL message EOL
 
+    context: local connection
+
     REMOTE_BROADCAST_RESPONSE user reqid EOL 
 
-	context
+    context: TLS connection
 
     REMOTE_BROADCAST_FINAL user reqid EOL 
 
-	context: local conection
+    context: local conection
 
+    ENCRYPT_REMOTE_BROADCAST token seq_num length EOL message EOL
+
+    context: TLS connection
+
+    RETURN_REMOTE_BROADCAST reqid dist_name generation sym EOL
+
+    context: TLS connection
+
+    REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
+
+    context: broadcasted message
+    
+    REMOTE_INNER seq_num date length EOL
+
+    context: remote broadcast message
 \end{verbatim}
 
 \end{document}

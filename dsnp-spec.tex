@@ -2,37 +2,10 @@
 %   Copyright 2011 Adrian Thurston <thurston@complang.org>
 %
 
-%   This file is part of Ragel.
-%
-%   Ragel is free software; you can redistribute it and/or modify
-%   it under the terms of the GNU General Public License as published by
-%   the Free Software Foundation; either version 2 of the License, or
-%   (at your option) any later version.
-%
-%   Ragel is distributed in the hope that it will be useful,
-%   but WITHOUT ANY WARRANTY; without even the implied warranty of
-%   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-%   GNU General Public License for more details.
-%
-%   You should have received a copy of the GNU General Public License
-%   along with Ragel; if not, write to the Free Software
-%   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
-
 % vim:expandtab:
-
-% TODO: Need a section on the different strategies for handline recursion.
 
 \documentclass[letterpaper,11pt,oneside]{article}
 \usepackage{comment}
-
-%\usepackage{graphicx}
-%\usepackage{multicol}
-%\usepackage[
-%   colorlinks=true,
-%   linkcolor=black,
-%   citecolor=green,
-%   filecolor=black,
-%   urlcolor=black]{hyperref}
 
 \topmargin -0.20in
 \oddsidemargin 0in
@@ -44,27 +17,12 @@
 \setlength{\partopsep}{0pt}
 \setlength{\itemsep}{0pt}
 
-%% \input{version}
-%% 
-%% \newcommand{\verbspace}{\vspace{10pt}}
-%% \newcommand{\graphspace}{\vspace{10pt}}
-%% 
-%% \renewcommand\floatpagefraction{.99}
-%% \renewcommand\topfraction{.99}
-%% \renewcommand\bottomfraction{.99}
-%% \renewcommand\textfraction{.01}   
-%% \setcounter{totalnumber}{50}
-%% \setcounter{topnumber}{50}
-%% \setcounter{bottomnumber}{50}
-%% 
-%% \newenvironment{inline_code}{\def\baselinestretch{1}\vspace{12pt}\small}{}
-
 \begin{document}
-
 
 %
 % Title page
 %
+
 \thispagestyle{empty}
 \begin{center}
 {\huge DSNP: Distributed Social Networking Protocol}\\
@@ -77,7 +35,7 @@ by\\
 \vspace{22pt}
 {\noindent\bf\large Protocol Version: 0.1}\\
 \vspace{12pt}
-{\noindent\bf\large Document Revision: 1}
+{\noindent\bf\large Document Revision: 2}
 \end{center}
 
 \pagenumbering{roman}
@@ -137,15 +95,9 @@ like it finished, please complain loudly and publicly.}
 
 \section{Introduction}
 
-% Fit this in somehow.
-%
 % DSNP uses a similar pattern. A submits its URI to B. B encrypt-signs a
 % challenge to A. The browser visits A to prove it initiated the
 % exchange. A encrypt-signs a response to B. Then friendship exists.
-%
-% There are two other parts of the DSNP protocol that have this flavour:
-% cross-site login and remote publishing. That latter I don't have
-% described anywhere, unfortunately. Just in code.
 %
 % Keys are indeed cheap. I was thinking of using two keys actually. One
 % would be stored in plaintext on the server, the other encrypted using
@@ -167,22 +119,16 @@ like it finished, please complain loudly and publicly.}
 % Multiply this by however many users are on a mulituser system and I
 % got worried.
 
-% Keys are indeed cheap. I was thinking of using two keys actually. One
-% would be stored in plaintext on the server, the other encrypted using
-% the user's password. The encrypted key would be used to comminicate
-% any major changes concerning the user's identity. It would be a higher
-% privilege key for certain operations. I haven't hashed it out yet
-% though.
-
-DSNP is a protocol for distributed social networking. The goal is to allow you
-to host your profile with a provider that you choose (possibly yourself), give
-you the freedom to maintain control over your personal information, and
-interact with your friends and family in a secure manner.
+DSNP is a protocol for distributed social networking. The goal of this project
+is to allow you to host your profile with a provider of your choice, or host
+your profile yourself, without the choice impacting who you are able to invite
+as connections. Communication between you and the people you trust is private
+and safe from forgery.
 
 DSNP aims to cover any use case that can be described as first creating a
 profile for yourself, establishing connections to people you know, then
 broadcasting private information to these people. The information that we share
-are the artifacts of our lives. No single provider should house this for
+are the artifacts of our lives. No single provider should host such information
 everyone.
 
 \subsection{Properties of DSNP}
@@ -193,29 +139,35 @@ everyone.
 
 \item The system is distributed at the level of identities, as opposed to
 collections of identities. Authentication and authorization mechanisms are
-based on the credentials of the two users who are interacting.
+based on the credentials of the two users who are interacting. DSNP does not
+rely on simply securing the server-server communications with SSL.
 
-\item There is a single sign-on. Once a user has logged into her profile, she
+\item There is a single sign-on. Once a user has signed into her profile, she
 is able to get access to her friend's profiles without submitting any password.
 
 \item DSNP is secure against forgery by non-friends and friends. It is secure
 against eavesdropping by non-friends.
 
-\item DSNP allows friendship claims to be verified by trusted third parties.
-False friendships can be claimed easily, but they can also be discredited
-easily.
+\item DSNP allows friendship claims and user activity to be verified by trusted
+third parties. False friendships and statements can be claimed easily, but they
+can also be discredited easily. This makes it safe for you to evaluate new
+friends you don't yet fully trust, without worrying that person will forge
+statements by you.
 
-\item Security does not rely on DNS or SSL alone. If ownership of a domain is
-lost to an attacker who is able to secure an SSL cert for the domain, the
-attacker does not gain control of the identities on the domain.
+\item Security does not rely on DNS or SSL. If ownership of a domain is lost to
+an attacker who is able to secure an SSL cert for the domain, the attacker does
+not gain control of the identities on the domain.
 
 \item DSNP allows unfriending. Once a user is unfriended, they no longer have
-access to the user's broadcasts, even if they are able to snoop the broadcast
-traffic.
-
-\item Identities can be exported and migrated to another provider.
+access to the user's broadcasts, even if they are somehow able to snoop the
+broadcast traffic.
 
 \end{enumerate}
+
+% Wishlist.
+%\begin{enumerate}
+%\item Identities can be exported and migrated to another provider.
+%\end{enumerate}
 
 \subsection{Security Model}
 
@@ -223,10 +175,13 @@ DSNP leverages RSA public key cryptography for identity, the sharing of secrets
 and the declaration of relationships. It can be described as a public-key
 cryptosystem for web-based identities. Each identity gets a public/private key
 pair. The public portion of the key must be fetched over SSL. By requiring SSL
-for public key fetches we eliminate the need for a web of trust. Each public
-key is fetched once and trusted from then on.
+for public key fetches we give some assurance that the correct public key is
+always distributed, without introducing the complexites involved with a
+web-of-trust, or the cost of commercial certificates on a per-user basis. It is
+a trade off, however, as it is possible for a domain to change hands and for
+the new owner to start different certs for the identities inside the domain.
 
-Use of SSL makes sense for us because it is already needed to protect the HTTP
+Use of SSL makes sense because it is already needed to protect the HTTP
 interface to the system. We simply use the same cert to solve the problem of
 securely transmitting public keys.
 
@@ -235,67 +190,43 @@ can be protected in the usual asymmetric manner, where a session key is
 encrypted using the peer's public key, then content is encrypted using the
 session key.
 
-Messages broadcasted to all friends are handled using a pre-shared broadcast
-key. Using a pre-shared key means that messages do not need to crafted for each
-recipient. The message can be computed by the sender, stored once, then a copy
-sent to each recipient. If desired, messages can be handed to a third party and
-delivered on behalf of the user, without the third party being privy to the
-message. Only the recipient list is revealed.
-
 Since users can be expected to have very large friend lists, it is desirable to
-omit the use of SSL when delivering messages. DNSP allows this, without
-explicitly identifying the sender or recipient. Instead, pre-shared relationship
-identifiers are transmitted.
-
-When you send messages to your friends, either directly or by broadcast,
-messages are also signed with your private key. Your friends can then use your
-public key to verify that you wrote the message, uploaded the photo, commented
-on someone else's post, etc.
-
-\subsection{Broadcast Keys}
-
-DSNP uses a broadcast key for encrypting messages broadcast to all friends.
-It requires that keys be delivered to friends ahead of time.
-
-Broadcast keys reduce the cost of broadcasting by allowing a message to be
-encrypted only once, then copied to each recipient. Use of SSL for message
-delivery is optional. If it is not used, only a relationship identifier is
-revealed in the broadcast. This identifier has meaning only to the sender and
+omit the use of SSL when delivering messages. DNSP could permit this, without
+explicitly identifying the sender or recipient. Only pre-shared relationship
+identifiers are transmitted. This identifier has meaning only to the sender and
 recipient. A snooper is able to discover that pairs are repeatedly
 communicating, but cannot discover who. This is in contrast with schemes such
 as PGP or CMS, where senders and recipients are identified in each
 communication.
 
-Use of broadcast keys also allows a third party message broker to deliver
-messages on behalf of a user. This feature allows more possible architecture
-configurations. One server that is capable of many high-volume transactions can
-serve as the message broker for a number of smaller systems.
+Messages broadcasted to all friends are handled using a pre-shared broadcast
+key. This is akin to a long-running session key just for broadcasts. Using a
+pre-shared key means that messages do not need to crafted for each recipient.
+The message can be computed by the sender, stored once, then a copy sent to
+each recipient. If desired, messages can be handed to a third party and
+delivered on behalf of the user, without the third party being privy to the
+message. Only the domains and relationship identifiers (random) for the
+recipients is revealed to the broker. This aspect of the protocol allows more
+possible architecture configurations. One server that is capable of high-volume
+delivery can serve as the message broker for a number of smaller systems that
+host identities.
 
-%\subsection{Characteristics}
-%
-%Your list of friends can be treated as private information. It is impossible
-%for someone to probe your list of friends if you don't want to publish it. The
-%list must be explictly granted, even to current friends (see next point for a
-%minor exception). This makes it possible to partition your relationships into
-%different groups, such as family, close friends, co-workers, and people you
-%hardly know but might like to get to know better.
-%
-%The user must trust the server that is hosting their identity. But like email,
-%blogs, and other forms of internet identity, we are free to choose our service
-%providers and the truly paranoid and technically inclined are free to host
-%their own identity on their own server. Perhaps a more difficult problem is
-%that the user must trust the server that is hosting their friend's identities.
-%However, this is not a problem unique to DSNP. This is true of email as well.
+When you send messages to your friends, either directly or by broadcast,
+messages are signed with your private key. Your contacts can then use your
+public key to verify that you wrote the message, uploaded the photo, commented
+on someone else's post, etc. Message signatures can also be given to common
+friends for verification. This solves the problem of forgery, which is of
+practical concern for individuals with reputations to preserve among their peer
+groups, especially as peer groups grow. Of course, one loses deniability when
+messages are signed, but if deniability is needed, social networking is
+probably the wrong communication medium.
 
-\subsection{Software Architecture}
-
-The system is divided into two subsystems. There is a daemon in C++ that
-handles server-server communication and all encryption facilities. There is a
-web frontent written in PHP that provides the user experience. It defers to the
-local DSNPd for all protocol-related tasks, such as submitting messages for
-broadcast, initiating friend requests, etc. The expectation is that a number of
-different web UI implementations can utilize the reference DSNPd
-implementation.
+Your list of friends can be treated as private information. It is impossible
+for someone to probe your list of friends if you don't want to publish it. The
+list must be explictly granted, even to current friends (see next point for a
+minor exception). This makes it possible to partition your relationships into
+different groups, such as family, close friends, co-workers, and people you
+hardly know but might like to get to know better.
 
 \section{Protocol}
 
@@ -409,10 +340,17 @@ that will be used by the two parties to identify the relationship, should it
 proceed.
 
 It is important that the user who is recieving the friend request be assured
-that the person controlling the browser that has submitted the friend request
-be the actual owner of the identity submitted. To guarantee this, we must send
-the browser home, where it can answer to a challenge to decrypt a randomly
-selected token, then send the token back.
+that the person controlling the browser is the actual owner of the identity
+submitted. To guarantee this, we must send the browser home, where it can
+answer to a challenge to decrypt a randomly selected token, then send the token
+back. When the token is sent back a similar challenge is issued to ensure the
+person making the friend request indeed has the right identity.
+
+There are two other parts of the DSNP protocol that have this flavour:
+cross-site login and remote publishing. Indeed it is a recurring pattern to
+send the browser home so the that all three parties (browser, the browser's
+server and the friend's server) are assured they are dealing with who they
+think they are.
 
 The person requesting friendship is the friender, with identity URI. The person
 who is receiving the request is the friendee, with FR-URI
@@ -720,7 +658,6 @@ allow others outside of the common friend group to view messages.
 %\item notification\_remote\_message     (author-subject message to a group)
 %\item notification\_remote\_publication (author-subject message to the author)
 %\end{itemize}
-
 
 % \section{Roles and Friendship Types}
 % The different roles people play in their lives are often reflected in a

@@ -277,6 +277,8 @@ type. The auth type must indicate either a local connection, in which case the
 communication authorization key must be sent, or it must indicate that TLS will
 be used.
 
+\subsubsection{DSNP Command}
+
 \vspace{10pt}
 \begin{verbatim}
     DSNP supported_versions site auth EOL
@@ -301,6 +303,8 @@ The public portion of the key is made available. The key must always be fetched
 using SSL. This guarantees that a key has been provided by the server hosting
 the identity and has not been altered.
 
+\subsubsection{New User}
+
 \vspace{10pt}
 \begin{verbatim}
     NEW_USER user pass EOL
@@ -314,6 +318,8 @@ the identity and has not been altered.
 To login, the user agent submits credentials to the LOGIN command. key that
 will be used to verify with the server that the user is logged in when commands
 are issued (not yet added to the protocol).
+
+\subsubsection{Login}
 
 \vspace{10pt}
 \begin{verbatim}
@@ -399,28 +405,54 @@ commands used by the user agent on behalf of the browser for the three major
 steps of friendship request. The last two are commands used by DSNPd to fetch
 the encrypted relids.
 
+\subsubsection{Relid Request}
+
 \vspace{10pt}
 \begin{verbatim}
     RELID_REQUEST user identity EOL
 
     returns: OK reqid EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Relid Response}
+
+\vspace{10pt}
+\begin{verbatim}
     RELID_RESPONSE user reqid identity EOL
 
     returns: OK reqid EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Friend Final}
+
+\vspace{10pt}
+\begin{verbatim}
     FRIEND_FINAL user reqid identity EOL
 
     returns: OK EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Fetch Requested Relid}
+
+\vspace{10pt}
+\begin{verbatim}
     FETCH_REQUESTED_RELID reqid EOL
 
     returns: OK message EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Fetch Response Relid}
+
+\vspace{10pt}
+\begin{verbatim}
     FETCH_RESPONSE_RELID reqid EOL
 
     returns: OK message EOL
@@ -438,13 +470,21 @@ then registers the friendship and sends a registered message. It can can now
 send broadcast key and broadcast tree insertion messages. The other end can
 send these messages after it receives the registered message.
 
+\subsubsection{Accept Friend}
+
 \vspace{10pt}
 \begin{verbatim}
     ACCEPT_FRIEND user reqid EOL
 
     returns: OK EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Prefriend Message}
+
+\vspace{10pt}
+\begin{verbatim}
     PREFRIEND_MESSAGE relid length EOL message EOL
 
     returns: message dependent (see below).
@@ -461,13 +501,21 @@ indicate that the process is now complete, and friend-friend messages can be
 sent. This is how the friender knows it is safe to begin sending messages and
 otherwise broadcast information.
 
+\subsubsection{Notify Accept}
+
 \vspace{10pt}
 \begin{verbatim}
     NOTIFY_ACCEPT requested_relid returned_relid EOL
 
     returns: OK EOL
     context: prefriend message
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Registered}
+
+\vspace{10pt}
+\begin{verbatim}
     REGISTERED requested_relid returned_relid EOL
 
     returns: OK EOL
@@ -524,23 +572,43 @@ There are four commands related to friend login. The first three are used by
 the user-agent on behalf of the user in the primary challenge-response scheme.
 The fourth is used by the friend logging in to fetch the encrypted challenge.
 
+\subsubsection{Ftoken Request}
+
 \vspace{10pt}
 \begin{verbatim}
     FTOKEN_REQUEST user hash EOL 
 
     returns: OK identity hash reqid EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Ftoken Response}
+
+\vspace{10pt}
+\begin{verbatim}
     FTOKEN_RESPONSE user hash reqid EOL 
 
     returns: OK identity token EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Submit Ftoken}
+
+\vspace{10pt}
+\begin{verbatim}
     SUBMIT_FTOKEN token EOL 
 
     returns: OK identity hash lasts EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Fetch Ftoken}
+
+\vspace{10pt}
+\begin{verbatim}
     FETCH_FTOKEN reqid EOL
 
     returns: OK message EOL
@@ -552,13 +620,21 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 Sending friend-friend messages that are encrypted to the recipient and signed
 by the sender. 
 
+\subsubsection{Submit Message}
+
 \vspace{10pt}
 \begin{verbatim}
     SUBMIT_MESSAGE user identity length EOL
 
     returns: OK EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Message}
+
+\vspace{10pt}
+\begin{verbatim}
     MESSAGE relid length EOL message EOL
 
     returns: message dependent (see below)
@@ -572,28 +648,54 @@ to groups. The key has an ID and a generation. The ID is a base64 encoded
 random string assigned by the owner and used by the recipients to identify the
 group within the sender's collection of groups.
 
+\subsubsection{Submit Broadcast}
+
 \vspace{10pt}
 \begin{verbatim}
     SUBMIT_BROADCAST user length EOL message EOL
 
     returns: OK EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Broadcast Key}
+
+\vspace{10pt}
+\begin{verbatim}
     BROADCAST_KEY dist_name generation key EOL
 
     returns: OK EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Broadcast Recipient}
+
+\vspace{10pt}
+\begin{verbatim}
     BROADCAST_RECIPIENT relid EOL
 
     returns: OK EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
     BROADCAST network generation length EOL message EOL
 
     returns: message dependent
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Direct Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
     DIRECT_BROADCAST seq_num date length EOL message EOL
 
     returns: OK EOL
@@ -610,38 +712,76 @@ to prove to the message was not forged, and to ensure that only common friends
 are able to view such messages. The encryption requirement may be relaxed to
 allow others outside of the common friend group to view messages.
 
+\subsubsection{Remote Broadcast Request}
+
 \vspace{10pt}
 \begin{verbatim}
     REMOTE_BROADCAST_REQUEST user identity hash token length EOL message EOL
 
     returns: OK reqid EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Remote Broadcast Response}
+
+\vspace{10pt}
+\begin{verbatim}
     REMOTE_BROADCAST_RESPONSE user reqid EOL 
 
     returns: OK reqid EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Remote Broadcast Final}
+
+\vspace{10pt}
+\begin{verbatim}
     REMOTE_BROADCAST_FINAL user reqid EOL 
 
     returns: OK EOL
     context: local conection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Encrypt Remote Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
     ENCRYPT_REMOTE_BROADCAST token seq_num length EOL message EOL
 
     returns: OK reqid EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Return Remote Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
     RETURN_REMOTE_BROADCAST reqid dist_name generation length EOL message EOL
 
     returns OK reqid EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
 
+\subsubsection{Remote Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
     REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
 
     returns: message dependent (see below)
     context: broadcasted message
-    
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Remote Inner}
+
+\vspace{10pt}
+\begin{verbatim}
     REMOTE_INNER seq_num date length EOL
 
     returns: OK EOL

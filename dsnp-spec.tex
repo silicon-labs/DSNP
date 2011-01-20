@@ -339,8 +339,8 @@ should be!
 
 \subsection{Friendship Request}
 
-The friendship request has two purposes. The primary purpose is the obvious,
-for remote user to indicate to a local user that she wishes to establish a
+The friendship request has two purposes. The primary purpose is the stated, for
+a remote user to indicate to a local user that she wishes to establish a
 connection. The secondary purpose is to securely exchange random identifiers
 that will be used by the two parties to identify the relationship, should it
 proceed.
@@ -358,43 +358,47 @@ send the browser home so the that all three parties (browser, the browser's
 server and the friend's server) are assured they are dealing with who they
 think they are.
 
-The person requesting friendship is the friender, with identity URI. The person
-who is receiving the request is the friendee, with FR-URI
+The person requesting friendship is the referred to as the requestor, with
+identity QURI. The person who is receiving the request is the responder, with
+identity SURI
 
 \begin{enumerate}
-\item The friender fills in a friend request form at FR-URI
+\item The requestor fills in a friend request form at SURI
     \begin{enumerate}
-    \item friender answers a challenge (generic CAPTCHA, or personalized)
-    \item friender submits URI
+    \item requestor answers a challenge, which can be a CAPTCHA, or 
+            personalized question
+    \item requestor submits QURI
     \end{enumerate}
 
-\item Friendee server processes the request:
+\item Responder's server processes the request:
     \begin{enumerate}
     \item verifies challenge response
-    \item fetches the public key for URI (using SSL)
+    \item fetches the public key for QURI (using SSL)
     \item randomly generates a one-way relationship id (REQUESTED-RELID)
     \item randomly generates a one-way request id (REQUESTED-REQID)
-    \item encrypts REQUESTED-RELID to friender and signs it
+    \item encrypts REQUESTED-RELID to requestor and signs it
     \item makes message available to be fetched using REQUESTED-REQID to identify it
-    \item redirects the user's browser to https://URI/return-relid?uri=FR-URI\&reqid=REQUESTED-REQID
+    \item redirects the requestor's browser home to QURI, where the return-relid 
+        function is called with SURI and REQUESTED-REQID as arguments
     \end{enumerate}
 
-\item Friender server processes the return-relid request:
+\item Requestor's server processes the return-relid call:
     \begin{enumerate}
-    \item verifies browser is logged in as owner
-    \item fetches public key for FR-URI (using SSL)
-    \item fetches encrypted REQUESTED-RELID from FR-URI using REQUESTED-REQID
+    \item verifies browser is logged in as the owner of QURI
+    \item fetches public key for SURI (using SSL)
+    \item fetches encrypted REQUESTED-RELID from SURI using REQUESTED-REQID
     \item decrypts and verifies REQUESTED-RELID
     \item randomly generates RETURNED-RELID
     \item randomly generates RETURNED-REQID
     \item encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
-    \item makes message available at to be fetched using RETURNED-REQID to identify it
-    \item redirects the friender to https://FR-URI/friend-final?uri=URI\&reqid=REQID
+    \item makes message available to be fetched using RETURNED-REQID to identify it
+    \item redirects the friender back to SURI, where the friend-final function is called
+    with QURI and RETURNED-REQID as arguments.
     \end{enumerate}
 
-\item Friendee server processes the friend-final request:
+\item Responder's processes the friend-final call:
     \begin{enumerate}
-    \item fetches encrypted RETURNED-RELID using RETURNED-REQID
+    \item fetches encrypted RETURNED-RELID from QURI using RETURNED-REQID
     \item decrypts and verifies message, must contain correct REQUESTED-RELID
     \item stores request for friendee to accept/deny
     \end{enumerate}
@@ -402,8 +406,8 @@ who is receiving the request is the friendee, with FR-URI
 
 There are five commands related to friendship request. The first three are the
 commands used by the user agent on behalf of the browser for the three major
-steps of friendship request. The last two are commands used by DSNPd to fetch
-the encrypted relids.
+steps. The last two are commands used by DSNPd to fetch the encrypted the
+relids.
 
 \subsubsection{Relid Request}
 

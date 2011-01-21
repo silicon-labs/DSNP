@@ -35,12 +35,14 @@ by\\
 \vspace{22pt}
 {\noindent\bf\large Protocol Version: 0.1}\\
 \vspace{12pt}
-{\noindent\bf\large Document Revision: 3}
+{\noindent\bf\large Document Revision: 4}\\
+\vspace{12pt}
+{\noindent\bf\large Date: January 20, 2011}
 \end{center}
 
 \pagenumbering{roman}
 
-\vspace{1.5in}
+\vspace{1.3in}
 
 \section*{License}
 
@@ -232,13 +234,35 @@ hardly know but might like to get to know better.
 
 \subsection{Common Elements}
 
-In the section, Ragel notation is used to describe the terminal elements of the
-grammar. In subsequent sections, a less formal notation is used.
+In the section, standard regular expression syntax is used to describe the
+terminal elements of the grammar. In subsequent sections, a less formal
+notation is used, with references to these defintions.
+
+\subsubsection{Modified Base64}
+
+Throughout DSNP, a modified Base64 encoding is used for all binary data. The
+characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
+the 63rd and 64th characters. This modified encoding is used commonly in
+applications where base64 data must be embedded in URLs.
 
 \vspace{10pt}
 \begin{verbatim}
-    base64 = [A-Za-z0-9\-_]+;
-    user = [a-zA-Z0-9_.]+;
+    base64: /[A-Za-z0-9\-_]+/
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{User Names}
+
+\vspace{10pt}
+\begin{verbatim}
+    user: /[a-zA-Z0-9][a-zA-Z0-9\.\-_]*/
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Passwords}
+
+\vspace{10pt}
+\begin{verbatim}
     pass = graph+;
     dist_name = base64;
 

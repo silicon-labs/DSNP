@@ -533,42 +533,45 @@ pages without submitting any credentials. The friend's site requests that she
 go to her own page to fetch the answer to a crypto challenge that is posed
 directly to her identity. At her own site it is verified that she is is the
 owner, and the login token is returned to the friend's site. Note that this
-pattern identical to friendship request, and is repeated throughout DSNP.
+pattern is identical to friendship request, and is repeated throughout DSNP.
 
-The user wishing to login to the friend's site is identified as URI, with
-put-relid RELID The friend whose site will be logged into is identified as
-FR-URI, with put-relid FR-RELID.
+The user wishing to login to the friend's site is referred to as the requestor,
+and she is identified as QURI. The relid she uses to identify the relationship
+we call the QURI-RELID, and will be the one she was given during the friendship
+request process. The friend who's page is being logged into will be called the
+responder, and her identity is SURI.
 
 \begin{enumerate}
-\item User fills in a login-as-friend form
+\item The requestor visits SURI/login-as-friend
     \begin{enumerate}
-    \item User visits https://FR-URI/login-as-friend
-    \item submits URI
+    \item submits as the only argument a hash of QURI
     \end{enumerate}
 
-\item The friend's server processes the request.
+\item The responder's server processes the request
     \begin{enumerate}
-    \item verifies that URI is a friend
-    \item randomly generates a token
-    \item encrypts the token to the user and signs it.
-    \item makes it available under to be fetched with FR-RELID as identifier
-    \item redirects user to https://URI/return-token?uri=FR-URI
+    \item verifies that hash(QURI) is a friend
+    \item randomly generates a REQID and login token
+    \item encrypts the token to the user and signs it
+    \item makes it available to be fetched with REQID as identifier
+    \item redirects user to QURI/return-token with hash(QURI) and REQID as
+        arguments
     \end{enumerate}
 
-\item  The user's server verifies the user owns the identity.
+\item The requestor's server verifies the browser is the identity owner
     \begin{enumerate}
-    \item checks that FR-URI is a friend
+    \item checks that hash(SURI) is a friend
     \item if browser is not logged in, fails the process
-            (possibly with redirect to loging screen)
-    \item fetches the token using from FR-URI using FR-RELID to identify it
+            (sending the user to a login page encourages phishing)
+    \item fetches the token using from SURI using REQID to identify it
     \item decrypts and verifies the token
-    \item redirects the browser to https://FP-URI/submit-token?uri=URI\&token=TOK
+    \item redirects the browser to SURI/submit-ftoken with QURI and the TOKEN
+    as aguments
     \end{enumerate}
 
 \item Friend login final
     \begin{enumerate}
-    \item Verifies (URI, TOK)
-    \item grants friend credentials to the browser using cookie-based session.
+    \item verifies that TOKEN is valid for QURI.
+    \item grants friend credentials to the browser for the session.
     \end{enumerate}
 \end{enumerate}
 

@@ -27,16 +27,16 @@
 \begin{center}
 {\huge DSNP: Distributed Social Networking Protocol}\\
 \vspace*{12pt}
-{\Large Specification and Software Documentation}\\
+{\Large Protocol Specification}\\
 \vspace{12pt}
 by\\
 \vspace{12pt}
 {\large Dr. Adrian D. Thurston}\\
 \vspace{22pt}
 {\noindent\bf\large Protocol Version: 0.1}\\
-\vspace{12pt}
+\vspace{6pt}
 {\noindent\bf\large Document Revision: 4}\\
-\vspace{12pt}
+\vspace{6pt}
 {\noindent\bf\large Date: January 20, 2011}
 \end{center}
 
@@ -280,10 +280,6 @@ applications where base64 data must be embedded in URLs.
 
     number = [0-9]+           
 
-    auth = ( 
-        'local'i ' ' key |
-        'start_tls'i
-    );
 
     version = '0.1'
     supported_versions =  version ( '|' version )*;
@@ -294,18 +290,29 @@ applications where base64 data must be embedded in URLs.
 
 \subsection{Connection Negotiation}
 
-The client first sends a negotiation command. It it includes a literal string
-identifying this as DSNP, a list of proptocol versions the client is willing to
-talk, the site the client expects to communicate with, and an authorization
-type. The auth type must indicate either a local connection, in which case the
-communication authorization key must be sent, or it must indicate that TLS will
-be used.
+The DSNP command is the initial command that must be sent by all clients. In
+this command, the client sends the DSNP versions it is willing to talk, the
+site it wishes to communicate with, and the connection authorization method.
 
-\subsubsection{DSNP Command}
+The auth method can be either a local connection, or a TLS-secured connection.
+Local connections require a secret key, which is typically stored on disk on
+the server. Local connections must pass through the loopback network interface
+(be bound to 127.0.0.1). Local connections that do not should be rejected.
+
+If it is a TLS-secured connection, the server must supply a valid certificate
+that matches the hostname of the site. The server responds with OK followed by
+the version it has chosen from the list. This should be the highest supplied
+version it supports.
 
 \vspace{10pt}
 \begin{verbatim}
+    auth: /local/ key
+    auth: /start_tls/
+
     DSNP supported_versions site auth EOL
+
+    returns: OK version EOL
+    context: TCP
 \end{verbatim}
 
 \subsection{Creating Users}
@@ -487,7 +494,7 @@ relids.
     context: TLS connection
 \end{verbatim}
 
-\subsection{Friendship Accept/Deny}
+\subsection{Friendship Accept and Deny}
 
 The next time the friendee logs in they are presented with the friendship
 request. They can either accept or deny the request. 

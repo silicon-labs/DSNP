@@ -278,14 +278,37 @@ Note that we omit trailing padding, which is normally specified using the
 
 \vspace{10pt}
 \begin{verbatim}
-    public_keys pub1n pub1e pub2n pub2e length EOL keydata EOL
+    public_keys pub1n pub1e pub2n pub2e length EOL key_data EOL
 \end{verbatim}
 \vspace{10pt}
 
 Two keys are transmitted, each containing \verb|n| and \verb|e| components. The
-\verb|keydata| consists of the four Base64 encoded components concatenated
-together. Note that each component is individually Base64 encoded, then they
-are concatenated.
+\verb|key_data| consists of the four binary components concatenated together,
+then Base64 encoded. Note that the component lengths are the lengths of the
+components in binary. The overall length is the length of the message in
+Base64. We must have:
+
+\vspace{10pt}
+\begin{verbatim}
+pub1n + pub1e + pub2n + pub2e == length( base64ToBin( key_data ) )
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Signed Encrypted}
+
+\vspace{10pt}
+\begin{verbatim}
+signed_encrypted protKeyLen sigLen mLen length EOL enc_data EOL
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{BK Signed Encrypted}
+
+\vspace{10pt}
+\begin{verbatim}
+bk_signed_encrypted protKeyLen sigLen mLen length EOL enc_data EOL
+\end{verbatim}
+\vspace{10pt}
 
 \section{Protocol}
 

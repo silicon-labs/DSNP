@@ -230,20 +230,23 @@ minor exception). This makes it possible to partition your relationships into
 different groups, such as family, close friends, co-workers, and people you
 hardly know but might like to get to know better.
 
-\section{Protocol}
+\section{Basics}
 
-\subsection{Common Elements}
+In the sections that follow, standard regular expression syntax is used to
+describe the terminal elements of the grammar. A less formal notation is used
+for commands and other protocol elements that are constructed with the base
+elements. In the less formal sections, white space simply used in places where
+it is required.
 
-In the section, standard regular expression syntax is used to describe the
-terminal elements of the grammar. In subsequent sections, a less formal
-notation is used, with references to these defintions.
-
-\subsubsection{Modified Base64}
+\subsection{Modified Base64}
 
 Throughout DSNP, a modified Base64 encoding is used for all binary data. The
 characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
 the 63rd and 64th characters. This modified encoding is used commonly in
-applications where base64 data must be embedded in URLs.
+applications where Base64 data must be embedded in URLs.
+
+Note that we omit trailing padding, which is normally specified using the
+\verb|=| character.
 
 \vspace{10pt}
 \begin{verbatim}
@@ -251,7 +254,7 @@ applications where base64 data must be embedded in URLs.
 \end{verbatim}
 \vspace{10pt}
 
-\subsubsection{User Names}
+\subsection{User Names}
 
 \vspace{10pt}
 \begin{verbatim}
@@ -259,7 +262,35 @@ applications where base64 data must be embedded in URLs.
 \end{verbatim}
 \vspace{10pt}
 
-\subsubsection{Passwords}
+\subsection{Passwords}
+
+\vspace{10pt}
+\begin{verbatim}
+    pass: [::graph::]+
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Timeouts}
+
+\section{Encryption Parameters and Data}
+
+\subsection{Public Keys}
+
+\vspace{10pt}
+\begin{verbatim}
+    public_keys pub1n pub1e pub2n pub2e length EOL keydata EOL
+\end{verbatim}
+\vspace{10pt}
+
+Two keys are transmitted, each containing \verb|n| and \verb|e| components. The
+\verb|keydata| consists of the four Base64 encoded components concatenated
+together. Note that each component is individually Base64 encoded, then they
+are concatenated.
+
+\section{Protocol}
+
+\subsection{Common Elements}
+
 
 \vspace{10pt}
 \begin{verbatim}

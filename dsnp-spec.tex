@@ -238,6 +238,13 @@ for commands and other protocol elements that are constructed with the base
 elements. In the less formal sections, white space simply used in places where
 it is required.
 
+All commands, messages, and encryption packets have the same general structure.
+They consist of a command or message name, a list of arguments, CRLF, and an
+optional message body. If there is a message body, the last argument will be
+the number of bytes in the message body. Message bodies can be arbitrary data,
+and should be parsed separately from the message. A CRLF follows the message
+body.
+
 \subsection{Modified Base64}
 
 Throughout DSNP, a modified Base64 encoding is used for all binary data. The

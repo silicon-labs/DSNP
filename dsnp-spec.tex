@@ -247,13 +247,11 @@ body.
 
 \subsection{Modified Base64}
 
-Throughout DSNP, a modified Base64 encoding is used for all binary data. The
+Throughout DSNP a modified Base64 encoding is used for all binary data. The
 characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
-the 63rd and 64th characters. This modified encoding is used commonly in
-applications where Base64 data must be embedded in URLs.
-
-Note that we omit trailing padding, which is normally specified using the
-\verb|=| character.
+the 63rd and 64th characters. This modified encoding is commonly used in
+applications where Base64 data must be embedded in URLs. Note that we omit
+trailing padding, which is normally specified using the \verb|=| character.
 
 \vspace{10pt}
 \begin{verbatim}
@@ -263,6 +261,10 @@ Note that we omit trailing padding, which is normally specified using the
 
 \subsection{User Names}
 
+Valid characters in user names include letters, numbers, dot, dash and
+underscore. Uppercase letters can be used to specify, but they are stored and
+displayed in all lowercase to ensure that URIs are given as lowercase.
+
 \vspace{10pt}
 \begin{verbatim}
     user: /[a-zA-Z0-9][a-zA-Z0-9\.\-_]*/
@@ -270,6 +272,8 @@ Note that we omit trailing padding, which is normally specified using the
 \vspace{10pt}
 
 \subsection{Passwords}
+
+Passwords can be any comprised any graphical characters.
 
 \vspace{10pt}
 \begin{verbatim}
@@ -279,7 +283,15 @@ Note that we omit trailing padding, which is normally specified using the
 
 \subsection{Timeouts}
 
+A DSNP inmplementation should time out connections. The DSNP daemon times out
+connections after 7 seconds, both when reading and writing. The user agent
+times out connections to the daemon after 12 seconds.
+
 \section{Encryption Parameters and Data}
+
+There are three messages for carrying encryption parameters and encrypted data.
+Encryption data does not carry any sender or recipeint information. Senders and
+recipients are transmitted in the container message.
 
 \subsection{Public Keys}
 
@@ -293,15 +305,17 @@ Two keys are transmitted, each containing \verb|n| and \verb|e| components. The
 \verb|key_data| consists of the four binary components concatenated together,
 then Base64 encoded. Note that the component lengths are the lengths of the
 components in binary. The overall length is the length of the message in
-Base64. We must have:
-
-\vspace{10pt}
-\begin{verbatim}
-pub1n + pub1e + pub2n + pub2e == length( base64ToBin( key_data ) )
-\end{verbatim}
-\vspace{10pt}
+Base64. The size of the four components must sum to the payload after it has
+been Base64 decoded.
 
 \subsection{Signed Encrypted}
+
+The signed-encrypted message contains data that is signed with a public RSA key
+and encrypted with a symmetric key that is included in the message and
+encrypted with an RSA public key. It has three components: the RSA-protected
+key, the the RSA signature, and the symmetric-key protected message. The three
+component sizes must sum to the size of the payload after it has been Base64
+decoded.
 
 \vspace{10pt}
 \begin{verbatim}
@@ -311,9 +325,15 @@ signed_encrypted protKeyLen sigLen mLen length EOL enc_data EOL
 
 \subsection{BK Signed Encrypted}
 
+The bk-signed-encrypted message contains data that is signed with a public RSA
+key and encrypted with a pre-shared symmetric key. The encrypted data block
+contains two components, the signature and the message data. Both are encrypted
+as a single stream. The sigLen plus message length equal the size of the
+payload after it has been Base64 decoded.
+
 \vspace{10pt}
 \begin{verbatim}
-bk_signed_encrypted protKeyLen sigLen mLen length EOL enc_data EOL
+bk_signed_encrypted sigLen mLen length EOL enc_data EOL
 \end{verbatim}
 \vspace{10pt}
 

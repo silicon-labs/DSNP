@@ -291,7 +291,7 @@ times out connections to the daemon after 12 seconds.
 
 There are three messages for carrying encryption parameters and encrypted data.
 Encryption data does not carry any sender or recipeint information. Senders and
-recipients are transmitted in the container message.
+recipients are transmitted in the container message. Message bodies are binary.
 
 \subsection{Public Key}
 
@@ -301,20 +301,22 @@ recipients are transmitted in the container message.
 \end{verbatim}
 \vspace{10pt}
 
-The public-key packet is used for transmitting a user's public key. Te key
-contains contains \verb|n| and \verb|e| BIGNUM components. The \verb|key_data|
-consists of these two binary components concatenated together. The overall
-length is the sum of the two components. The size of the two components must
-sum to the payload.
+The public-key packet is used for transmitting a user's public key. The key
+contains \verb|n| and \verb|e| BIGNUM components, encoded in big-endian binary
+format. The \verb|key_data| consists of these two binary components
+concatenated together. The overall length is the sum of the two components. The
+size of the two components must sum to the payload.
 
 \subsection{Signed Encrypted}
 
-The signed-encrypted message contains data that is signed with a public RSA key
-and encrypted with a symmetric key that is included in the message and
-encrypted with an RSA public key. It has three components: the RSA-protected
-key, the the RSA signature, and the symmetric-key protected message. The three
-component sizes must sum to the size of the payload after it has been Base64
-decoded.
+The signed-encrypted message contains data that is signed with an public RSA
+key and encrypted with a symmetric key that is included in the message and
+protected by the RSA public key. It has three components: the RSA-protected
+key, the RSA signature, and the symmetric-key protected message. The three
+component sizes must sum to the size of the payload. The RSA sig and the
+message body encrypted using the symmetric key as a single stream. The
+signature is produced by concatenating the public key (n-e components) with the
+message body, then RSA-signing the resulting block.
 
 \vspace{10pt}
 \begin{verbatim}
@@ -328,7 +330,9 @@ The bk-signed-encrypted message contains data that is signed with a public RSA
 key and encrypted with a pre-shared symmetric key. The encrypted data block
 contains two components, the signature and the message data. Both are encrypted
 as a single stream. The sigLen plus message length equal the size of the
-payload after it has been Base64 decoded.
+payload after it has been Base64 decoded. The signature is produced by
+concatenating the broadcast key with the message data, then signing the
+resulting block.
 
 \vspace{10pt}
 \begin{verbatim}
@@ -339,7 +343,6 @@ bk_signed_encrypted sigLen mLen length EOL enc_data EOL
 \section{Protocol}
 
 \subsection{Common Elements}
-
 
 \vspace{10pt}
 \begin{verbatim}

@@ -247,7 +247,7 @@ body.
 
 \subsection{Modified Base64}
 
-Throughout DSNP a modified Base64 encoding is used for all binary data. The
+Throughout DSNP a modified Base64 encoding is used for binary data. The
 characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
 the 63rd and 64th characters. This modified encoding is commonly used in
 applications where Base64 data must be embedded in URLs. Note that we omit
@@ -309,14 +309,15 @@ size of the two components must sum to the payload.
 
 \subsection{Signed Encrypted}
 
-The signed-encrypted message contains data that is signed with an public RSA
-key and encrypted with a symmetric key that is included in the message and
+The signed-encrypted message contains data that is signed with a public RSA key
+and encrypted with a symmetric key that is included in the message and
 protected by the RSA public key. It has three components: the RSA-protected
 key, the RSA signature, and the symmetric-key protected message. The three
 component sizes must sum to the size of the payload. The RSA sig and the
-message body encrypted using the symmetric key as a single stream. The
-signature is produced by concatenating the public key (n-e components) with the
-message body, then RSA-signing the resulting block.
+message body are encrypted using the symmetric key as a single stream. The
+signature is produced by concatenating the public key (n and e components) and
+the message body, then RSA-signing the resulting block. SHA1 is used as the
+signing hash. RC4 is used as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
@@ -332,7 +333,8 @@ contains two components, the signature and the message data. Both are encrypted
 as a single stream. The sigLen plus message length equal the size of the
 payload after it has been Base64 decoded. The signature is produced by
 concatenating the broadcast key with the message data, then signing the
-resulting block.
+resulting block. SHA1 is used as the signing hash. RC4 is used as the stream
+cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
@@ -346,7 +348,6 @@ bk_signed_encrypted sigLen mLen length EOL enc_data EOL
 
 \vspace{10pt}
 \begin{verbatim}
-    pass = graph+;
     dist_name = base64;
 
     date = (

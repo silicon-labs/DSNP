@@ -33,11 +33,11 @@ by\\
 \vspace{12pt}
 {\large Dr. Adrian D. Thurston}\\
 \vspace{22pt}
-{\noindent\bf\large Protocol Version: 0.1}\\
+{\noindent\bf\large Protocol Version: 0.2}\\
 \vspace{6pt}
-{\noindent\bf\large Document Revision: 4}\\
+{\noindent\bf\large Document Revision: 5}\\
 \vspace{6pt}
-{\noindent\bf\large Date: January 20, 2011}
+{\noindent\bf\large Date: January 28, 2011}
 \end{center}
 
 \pagenumbering{roman}
@@ -293,20 +293,19 @@ There are three messages for carrying encryption parameters and encrypted data.
 Encryption data does not carry any sender or recipeint information. Senders and
 recipients are transmitted in the container message.
 
-\subsection{Public Keys}
+\subsection{Public Key}
 
 \vspace{10pt}
 \begin{verbatim}
-    public_keys pub1n pub1e pub2n pub2e length EOL key_data EOL
+    public_key pub1n pub1e length EOL key_data EOL
 \end{verbatim}
 \vspace{10pt}
 
-Two keys are transmitted, each containing \verb|n| and \verb|e| components. The
-\verb|key_data| consists of the four binary components concatenated together,
-then Base64 encoded. Note that the component lengths are the lengths of the
-components in binary. The overall length is the length of the message in
-Base64. The size of the four components must sum to the payload after it has
-been Base64 decoded.
+The public-key packet is used for transmitting a user's public key. Te key
+contains contains \verb|n| and \verb|e| BIGNUM components. The \verb|key_data|
+consists of these two binary components concatenated together. The overall
+length is the sum of the two components. The size of the two components must
+sum to the payload.
 
 \subsection{Signed Encrypted}
 

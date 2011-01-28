@@ -68,9 +68,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
 \vspace{1.5in}
 
 {\noindent\bf\large DISCLAIMER: This document is woefully incomplete,
-inconsistent and in some cases, incomprehensible. I blame gainful full-time
+inconsistent and in some cases, incomprehensible. I blame full-time
 employment that does not involve distributed social networking. If you would
-like it finished, please complain loudly and publicly.}
+like it finished, please complain loudly.}
 
 \newpage
 
@@ -207,11 +207,8 @@ pre-shared key means that messages do not need to crafted for each recipient.
 The message can be computed by the sender, stored once, then a copy sent to
 each recipient. If desired, messages can be handed to a third party and
 delivered on behalf of the user, without the third party being privy to the
-message. Only the domains and relationship identifiers (random) for the
-recipients is revealed to the broker. This aspect of the protocol allows more
-possible architecture configurations. One server that is capable of high-volume
-delivery can serve as the message broker for a number of smaller systems that
-host identities.
+message. Only the sender/recipient domains and the relationship identifiers
+(which are chosen randomly) are revealed to the broker. 
 
 When you send messages to your friends, either directly or by broadcast,
 messages are signed with your private key. Your contacts can then use your
@@ -297,31 +294,32 @@ recipients are transmitted in the container message. Message bodies are binary.
 
 \vspace{10pt}
 \begin{verbatim}
-    public_key pub1n pub1e length EOL key_data EOL
+    public_key pub1nLen length EOL key_data EOL
 \end{verbatim}
 \vspace{10pt}
 
 The public-key packet is used for transmitting a user's public key. The key
 contains \verb|n| and \verb|e| BIGNUM components, encoded in big-endian binary
 format. The \verb|key_data| consists of these two binary components
-concatenated together. The overall length is the sum of the two components. The
-size of the two components must sum to the payload.
+concatenated together. The length of the second component can be computed by
+subtracting the length of the first from the overall message body length.
 
 \subsection{Signed Encrypted}
 
 The signed-encrypted message contains data that is signed with a public RSA key
 and encrypted with a symmetric key that is included in the message and
 protected by the RSA public key. It has three components: the RSA-protected
-key, the RSA signature, and the symmetric-key protected message. The three
-component sizes must sum to the size of the payload. The RSA sig and the
-message body are encrypted using the symmetric key as a single stream. The
-signature is produced by concatenating the public key (n and e components) and
-the message body, then RSA-signing the resulting block. SHA1 is used as the
-signing hash. RC4 is used as the stream cipher (temporary).
+key, the RSA signature, and the symmetric-key protected message. The parameter
+list contains the lengths of the first two comonents. The third length is
+computed from the overall length. The RSA sig and the message body are
+encrypted using the symmetric key as a single stream. The signature is produced
+by concatenating the public key (n and e components) and the message body, then
+RSA-signing the resulting block. SHA1 is used as the signing hash. RC4 is used
+as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-signed_encrypted protKeyLen sigLen mLen length EOL enc_data EOL
+signed_encrypted protKeyLen sigLen length EOL enc_data EOL
 \end{verbatim}
 \vspace{10pt}
 
@@ -329,16 +327,15 @@ signed_encrypted protKeyLen sigLen mLen length EOL enc_data EOL
 
 The bk-signed-encrypted message contains data that is signed with a public RSA
 key and encrypted with a pre-shared symmetric key. The encrypted data block
-contains two components, the signature and the message data. Both are encrypted
-as a single stream. The sigLen plus message length equal the size of the
-payload after it has been Base64 decoded. The signature is produced by
-concatenating the broadcast key with the message data, then signing the
-resulting block. SHA1 is used as the signing hash. RC4 is used as the stream
-cipher (temporary).
+contains two components: the signature and the message data. Both are encrypted
+as a single stream. Only the first component length is included. The second is
+computed from the overall length. The signature is produced by concatenating
+the broadcast key with the message data, then signing the resulting block. SHA1
+is used as the signing hash. RC4 is used as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-bk_signed_encrypted sigLen mLen length EOL enc_data EOL
+bk_signed_encrypted sigLen length EOL enc_data EOL
 \end{verbatim}
 \vspace{10pt}
 

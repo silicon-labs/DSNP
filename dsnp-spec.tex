@@ -67,10 +67,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
 
 \vspace{1.5in}
 
-{\noindent\bf\large DISCLAIMER: This document is woefully incomplete,
-inconsistent and in some cases, incomprehensible. I blame full-time
-employment that does not involve distributed social networking. If you would
-like it finished, please complain loudly.}
+{\noindent\bf\large DISCLAIMER: This document is draft quality. As of early
+2011, it is steadily improving in lockstep with the reference implementation,
+Choice Social.}
 
 \newpage
 
@@ -226,6 +225,17 @@ list must be explictly granted, even to current friends (see next point for a
 minor exception). This makes it possible to partition your relationships into
 different groups, such as family, close friends, co-workers, and people you
 hardly know but might like to get to know better.
+
+\subsection{Definitions}
+
+\begin{itemize}
+
+\item User-agent: Software that a user, and user's connections interact with.
+This software provides the 'front' for the user's identity. At a minimium, this
+should be a web-based application, though other forms of user-agent are
+possible.
+
+\end{itemize}
 
 \section{Basics}
 
@@ -954,16 +964,20 @@ result in user experience. Various components require syncronization.
 \end{verbatim}
 \vspace{10pt}
 
-\end{document}
+\subsection{Notification Logout}
 
-%\subsection{Notifications}
-%
-%\begin{itemize}
-%\item notification\_broadcast           (user message to a group)
-%\item notification\_message             (user message direct)
-%\item notification\_remote\_message     (author-subject message to a group)
-%\item notification\_remote\_publication (author-subject message to the author)
-%\end{itemize}
+The logout notification is used by the daemon to indicate to the user agent
+that a login session is no longer valid. This should invalidate any cookies
+that have been handed out to user. The session ID can be any string of
+characters that the user agent wishes to use. It is limited to 48 characters.
+
+\vspace{10pt}
+\begin{verbatim}
+    notification_logout session_id
+\end{verbatim}
+\vspace{10pt}
+
+\end{document}
 
 % \section{Roles and Friendship Types}
 % The different roles people play in their lives are often reflected in a

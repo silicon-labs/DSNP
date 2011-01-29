@@ -433,9 +433,13 @@ are issued (not yet added to the protocol).
 
 \subsubsection{Login}
 
+The session ID is a string that is used to associate the granted login token
+with the session ID of the browser. It is supplied to the user agent when DSNPd
+needs to specify to the user agent that the browser's login token has expired.
+
 \vspace{10pt}
 \begin{verbatim}
-    LOGIN user pass EOL
+    LOGIN user pass session_id EOL
 
     returns: OK hash token lasts EOL
     context: TLS connection
@@ -446,7 +450,7 @@ On success, the login commands returns the owner's URI hash, a login token, and
 the number of seconds the token is valid for. The URI hash can be computed
 independently, but is returned here for convenience.
 
-Note that as of version 0.1 of DSNP, the token is not yet made use of. It
+Note that as of version 0.2 of DSNP, the token is not yet made use of. It
 should be!
 
 \subsection{Friendship Request}
@@ -715,9 +719,13 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 
 \subsubsection{Submit Ftoken}
 
+The session ID is a string that the user agent submits to identify the browser
+session that the login is for. This session id may be used later by DSNPd to
+invalidate the login.
+
 \vspace{10pt}
 \begin{verbatim}
-    SUBMIT_FTOKEN token EOL 
+    SUBMIT_FTOKEN token session_id EOL 
 
     returns: OK identity hash lasts EOL
     context: local connection

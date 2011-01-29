@@ -915,6 +915,45 @@ allow others outside of the common friend group to view messages.
     context: remote broadcast message
 \end{verbatim}
 
+\section{Notifications}
+
+The DSNP daemon defers to the user-agent software for tasks that are not
+associated with identity, authentication, authorization, encryption, etc. This
+includes content that arrives from friends, and various notifications that
+result in user experience. Various components require syncronization.
+
+\subsection{Notification Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
+    notification_broadcast user author seq_num date time length 
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Notification Message}
+
+\vspace{10pt}
+\begin{verbatim}
+    notification_message user author date time length 
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Notification Remote Message}
+
+\vspace{10pt}
+\begin{verbatim}
+    notification_remote_message user subject author seq_num date time length 
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Notification Remote Publication}
+
+\vspace{10pt}
+\begin{verbatim}
+    notification_remote_publication user subject length 
+\end{verbatim}
+\vspace{10pt}
+
 \end{document}
 
 %\subsection{Notifications}

@@ -876,7 +876,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_REQUEST user identity hash token length EOL message EOL
+    REMOTE_BROADCAST_REQUEST flogin_token length EOL message EOL
 
     returns: OK reqid EOL
     context: local connection
@@ -887,7 +887,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_RESPONSE user reqid EOL 
+    REMOTE_BROADCAST_RESPONSE login_token reqid EOL 
 
     returns: OK reqid EOL
     context: TLS connection
@@ -898,7 +898,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_FINAL user reqid EOL 
+    REMOTE_BROADCAST_FINAL flogin_token reqid EOL 
 
     returns: OK EOL
     context: local conection
@@ -909,7 +909,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    ENCRYPT_REMOTE_BROADCAST token seq_num length EOL message EOL
+    ENCRYPT_REMOTE_BROADCAST flogin_token seq_num length EOL message EOL
 
     returns: OK reqid EOL
     context: TLS connection

@@ -959,7 +959,7 @@ result in user experience. Various components require syncronization.
 
 \vspace{10pt}
 \begin{verbatim}
-    notification_broadcast user author seq_num date time length 
+    NOTIFICATION_BROADCAST user author seq_num date time length 
 \end{verbatim}
 \vspace{10pt}
 
@@ -967,7 +967,7 @@ result in user experience. Various components require syncronization.
 
 \vspace{10pt}
 \begin{verbatim}
-    notification_message user author date time length 
+    NOTIFICATION_MESSAGE user author date time length 
 \end{verbatim}
 \vspace{10pt}
 
@@ -975,7 +975,7 @@ result in user experience. Various components require syncronization.
 
 \vspace{10pt}
 \begin{verbatim}
-    notification_remote_message user subject author seq_num date time length 
+    NOTIFICATION_REMOTE_MESSAGE user subject author seq_num date time length 
 \end{verbatim}
 \vspace{10pt}
 
@@ -983,7 +983,7 @@ result in user experience. Various components require syncronization.
 
 \vspace{10pt}
 \begin{verbatim}
-    notification_remote_publication user subject length 
+    NOTIFICATION_REMOTE_PUBLICATION user subject length 
 \end{verbatim}
 \vspace{10pt}
 
@@ -996,7 +996,7 @@ characters that the user agent wishes to use. It is limited to 48 characters.
 
 \vspace{10pt}
 \begin{verbatim}
-    notification_logout session_id
+    NOTIFICATION_LOGOUT session_id
 \end{verbatim}
 \vspace{10pt}
 
@@ -1007,7 +1007,23 @@ in its database.
 
 \vspace{10pt}
 \begin{verbatim}
-    notification_new_user user_id
+    NOTIFICATION_NEW_USER user
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Friend Request Sent}
+
+\vspace{10pt}
+\begin{verbatim}
+    FRIEND_REQUEST_SENT user iduri reqid requested_relid response_relid 
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Friend Request Received}
+
+\vspace{10pt}
+\begin{verbatim}
+    FRIEND_REQUEST_RECEIVED user iduri reqid requested_relid response_relid 
 \end{verbatim}
 \vspace{10pt}
 

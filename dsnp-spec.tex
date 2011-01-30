@@ -1000,14 +1000,16 @@ characters that the user agent wishes to use. It is limited to 48 characters.
 \end{verbatim}
 \vspace{10pt}
 
+\subsection{Notification New User}
+
+Indicates that user creation succeeded. The user agent should register the user
+in its database.
+
+\vspace{10pt}
+\begin{verbatim}
+    notification_new_user user_id
+\end{verbatim}
+\vspace{10pt}
+
 \end{document}
 
-% \section{Roles and Friendship Types}
-% The different roles people play in their lives are often reflected in a
-% categorization of their relationships. It would be useful in DSNP to support
-% friendship categories. Each category should have it's own broadcast key and the
-% distribution trees should not be disconnected. The categories should not
-% necessarily be comprised of disjoint sets of friends however. Your brother can
-% be both in your friend category and your family category. You grandmonther,
-% however, can just be in your family category so you can shelter her from the
-% details of that crazy weekend in Montreal.

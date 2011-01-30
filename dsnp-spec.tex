@@ -699,7 +699,7 @@ responder, and her identity is SURI.
     \item encrypts the token to the user and signs it
     \item makes it available to be fetched with REQID as identifier
     \item redirects user to QURI/return-token with hash(QURI) and REQID as
-        arguments
+            arguments
     \end{enumerate}
 
 \item The requestor's server verifies the browser is the identity owner
@@ -710,7 +710,7 @@ responder, and her identity is SURI.
     \item fetches the token using from SURI using REQID to identify it
     \item decrypts and verifies the token
     \item redirects the browser to SURI/submit-ftoken with QURI and the TOKEN
-    as aguments
+            as aguments
     \end{enumerate}
 
 \item Friend login final
@@ -737,9 +737,13 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 
 \subsubsection{Ftoken Response}
 
+The Ftoken Response command is executed by the requestor's user agent. It is
+reponsible for supplying the proof that the browser owns the identity that is
+logging it. This command requires users be logged in.
+
 \vspace{10pt}
 \begin{verbatim}
-    FTOKEN_RESPONSE user hash reqid EOL 
+    FTOKEN_RESPONSE login_token hash reqid EOL 
 
     returns: OK identity token EOL
     context: local connection

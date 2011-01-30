@@ -617,9 +617,13 @@ send these messages after it receives the registered message.
 
 \subsubsection{Accept Friend}
 
+Accept friend is issued by the responder. The particular friend request is
+identified by reqid, which is the request ID originally allocated by the
+responder in the relid request command. The responder must be logged in.
+
 \vspace{10pt}
 \begin{verbatim}
-    ACCEPT_FRIEND user reqid EOL
+    ACCEPT_FRIEND login_token reqid EOL
 
     returns: OK EOL
     context: local connection

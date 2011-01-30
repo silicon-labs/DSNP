@@ -537,6 +537,11 @@ relids.
 
 \subsubsection{Relid Request}
 
+The relid request is issued by the responder's server on behalf of the
+requestor. The server generates a relationship ID and makes it available for
+the requestor's server to fetch. It then redirects the user back home where the
+request can be processed.
+
 \vspace{10pt}
 \begin{verbatim}
     RELID_REQUEST user identity EOL
@@ -548,9 +553,14 @@ relids.
 
 \subsubsection{Relid Response}
 
+The relid response is executed by the requestor. The requestor must be logged
+in for this command to run. The requestor's server fetches the request from the
+responder's server, decrypts and verifies it. It then generates a response and
+makes it available for the responder's server to fetch in the final step.
+
 \vspace{10pt}
 \begin{verbatim}
-    RELID_RESPONSE user reqid identity EOL
+    RELID_RESPONSE login_token reqid identity EOL
 
     returns: OK reqid EOL
     context: local connection
@@ -558,6 +568,11 @@ relids.
 \vspace{10pt}
 
 \subsubsection{Friend Final}
+
+The final step in the friend request protocol is for the responder's server to
+verify the response, which includes a copy of the request it generated in the
+first step. If the response validates, a friend request is stored for the
+responder user to accept or deny.
 
 \vspace{10pt}
 \begin{verbatim}

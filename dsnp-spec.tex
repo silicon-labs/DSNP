@@ -784,7 +784,7 @@ by the sender.
 
 \vspace{10pt}
 \begin{verbatim}
-    SUBMIT_MESSAGE user identity length EOL
+    SUBMIT_MESSAGE login_token identity length EOL
 
     returns: OK EOL
     context: local connection
@@ -812,7 +812,7 @@ group within the sender's collection of groups.
 
 \vspace{10pt}
 \begin{verbatim}
-    SUBMIT_BROADCAST user length EOL message EOL
+    SUBMIT_BROADCAST login_token length EOL message EOL
 
     returns: OK EOL
     context: local connection

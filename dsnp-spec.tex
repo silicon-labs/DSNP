@@ -35,9 +35,9 @@ by\\
 \vspace{22pt}
 {\noindent\bf\large Protocol Version: 0.3}\\
 \vspace{6pt}
-{\noindent\bf\large Document Revision: 6}\\
+{\noindent\bf\large Document Revision: 7}\\
 \vspace{6pt}
-{\noindent\bf\large Date: January 31, 2011}
+{\noindent\bf\large Date: February 1, 2011}
 \end{center}
 
 \pagenumbering{roman}
@@ -1042,5 +1042,67 @@ in its database.
 \end{verbatim}
 \vspace{10pt}
 
-\end{document}
+\section{User Messages}
 
+User messages are submitted by the user agent to DSNPd, encrypted, distributed
+over the network, decrypted, then handed to the receiving user agent for
+storage and display. This particular section of DSNP is likely to change, as
+better message formats become apparent. For the time being, we use an
+rfc822-like message format. There are just four types.
+
+\subsection{Broadcast}
+
+Broadcast message type is used for so-called status updates.
+
+\vspace{10pt}
+\begin{verbatim}
+Content-Type: text/plain
+Type: broadcast
+
+CONTENT
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Board Post}
+
+Board post is used for messages that are to be shared with the sender and
+recipient's friends. The board post is akin to a "wall" message.
+
+\vspace{10pt}
+\begin{verbatim}
+Type: board-post
+Content-Type: text/plain
+
+CONTENT
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Name Change}
+
+Name change is used to transmit a user's new name.
+
+\vspace{10pt}
+\begin{verbatim}
+Content-Type: text/plain
+Type: name-change
+
+CONTENT
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Photo Upload}
+
+Photo upload is use to notifiy friend's about a photo that has been uploaded.
+Resource-Id is an identifier describing the uploader's image.
+
+\vspace{10pt}
+\begin{verbatim}
+Content-Type: image/jpg
+Resource-Id: ID
+Type: photo-upload
+
+CONTENT
+\end{verbatim}
+\vspace{10pt}
+
+\end{document}

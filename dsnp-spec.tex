@@ -301,17 +301,44 @@ recipients are transmitted in the container message. Message bodies are binary.
 
 \subsection{Public Key}
 
+The public-key packet is used for transmitting a user's public key. The key
+contains \verb|n| and \verb|e| BIGNUM components, encoded in big-endian binary
+format. The \verb|key_data| consists of these two binary components
+concatenated together. The length of the second component can be computed by
+subtracting the length of the first from the overall message body length.
+
 \vspace{10pt}
 \begin{verbatim}
     public_key pub1nLen length EOL key_data EOL
 \end{verbatim}
 \vspace{10pt}
 
-The public-key packet is used for transmitting a user's public key. The key
-contains \verb|n| and \verb|e| BIGNUM components, encoded in big-endian binary
-format. The \verb|key_data| consists of these two binary components
-concatenated together. The length of the second component can be computed by
-subtracting the length of the first from the overall message body length.
+\subsection{Public Key Set}
+\label{public-key-set}
+
+The Public Key Set packages up the four public keys at privilege levels zero to
+three. Privilege level zero should be considered the most trusted. The public
+key set should be delivered in a signed packet, with the signature verifiable
+by the privilege zero key.
+
+\vspace{10pt}
+\begin{verbatim}
+    public_key_set priv0Len priv1Len priv2Len length EOL key_data EOL
+\end{verbatim}
+\vspace{10pt}
+
+
+\subsection{Private Key}
+
+Private keys are never transmitted, but they must be stored and backed up. This
+packet type specifies the format of the private key before it is encapsulated
+in a protection envelope.
+
+\vspace{10pt}
+\begin{verbatim}
+    private_key nLen eLen dLen pLen qLen dmp1Len dmq1Len length EOL key_data EOL
+\end{verbatim}
+\vspace{10pt}
 
 \subsection{Signed Encrypted}
 
@@ -328,7 +355,7 @@ as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-signed_encrypted protKeyLen sigLen length EOL enc_data EOL
+    signed_encrypted protKeyLen sigLen length EOL enc_data EOL
 \end{verbatim}
 \vspace{10pt}
 
@@ -344,7 +371,29 @@ is used as the signing hash. RC4 is used as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-bk_signed_encrypted sigLen length EOL enc_data EOL
+    bk_signed_encrypted sigLen length EOL enc_data EOL
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{PW Encrypted}
+
+This packet contains data encrypted with the owning user's password. The
+password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
+
+\vspace{10pt}
+\begin{verbatim}
+    pw_encrypted length EOL enc_data EOL
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Signed}
+\label{signed-packet}
+
+This packet contains data that is accompanied by a signature.
+
+\vspace{10pt}
+\begin{verbatim}
+    signed sigLen length EOL signed_data EOL
 \end{verbatim}
 \vspace{10pt}
 
@@ -461,6 +510,22 @@ independently, but is returned here for convenience.
 
 Note that as of version 0.2 of DSNP, the token is not yet made use of. It
 should be!
+
+\subsubsection{Public Key}
+
+Command for fetching a user's public key. A user's public key must never
+change. If a peer detects a change, the user must be considered invalid. The
+message returned is a signed packet (\ref{signed-packet}), that contains a
+public key set (\ref{public-key-set}).
+
+\vspace{10pt}
+\begin{verbatim}
+    PUBLIC_KEY user EOL
+
+    returns: OK message EOL
+    context: TLS connection
+\end{verbatim}
+
 
 \subsection{Friendship Request}
 

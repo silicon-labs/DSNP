@@ -694,27 +694,17 @@ responder in the relid request command. The responder must be logged in.
 \end{verbatim}
 \vspace{10pt}
 
-\subsubsection{Prefriend Message}
-
-\vspace{10pt}
-\begin{verbatim}
-    PREFRIEND_MESSAGE relid length EOL message EOL
-
-    returns: message dependent (see below).
-    context: TLS connection
-\end{verbatim}
-\vspace{10pt}
+\subsubsection{Notify Accept, Registered}
 
 During the friend accept exchange, these messages arrive as the payload to
-prefriend messages. Notify accept is used to indicate to the requestor that the
+standard messages. They are identified as prefriend messages by the state of the
+relationship. Notify accept is used to indicate to the requestor that the
 reciever intends to accept the friendship request. If the requestor still
 considers the request valid, it indicates so and registers the friendship. The
 friendee then registers the friendship and sends the REGISTERED message to
 indicate that the process is now complete, and friend-friend messages can be
 sent. This is how the friender knows it is safe to begin sending messages and
 otherwise broadcast information.
-
-\subsubsection{Notify Accept}
 
 \vspace{10pt}
 \begin{verbatim}
@@ -724,8 +714,6 @@ otherwise broadcast information.
     context: prefriend message
 \end{verbatim}
 \vspace{10pt}
-
-\subsubsection{Registered}
 
 \vspace{10pt}
 \begin{verbatim}

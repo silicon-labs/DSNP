@@ -33,11 +33,11 @@ by\\
 \vspace{12pt}
 {\large Dr. Adrian D. Thurston}\\
 \vspace{22pt}
-{\noindent\bf\large Protocol Version: 0.3}\\
+{\noindent\bf\large Protocol Version: 0.4}\\
 \vspace{6pt}
-{\noindent\bf\large Document Revision: 7}\\
+{\noindent\bf\large Document Revision: 8}\\
 \vspace{6pt}
-{\noindent\bf\large Date: February 1, 2011}
+{\noindent\bf\large Date: February 23, 2011}
 \end{center}
 
 \pagenumbering{roman}
@@ -65,76 +65,25 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
 
-\vspace{1.0in}
+\vspace{1.5in}
 
-{\noindent\bf\large DISCLAIMER 1: This document is draft quality. It is steadily
+{\noindent\bf\large DISCLAIMER: This document is draft quality. It is steadily
 improving in lockstep with the reference implementation, Choice Social.}
-
-\vspace{0.5in}
-
-{\noindent\bf\large DISCLAIMER 2: I am not an encryption researcher. Please
-forgive my (mis)use of terminology. Please help.}
 
 \newpage
 
 \tableofcontents
 
-%
-% Chapter 1
-%
-
-
-% Topics:
-% RSA Keys allocated to each identity
-%
-% Broadcast Keys
-%
-% Properties.
-%  Forgery
-%  Privacy
-%
-% Protocol
-%  Friendship Initialization
-
 \pagenumbering{arabic}
 
 \section{Introduction}
 
-% DSNP uses a similar pattern. A submits its URI to B. B encrypt-signs a
-% challenge to A. The browser visits A to prove it initiated the
-% exchange. A encrypt-signs a response to B. Then friendship exists.
-%
-% Keys are indeed cheap. I was thinking of using two keys actually. One
-% would be stored in plaintext on the server, the other encrypted using
-% the user's password. The encrypted key would be used to communicate
-% any major changes concerning the user's identity. It would be a higher
-% privilege key for certain operations. I haven't hashed it out yet
-% though.
-%
-% In DSNP I introduced a symmetric broadcast key. It is distributed to
-% each friend ahead of time using each friend's public keys. It is
-% versioned as well. It must change when unfriending happens.
-% 
-% Status updates (and other activity) can then be encrypted using using
-% the broadcast key (and signed). This can be done once, then the same
-% message delivered to all friends. I took this approach because I
-% wanted to reduce the computation required for a single status
-% update/post/etc. Some quick tests showed that encryption to 2000
-% friends (extreme) when 2000 public keys were used was very costly.
-% Multiply this by however many users are on a mulituser system and I
-% got worried.
-
-DSNP is a protocol for distributed social networking. The goal of this project
-is to allow you to host your profile with a provider of your choice, or host
-your profile yourself, without the choice impacting who you are able to invite
-as connections. Communication between you and the people you trust is private
-and safe from forgery.
-
-DSNP aims to cover any use case that can be described as first creating a
-profile for yourself, establishing connections to people you know, then
-broadcasting private information to these people. The information that we share
-are the artifacts of our lives. No single provider should host such information
-everyone.
+DSNP is a protocol for distributed social networking. DSNP allows you to host
+your profile with a provider of your choice, or host your profile yourself,
+without the choice impacting who you are able to invite as connections.
+Communication between you and the people you trust is private and safe from
+forgery. The updates and notes we share are artifacts of our lives. No single
+provider should host such information for everyone. 
 
 \subsection{Properties of DSNP}
 

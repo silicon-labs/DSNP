@@ -181,7 +181,7 @@ and the declaration of relationships. It can be described as a public-key
 cryptosystem for web-based identities. Each identity gets a public/private key
 pair. The public portion of the key must be fetched over SSL. By requiring SSL
 for public key fetches we give some assurance that the correct public key is
-always distributed, without introducing the complexites involved with a
+always distributed, without introducing the complexities involved with a
 web-of-trust, or the cost of commercial certificates on a per-user basis. It is
 a trade off, however, as it is possible for a domain to change hands and for
 the new owner to start different certs for the identities inside the domain.
@@ -225,7 +225,7 @@ probably the wrong communication medium.
 
 Your list of friends can be treated as private information. It is impossible
 for someone to probe your list of friends if you don't want to publish it. The
-list must be explictly granted, even to current friends (see next point for a
+list must be explicitly granted, even to current friends (see next point for a
 minor exception). This makes it possible to partition your relationships into
 different groups, such as family, close friends, co-workers, and people you
 hardly know but might like to get to know better.
@@ -235,7 +235,7 @@ hardly know but might like to get to know better.
 \begin{itemize}
 
 \item User-agent: Software that a user, and user's connections interact with.
-This software provides the 'front' for the user's identity. At a minimium, this
+This software provides the 'front' for the user's identity. At a minimum, this
 should be a web-based application, though other forms of user-agent are
 possible.
 
@@ -294,9 +294,9 @@ Passwords can be any comprised any graphical characters.
 
 \subsection{Timeouts}
 
-A DSNP inmplementation should time out connections. The DSNP daemon times out
-connections after 7 seconds, both when reading and writing. The user agent
-times out connections to the daemon after 12 seconds.
+A DSNP implementation should close connections after a time of inactivity. The
+DSNP daemon times out connections after 7 seconds, both when reading and
+writing. The user agent times out connections to the daemon after 12 seconds.
 
 \section{Encryption Parameters and Data}
 
@@ -305,7 +305,7 @@ These messages most often carry binary payloads. They are often encrypted and
 used in the construction of other packets. Due to these circumstances, and the
 fact that they are constructed and parsed only within the confines of DSNPd, it
 makes sense to construct them in binary form. As a general rule, encryption
-packets do not carry any sender or recipeint information. Senders and
+packets do not carry any sender or recipient information. Senders and
 recipients are transmitted in the container message.
 
 The basic element of the encryption packet is the binary string. It is composed
@@ -440,7 +440,7 @@ password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
 \label{signed-packet}
 
 This packet contains plaintext data that is accompanied by a signature. Unless
-specified otherwise, the signiture is acquired by applying RSA-sign to the
+specified otherwise, the signature is acquired by applying RSA-sign to the
 plaintext. 
 
 In the BK Signed Encrypted and the Signed Encrypted messages the
@@ -555,22 +555,42 @@ version it supports.
 
 \subsection{Creating Users}
 
-\vspace{10pt}
-A user name and password is requested. These credentials will be used by the
-user to login as the owner of the identity.
+A user name and password is requested. The user's IDURI is assigned. It
+consists of the scheme \verb'dsnp://', the site's root name, and the user name
+as the final path component. It must end with a slash. Similarly, the user's
+IDURL is assigned. This is identical, except the scheme is \verb'https://'.
 
-A URI consisting of the site root name, followed by the user name as the last
-component is assigned. This is an internet facing web address that the user has
-control of. It represents their identity.
+%
+% IDURI: dsnp://www.foo.com/site/gia/ 
+% IDURL: https://www.foo.com/site/gia/
+%
 
-An RSA key pair is created. The key has no password. (In future versions of the
-protocol we may generate two key pairs, one with no password,  another with a
-password. The encrypted key will be required at times when the user is logged
+Four RSA key pairs are created. The keys have privilege levels 3 to 0.
+Privilege level 3 is considered the weakest. Privilege level 0 is reserved for
+the most significant actions, such as profile moving.
+
+\begin{itemize}
+\item Priv 3: Not password protected. For activity that doesn't require the user be logged
 in.
 
-The public portion of the key is made available. The key must always be fetched
-using SSL. This guarantees that a key has been provided by the server hosting
-the identity and has not been altered.
+\item Priv 2: Password protected, decrypted in memory only while user is logged
+in. A sig indicates the user is currently logged in. Used for activity by
+logged in user.
+
+\item Priv 1: Password protected. Purged from memory immediately after it is
+used. Decrypted on each login. A signed timestamp by this key indicates the
+user logged in with her password at that time.
+
+\item Priv 0: Password protected. Purged from memory immediately after use.
+Decrypted on demand. A message signed by this key indicates the user submitted
+her password to produce the signature. This privilege ring is reserved for
+moving and deleting the identity.
+\end{itemize}
+
+The public portions of the keys are made available (Section
+\ref{public-key-command}). The key must always be fetched using SSL. This
+guarantees that a key has been provided by the server hosting the identity and
+has not been altered.
 
 \subsubsection{New User}
 
@@ -611,6 +631,7 @@ Note that as of version 0.2 of DSNP, the token is not yet made use of. It
 should be!
 
 \subsubsection{Public Key}
+\label{public-key-command}
 
 The Public Key command is for fetching a user's public key. A public key must
 never change. If a peer detects a change, the user must be considered invalid.
@@ -635,7 +656,7 @@ connection. The secondary purpose is to securely exchange random identifiers
 that will be used by the two parties to identify the relationship, should it
 proceed.
 
-It is important that the user who is recieving the friend request be assured
+It is important that the user who is receiving the friend request be assured
 that the person controlling the browser is the actual owner of the identity
 submitted. To guarantee this, we must send the browser home, where it can
 answer to a challenge to decrypt a randomly selected token, then send the token
@@ -799,7 +820,7 @@ responder in the relid request command. The responder must be logged in.
 During the friend accept exchange, these messages arrive as the payload to
 standard messages. They are identified as prefriend messages by the state of the
 relationship. Notify accept is used to indicate to the requestor that the
-reciever intends to accept the friendship request. If the requestor still
+receiver intends to accept the friendship request. If the requestor still
 considers the request valid, it indicates so and registers the friendship. The
 friendee then registers the friendship and sends the REGISTERED message to
 indicate that the process is now complete, and friend-friend messages can be
@@ -862,7 +883,7 @@ responder, and her identity is SURI.
     \item fetches the token using from SURI using REQID to identify it
     \item decrypts and verifies the token
     \item redirects the browser to SURI/submit-ftoken with QURI and the TOKEN
-            as aguments
+            as arguments
     \end{enumerate}
 
 \item Friend login final
@@ -890,7 +911,7 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 \subsubsection{Ftoken Response}
 
 The Ftoken Response command is executed by the requestor's user agent. It is
-reponsible for supplying the proof that the browser owns the identity that is
+responsible for supplying the proof that the browser owns the identity that is
 logging it. This command requires users be logged in.
 
 \vspace{10pt}
@@ -1058,7 +1079,7 @@ allow others outside of the common friend group to view messages.
     REMOTE_BROADCAST_FINAL flogin_token reqid EOL 
 
     returns: OK EOL
-    context: local conection
+    context: local connection
 \end{verbatim}
 \vspace{10pt}
 
@@ -1110,7 +1131,7 @@ allow others outside of the common friend group to view messages.
 The DSNP daemon defers to the user-agent software for tasks that are not
 associated with identity, authentication, authorization, encryption, etc. This
 includes content that arrives from friends, and various notifications that
-result in user experience. Various components require syncronization.
+result in user experience. Various components require synchronization.
 
 \subsection{Notification Broadcast}
 

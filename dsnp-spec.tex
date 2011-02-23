@@ -1189,35 +1189,46 @@ in its database.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Friend Request Sent}
+\subsection{Friend Request Received}
+
+Notification for the responder to the friend request that a new request has
+arrived.
 
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_REQUEST_SENT user iduri hash reqid requested_relid response_relid 
+    FRIEND_REQUEST_RECEIVED user iduri hash accept_reqid
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Friend Request Received}
+\subsection{Friend Request Sent}
+
+Notification for the requestor of the relationship that a new request was
+successfully sent.
 
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_REQUEST_RECEIVED user iduri hash reqid requested_relid response_relid 
+    FRIEND_REQUEST_SENT user iduri hash user_notify_reqid
 \end{verbatim}
 \vspace{10pt}
 
 \subsection{Friend Request Accepted}
 
+Notification for the responder to the friend request that acceptance succeeded.
+
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_REQUEST_ACCEPTED user iduri requested_relid response_relid
+    FRIEND_REQUEST_ACCEPTED user iduri accept_reqid
 \end{verbatim}
 \vspace{10pt}
 
 \subsection{Sent Friend Request Accepted}
 
+Notification for the requestor of the relationship that the request was
+accepted.
+
 \vspace{10pt}
 \begin{verbatim}
-    SENT_FRIEND_REQUEST_ACCEPTED user iduri requested_relid response_relid
+    SENT_FRIEND_REQUEST_ACCEPTED user iduri user_notify_reqid
 \end{verbatim}
 \vspace{10pt}
 

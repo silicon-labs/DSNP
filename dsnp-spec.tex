@@ -299,6 +299,13 @@ There are three messages for carrying encryption parameters and encrypted data.
 Encryption data does not carry any sender or recipeint information. Senders and
 recipients are transmitted in the container message. Message bodies are binary.
 
+\vspace{10pt}
+\begin{verbatim}
+    len16   -> octet octet
+    bin16   -> len16 octet*
+\end{verbatim}
+\vspace{10pt}
+
 \subsection{Public Key}
 
 The public-key packet is used for transmitting a user's public key. The key
@@ -309,7 +316,9 @@ subtracting the length of the first from the overall message body length.
 
 \vspace{10pt}
 \begin{verbatim}
-    public_key pub1nLen length EOL key_data EOL
+    n           -> bin16
+    e           -> bin16
+    public_key  -> 0x01 n e
 \end{verbatim}
 \vspace{10pt}
 
@@ -323,10 +332,44 @@ by the privilege zero key.
 
 \vspace{10pt}
 \begin{verbatim}
-    public_key_set priv0Len priv1Len priv2Len length EOL key_data EOL
+    priv0           -> bin16
+    priv1           -> bin16
+    priv2           -> bin16
+    priv3           -> bin16
+    public_key_set  -> 0x02 priv0 priv1 priv2 priv3
 \end{verbatim}
 \vspace{10pt}
 
+\subsection{Relid Set}
+
+\vspace{10pt}
+\begin{verbatim}
+    priv0      -> bin16
+    priv1      -> bin16
+    priv2      -> bin16
+    priv3      -> bin16
+    relid_set  -> 0x03 priv0 priv1 priv2 priv3
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Relid Set Pair}
+\vspace{10pt}
+\begin{verbatim}
+    requested       -> len16 relid_set
+    returned        -> len16 relid_set
+    relid_set_pair  -> 0x04 requested returned
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Relid Response}
+
+\vspace{10pt}
+\begin{verbatim}
+    peer_notify_reqid  -> bin16
+    rr_relid_set_pair  -> len16 relid_set_pair
+    relid_response     -> 0x05 peer_notify_reqid rr_relid_set_pair
+\end{verbatim}
+\vspace{10pt}
 
 \subsection{Private Key}
 
@@ -336,7 +379,57 @@ in a protection envelope.
 
 \vspace{10pt}
 \begin{verbatim}
-    private_key nLen eLen dLen pLen qLen dmp1Len dmq1Len length EOL key_data EOL
+    n            -> bin16
+    e            -> bin16
+    d            -> bin16
+    p            -> bin16
+    q            -> bin16
+    dmp1         -> bin16
+    dmq1         -> bin16
+    iqmp         -> bin16
+    private_key  -> 0x06 n e d p q dmp1 dmq1 iqmp
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{PW Encrypted}
+
+This packet contains data encrypted with the owning user's password. The
+password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
+
+\vspace{10pt}
+\begin{verbatim}
+    enc -> bin16
+    pw_encrypted -> 0x07 enc
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Signed}
+\label{signed-packet}
+
+This packet contains data that is accompanied by a signature.
+
+\vspace{10pt}
+\begin{verbatim}
+    sig            -> bin16
+    plain_message  -> bin16
+    signed         -> 0x08 sig plain_message
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{BK Signed Encrypted}
+
+The bk-signed-encrypted message contains data that is signed with a public RSA
+key and encrypted with a pre-shared symmetric key. The encrypted data block
+contains two components: the signature and the message data. Both are encrypted
+as a single stream. Only the first component length is included. The second is
+computed from the overall length. The signature is produced by concatenating
+the broadcast key with the message data, then signing the resulting block. SHA1
+is used as the signing hash. RC4 is used as the stream cipher (temporary).
+
+\vspace{10pt}
+\begin{verbatim}
+    enc_message          -> len16 SYM_ENC( signed ) 
+    bk_signed_encrypted  -> 0x09 enc_message
 \end{verbatim}
 \vspace{10pt}
 
@@ -355,47 +448,15 @@ as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-    signed_encrypted protKeyLen sigLen length EOL enc_data EOL
+    protected_key     -> len16 PK_ENC( sym_key )
+    enc_message       -> len16 SYM_ENC( signed )
+    signed_encrypted  -> 0x0a protected_key enc_message
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{BK Signed Encrypted}
-
-The bk-signed-encrypted message contains data that is signed with a public RSA
-key and encrypted with a pre-shared symmetric key. The encrypted data block
-contains two components: the signature and the message data. Both are encrypted
-as a single stream. Only the first component length is included. The second is
-computed from the overall length. The signature is produced by concatenating
-the broadcast key with the message data, then signing the resulting block. SHA1
-is used as the signing hash. RC4 is used as the stream cipher (temporary).
-
-\vspace{10pt}
-\begin{verbatim}
-    bk_signed_encrypted sigLen length EOL enc_data EOL
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{PW Encrypted}
-
-This packet contains data encrypted with the owning user's password. The
-password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
-
-\vspace{10pt}
-\begin{verbatim}
-    pw_encrypted length EOL enc_data EOL
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{Signed}
-\label{signed-packet}
-
-This packet contains data that is accompanied by a signature.
-
-\vspace{10pt}
-\begin{verbatim}
-    signed sigLen length EOL signed_data EOL
-\end{verbatim}
-\vspace{10pt}
+%
+% Section: Protocol
+%
 
 \section{Protocol}
 

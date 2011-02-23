@@ -612,10 +612,11 @@ should be!
 
 \subsubsection{Public Key}
 
-Command for fetching a user's public key. A user's public key must never
-change. If a peer detects a change, the user must be considered invalid. The
-message returned is a signed packet (\ref{signed-packet}), that contains a
-public key set (\ref{public-key-set}).
+The Public Key command is for fetching a user's public key. A public key must
+never change. If a peer detects a change, the user must be considered invalid.
+The message returned is a signed packet (Section \ref{signed-packet}), that
+contains a public key set (Section \ref{public-key-set}). The priv0 key is used
+for signing.
 
 \vspace{10pt}
 \begin{verbatim}

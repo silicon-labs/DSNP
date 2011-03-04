@@ -453,11 +453,6 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \begin{verbatim}
     dist_name = base64;
 
-    date = (
-        digit{4} '-' digit{2} '-' digit{2} ' ' 
-        digit{2} ':' digit{2} ':' digit{2} 
-    )
-
     path_part = ( graph - '/' )+;
 
     identity = 
@@ -1094,7 +1089,7 @@ result in user experience. Various components require synchronization.
 
 \vspace{10pt}
 \begin{verbatim}
-    MESSAGE user author date time length 
+    MESSAGE user author length 
 \end{verbatim}
 \vspace{10pt}
 

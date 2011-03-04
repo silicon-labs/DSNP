@@ -983,7 +983,7 @@ group within the sender's collection of groups.
 
 \vspace{10pt}
 \begin{verbatim}
-    DIRECT_BROADCAST seq_num date length EOL message EOL
+    DIRECT_BROADCAST date length EOL message EOL
 
     returns: OK EOL
     context: broadcasted message
@@ -1058,7 +1058,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST hash dist_name generation seq_num length EOL message EOL
+    REMOTE_BROADCAST hash dist_name generation length EOL message EOL
 
     returns: message dependent (see below)
     context: broadcasted message

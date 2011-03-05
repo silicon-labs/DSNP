@@ -1190,6 +1190,8 @@ Broadcast message type is used for so-called status updates.
 
 \vspace{10pt}
 \begin{verbatim}
+Publisher-Iduri: publisher-iduri
+Message-Id: message-id
 Content-Type: text/plain
 Type: broadcast
 
@@ -1204,8 +1206,12 @@ recipient's friends. The board post is akin to a "wall" message.
 
 \vspace{10pt}
 \begin{verbatim}
+Author-Iduri: author-iduri
+Publisher-Iduri: publisher-iduri
+Message-Id: message-id
 Type: board-post
 Content-Type: text/plain
+Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
 \end{verbatim}
@@ -1217,8 +1223,11 @@ Name change is used to transmit a user's new name.
 
 \vspace{10pt}
 \begin{verbatim}
-Content-Type: text/plain
+Publisher-Iduri: publisher-iduri
+Message-Id: message-id
 Type: name-change
+Content-Type: text/plain
+Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
 \end{verbatim}
@@ -1231,9 +1240,14 @@ Resource-Id is an identifier describing the uploader's image.
 
 \vspace{10pt}
 \begin{verbatim}
-Content-Type: image/jpg
-Resource-Id: ID
+Publisher-Iduri: publisher-iduri
 Type: photo-upload
+Message-Id: message-id
+Type: name-change
+Content-Type: image/jpg
+Remote-Resource: /path/to/resource
+Remote-Presentation: /path/to/presentation/page
+Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
 \end{verbatim}

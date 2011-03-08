@@ -1037,7 +1037,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    RETURN_REMOTE_BROADCAST reqid dist_name generation length EOL message EOL
+    RETURN_REMOTE_BROADCAST reqid length EOL message EOL
 
     returns OK reqid EOL
     context: TLS connection
@@ -1048,7 +1048,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST hash dist_name generation length EOL message EOL
+    REMOTE_BROADCAST hash length EOL message EOL
 
     returns: message dependent (see below)
     context: broadcasted message

@@ -989,6 +989,18 @@ to prove to the message was not forged, and to ensure that only common friends
 are able to view such messages. The encryption requirement may be relaxed to
 allow others outside of the common friend group to view messages.
 
+
+\subsubsection{Remote Broadcast Subject}
+
+\vspace{10pt}
+\begin{verbatim}
+    REMOTE_BROADCAST_SUBJECT identit EOL
+
+    returns: OK reqid EOL
+    context: local connection
+\end{verbatim}
+\vspace{10pt}
+
 \subsubsection{Remote Broadcast Request}
 
 \vspace{10pt}
@@ -1019,6 +1031,28 @@ allow others outside of the common friend group to view messages.
 
     returns: OK EOL
     context: local connection
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Encrypt Remote Broadcast Author}
+
+\vspace{10pt}
+\begin{verbatim}
+    ENCRYPT_REMOTE_BROADCAST_AUTHOR flogin_token dist_name generation length EOL message EOL
+
+    returns: OK reqid EOL
+    context: TLS connection
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Encrypt Remote Broadcast Subject}
+
+\vspace{10pt}
+\begin{verbatim}
+    ENCRYPT_REMOTE_BROADCAST_SUBJECT hash dist_name generation length EOL message EOL
+
+    returns: OK message EOL
+    context: TLS connection
 \end{verbatim}
 \vspace{10pt}
 

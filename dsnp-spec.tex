@@ -969,13 +969,12 @@ group within the sender's collection of groups.
 \end{verbatim}
 \vspace{10pt}
 
-\subsubsection{Direct Broadcast}
+\subsubsection{Broadcast Content}
 
 \vspace{10pt}
 \begin{verbatim}
-    DIRECT_BROADCAST length EOL message EOL
+    BROADCAST_CONTENT length EOL message EOL
 
-    returns: OK EOL
     context: broadcasted message
 \end{verbatim}
 
@@ -1067,11 +1066,24 @@ allow others outside of the common friend group to view messages.
 \end{verbatim}
 \vspace{10pt}
 
-\subsubsection{Remote Broadcast}
+\subsubsection{Remote Broadcast Author}
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST identity length EOL message EOL
+    REMOTE_BROADCAST_AUTHOR identity length EOL message EOL
+
+    returns: message dependent (see below)
+    context: broadcasted message
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Remote Broadcast Subject}
+
+% Note this is already a command.
+
+\vspace{10pt}
+\begin{verbatim}
+    REMOTE_BROADCAST_SUBJECT identity length EOL message EOL
 
     returns: message dependent (see below)
     context: broadcasted message

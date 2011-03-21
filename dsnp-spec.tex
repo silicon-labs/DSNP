@@ -33,11 +33,11 @@ by\\
 \vspace{12pt}
 {\large Dr. Adrian D. Thurston}\\
 \vspace{22pt}
-{\noindent\bf\large Protocol Version: 0.4}\\
+{\noindent\bf\large Protocol Version: 0.5}\\
 \vspace{6pt}
-{\noindent\bf\large Document Revision: 8}\\
+{\noindent\bf\large Document Revision: 9}\\
 \vspace{6pt}
-{\noindent\bf\large Date: February 23, 2011}
+{\noindent\bf\large Date: March 20, 2011}
 \end{center}
 
 \pagenumbering{roman}
@@ -435,6 +435,46 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
     signed_encrypted  -> 0x0a protected_key enc_message
 \end{verbatim}
 \vspace{10pt}
+
+\subsection{BK Encrypted}
+
+\vspace{10pt}
+\begin{verbatim}
+    enc_message       -> len16 SYM_ENC( signed )
+    bk_encrypted      -> 0x0b enc_message
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Broadcast}
+
+\vspace{10pt}
+\begin{verbatim}
+    publisher       -> 0x01
+    author          -> 0x02
+    subject         -> 0x03
+    body            -> 0x04
+    broadcast_type  -> 0x0c
+
+    iduri           -> bin16
+    sig             -> bin16 
+
+    broadcast ->
+        broadcast_type
+        ( publisher iduri sig )?
+        ( author iduri sig )?
+        ( subject iduri sig )*
+        body bin16 
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Detached Sig}
+
+\vspace{10pt}
+\begin{verbatim}
+    detached_sig -> 0x0d bin16
+\end{verbatim}
+\vspace{10pt}
+
 
 %
 % Section: Protocol
@@ -1043,14 +1083,65 @@ allow others outside of the common friend group to view messages.
 \end{verbatim}
 \vspace{10pt}
 
-\subsubsection{Return Remote Broadcast}
+\subsubsection{Return Remote Broadcast Author}
 
 \vspace{10pt}
 \begin{verbatim}
-    RETURN_REMOTE_BROADCAST reqid length EOL message EOL
+    RETURN_REMOTE_BROADCAST_AUTHOR reqid length EOL message EOL
 
     returns OK reqid EOL
     context: TLS connection
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Return Remote Broadcast Subject}
+
+\vspace{10pt}
+\begin{verbatim}
+    RETURN_REMOTE_BROADCAST_SUBJECT reqid length EOL message EOL
+
+    returns OK reqid EOL
+    context: TLS connection
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Repub Remote Broadcast Publisher}
+
+\vspace{10pt}
+\begin{verbatim}
+REPUB_REMOTE_BROADCAST_PUBLISHER message_id dist_name generation EOL
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Repub Remote Broadcast Author}
+
+\vspace{10pt}
+\begin{verbatim}
+REPUB_REMOTE_BROADCAST_AUTHOR message_id dist_name generation EOL
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Repub Remote Broadcast Subject}
+
+\vspace{10pt}
+\begin{verbatim}
+REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Broadcast Success Author}
+
+\vspace{10pt}
+\begin{verbatim}
+    BROADCAST_SUCCESS_AUTHOR message_id
+\end{verbatim}
+\vspace{10pt}
+
+\subsubsection{Broadcast Success Subject}
+
+\vspace{10pt}
+\begin{verbatim}
+    BROADCAST_SUCCESS_SUBJECT message_id
 \end{verbatim}
 \vspace{10pt}
 
@@ -1098,7 +1189,7 @@ result in user experience. Various components require synchronization.
 
 \vspace{10pt}
 \begin{verbatim}
-    BROADCAST user publisher length 
+    BROADCAST user broadcaster length 
 \end{verbatim}
 \vspace{10pt}
 
@@ -1107,22 +1198,6 @@ result in user experience. Various components require synchronization.
 \vspace{10pt}
 \begin{verbatim}
     MESSAGE user sender length 
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{Notification Remote Message}
-
-\vspace{10pt}
-\begin{verbatim}
-    REMOTE_MESSAGE user publisher author time length 
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{Notification Remote Publication}
-
-\vspace{10pt}
-\begin{verbatim}
-    REMOTE_PUBLICATION user publisher length 
 \end{verbatim}
 \vspace{10pt}
 

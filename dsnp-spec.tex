@@ -242,15 +242,14 @@ A DSNP implementation should close connections after a time of inactivity. The
 DSNP daemon times out connections after 7 seconds, both when reading and
 writing. The user agent times out connections to the daemon after 12 seconds.
 
-\section{Encryption Parameters and Data}
+\section{Packets}
 
-There are ten messages for carrying encryption parameters and encrypted data.
-These messages most often carry binary payloads. They are often encrypted and
-used in the construction of other packets. Due to these circumstances, and the
-fact that they are constructed and parsed only within the confines of DSNPd, it
-makes sense to construct them in binary form. As a general rule, encryption
-packets do not carry any sender or recipient information. Senders and
-recipients are transmitted in the container message.
+There are ten messages for carrying encryption parameters, encrypted data, and
+various other atoms of the protocol. These messages most often carry binary
+payloads. They are often encrypted and used in the construction of other
+packets. As a general rule, encryption packets do not carry any sender or
+recipient information. Senders and recipients are transmitted in the container
+message.
 
 The basic element of the encryption packet is the binary string. It is composed
 of a 16bit length in network byte order, then the binary data. Many of the
@@ -400,19 +399,28 @@ plain message component excludes the keys.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{BK Signed Encrypted}
-
-The bk-signed-encrypted message contains data that is signed with a public RSA
-key and encrypted with a pre-shared symmetric key. The encrypted data block
-contains two components: the signature and the message data. Both are encrypted
-as a single stream. The signature is produced by concatenating the broadcast
-key with the message data, then signing the resulting block. SHA1 is used as
-the signing hash. RC4 is used as the stream cipher (temporary).
+\subsection{Signed Id}
+\label{signed-packet}
 
 \vspace{10pt}
 \begin{verbatim}
-    enc_message          -> len16 SYM_ENC( signed ) 
-    bk_signed_encrypted  -> 0x09 enc_message
+    signed_id -> 0x09 ...
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Detached Sig}
+
+\vspace{10pt}
+\begin{verbatim}
+    detached_sig -> 0x0a bin16
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{Detached Sig Key}
+
+\vspace{10pt}
+\begin{verbatim}
+    detached_sig_key -> 0x0b ...
 \end{verbatim}
 \vspace{10pt}
 
@@ -432,7 +440,15 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \begin{verbatim}
     protected_key     -> len16 PK_ENC( sym_key )
     enc_message       -> len16 SYM_ENC( signed )
-    signed_encrypted  -> 0x0a protected_key enc_message
+    signed_encrypted  -> 0x0c protected_key enc_message
+\end{verbatim}
+\vspace{10pt}
+
+\subsection{BK Keys}
+
+\vspace{10pt}
+\begin{verbatim}
+    bk_keys -> 0x0d ...
 \end{verbatim}
 \vspace{10pt}
 
@@ -441,7 +457,24 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \vspace{10pt}
 \begin{verbatim}
     enc_message       -> len16 SYM_ENC( signed )
-    bk_encrypted      -> 0x0b enc_message
+    bk_encrypted      -> 0x0e enc_message
+\end{verbatim}
+\vspace{10pt}
+
+
+\subsection{BK Signed Encrypted}
+
+The bk-signed-encrypted message contains data that is signed with a public RSA
+key and encrypted with a pre-shared symmetric key. The encrypted data block
+contains two components: the signature and the message data. Both are encrypted
+as a single stream. The signature is produced by concatenating the broadcast
+key with the message data, then signing the resulting block. SHA1 is used as
+the signing hash. RC4 is used as the stream cipher (temporary).
+
+\vspace{10pt}
+\begin{verbatim}
+    enc_message          -> len16 SYM_ENC( signed ) 
+    bk_signed_encrypted  -> 0x0f enc_message
 \end{verbatim}
 \vspace{10pt}
 
@@ -453,7 +486,7 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
     author          -> 0x02
     subject         -> 0x03
     body            -> 0x04
-    broadcast_type  -> 0x0c
+    broadcast_type  -> 0x10
 
     iduri           -> bin16
     sig             -> bin16 
@@ -467,11 +500,11 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Detached Sig}
+\subsection{Recipient List}
 
 \vspace{10pt}
 \begin{verbatim}
-    detached_sig -> 0x0d bin16
+    recipient_list  -> 0x11 ...
 \end{verbatim}
 \vspace{10pt}
 

@@ -178,69 +178,12 @@ hardly know but might like to get to know better.
 
 \begin{itemize}
 
-\item User-agent: Software that a user, and user's connections interact with.
+\item Content-Manager: Software that a user, and user's connections interact with.
 This software provides the 'front' for the user's identity. At a minimum, this
-should be a web-based application, though other forms of user-agent are
+should be a web-based application, though other forms of content-manager are
 possible.
 
 \end{itemize}
-
-\section{Basics}
-
-In the sections that follow, standard regular expression syntax is used to
-describe the terminal elements of the grammar. A less formal notation is used
-for commands and other protocol elements that are constructed with the base
-elements. In the less formal sections, white space simply used in places where
-it is required.
-
-All commands, messages, and encryption packets have the same general structure.
-They consist of a command or message name, a list of arguments, CRLF, and an
-optional message body. If there is a message body, the last argument will be
-the number of bytes in the message body. Message bodies can be arbitrary data,
-and should be parsed separately from the message. A CRLF follows the message
-body.
-
-\subsection{Modified Base64}
-
-Throughout DSNP a modified Base64 encoding is used for binary data. The
-characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
-the 63rd and 64th characters. This modified encoding is commonly used in
-applications where Base64 data must be embedded in URLs. Note that we omit
-trailing padding, which is normally specified using the \verb|=| character.
-
-\vspace{10pt}
-\begin{verbatim}
-    base64: /[A-Za-z0-9\-_]+/
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{User Names}
-
-Valid characters in user names include letters, numbers, dot, dash and
-underscore. Uppercase letters can be used to specify, but they are stored and
-displayed in all lowercase to ensure that URIs are given as lowercase.
-
-\vspace{10pt}
-\begin{verbatim}
-    user: /[a-zA-Z0-9][a-zA-Z0-9\.\-_]*/
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{Passwords}
-
-Passwords can be any comprised any graphical characters.
-
-\vspace{10pt}
-\begin{verbatim}
-    pass: [::graph::]+
-\end{verbatim}
-\vspace{10pt}
-
-\subsection{Timeouts}
-
-A DSNP implementation should close connections after a time of inactivity. The
-DSNP daemon times out connections after 7 seconds, both when reading and
-writing. The user agent times out connections to the daemon after 12 seconds.
 
 \section{Packets}
 
@@ -259,8 +202,8 @@ then reparsed as some other packet.
 
 \vspace{10pt}
 \begin{verbatim}
-    len16   -> octet octet
-    bin16   -> len16 octet*
+    len16   = octet octet
+    bin16   = len16 octet*
 \end{verbatim}
 \vspace{10pt}
 
@@ -273,9 +216,9 @@ format.
 
 \vspace{10pt}
 \begin{verbatim}
-    n           -> bin16
-    e           -> bin16
-    public_key  -> 0x01 n e
+    n           = bin16
+    e           = bin16
+    public-key  = %x01 n e
 \end{verbatim}
 \vspace{10pt}
 
@@ -289,11 +232,11 @@ privilege 0 key.
 
 \vspace{10pt}
 \begin{verbatim}
-    priv0           -> bin16
-    priv1           -> bin16
-    priv2           -> bin16
-    priv3           -> bin16
-    public_key_set  -> 0x02 priv0 priv1 priv2 priv3
+    priv0           = bin16
+    priv1           = bin16
+    priv2           = bin16
+    priv3           = bin16
+    public-key-set  = %x02 priv0 priv1 priv2 priv3
 \end{verbatim}
 \vspace{10pt}
 
@@ -307,11 +250,11 @@ appropriate relid corresponding to the protection desired.
 
 \vspace{10pt}
 \begin{verbatim}
-    priv0      -> bin16
-    priv1      -> bin16
-    priv2      -> bin16
-    priv3      -> bin16
-    relid_set  -> 0x03 priv0 priv1 priv2 priv3
+    priv0      = bin16
+    priv1      = bin16
+    priv2      = bin16
+    priv3      = bin16
+    relid-set  = %x03 priv0 priv1 priv2 priv3
 \end{verbatim}
 \vspace{10pt}
 
@@ -325,9 +268,9 @@ requestor's relationship IDs.
 
 \vspace{10pt}
 \begin{verbatim}
-    requested       -> len16 relid_set
-    returned        -> len16 relid_set
-    relid_set_pair  -> 0x04 requested returned
+    requested       = len16 relid-set
+    returned        = len16 relid-set
+    relid-set-pair  = %x04 requested returned
 \end{verbatim}
 \vspace{10pt}
 
@@ -341,9 +284,9 @@ set returned by the requestor.
 
 \vspace{10pt}
 \begin{verbatim}
-    peer_notify_reqid  -> bin16
-    rr_relid_set_pair  -> len16 relid_set_pair
-    relid_response     -> 0x05 peer_notify_reqid rr_relid_set_pair
+    peer-notify-reqid  = bin16
+    rr-relid-set-pair  = len16 relid-set-pair
+    relid-response     = %x05 peer-notify-reqid rr-relid-set-pair
 \end{verbatim}
 \vspace{10pt}
 
@@ -355,15 +298,15 @@ is encapsulated in a protection envelope.
 
 \vspace{10pt}
 \begin{verbatim}
-    n            -> bin16
-    e            -> bin16
-    d            -> bin16
-    p            -> bin16
-    q            -> bin16
-    dmp1         -> bin16
-    dmq1         -> bin16
-    iqmp         -> bin16
-    private_key  -> 0x06 n e d p q dmp1 dmq1 iqmp
+    n            = bin16
+    e            = bin16
+    d            = bin16
+    p            = bin16
+    q            = bin16
+    dmp1         = bin16
+    dmq1         = bin16
+    iqmp         = bin16
+    private-key  = %x06 n e d p q dmp1 dmq1 iqmp
 \end{verbatim}
 \vspace{10pt}
 
@@ -374,8 +317,8 @@ password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-    pw_enc_message  -> len16 SYM_ENC( plain_message ) 
-    pw_encrypted -> 0x07 pw_enc_message
+    pw-enc-message  = len16 SYM-ENC( plain-message ) 
+    pw-encrypted = %x07 pw-enc-message
 \end{verbatim}
 \vspace{10pt}
 
@@ -393,9 +336,9 @@ plain message component excludes the keys.
 
 \vspace{10pt}
 \begin{verbatim}
-    sig            -> bin16
-    plain_message  -> bin16
-    signed         -> 0x08 sig plain_message
+    sig            = bin16
+    plain-message  = bin16
+    signed         = %x08 sig plain-message
 \end{verbatim}
 \vspace{10pt}
 
@@ -404,7 +347,7 @@ plain message component excludes the keys.
 
 \vspace{10pt}
 \begin{verbatim}
-    signed_id -> 0x09 ...
+    signed-id = %x09 ...
 \end{verbatim}
 \vspace{10pt}
 
@@ -412,7 +355,7 @@ plain message component excludes the keys.
 
 \vspace{10pt}
 \begin{verbatim}
-    detached_sig -> 0x0a bin16
+    detached-sig = %x0a bin16
 \end{verbatim}
 \vspace{10pt}
 
@@ -420,7 +363,7 @@ plain message component excludes the keys.
 
 \vspace{10pt}
 \begin{verbatim}
-    detached_sig_key -> 0x0b ...
+    detached-sig-key = %x0b ...
 \end{verbatim}
 \vspace{10pt}
 
@@ -438,9 +381,9 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 
 \vspace{10pt}
 \begin{verbatim}
-    protected_key     -> len16 PK_ENC( sym_key )
-    enc_message       -> len16 SYM_ENC( signed )
-    signed_encrypted  -> 0x0c protected_key enc_message
+    protected-key     = len16 PK-ENC( sym-key )
+    enc-message       = len16 SYM-ENC( signed )
+    signed-encrypted  = %x0c protected-key enc-message
 \end{verbatim}
 \vspace{10pt}
 
@@ -448,7 +391,7 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 
 \vspace{10pt}
 \begin{verbatim}
-    bk_keys -> 0x0d ...
+    bk-keys = %x0d ...
 \end{verbatim}
 \vspace{10pt}
 
@@ -456,8 +399,8 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 
 \vspace{10pt}
 \begin{verbatim}
-    enc_message       -> len16 SYM_ENC( signed )
-    bk_encrypted      -> 0x0e enc_message
+    enc-message       = len16 SYM-ENC( signed )
+    bk-encrypted      = %x0e enc-message
 \end{verbatim}
 \vspace{10pt}
 
@@ -473,8 +416,8 @@ the signing hash. RC4 is used as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-    enc_message          -> len16 SYM_ENC( signed ) 
-    bk_signed_encrypted  -> 0x0f enc_message
+    enc-message          = len16 SYM-ENC( signed ) 
+    bk-signed-encrypted  = %x0f enc-message
 \end{verbatim}
 \vspace{10pt}
 
@@ -482,17 +425,17 @@ the signing hash. RC4 is used as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-    publisher       -> 0x01
-    author          -> 0x02
-    subject         -> 0x03
-    body            -> 0x04
-    broadcast_type  -> 0x10
+    publisher       = %x01
+    author          = %x02
+    subject         = %x03
+    body            = %x04
+    broadcast-type  = %x10
 
-    iduri           -> bin16
-    sig             -> bin16 
+    iduri           = bin16
+    sig             = bin16 
 
-    broadcast ->
-        broadcast_type
+    broadcast =
+        broadcast-type
         ( publisher iduri sig )?
         ( author iduri sig )?
         ( subject iduri sig )*
@@ -504,7 +447,7 @@ the signing hash. RC4 is used as the stream cipher (temporary).
 
 \vspace{10pt}
 \begin{verbatim}
-    recipient_list  -> 0x11 ...
+    recipient-list  = %x11 ...
 \end{verbatim}
 \vspace{10pt}
 
@@ -515,28 +458,66 @@ the signing hash. RC4 is used as the stream cipher (temporary).
 
 \section{Protocol}
 
-\subsection{Common Elements}
+DSNP has both text and binary elements. Communcation between DSNPd and content
+managers are in a textual format. This covers commands and notifications.
+Daemon-daemon communication and exportable packets are in a binary format.
+
+The textual commands and notifications all have the same general structure.
+They consist of a command or notificaiton name, a list of arguments, CRLF, and
+an optional message body. If there is a message body, the last argument will be
+the number of bytes in the message body. Message bodies can be arbitrary data,
+and should be parsed separately from the message. A CRLF follows the message
+body.
+
+The binary packets and commands use a single byte to indicate the type of
+element, followed by any number of arguments. Arguments are generally a
+fixed-width atom, a null-terminated string, or binary data in length-body
+format.
+
+\subsection{Timeouts}
+
+A DSNP implementation should close connections after a time of inactivity. The
+DSNP daemon times out connections after 7 seconds, both when reading and
+writing. The user agent times out connections to the daemon after 12 seconds.
+
+\subsection{Modified Base64}
+
+Throughout DSNP a modified Base64 encoding is used for binary data. The
+characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
+the 63rd and 64th characters. This modified encoding is commonly used in
+applications where Base64 data must be embedded in URLs. Note that we omit
+trailing padding, which is normally specified using the \verb|=| character.
 
 \vspace{10pt}
 \begin{verbatim}
-    dist_name = base64;
-
-    path_part = ( graph - '/' )+;
-
-    identity = 
-        ( 'https://' path_part '/' ( path_part '/' )* );
-
-    site = identity;
-
-    number = [0-9]+           
-
-
-    version = '0.1'
-    supported_versions =  version ( '|' version )*;
-    key = base64;
-
-    EOL = '\r'? '\n';
+    base64 = %x41-5A / %x61-7A / %x30-39 / "-" / "_"
 \end{verbatim}
+\vspace{10pt}
+
+\subsection{Iduri and Site}
+
+\vspace{10pt}
+\begin{verbatim}
+    dist-name    = base64
+
+    path-part    = 1*( graph - '/' )
+
+    iduri        = ( "dsnp://" path-part "/" *( path-part "/" ) )
+
+    site         = iduri
+
+    key          = base64
+\end{verbatim}
+
+\subsection{Passwords}
+
+Passwords can be any comprised any graphical characters.
+
+\vspace{10pt}
+\begin{verbatim}
+    pass = 1*( ::graph:: )
+\end{verbatim}
+\vspace{10pt}
 
 \subsection{Connection Negotiation}
 
@@ -556,10 +537,19 @@ version it supports.
 
 \vspace{10pt}
 \begin{verbatim}
-    auth: /local/ key
-    auth: /start_tls/
+    SP           = %x20
+    EOL          = [ %x0D ] %x0A
 
-    DSNP supported_versions site auth EOL
+    auth = 
+        "local" SP key /
+        "start_tls"
+
+    version = '0.6'
+
+    supported-versions = version *( '|' version )
+
+    connection-negotation = 
+        "DSNP" SP supported-versions SP host SP auth EOL
 
     returns: OK version EOL
     context: TCP
@@ -628,7 +618,7 @@ needs to specify to the user agent that the browser's login token has expired.
 
 \vspace{10pt}
 \begin{verbatim}
-    LOGIN user pass session_id EOL
+    LOGIN user pass session-id EOL
 
     returns: OK hash token lasts EOL
     context: TLS connection
@@ -741,7 +731,7 @@ request can be processed.
 
 \vspace{10pt}
 \begin{verbatim}
-    RELID_REQUEST user identity EOL
+    RELID_REQUEST user iduri EOL
 
     returns: OK reqid EOL
     context: local connection
@@ -757,7 +747,7 @@ makes it available for the responder's server to fetch in the final step.
 
 \vspace{10pt}
 \begin{verbatim}
-    RELID_RESPONSE login_token reqid identity EOL
+    RELID_RESPONSE login_token reqid iduri EOL
 
     returns: OK reqid EOL
     context: local connection
@@ -773,7 +763,7 @@ responder user to accept or deny.
 
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_FINAL user reqid identity EOL
+    FRIEND_FINAL user reqid iduri EOL
 
     returns: OK EOL
     context: local connection
@@ -841,7 +831,7 @@ otherwise broadcast information.
 
 \vspace{10pt}
 \begin{verbatim}
-    NOTIFY_ACCEPT requested_relid returned_relid EOL
+    NOTIFY_ACCEPT requested-relid returned-relid EOL
 
     returns: OK EOL
     context: prefriend message
@@ -850,7 +840,7 @@ otherwise broadcast information.
 
 \vspace{10pt}
 \begin{verbatim}
-    REGISTERED requested_relid returned_relid EOL
+    REGISTERED requested-relid returned-relid EOL
 
     returns: OK EOL
     context: prefriend message
@@ -906,7 +896,7 @@ responder, and her identity is SURI.
 \end{enumerate}
 
 There are four commands related to friend login. The first three are used by
-the user-agent on behalf of the user in the primary challenge-response scheme.
+the content-manager on behalf of the user in the primary challenge-response scheme.
 The fourth is used by the friend logging in to fetch the encrypted challenge.
 
 \subsubsection{Ftoken Request}
@@ -915,7 +905,7 @@ The fourth is used by the friend logging in to fetch the encrypted challenge.
 \begin{verbatim}
     FTOKEN_REQUEST user hash EOL 
 
-    returns: OK identity hash reqid EOL
+    returns: OK iduri hash reqid EOL
     context: local connection
 \end{verbatim}
 \vspace{10pt}
@@ -928,9 +918,9 @@ logging it. This command requires users be logged in.
 
 \vspace{10pt}
 \begin{verbatim}
-    FTOKEN_RESPONSE login_token hash reqid EOL 
+    FTOKEN_RESPONSE login-token hash reqid EOL 
 
-    returns: OK identity token EOL
+    returns: OK iduri token EOL
     context: local connection
 \end{verbatim}
 \vspace{10pt}
@@ -943,9 +933,9 @@ invalidate the login.
 
 \vspace{10pt}
 \begin{verbatim}
-    SUBMIT_FTOKEN token session_id EOL 
+    SUBMIT_FTOKEN token session-id EOL 
 
-    returns: OK identity hash lasts EOL
+    returns: OK iduri hash lasts EOL
     context: local connection
 \end{verbatim}
 \vspace{10pt}
@@ -969,7 +959,7 @@ by the sender.
 
 \vspace{10pt}
 \begin{verbatim}
-    SUBMIT_MESSAGE login_token identity length EOL
+    SUBMIT_MESSAGE login-token iduri length EOL
 
     returns: OK EOL
     context: local connection
@@ -1002,7 +992,7 @@ group within the sender's collection of groups.
 
 \vspace{10pt}
 \begin{verbatim}
-    SUBMIT_BROADCAST login_token length EOL message EOL
+    SUBMIT_BROADCAST login-token length EOL message EOL
 
     returns: OK EOL
     context: local connection
@@ -1013,7 +1003,7 @@ group within the sender's collection of groups.
 
 \vspace{10pt}
 \begin{verbatim}
-    BROADCAST_KEY dist_name generation key EOL
+    BROADCAST_KEY dist-name generation key EOL
 
     returns: OK EOL
     context: TLS connection
@@ -1065,7 +1055,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_REQUEST flogin_token length EOL message EOL
+    REMOTE_BROADCAST_REQUEST flogin-token length EOL message EOL
 
     returns: OK reqid EOL
     context: local connection
@@ -1076,7 +1066,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_RESPONSE login_token reqid EOL 
+    REMOTE_BROADCAST_RESPONSE login-token reqid EOL 
 
     returns: OK reqid EOL
     context: TLS connection
@@ -1087,7 +1077,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_FINAL flogin_token reqid EOL 
+    REMOTE_BROADCAST_FINAL flogin-token reqid EOL 
 
     returns: OK EOL
     context: local connection
@@ -1098,7 +1088,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    ENCRYPT_REMOTE_BROADCAST_AUTHOR flogin_token dist_name generation length EOL message EOL
+    ENCRYPT_REMOTE_BROADCAST_AUTHOR flogin-token dist-name generation length EOL message EOL
 
     returns: OK reqid EOL
     context: TLS connection
@@ -1109,7 +1099,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-    ENCRYPT_REMOTE_BROADCAST_SUBJECT hash dist_name generation length EOL message EOL
+    ENCRYPT_REMOTE_BROADCAST_SUBJECT hash dist-name generation length EOL message EOL
 
     returns: OK message EOL
     context: TLS connection
@@ -1142,7 +1132,7 @@ allow others outside of the common friend group to view messages.
 
 \vspace{10pt}
 \begin{verbatim}
-REPUB_REMOTE_BROADCAST_PUBLISHER message_id dist_name generation EOL
+REPUB_REMOTE_BROADCAST_PUBLISHER message-id dist-name generation EOL
 \end{verbatim}
 \vspace{10pt}
 
@@ -1150,7 +1140,7 @@ REPUB_REMOTE_BROADCAST_PUBLISHER message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-REPUB_REMOTE_BROADCAST_AUTHOR message_id dist_name generation EOL
+REPUB_REMOTE_BROADCAST_AUTHOR message-id dist-name generation EOL
 \end{verbatim}
 \vspace{10pt}
 
@@ -1158,7 +1148,7 @@ REPUB_REMOTE_BROADCAST_AUTHOR message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
+REPUB_REMOTE_BROADCAST_SUBJECT message-id dist-name generation EOL
 \end{verbatim}
 \vspace{10pt}
 
@@ -1166,7 +1156,7 @@ REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-    BROADCAST_SUCCESS_AUTHOR message_id
+    BROADCAST_SUCCESS_AUTHOR message-id
 \end{verbatim}
 \vspace{10pt}
 
@@ -1174,7 +1164,7 @@ REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-    BROADCAST_SUCCESS_SUBJECT message_id
+    BROADCAST_SUCCESS_SUBJECT message-id
 \end{verbatim}
 \vspace{10pt}
 
@@ -1182,7 +1172,7 @@ REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_AUTHOR identity length EOL message EOL
+    REMOTE_BROADCAST_AUTHOR iduri length EOL message EOL
 
     returns: message dependent (see below)
     context: broadcasted message
@@ -1193,7 +1183,7 @@ REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-    REMOTE_BROADCAST_SUBJECT identity length EOL message EOL
+    REMOTE_BROADCAST_SUBJECT iduri length EOL message EOL
 
     returns: message dependent (see below)
     context: broadcasted message
@@ -1204,7 +1194,7 @@ REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
 
 \vspace{10pt}
 \begin{verbatim}
-    BROADCAST_SUCCESS message_id EOL
+    BROADCAST_SUCCESS message-id EOL
 
     returns: OK
     context: friend message
@@ -1213,7 +1203,7 @@ REPUB_REMOTE_BROADCAST_SUBJECT message_id dist_name generation EOL
 
 \section{Notifications}
 
-The DSNP daemon defers to the user-agent software for tasks that are not
+The DSNP daemon defers to the content-manager software for tasks that are not
 associated with identity, authentication, authorization, encryption, etc. This
 includes content that arrives from friends, and various notifications that
 result in user experience. Various components require synchronization.
@@ -1243,7 +1233,7 @@ characters that the user agent wishes to use. It is limited to 48 characters.
 
 \vspace{10pt}
 \begin{verbatim}
-    LOGOUT session_id
+    LOGOUT session-id
 \end{verbatim}
 \vspace{10pt}
 
@@ -1265,7 +1255,7 @@ arrived.
 
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_REQUEST_RECEIVED user iduri hash accept_reqid
+    FRIEND_REQUEST_RECEIVED user iduri hash accept-reqid
 \end{verbatim}
 \vspace{10pt}
 
@@ -1276,7 +1266,7 @@ successfully sent.
 
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_REQUEST_SENT user iduri hash user_notify_reqid
+    FRIEND_REQUEST_SENT user iduri hash user-notify-reqid
 \end{verbatim}
 \vspace{10pt}
 
@@ -1286,7 +1276,7 @@ Notification for the responder to the friend request that acceptance succeeded.
 
 \vspace{10pt}
 \begin{verbatim}
-    FRIEND_REQUEST_ACCEPTED user iduri accept_reqid
+    FRIEND_REQUEST_ACCEPTED user iduri accept-reqid
 \end{verbatim}
 \vspace{10pt}
 
@@ -1297,7 +1287,7 @@ accepted.
 
 \vspace{10pt}
 \begin{verbatim}
-    SENT_FRIEND_REQUEST_ACCEPTED user iduri user_notify_reqid
+    SENT_FRIEND_REQUEST_ACCEPTED user iduri user-notify-reqid
 \end{verbatim}
 \vspace{10pt}
 

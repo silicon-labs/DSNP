@@ -79,8 +79,10 @@ improving in lockstep with the reference implementation.}
 \section{Introduction}
 
 DSNP is a protocol for distributed social networking. DSNP allows you to host
-your profile with a provider of your choice, or host your profile yourself,
-without the choice impacting who you are able to invite as connections.
+your profile with a provider of your choice, without the choice impacting who
+you are able to invite as connections. If you are inclined, you can host your
+profile yourself.
+
 Communication between you and the people you trust is private and safe from
 forgery. The updates and notes we share are artifacts of our lives. No single
 provider should host such information for everyone. 
@@ -665,67 +667,67 @@ This command is for TLS connections only. It returns \verb|%x bin16|.
 
 \subsection{Friendship Request}
 
-The friendship request has two purposes. The primary purpose is the stated, for
-a remote user to indicate to a local user that she wishes to establish a
-connection. The secondary purpose is to securely exchange random identifiers
-that will be used by the two parties to identify the relationship, should it
-proceed.
+The purpose of the friendship request is to establish a connection between two
+users. A remote user to indicates to a local user that she wishes to establish
+a connection. During this exchange, the two sites securely exchange random
+identifiers that will be used by the two parties to identify the relationship,
+should it proceed.
 
 It is important that the user who is receiving the friend request be assured
 that the person controlling the browser is the actual owner of the identity
 submitted. To guarantee this, we must send the browser home, where it can
-answer to a challenge to decrypt a randomly selected token, then send the token
-back. When the token is sent back a similar challenge is issued to ensure the
-person making the friend request indeed has the right identity.
+answer to a challenge to decrypt a randomly selected token. The browser then
+sends the token back. When the token is sent back a similar challenge is issued
+to ensure the person making the friend request indeed has the right identity.
 
 There are two other parts of the DSNP protocol that have this flavour:
-cross-site login and remote publishing. Indeed it is a recurring pattern to
-send the browser home so the that all three parties (browser, the browser's
-server and the friend's server) are assured they are dealing with who they
-think they are.
+cross-site login and remote publishing both issue a challenge and require the
+browser to go home, fetch the answer, then return it. In the course of this all
+three parties, browser, the browser's server and the friend's server, are
+assured they are dealing with who they think they are.
 
 The person requesting friendship is the referred to as the requestor, with
-identity QURI. The person who is receiving the request is the responder, with
-identity SURI
+identity requestor-iduri. The person who is receiving the request is the responder, with
+identity responder-iduri
 
 \begin{enumerate}
-\item The requestor fills in a friend request form at SURI
+\item The requestor fills in a friend request form at resp-iduri
     \begin{enumerate}
     \item requestor answers a challenge, which can be a CAPTCHA, or 
             personalized question
-    \item requestor submits QURI
+    \item requestor submits requestor-iduri
     \end{enumerate}
 
-\item Responder's server processes the request:
+\item The responder's server processes the request:
     \begin{enumerate}
     \item verifies challenge response
-    \item fetches the public key for QURI (using SSL)
-    \item randomly generates a one-way relationship id (REQUESTED-RELID)
-    \item randomly generates a one-way request id (REQUESTED-REQID)
-    \item encrypts REQUESTED-RELID to requestor and signs it
-    \item makes message available to be fetched using REQUESTED-REQID to identify it
-    \item redirects the requestor's browser home to QURI, where the return-relid 
-        function is called with SURI and REQUESTED-REQID as arguments
+    \item fetches the public key for requestor-iduri (using SSL)
+    \item randomly generates a set of one-way relationship ids (requested-relid-set)
+    \item randomly generates a one-way request id (requested-reqid)
+    \item encrypts the relationship ids to requestor and signs it
+    \item makes message available to be fetched using requested-reqid to identify it
+    \item redirects the requestor's browser home to requestor-iduri, calling the return-relid 
+        function with resp-iduri and requested-reqid as arguments
     \end{enumerate}
 
 \item Requestor's server processes the return-relid call:
     \begin{enumerate}
-    \item verifies browser is logged in as the owner of QURI
-    \item fetches public key for SURI (using SSL)
-    \item fetches encrypted REQUESTED-RELID from SURI using REQUESTED-REQID
-    \item decrypts and verifies REQUESTED-RELID
-    \item randomly generates RETURNED-RELID
-    \item randomly generates RETURNED-REQID
-    \item encrypts "REQUESTED-RELID RETURNED-RELID" to friendee and signs it
-    \item makes message available to be fetched using RETURNED-REQID to identify it
-    \item redirects the friender back to SURI, where the friend-final function is called
-    with QURI and RETURNED-REQID as arguments.
+    \item verifies browser is logged in as the owner of requestor-iduri
+    \item fetches public key for resp-iduri (using SSL)
+    \item fetches encrypted requested-relid-set from resp-iduri using requested-reqid
+    \item decrypts and verifies requested-relid-set
+    \item randomly generates returned-relid-set
+    \item randomly generates returned-reqid
+    \item encrypts (requested-relid-set,returned-relid-set) to responder and signs it
+    \item makes message available to be fetched using returned-reqid to identify it
+    \item redirects the friender back to responder-iduri, where the friend-final function is called
+    with requestor-iduri and returned-reqid as arguments.
     \end{enumerate}
 
 \item Responder's processes the friend-final call:
     \begin{enumerate}
-    \item fetches encrypted RETURNED-RELID from QURI using RETURNED-REQID
-    \item decrypts and verifies message, must contain correct REQUESTED-RELID
+    \item fetches encrypted (requested-relid-set,returned-relid-set) from requestor-iduri using returned-reqid
+    \item decrypts and verifies message, must contain correct requested-relid-set
     \item stores request for friendee to accept/deny
     \end{enumerate}
 \end{enumerate}
@@ -900,48 +902,49 @@ owner, and the login token is returned to the friend's site. Note that this
 pattern is identical to friendship request, and is repeated throughout DSNP.
 
 The user wishing to login to the friend's site is referred to as the requestor,
-and she is identified as QURI. The relid she uses to identify the relationship
+and she is identified as requestor-iduri. The relid she uses to identify the relationship
 we call the QURI-RELID, and will be the one she was given during the friendship
 request process. The friend who's page is being logged into will be called the
-responder, and her identity is SURI.
+responder, and her identity is responder-iduri.
 
 \begin{enumerate}
-\item The requestor visits SURI/login-as-friend
+\item The requestor visits responder-iduri/login-as-friend
     \begin{enumerate}
-    \item submits as the only argument a hash of QURI
+    \item submits as the only argument a hash of requestor-iduri
     \end{enumerate}
 
 \item The responder's server processes the request
     \begin{enumerate}
-    \item verifies that hash(QURI) is a friend
-    \item randomly generates a REQID and login token
+    \item verifies that hash(requestor-iduri) is a friend
+    \item randomly generates a reqid and login token
     \item encrypts the token to the user and signs it
-    \item makes it available to be fetched with REQID as identifier
-    \item redirects user to QURI/return-token with hash(QURI) and REQID as
+    \item makes it available to be fetched with reqid as identifier
+    \item redirects user to requestor-iduri/return-token with hash(requestor-iduri) and reqid as
             arguments
     \end{enumerate}
 
 \item The requestor's server verifies the browser is the identity owner
     \begin{enumerate}
-    \item checks that hash(SURI) is a friend
+    \item checks that hash(responder-iduri) is a friend
     \item if browser is not logged in, fails the process
             (sending the user to a login page encourages phishing)
-    \item fetches the token using from SURI using REQID to identify it
+    \item fetches the token using from responder-iduri using reqid to identify it
     \item decrypts and verifies the token
-    \item redirects the browser to SURI/submit-ftoken with QURI and the TOKEN
-            as arguments
+    \item redirects the browser to responder-iduri/submit-ftoken with requestor-iduri 
+    and the token as arguments
     \end{enumerate}
 
 \item Friend login final
     \begin{enumerate}
-    \item verifies that TOKEN is valid for QURI.
+    \item verifies that token is valid for requestor-iduri.
     \item grants friend credentials to the browser for the session.
     \end{enumerate}
 \end{enumerate}
 
 There are four commands related to friend login. The first three are used by
-the content-manager on behalf of the user in the primary challenge-response scheme.
-The fourth is used by the friend logging in to fetch the encrypted challenge.
+the content-manager on behalf of the user in the primary challenge-response
+scheme. The fourth is used by the friend logging in to fetch the encrypted
+challenge.
 
 \subsubsection{Ftoken Request}
 
@@ -1165,7 +1168,7 @@ allow others outside of the common friend group to view messages.
             reqid EOL 
 
     returns: OK reqid EOL
-    context: TLS connection
+    context: local connection 
 \end{verbatim}
 \vspace{10pt}
 

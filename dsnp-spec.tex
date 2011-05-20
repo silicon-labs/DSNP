@@ -37,7 +37,7 @@ by\\
 \vspace{6pt}
 {\noindent\bf\large Document Revision: 10}\\
 \vspace{6pt}
-{\noindent\bf\large Date: April 25, 2011}
+{\noindent\bf\large Date: May 19, 2011}
 \end{center}
 
 \pagenumbering{roman}
@@ -76,16 +76,29 @@ improving in lockstep with the reference implementation.}
 
 \pagenumbering{arabic}
 
+\newpage
+
 \section{Introduction}
 
-DSNP is a protocol for distributed social networking. DSNP allows you to host
-your profile with a provider of your choice, without the choice impacting who
-you are able to invite as connections. If you are inclined, you can host your
-profile yourself.
+Social networking sites have become an important part of our day-to-day
+communication. These sites give us a place to declare our identity, an ability
+to establish connections with others, and a suite of efficient broadcast communcation
+tools.
 
-Communication between you and the people you trust is private and safe from
-forgery. The updates and notes we share are artifacts of our lives. No single
-provider should host such information for everyone. 
+This is all well and good, save for the fact that the popular social networks
+of today are closed systems that do not allow their users to cross network
+boundaries. For social networking to reach its full potential as a
+commmunication paradigm, there must be no boundaries between service providers.
+Instead, users must be able to establish connections to others regardless of
+where they host their profile. 
+
+The rewards of such a system are a freedom to choose providers, competition,
+innovation, and dispersion of the data, eliminating the problems associated
+with massive repositories of personal information.
+
+The challenges of such a system are security, privacy, and developing feature
+rich applications that can compete with the products developed as single
+databases.
 
 \subsection{Properties of DSNP}
 
@@ -117,6 +130,9 @@ not gain control of the identities on the domain.
 \item DSNP allows unfriending. Once a user is unfriended, they no longer have
 access to the user's broadcasts, even if they are somehow able to snoop the
 broadcast traffic.
+
+\item DSNP allows users to deny messages and trace a leak in the event that a
+private statement is shared along with the proof.
 
 \end{enumerate}
 
@@ -515,9 +531,11 @@ trailing padding, which is normally specified using the \verb|=| character.
     # FIXME: - not ABNF
     path-part    = 1*( graph - "/" )
 
-    path         = "/" *( path_part "/" ) [ path_part ];
+    rel_path     = *( path_part "/" ) [ path_part ];
 
-    iduri        = ( "dsnp://" path-part "/" *( path-part "/" ) )
+    path         = "/" rel_path
+
+    iduri        = "dsnp://" path-part "/" rel_path
 
     site         = iduri
 
@@ -525,8 +543,6 @@ trailing padding, which is normally specified using the \verb|=| character.
 \end{verbatim}
 
 \subsection{Passwords}
-
-Passwords can be any comprised any graphical characters.
 
 \vspace{10pt}
 \begin{verbatim}

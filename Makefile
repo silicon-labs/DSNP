@@ -15,6 +15,12 @@
 
 all: dsnp-spec.pdf
 
+generate.bin: generate.lm
+	colm generate.lm
+
+dsnp-spec.tex: generate.bin dsnp-spec.txt
+	./generate.bin < dsnp-spec.txt > dsnp-spec.tex
+
 dsnp-spec.pdf: dsnp-spec.tex
 	pdflatex -interaction=nonstopmode $< >/dev/null
 	pdflatex -interaction=nonstopmode $< >/dev/null

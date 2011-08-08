@@ -1,19 +1,41 @@
-
 lex all 
 {
-	token line /[^\n]* '\n'/
+	token comment /'#' [^\n]* '\n'/
+
+	token word /[^#^\n]+/
+	token NL /'\n'/
+
+	literal '^'
 }
 
-def start 
-	[line*]
+lex cmd
+{
+	literal 'title', 'subtitle', 'author', 'note'
+	token cmd_sp /' '+/
+}
 
-All: str =
-	~%
-	~%   Copyright 2011 Adrian Thurston <thurston@complang.org>
-	~%
-	~
-	~% vim:expandtab:
-	~
+token line /[^\n]* '\n'/
+
+def cmd_type
+	['title']
+|	['subtitle']
+|	['author']
+|	['note']
+
+
+def command
+	['^' cmd_type cmd_sp line]
+
+def item
+	[word]
+|	[NL]
+|	[comment]
+|	[command]
+
+def start 
+	[item*]
+
+Header: str =
 	~\documentclass[letterpaper,11pt,oneside]{article}
 	~\usepackage{comment}
 	~
@@ -84,6 +106,8 @@ All: str =
 	~
 	~\tableofcontents
 	~
+
+Footer: str =
 	~\pagenumbering{arabic}
 	~
 	~\newpage
@@ -1617,4 +1641,19 @@ All: str =
 	~
 	~\end{document}
 
-print( All )
+parse Input: start( stdin )
+
+# Strip out commands.
+for Item: item* in Input
+{
+	while match Item [command item*] ||
+			match Item [comment item*]
+	{
+		match Item [item Rest: item*]
+		Item = Rest
+	}
+}
+
+print( Header )
+print( Input )
+print( Footer )

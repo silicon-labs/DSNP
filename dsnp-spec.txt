@@ -1,0 +1,14 @@
+#
+# Copyright 2011 Adrian Thurston <thurston@complang.org>
+#
+
+# vim:expandtab:
+
+^title     DSNP: Distributed Social Networking Protocol
+^subtitle  Protocol Specification
+
+^author    Dr. Adrian D. Thurston
+
+^note      Protocol Version: 0.6
+^note      Document Revision: 11
+^note      Date: May 19, 2011

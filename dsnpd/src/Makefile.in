@@ -1,0 +1,109 @@
+# 
+#  Copyright (c) 2009-2011, Adrian Thurston <thurston@complang.org>
+#
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+#  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+#  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+LDFLAGS = @LDFLAGS@
+CXXFLAGS += -g -Wall
+
+CC_SRCS = main.cc parser.cc string.cc rcfile.cc encrypt.cc \
+	log.cc db.cc tls.cc base64.cc test.cc broadcast.cc queue.cc \
+	friendreq.cc prefriend.cc message.cc network.cc notification.cc user.cc \
+	login.cc flogin.cc identity.cc connect.cc keys.cc conversion.cc server.cc \
+	packet.cc umessage.cc listenfork.cc keyagent.cc barrier.cc command.cc
+
+GEN_SRCS = packet.cc parser.cc rcfile.cc base64.cc schema.h umessage.cc command.cc
+
+LIBS = @LIBS@
+LIBS += -lcrypto -ldl
+
+#*************************************
+
+DEFS += \
+	-DPREFIX='"@prefix@"' \
+	-DSYSCONFDIR='"@prefix@/etc"' \
+	-DLOGDIR='"@prefix@/var/log/dsnpd"' \
+	-DDSNPD_USER='"@DSNPD_USER@"' \
+	-DDSNPK_USER='"@DSNPK_USER@"' \
+	-DNOTIF_USER='"@NOTIF_USER@"' \
+	-DCA_CERT_FILE='"@CA_CERT_FILE@"' \
+	-DPID_DIR='"@PID_DIR@"' \
+	-DENABLE_DEBUG=@ENABLE_DEBUG@
+
+prefix = @prefix@
+datarootdir = @datarootdir@
+BUILD_PARSERS = @BUILD_PARSERS@
+EXEEXT = @EXEEXT@
+CXX = @CXX@
+PID_DIR = @PID_DIR@
+
+# Get objects and dependencies from sources.
+OBJS = $(CC_SRCS:%.cc=%.o)
+DEPS = $(CC_SRCS:%.cc=.%.d)
+
+# Get the version info.
+#include ../version.mk
+
+# Rules.
+all: dsnpd
+
+dsnpd: $(GEN_SRCS) $(OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+# No automatic dependency computation for Ragel includes.
+parser.cc: common.rl
+packet.cc: common.rl
+umessage.cc: common.rl
+
+packet.cc: packet.rl
+	ragel -G2 -o $@ $<
+
+parser.cc: parser.rl
+	ragel -G2 -o $@ $<
+
+rcfile.cc: rcfile.rl
+	ragel -G2 -o $@ $<
+
+base64.cc: base64.rl
+	ragel -G2 -o $@ $<
+
+umessage.cc: umessage.rl
+	ragel -G2 -o $@ $<
+
+command.cc: command.rl
+	ragel -G2 -o $@ $<
+
+schema.h: Makefile ../schema_version
+	echo "#ifndef _SCHEMA_VERSION_H" > $@
+	echo "#define _SCHEMA_VERSION_H" >> $@
+	echo "#define SCHEMA_VERSION `cat ../schema_version`" >> $@
+	echo "#endif" >> $@
+
+%.o: %.cc
+	@$(CXX) -M $(DEFS) $(INCS) $< > .$*.d
+	$(CXX) -c $(CXXFLAGS) $(DEFS) $(INCS) -o $@ $<
+
+distclean: clean
+	rm -f Makefile 
+
+clean:
+	rm -f tags .*.d *.o dsnpd $(GEN_SRCS)
+
+install: all
+	install -d $(DESTDIR)$(prefix)/etc/
+	install -d $(DESTDIR)$(prefix)/bin
+	install -d $(DESTDIR)$(prefix)/var/log
+	install -d $(DESTDIR)$(PID_DIR)
+	install dsnpd $(DESTDIR)$(prefix)/bin/dsnpd
+
+-include $(DEPS)

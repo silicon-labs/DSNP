@@ -1,0 +1,6 @@
+use dsnpn;
+source @prefix@/share/dsnpd/dsnpn.sql;
+use dsnpk;
+source @prefix@/share/dsnpd/dsnpk.sql;
+use dsnpd;
+source @prefix@/share/dsnpd/dsnpd.sql;

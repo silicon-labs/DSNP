@@ -1,0 +1,63 @@
+REQUIREMENTS FOR INSTALLATION 
+=============================
+
+1. You must have root privileges on your system. You need to be able to install
+   a new service.
+
+2. You need to have the mysql server and client library installed. You need the
+   ability to create new databases and users.
+
+3. You need the openssl development package installed on your system.
+
+4. If you are building from the source repository, you need Ragel installed.
+
+UBUNTU PACKAGES
+===============
+
+If you are running ubuntu, install these packages:
+
+    mysql-server mysql-client libmysqlclient-dev libssl-dev 
+
+REQUIREMENTS FOR EACH SITE
+==========================
+
+You must have an SSL certificate for the site you wish to host. This is a
+requirement of the DSNP protocol. The SSL cert will be used to protect pages
+that are served by apache, and it will be used by the DSNP daemon when it
+serves up public keys.
+
+SYSTEM INSTALL INSTRUCTIONS
+===========================
+
+First create users for DSNPd and the DSNP Key Agent. If you need to install
+apache, do this now as well so the apache user is available.
+
+   $ adduser --system --no-create-home --group dsnpd
+   $ adduser --system --no-create-home --group dsnpk
+
+   $ ./configure --prefix=PREFIX \
+                 --with-dsnpd-user=dsnpd \
+                 --with-dsnpk-user=dsnpk \
+                 --with-notif-user=www-data \
+		 --with-ca-cert-file=/etc/ssl/certs/ca-certificates.crt \
+		 --with-pid-dir=/var/run
+
+   $ make
+   $ sudo make install
+
+The system install instructions are generated run the init-system script, then
+follow the instructions in the output.
+
+$ PREFIX/share/dsnp/init-system system-instructions
+$ less system-instructions
+
+SITE INSTALL INSTRUCTIONS
+=========================
+
+You can run more than one content manager installation (site) on a single
+system. Each site requires a few configuration steps in the DSNP daemon and in
+the Content Manager. The new-site script here is for the daemon half of the
+site configuration. This script will ask you a few questions, then will
+generate the steps for you to follow.
+
+$ PREFIX/share/dsnp/new-site site-name-instructions

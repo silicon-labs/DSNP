@@ -12,8 +12,8 @@ dnl  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 dnl  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 dnl  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   
-AC_INIT(src/main.cc)
-AC_CONFIG_HEADER(src/config.h)
+AC_INIT(dsnpd/main.cc)
+AC_CONFIG_HEADER(dsnpd/config.h)
 
 dnl Checks for programs.
 AC_PROG_CXX
@@ -88,6 +88,6 @@ AC_SUBST(ENABLE_DEBUG)
 dnl
 dnl Write Output Files
 dnl 
-AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile src/Makefile)
+AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile dsnpd/Makefile)
 
 echo "configuration of DSNPd complete"

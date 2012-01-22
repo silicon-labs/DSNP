@@ -1,0 +1,69 @@
+REQUIREMENTS FOR INSTALLATION 
+=============================
+
+1. Apache with mod_ssl, mod_php and mod_rewrite installed. The mod_rewrite
+   module must be configured to work in .htaccess files.
+
+2. You need the php command line program 'php'. This is used by the daemon to
+   call the message script.
+
+3. You need to have mysql server and the mysql module for php installed. You
+   need the ability to create new databases and users.
+
+4. You need the openssl development package installed on your system.
+
+5. You need the Imagemagick program 'convert' for making thumbnails.
+
+UBUNTU PACKAGES
+===============
+
+If you are running ubuntu, install these packages:
+
+    mysql-server apache2 mysql-client libmysqlclient-dev libapache2-mod-php5
+    php5-mysql php5-cli imagemagick
+
+Make sure the following modules are enabled:
+
+    a2enmod rewrite 
+    a2enmod php5
+    a2enmod ssl
+
+REQUIREMENTS FOR EACH SITE
+==========================
+
+You must have an SSL certificate for site you wish to host. This is a
+requirement of the DSNP protocol. The SSL cert will be used to protect pages
+that are served by apache and it will be used by the DSNP daemon when it serves
+up public keys.
+
+You should also have a recapcha key for each site you wish to host. This will
+be used on the new-user page, as well as the friend-request page.
+
+SYSTEM INSTALL INSTRUCTIONS
+===========================
+
+If you need to install your webserver, do this now as well so the WWW user is
+available.
+
+   $ ./configure --prefix=PREFIX \
+                 --with-www-user=www-data \
+                 --with-dsnpd=DSNPD-PREFIX
+
+   $ make
+   $ sudo make install
+
+The system install instructions need to followed only once. Follow the
+instructions in the INIT_SYSTEM file.
+
+$ less PREFIX/share/choicesocial/INIT_SYSTEM
+
+SITE INSTALL INSTRUCTIONS
+=========================
+
+You can run more than one site on a single system. Each site has it's own
+database. To add a site to the system first run the new-site script. This
+script will ask you for site name, URI, and database credentials. It will then
+generate various config and script fragments to help you install the new site.
+Run it, then follow the instructions.
+
+$ PREFIX/share/choicesocial/new-site site-name-instructions

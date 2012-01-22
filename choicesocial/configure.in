@@ -1,0 +1,56 @@
+dnl  Copyright (c) 2008-2011, Adrian Thurston <thurston@complang.org>
+dnl
+dnl  Permission to use, copy, modify, and/or distribute this software for any
+dnl  purpose with or without fee is hereby granted, provided that the above
+dnl  copyright notice and this permission notice appear in all copies.
+dnl
+dnl  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+dnl  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+dnl  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+dnl  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+dnl  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+dnl  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+dnl  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  
+AC_INIT(src/webroot/index.php)
+dnl AC_CONFIG_HEADER(etc/config.h)
+
+dnl Checks for programs.
+AC_PROG_CXX
+AC_LANG_C
+
+dnl Check for definition of MAKE.
+AC_PROG_MAKE_SET
+
+AC_CHECK_PROG( PROG_CONVERT, "convert", "convert" )
+AC_CHECK_PROG( PROG_GM, "gm", "gm" )
+
+AC_ARG_WITH(www-user,   
+	[  --with-notif-user=who   user the webserver runs as (default is www-data)], 
+	[WWW_USER="$withval"], [WWW_USER="www-data"] )
+
+AC_SUBST(WWW_USER)
+
+if test -n "$PROG_CONVERT"; then
+	CONVERT="$PROG_CONVERT"
+elif test -n "$PROG_GM"; then
+	CONVERT="$PROG_GM"
+else
+	AC_ERROR([no convert program found for making thumbnails])
+fi
+AC_SUBST(CONVERT)
+
+dnl The DNSPd installation. Default it to prefix.
+AC_ARG_WITH(dsnpd,
+	[  --with-dsnpd=/dsnpd/prefix   place where dsnpd is installed], 
+	[WITH_DSNPD="$withval"], [WITH_DSNPD="$prefix"] )
+
+DSNPDd="$WITH_DSNPD/bin/dsnpd"
+AC_CHECK_FILE( $DSNPDd, [], AC_ERROR([$DSNPDd not found]) )
+
+AC_SUBST(WITH_DSNPD)
+
+dnl write output files
+AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile src/Makefile scripts/Makefile)
+
+echo "configuration of Choice Social complete"

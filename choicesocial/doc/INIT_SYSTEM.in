@@ -1,0 +1,14 @@
+SYSTEM INSTALL INSTRUCTIONS
+===========================
+
+1. Set permissions on various files and directories. This must be run as root.
+
+-------- BEGIN SCRIPT -------
+
+chmod 600 @sysconfdir@/choicesocial.php
+chown @WWW_USER@:@WWW_USER@ @sysconfdir@/choicesocial.php
+install -d @prefix@/var/lib/choicesocial
+chown @WWW_USER@:@WWW_USER@ @prefix@/var/lib/choicesocial
+chmod 700 @prefix@/var/lib/choicesocial
+
+-------- END SCRIPT -------

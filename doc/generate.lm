@@ -16,15 +16,17 @@ lex cmd
 
 token line /[^\n]* '\n'/
 
+token cmd_end /'\n'/
+token cmd_content /[^\n]*/
+
 def cmd_type
 	['title']
 |	['subtitle']
 |	['author']
 |	['note']
 
-
 def command
-	['^' cmd_type cmd_sp line]
+	['^' cmd_type cmd_sp cmd_content cmd_end]
 
 def item
 	[word]
@@ -35,7 +37,84 @@ def item
 def start 
 	[item*]
 
-Header: str =
+global Title: cmd_content
+global SubTitle: cmd_content
+global Author: cmd_content
+global Note: list<cmd_content> = cons list<cmd_content>[]
+
+def output
+	[line*]
+
+cons Output: parser<output>[]
+
+int titlePage( Output: ref parser<output> )
+{
+	Output << 
+		~
+		~%
+		~% Title page
+		~%
+		~
+		~\thispagestyle{empty}
+		~\begin{center}
+
+	Output << "{\\huge [$Title]}\\\\
+	Output << ~\vspace*{12pt}
+	Output << "{\\Large [$SubTitle]}\\\\
+
+	Output <<
+		~\vspace{12pt}
+		~by\\
+		~\vspace{12pt}
+
+	Output << "{\\large [$Author]}\\\\
+
+	Output << ~\vspace{16pt}
+	
+	Note2: list<cmd_content> = Note
+	for N: cmd_content in Note2 {
+		Output << ~\vspace{6pt}
+		Output << "{\\noindent\\bf\\large [$N]}\\\\
+	}
+
+	Output << ~\end{center}
+}
+
+
+parse Input: start( stdin )
+
+# Strip out comments.
+for Item: item* in Input
+{
+	while match Item 
+			[comment Rest: item*]
+	{
+		Item = Rest
+	}
+}
+
+# Collect commands, strip them from the input.
+for Item: item* in Input
+{
+	while match Item 
+			['^' CmdType: cmd_type cmd_sp Line: cmd_content cmd_end
+				Rest: item*]
+	{
+		if match CmdType ['title']
+			Title = Line
+		elsif match CmdType ['subtitle']
+			SubTitle = Line
+		elsif match CmdType ['author']
+			Author = Line
+		elsif match CmdType ['note']
+			Note.append( Line )
+
+		Item = Rest
+	}
+}
+
+
+Output <<
 	~\documentclass[letterpaper,11pt,oneside]{article}
 	~\usepackage{comment}
 	~
@@ -50,28 +129,10 @@ Header: str =
 	~\setlength{\itemsep}{0pt}
 	~
 	~\begin{document}
-	~
-	~%
-	~% Title page
-	~%
-	~
-	~\thispagestyle{empty}
-	~\begin{center}
-	~{\huge DSNP: Distributed Social Networking Protocol}\\
-	~\vspace*{12pt}
-	~{\Large Protocol Specification}\\
-	~\vspace{12pt}
-	~by\\
-	~\vspace{12pt}
-	~{\large Dr. Adrian D. Thurston}\\
-	~\vspace{22pt}
-	~{\noindent\bf\large Protocol Version: 0.6}\\
-	~\vspace{6pt}
-	~{\noindent\bf\large Document Revision: 11}\\
-	~\vspace{6pt}
-	~{\noindent\bf\large Date: May 19, 2011}
-	~\end{center}
-	~
+
+titlePage( Output )
+
+Output << 
 	~\pagenumbering{roman}
 	~
 	~\vspace{1.3in}
@@ -106,8 +167,9 @@ Header: str =
 	~
 	~\tableofcontents
 	~
+#Output << $Input
 
-Footer: str =
+Output << 
 	~\pagenumbering{arabic}
 	~
 	~\newpage
@@ -1641,19 +1703,4 @@ Footer: str =
 	~
 	~\end{document}
 
-parse Input: start( stdin )
-
-# Strip out commands.
-for Item: item* in Input
-{
-	while match Item [command item*] ||
-			match Item [comment item*]
-	{
-		match Item [item Rest: item*]
-		Item = Rest
-	}
-}
-
-print( Header )
-print( Input )
-print( Footer )
+print( Output.finish() )

@@ -16,7 +16,7 @@
 PACKAGE = dsnpd
 VERSION = 0.13
 
-BUILD_SUBDIRS = doc etc db src
+BUILD_SUBDIRS = doc etc db dsnpd
 
 #*************************************
 
@@ -75,13 +75,13 @@ DIST = $(PACKAGE)-$(VERSION)
 dist: all
 	rm -Rf $(DIST)
 	mkdir $(DIST)
-	mkdir $(DIST)/src
-	cp src/*.rl $(DIST)/src/
-	cp src/*.cc $(DIST)/src/
-	cp src/*.h $(DIST)/src/
-	cp src/*.h.in $(DIST)/src/
-	cp src/Makefile.in $(DIST)/src/
-	sed -i '/^	ragel/s/^/#/; /^[a-z0-9_\-]*\.cc: [a-z0-9_\-]*\.rl/s/^/#/;' $(DIST)/src/Makefile.in
+	mkdir $(DIST)/dsnpd
+	cp dsnpd/*.rl $(DIST)/dsnpd/
+	cp dsnpd/*.cc $(DIST)/dsnpd/
+	cp dsnpd/*.h $(DIST)/dsnpd/
+	cp dsnpd/*.h.in $(DIST)/dsnpd/
+	cp dsnpd/Makefile.in $(DIST)/dsnpd/
+	sed -i '/^	ragel/s/^/#/; /^[a-z0-9_\-]*\.cc: [a-z0-9_\-]*\.rl/s/^/#/;' $(DIST)/dsnpd/Makefile.in
 	mkdir $(DIST)/doc
 	cp doc/INSTALL $(DIST)/doc/
 	cp doc/PROTOCOL_VERSION $(DIST)/doc/

@@ -88,6 +88,6 @@ AC_SUBST(ENABLE_DEBUG)
 dnl
 dnl Write Output Files
 dnl 
-AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile dsnpd/Makefile)
+AC_OUTPUT(Makefile doc/Makefile etc/Makefile db/Makefile dsnpd/Makefile choice/Makefile)
 
 echo "configuration of DSNPd complete"

@@ -83,10 +83,10 @@ umessage.cc: umessage.rl
 command.cc: command.rl
 	ragel -G2 -o $@ $<
 
-schema.h: Makefile ../schema_version
+schema.h: Makefile ../db/dsnpd.ver
 	echo "#ifndef _SCHEMA_VERSION_H" > $@
 	echo "#define _SCHEMA_VERSION_H" >> $@
-	echo "#define SCHEMA_VERSION `cat ../schema_version`" >> $@
+	echo "#define SCHEMA_VERSION `cat ../db/dsnpd.ver`" >> $@
 	echo "#endif" >> $@
 
 %.o: %.cc

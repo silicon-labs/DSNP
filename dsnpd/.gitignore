@@ -1,0 +1,12 @@
+/Makefile
+/dsnpd
+/config.h
+/parser.cc
+/schema.h
+/.*.d
+/rcfile.cc
+/tags
+/base64.cc
+/packet.cc
+/umessage.cc
+/command.cc

@@ -7,3 +7,5 @@
 /aclocal.m4
 /missing
 /install-sh
+/doc/Makefile.in
+/doc/Makefile

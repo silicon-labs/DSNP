@@ -8,4 +8,4 @@ AC_SUBST(PUBDATE)
 AC_CONFIG_HEADER(dsnpd/config.h)
 
 dnl write output files
-AC_OUTPUT( [Makefile] )
+AC_OUTPUT( [Makefile doc/Makefile] )

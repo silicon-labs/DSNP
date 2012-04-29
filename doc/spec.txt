@@ -47,7 +47,7 @@ The challenges of such a system are security, privacy, and developing feature
 rich applications that can compete with the products developed as single
 databases.
 
-\subsection{Properties of DSNP}
+.subsection Properties of DSNP
 
 \begin{enumerate}
 
@@ -83,7 +83,7 @@ private statement is shared along with the proof.
 
 \end{enumerate}
 
-\subsection{Security Model}
+.subsection Security Model
 
 DSNP leverages RSA public key cryptography for identity, the sharing of secrets
 and the declaration of relationships. It can be described as a public-key
@@ -139,7 +139,7 @@ minor exception). This makes it possible to partition your relationships into
 different groups, such as family, close friends, co-workers, and people you
 hardly know but might like to get to know better.
 
-\subsection{Definitions}
+.subsection Definitions
 
 \begin{itemize}
 
@@ -172,7 +172,7 @@ then reparsed as some other packet.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Public Key}
+.subsection Public Key
 \label{public-key-packet}
 
 The public-key packet is used for transmitting a user's public key. The key
@@ -187,7 +187,7 @@ format.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Public Key Set}
+.subsection Public Key Set
 \label{public-key-set}
 
 The Public Key Set packages up the four public keys at privilege levels 0 to 3.
@@ -205,7 +205,7 @@ privilege 0 key.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Relid Set}
+.subsection Relid Set
 
 The Relid Set is used to package up a collection of relationship IDs that are
 used to identify one direction of a relationship. The four relids correspond to
@@ -223,7 +223,7 @@ appropriate relid corresponding to the protection desired.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Relid Set Pair}
+.subsection Relid Set Pair
 
 The Relid Set Pair packages up two sets of relationship IDs. This packet is
 used in the friendship request process. It is useful for storage of the
@@ -239,7 +239,7 @@ requestor's relationship IDs.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Relid Response}
+.subsection Relid Response
 
 The relid response is the packet that the friendship requestor returns to the
 responder. It contains a request ID and the pair of relid sets. The request ID
@@ -255,7 +255,7 @@ set returned by the requestor.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Private Key}
+.subsection Private Key
 
 Private keys are never transmitted, but they must be stored and backed up
 (encrypted). This packet type specifies the format of the private key before it
@@ -275,7 +275,7 @@ is encapsulated in a protection envelope.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{PW Encrypted}
+.subsection PW Encrypted
 
 This packet contains data encrypted with the owning user's password. The
 password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
@@ -287,7 +287,7 @@ password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Signed}
+.subsection Signed
 \label{signed-packet}
 
 This packet contains plaintext data that is accompanied by a signature. Unless
@@ -307,7 +307,7 @@ plain message component excludes the keys.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Signed Id}
+.subsection Signed Id
 \label{signed-packet}
 
 \vspace{10pt}
@@ -316,7 +316,7 @@ plain message component excludes the keys.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Detached Sig}
+.subsection Detached Sig
 
 \vspace{10pt}
 \begin{verbatim}
@@ -324,7 +324,7 @@ plain message component excludes the keys.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Detached Sig Key}
+.subsection Detached Sig Key
 
 \vspace{10pt}
 \begin{verbatim}
@@ -332,7 +332,7 @@ plain message component excludes the keys.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Signed Encrypted}
+.subsection Signed Encrypted
 
 The signed-encrypted message contains data that is signed with a public RSA
 key, and encrypted with a symmetric key that is included in the message and
@@ -354,7 +354,7 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{BK Keys}
+.subsection BK Keys
 
 \vspace{10pt}
 \begin{verbatim}
@@ -362,7 +362,7 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{BK Encrypted}
+.subsection BK Encrypted
 
 \vspace{10pt}
 \begin{verbatim}
@@ -373,7 +373,7 @@ block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 \vspace{10pt}
 
 
-\subsection{BK Signed Encrypted}
+.subsection BK Signed Encrypted
 
 The bk-signed-encrypted message contains data that is signed with a public RSA
 key and encrypted with a pre-shared symmetric key. The encrypted data block
@@ -390,7 +390,7 @@ the signing hash. RC4 is used as the stream cipher (temporary).
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Broadcast}
+.subsection Broadcast
 
 \vspace{10pt}
 \begin{verbatim}
@@ -413,7 +413,7 @@ the signing hash. RC4 is used as the stream cipher (temporary).
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Recipient List}
+.subsection Recipient List
 
 \vspace{10pt}
 \begin{verbatim}
@@ -445,13 +445,13 @@ element, followed by any number of arguments. Arguments are generally a
 fixed-width atom, a null-terminated string, or binary data in length-body
 format.
 
-\subsection{Timeouts}
+.subsection Timeouts
 
 A DSNP implementation should close connections after a time of inactivity. The
 DSNP daemon times out connections after 7 seconds, both when reading and
 writing. The user agent times out connections to the daemon after 12 seconds.
 
-\subsection{Modified Base64}
+.subsection Modified Base64
 
 Throughout DSNP a modified Base64 encoding is used for binary data. The
 characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
@@ -469,7 +469,7 @@ trailing padding, which is normally specified using the \verb|=| character.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Iduri and Site}
+.subsection Iduri and Site
 
 \vspace{10pt}
 \begin{verbatim}
@@ -489,7 +489,7 @@ trailing padding, which is normally specified using the \verb|=| character.
     key          = base64
 \end{verbatim}
 
-\subsection{Passwords}
+.subsection Passwords
 
 \vspace{10pt}
 \begin{verbatim}
@@ -497,7 +497,7 @@ trailing padding, which is normally specified using the \verb|=| character.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Connection Negotiation}
+.subsection Connection Negotiation
 
 The DSNP command is the initial command that must be sent by all clients. In
 this command, the client sends the DSNP versions it is willing to talk and the
@@ -531,7 +531,7 @@ should be the highest supplied version it supports.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Creating Users}
+.subsection Creating Users
 
 A user name and password is requested. The user's IDURI is assigned. It
 consists of the scheme \verb'dsnp://', the site's root name, and the user name
@@ -570,7 +570,7 @@ The public portions of the keys are made available (Section
 guarantees that a key has been provided by the server hosting the identity and
 has not been altered.
 
-\subsubsection{New User}
+.subsubsection New User
 
 \vspace{10pt}
 \begin{verbatim}
@@ -584,13 +584,13 @@ has not been altered.
 The context is a local connection. This command returns \verb|"OK"| followed by
 \verb|EOL|.
 
-\subsection{Owner Login}
+.subsection Owner Login
 
 To login, the user agent submits credentials to the LOGIN command. key that
 will be used to verify with the server that the user is logged in when commands
 are issued (not yet added to the protocol).
 
-\subsubsection{Login}
+.subsubsection Login
 
 The session ID is a string that is used to associate the granted login token
 with the session ID of the browser. It is supplied to the user agent when DSNPd
@@ -611,7 +611,7 @@ returns the owner's URI hash, a login token, and the number of seconds the
 token is valid for. The URI hash can be computed independently, but is returned
 here for convenience. \verb|"OK" SP hash SP token SP lasts EOL|.
 
-\subsubsection{Public Key}
+.subsubsection Public Key
 \label{public-key-command}
 
 The Public Key command is for fetching a user's public key. A public key must
@@ -628,7 +628,7 @@ for signing.
 
 This command is for TLS connections only. It returns \verb|%x bin16|.
 
-\subsection{Friendship Request}
+.subsection Friendship Request
 
 The purpose of the friendship request is to establish a connection between two
 users. A remote user to indicates to a local user that she wishes to establish
@@ -700,7 +700,7 @@ commands used by the user agent on behalf of the browser for the three major
 steps. The last two are commands used by DSNPd to fetch the encrypted the
 relids.
 
-\subsubsection{Relid Request}
+.subsubsection Relid Request
 
 The relid request is issued by the responder's server on behalf of the
 requestor. The server generates a relationship ID and makes it available for
@@ -720,7 +720,7 @@ request can be processed.
 \vspace{10pt}
 
 
-\subsubsection{Relid Response}
+.subsubsection Relid Response
 
 The relid response is executed by the requestor. The requestor must be logged
 in for this command to run. The requestor's server fetches the request from the
@@ -741,7 +741,7 @@ makes it available for the responder's server to fetch in the final step.
 \vspace{10pt}
 
 
-\subsubsection{Friend Final}
+.subsubsection Friend Final
 
 The final step in the friend request protocol is for the responder's server to
 verify the response, which includes a copy of the request it generated in the
@@ -762,7 +762,7 @@ responder user to accept or deny.
 \vspace{10pt}
 
 
-\subsubsection{Fetch Requested Relid}
+.subsubsection Fetch Requested Relid
 
 \vspace{10pt}
 \begin{verbatim}
@@ -776,7 +776,7 @@ responder user to accept or deny.
 \vspace{10pt}
 
 
-\subsubsection{Fetch Response Relid}
+.subsubsection Fetch Response Relid
 
 \vspace{10pt}
 \begin{verbatim}
@@ -789,7 +789,7 @@ responder user to accept or deny.
 \end{verbatim}
 
 
-\subsection{Friendship Accept and Deny}
+.subsection Friendship Accept and Deny
 
 The next time the friendee logs in they are presented with the friendship
 request. They can either accept or deny the request. 
@@ -800,7 +800,7 @@ then registers the friendship and sends a registered message. It can can now
 send broadcast key and broadcast tree insertion messages. The other end can
 send these messages after it receives the registered message.
 
-\subsubsection{Accept Friend}
+.subsubsection Accept Friend
 
 Accept friend is issued by the responder. The particular friend request is
 identified by reqid, which is the request ID originally allocated by the
@@ -819,7 +819,7 @@ responder in the relid request command. The responder must be logged in.
 \vspace{10pt}
 
 
-\subsubsection{Notify Accept, Registered}
+.subsubsection Notify Accept, Registered
 
 During the friend accept exchange, these messages arrive as the payload to
 standard messages. They are identified as prefriend messages by the state of
@@ -855,7 +855,7 @@ otherwise broadcast information.
 \end{verbatim}
 
 
-\subsection{Login as a Friend}
+.subsection Login as a Friend
 
 Once a user is logged in to her page, she is able to login to her friend's
 pages without submitting any credentials. The friend's site requests that she
@@ -909,7 +909,7 @@ the content-manager on behalf of the user in the primary challenge-response
 scheme. The fourth is used by the friend logging in to fetch the encrypted
 challenge.
 
-\subsubsection{Ftoken Request}
+.subsubsection Ftoken Request
 
 \vspace{10pt}
 \begin{verbatim}
@@ -924,7 +924,7 @@ challenge.
 \vspace{10pt}
 
 
-\subsubsection{Ftoken Response}
+.subsubsection Ftoken Response
 
 The Ftoken Response command is executed by the requestor's user agent. It is
 responsible for supplying the proof that the browser owns the identity that is
@@ -944,7 +944,7 @@ logging it. This command requires users be logged in.
 \vspace{10pt}
 
 
-\subsubsection{Submit Ftoken}
+.subsubsection Submit Ftoken
 
 The session ID is a string that the user agent submits to identify the browser
 session that the login is for. This session id may be used later by DSNPd to
@@ -963,7 +963,7 @@ invalidate the login.
 \vspace{10pt}
 
 
-\subsubsection{Fetch Ftoken}
+.subsubsection Fetch Ftoken
 
 \vspace{10pt}
 \begin{verbatim}
@@ -975,12 +975,12 @@ invalidate the login.
     context: TLS connection
 \end{verbatim}
     
-\subsection{Messages to Friends}
+.subsection Messages to Friends
 
 Sending friend-friend messages that are encrypted to the recipient and signed
 by the sender. 
 
-\subsubsection{Submit Message}
+.subsubsection Submit Message
 
 \vspace{10pt}
 \begin{verbatim}
@@ -996,7 +996,7 @@ by the sender.
 \vspace{10pt}
 
 
-\subsubsection{Message}
+.subsubsection Message
 
 The message command is used to deliver prefriend messages and friend messages.
 The type of message accepted is determined by the state of the friendship
@@ -1015,7 +1015,7 @@ level relationship ID used to identify the message.
 \end{verbatim}
 
 
-\subsubsection{Fof Message}
+.subsubsection Fof Message
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1029,14 +1029,14 @@ level relationship ID used to identify the message.
 \end{verbatim}
 
 
-\subsection{Broadcasting to a Group}
+.subsection Broadcasting to a Group
 
 As previously mentioned, DSNP uses a broadcast key for the sending of messages
 to groups. The key has an ID and a generation. The ID is a base64 encoded
 random string assigned by the owner and used by the recipients to identify the
 group within the sender's collection of groups.
 
-\subsubsection{Submit Broadcast}
+.subsubsection Submit Broadcast
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1051,7 +1051,7 @@ group within the sender's collection of groups.
 \vspace{10pt}
 
 
-\subsubsection{Broadcast Key}
+.subsubsection Broadcast Key
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1067,7 +1067,7 @@ group within the sender's collection of groups.
 \vspace{10pt}
 
 
-\subsubsection{Broadcast Recipient}
+.subsubsection Broadcast Recipient
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1081,7 +1081,7 @@ group within the sender's collection of groups.
 \vspace{10pt}
 
 
-\subsubsection{Broadcast}
+.subsubsection Broadcast
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1096,7 +1096,7 @@ group within the sender's collection of groups.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Remote Broadcasting}
+.subsection Remote Broadcasting
 
 Remote broadcasting (or remote publishing) covers activity that a user makes on
 a friend's site, such as commenting on a photo or, writing a public message on
@@ -1106,7 +1106,7 @@ to prove to the message was not forged, and to ensure that only common friends
 are able to view such messages. The encryption requirement may be relaxed to
 allow others outside of the common friend group to view messages.
 
-\subsubsection{Remote Broadcast Request}
+.subsubsection Remote Broadcast Request
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1121,7 +1121,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Remote Broadcast Response}
+.subsubsection Remote Broadcast Response
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1136,7 +1136,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Remote Broadcast Final}
+.subsubsection Remote Broadcast Final
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1151,7 +1151,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Encrypt Remote Broadcast Author}
+.subsubsection Encrypt Remote Broadcast Author
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1169,7 +1169,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Encrypt Remote Broadcast Subject}
+.subsubsection Encrypt Remote Broadcast Subject
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1187,7 +1187,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Repub Remote Broadcast Publisher}
+.subsubsection Repub Remote Broadcast Publisher
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1203,7 +1203,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Repub Remote Broadcast Author}
+.subsubsection Repub Remote Broadcast Author
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1219,7 +1219,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Repub Remote Broadcast Subject}
+.subsubsection Repub Remote Broadcast Subject
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1235,7 +1235,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Return Remote Broadcast Author}
+.subsubsection Return Remote Broadcast Author
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1250,7 +1250,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Return Remote Broadcast Subject}
+.subsubsection Return Remote Broadcast Subject
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1265,7 +1265,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Broadcast Success Author}
+.subsubsection Broadcast Success Author
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1279,7 +1279,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Broadcast Success Subject}
+.subsubsection Broadcast Success Subject
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1293,7 +1293,7 @@ allow others outside of the common friend group to view messages.
 \vspace{10pt}
 
 
-\subsubsection{Remote Broadcast Key}
+.subsubsection Remote Broadcast Key
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1310,7 +1310,7 @@ associated with identity, authentication, authorization, encryption, etc. This
 includes content that arrives from friends, and various notifications that
 result in user experience. Various components require synchronization.
 
-\subsection{Notification Broadcast}
+.subsection Notification Broadcast
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1322,7 +1322,7 @@ result in user experience. Various components require synchronization.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Notification Message}
+.subsection Notification Message
 
 \vspace{10pt}
 \begin{verbatim}
@@ -1334,7 +1334,7 @@ result in user experience. Various components require synchronization.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Notification Logout}
+.subsection Notification Logout
 
 The logout notification is used by the daemon to indicate to the user agent
 that a login session is no longer valid. This should invalidate any cookies
@@ -1349,7 +1349,7 @@ characters that the user agent wishes to use. It is limited to 48 characters.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Notification New User}
+.subsection Notification New User
 
 Indicates that user creation succeeded. The user agent should register the user
 in its database.
@@ -1362,7 +1362,7 @@ in its database.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Friend Request Received}
+.subsection Friend Request Received
 
 Notification for the responder to the friend request that a new request has
 arrived.
@@ -1378,7 +1378,7 @@ arrived.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Friend Request Sent}
+.subsection Friend Request Sent
 
 Notification for the requestor of the relationship that a new request was
 successfully sent.
@@ -1394,7 +1394,7 @@ successfully sent.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Friend Request Accepted}
+.subsection Friend Request Accepted
 
 Notification for the responder to the friend request that acceptance succeeded.
 
@@ -1408,7 +1408,7 @@ Notification for the responder to the friend request that acceptance succeeded.
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Sent Friend Request Accepted}
+.subsection Sent Friend Request Accepted
 
 Notification for the requestor of the relationship that the request was
 accepted.
@@ -1460,7 +1460,7 @@ remote-resource      = "Remote-Resource" COLON SP path CRLF
 remote-presentation  = "Remote-Presentation" COLON SP path CRLF
 \end{verbatim}
 
-\subsection{Broadcast}
+.subsection Broadcast
 
 Broadcast message type is used for so-called status updates.
 
@@ -1476,7 +1476,7 @@ CONTENT
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Board Post}
+.subsection Board Post
 
 Board post is used for messages that are to be shared with the sender and
 recipient's friends. The board post is akin to a "wall" message.
@@ -1494,7 +1494,7 @@ CONTENT
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Name Change}
+.subsection Name Change
 
 Name change is used to transmit a user's new name.
 
@@ -1510,7 +1510,7 @@ CONTENT
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Photo Upload}
+.subsection Photo Upload
 
 Photo upload is use to notifiy friend's about a photo that has been uploaded.
 Resource-Id is an identifier describing the uploader's image.
@@ -1530,7 +1530,7 @@ CONTENT
 \end{verbatim}
 \vspace{10pt}
 
-\subsection{Photo Tag}
+.subsection Photo Tag
 
 Photo upload is use to notifiy friend's about a photo that has been uploaded.
 Resource-Id is an identifier describing the uploader's image.

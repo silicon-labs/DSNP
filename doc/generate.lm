@@ -1,53 +1,56 @@
-lex all 
+namespace orig
 {
-	token comment /'#' [^\n]* '\n'/
+	lex all 
+	{
+		token comment /'#' [^\n]* '\n'/
 
-	token word /[^#^\n]+/
-	token NL /'\n'/
+		token word /[^#^\n]+/
+		token NL /'\n'/
 
-	literal '^'
+		literal '^'
+	}
+
+	lex cmd
+	{
+		literal 'title', 'subtitle', 'author', 'note'
+		token cmd_sp /' '+/
+	}
+
+	token line /[^\n]* '\n'/
+
+	token cmd_end /'\n'/
+	token cmd_content /[^\n]*/
+
+	def cmd_type
+		['title']
+	|	['subtitle']
+	|	['author']
+	|	['note']
+
+	def command
+		['^' cmd_type cmd_sp cmd_content cmd_end]
+
+	def item
+		[word]
+	|	[NL]
+	|	[comment]
+	|	[command]
+
+	def start 
+		[item*]
+
+	def output
+		[line*]
 }
 
-lex cmd
-{
-	literal 'title', 'subtitle', 'author', 'note'
-	token cmd_sp /' '+/
-}
+global OrigTitle: orig::cmd_content
+global OrigSubTitle: orig::cmd_content
+global OrigAuthor: orig::cmd_content
+global OrigNote: list<orig::cmd_content> = cons list<orig::cmd_content>[]
 
-token line /[^\n]* '\n'/
+cons Output: parser<orig::output>[]
 
-token cmd_end /'\n'/
-token cmd_content /[^\n]*/
-
-def cmd_type
-	['title']
-|	['subtitle']
-|	['author']
-|	['note']
-
-def command
-	['^' cmd_type cmd_sp cmd_content cmd_end]
-
-def item
-	[word]
-|	[NL]
-|	[comment]
-|	[command]
-
-def start 
-	[item*]
-
-global Title: cmd_content
-global SubTitle: cmd_content
-global Author: cmd_content
-global Note: list<cmd_content> = cons list<cmd_content>[]
-
-def output
-	[line*]
-
-cons Output: parser<output>[]
-
-int titlePage( Output: ref parser<output> )
+int titlePage( Output: ref parser<orig::output> )
 {
 	Output << 
 		~
@@ -58,21 +61,21 @@ int titlePage( Output: ref parser<output> )
 		~\thispagestyle{empty}
 		~\begin{center}
 
-	Output << "{\\huge [$Title]}\\\\
+	Output << "{\\huge [$OrigTitle]}\\\\
 	Output << ~\vspace*{12pt}
-	Output << "{\\Large [$SubTitle]}\\\\
+	Output << "{\\Large [$OrigSubTitle]}\\\\
 
 	Output <<
 		~\vspace{12pt}
 		~by\\
 		~\vspace{12pt}
 
-	Output << "{\\large [$Author]}\\\\
+	Output << "{\\large [$OrigAuthor]}\\\\
 
 	Output << ~\vspace{16pt}
 	
-	Note2: list<cmd_content> = Note
-	for N: cmd_content in Note2 {
+	Note2: list<orig::cmd_content> = OrigNote
+	for N: orig::cmd_content in Note2 {
 		Output << ~\vspace{6pt}
 		Output << "{\\noindent\\bf\\large [$N]}\\\\
 	}
@@ -81,33 +84,36 @@ int titlePage( Output: ref parser<output> )
 }
 
 
-parse Input: start( stdin )
+parse Input: orig::start( stdin )
 
 # Strip out comments.
-for Item: item* in Input
+for Item: orig::item* in Input
 {
 	while match Item 
-			[comment Rest: item*]
+			[orig::comment Rest: orig::item*]
 	{
 		Item = Rest
 	}
 }
 
 # Collect commands, strip them from the input.
-for Item: item* in Input
+for Item: orig::item* in Input
 {
 	while match Item 
-			['^' CmdType: cmd_type cmd_sp Line: cmd_content cmd_end
-				Rest: item*]
+			[orig::'^'
+				CmdType: orig::cmd_type orig::cmd_sp 
+				Line: orig::cmd_content orig::cmd_end
+				Rest: orig::item*
+			]
 	{
-		if match CmdType ['title']
-			Title = Line
-		elsif match CmdType ['subtitle']
-			SubTitle = Line
-		elsif match CmdType ['author']
-			Author = Line
-		elsif match CmdType ['note']
-			Note.append( Line )
+		if match CmdType [orig::'title']
+			OrigTitle = Line
+		elsif match CmdType [orig::'subtitle']
+			OrigSubTitle = Line
+		elsif match CmdType [orig::'author']
+			OrigAuthor = Line
+		elsif match CmdType [orig::'note']
+			OrigNote.append( Line )
 
 		Item = Rest
 	}

@@ -14,6 +14,7 @@ lex top
 	token cmd_title /'.title' lws/
 	token cmd_sub_title /'.subtitle' lws/
 	token cmd_author /'.author' lws/
+	token cmd_note /'.note' lws/
 
 	token cmd_chapter /'.chapter' lws/
 	token cmd_section /'.section' lws/
@@ -184,6 +185,9 @@ def subtitle
 def author
 	[cmd_author text* nl]
 
+def note
+	[cmd_note text* nl]
+
 #
 # Paragraphs.
 #
@@ -213,6 +217,7 @@ def preamble_item
 |	[title]
 |	[subtitle]
 |	[author]
+|	[note]
 
 def preamble
 	[preamble_item* license]
@@ -375,6 +380,12 @@ int printLines( Lines: line* )
 	}
 }
 
+parse Start: start( stdin )
+if ( ! Start ) {
+	print( error() '\n' )
+	exit( 1 )
+}
+
 int main()
 {
 	parse Start: start( stdin )
@@ -394,6 +405,8 @@ int main()
 
 	Author: author = author in Preamble
 	match Author [cmd_author AuthorData: text* nl]
+
+	NoteList: note* = note* in Preamble
 
 	License: license = license in Preamble
 
@@ -435,29 +448,10 @@ int main()
 		~\newenvironment{inline_code}{\def\baselinestretch{1}\vspace{12pt}\small}{}
 		~
 		~\begin{document}
-		~
-		~\thispagestyle{empty}
-		~\begin{center}
-		~\vspace*{3in}
 	)
 
-	print( '{\\huge ' TitleData '}\\\\\n' )
 
-	print( '\\vspace*{12pt}\n' )
-
-	print( '{\\Large ' SubTitleData '}\\\\\n' )
-
-	print(
-		~\vspace{1in}
-		~by\\
-		~\vspace{12pt}
-	)
-
-	print( '{\\large ' AuthorData '}\\\\\n' )
-
-	print(
-		~\end{center}
-		~\clearpage
+	print( 
 		~
 		~\pagenumbering{roman}
 		~
@@ -534,129 +528,7 @@ int main()
 	)
 }
 
-namespace orig
-{
-	lex all 
-	{
-		token comment /'#' [^\n]* '\n'/
-
-		token word /[^#^\n]+/
-		token NL /'\n'/
-
-		literal '^'
-	}
-
-	lex cmd
-	{
-		literal 'title', 'subtitle', 'author', 'note'
-		token cmd_sp /' '+/
-	}
-
-	token line /[^\n]* '\n'/
-
-	token cmd_end /'\n'/
-	token cmd_content /[^\n]*/
-
-	def cmd_type
-		['title']
-	|	['subtitle']
-	|	['author']
-	|	['note']
-
-	def command
-		['^' cmd_type cmd_sp cmd_content cmd_end]
-
-	def item
-		[word]
-	|	[NL]
-	|	[comment]
-	|	[command]
-
-	def start 
-		[item*]
-
-	def output
-		[line*]
-}
-
-global OrigTitle: orig::cmd_content
-global OrigSubTitle: orig::cmd_content
-global OrigAuthor: orig::cmd_content
-global OrigNote: list<orig::cmd_content> = cons list<orig::cmd_content>[]
-
-cons Output: parser<orig::output>[]
-
-int titlePage( Output: ref parser<orig::output> )
-{
-	Output << 
-		~
-		~%
-		~% Title page
-		~%
-		~
-		~\thispagestyle{empty}
-		~\begin{center}
-
-	Output << "{\\huge [$OrigTitle]}\\\\
-	Output << ~\vspace*{12pt}
-	Output << "{\\Large [$OrigSubTitle]}\\\\
-
-	Output <<
-		~\vspace{12pt}
-		~by\\
-		~\vspace{12pt}
-
-	Output << "{\\large [$OrigAuthor]}\\\\
-
-	Output << ~\vspace{16pt}
-	
-	Note2: list<orig::cmd_content> = OrigNote
-	for N: orig::cmd_content in Note2 {
-		Output << ~\vspace{6pt}
-		Output << "{\\noindent\\bf\\large [$N]}\\\\
-	}
-
-	Output << ~\end{center}
-}
-
-
-parse Input: orig::start( stdin )
-
-# Strip out comments.
-for Item: orig::item* in Input
-{
-	while match Item 
-			[orig::comment Rest: orig::item*]
-	{
-		Item = Rest
-	}
-}
-
-# Collect commands, strip them from the input.
-for Item: orig::item* in Input
-{
-	while match Item 
-			[orig::'^'
-				CmdType: orig::cmd_type orig::cmd_sp 
-				Line: orig::cmd_content orig::cmd_end
-				Rest: orig::item*
-			]
-	{
-		if match CmdType [orig::'title']
-			OrigTitle = Line
-		elsif match CmdType [orig::'subtitle']
-			OrigSubTitle = Line
-		elsif match CmdType [orig::'author']
-			OrigAuthor = Line
-		elsif match CmdType [orig::'note']
-			OrigNote.append( Line )
-
-		Item = Rest
-	}
-}
-
-
-Output <<
+print( 
 	~\documentclass[letterpaper,11pt,oneside]{article}
 	~\usepackage{comment}
 	~
@@ -671,10 +543,48 @@ Output <<
 	~\setlength{\itemsep}{0pt}
 	~
 	~\begin{document}
+)
 
-titlePage( Output )
+print(
+	~
+	~\thispagestyle{empty}
+	~\begin{center}
+)
 
-Output << 
+match Start 
+	[Preamble: preamble Chapters: chapter*]
+
+Title: title = title in Preamble
+match Title [cmd_title TitleData: text* nl]
+
+SubTitle: subtitle = subtitle in Preamble
+match SubTitle [cmd_sub_title SubTitleData: text* nl]
+
+Author: author = author in Preamble
+match Author [cmd_author AuthorData: text* nl]
+
+print( '{\\huge ' TitleData '}\\\\\n' )
+print( '\\vspace*{12pt}\n' )
+print( '{\\Large ' SubTitleData '}\\\\\n' )
+print(
+	~\vspace{12pt}
+	~by\\
+	~\vspace{12pt}
+)
+print( '{\\large ' AuthorData '}\\\\\n' )
+print( '\\vspace{16pt}\n' )
+
+for N: note in Preamble {
+	match N [cmd_note T: text* nl]
+	print( '\\vspace{6pt}\n' )
+	print( "{\\noindent\\bf\\large " T "}\\\\\n" )
+}
+
+print(
+	~\end{center}
+)
+
+print(
 	~\pagenumbering{roman}
 	~
 	~\vspace{1.3in}
@@ -709,9 +619,9 @@ Output <<
 	~
 	~\tableofcontents
 	~
-#Output << $Input
+)
 
-Output << 
+print(
 	~\pagenumbering{arabic}
 	~
 	~\newpage
@@ -2244,5 +2154,4 @@ Output <<
 	~\vspace{10pt}
 	~
 	~\end{document}
-
-print( Output.finish() )
+)

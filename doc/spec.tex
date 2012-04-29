@@ -579,9 +579,9 @@ should be the highest supplied version it supports.
 \subsection{Creating Users}
 
 A user name and password is requested. The user's IDURI is assigned. It
-consists of the scheme \verb'dsnp://', the site's root name, and the user name
+consists of the scheme \verb|dsnp://|, the site's root name, and the user name
 as the final path component. It must end with a slash. Similarly, the user's
-IDURL is assigned. This is identical, except the scheme is \verb'https://'.
+IDURL is assigned. This is identical, except the scheme is \verb|https://|.
 
 %
 % IDURI: dsnp://www.foo.com/site/gia/ 
@@ -1481,6 +1481,7 @@ storage and display. This particular section of DSNP is likely to change, as
 better message formats become apparent. For the time being, we use an
 rfc822-like message format. There are just four types.
 
+\vspace{10pt}
 \begin{verbatim}
 publisher-iduri      = "Publisher-Iduri" COLON SP iduri CRLF
 
@@ -1509,6 +1510,7 @@ remote-resource      = "Remote-Resource" COLON SP path CRLF
 
 remote-presentation  = "Remote-Presentation" COLON SP path CRLF
 \end{verbatim}
+\vspace{10pt}
 
 \subsection{Broadcast}
 

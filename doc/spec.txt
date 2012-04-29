@@ -49,39 +49,39 @@ databases.
 
 .subsection Properties of DSNP
 
-\begin{enumerate}
+.enumerate
 
-\item Identities are URI-based.
+.item Identities are URI-based.
 
-\item The system is distributed at the level of identities, as opposed to
+.item The system is distributed at the level of identities, as opposed to
 collections of identities. Authentication and authorization mechanisms are
 based on the credentials of the two users who are interacting. DSNP does not
 rely on simply securing the server-server communications with SSL.
 
-\item There is a single sign-on. Once a user has signed into her profile, she
+.item There is a single sign-on. Once a user has signed into her profile, she
 is able to get access to her friend's profiles without submitting any password.
 
-\item DSNP is secure against forgery by non-friends and friends. It is secure
+.item DSNP is secure against forgery by non-friends and friends. It is secure
 against eavesdropping by non-friends.
 
-\item DSNP allows friendship claims and user activity to be verified by trusted
+.item DSNP allows friendship claims and user activity to be verified by trusted
 third parties. False friendships and statements can be claimed easily, but they
 can also be discredited easily. This makes it safe for you to evaluate new
 friends you don't yet fully trust, without worrying that person will forge
 statements by you.
 
-\item Security does not rely on DNS or SSL. If ownership of a domain is lost to
+.item Security does not rely on DNS or SSL. If ownership of a domain is lost to
 an attacker who is able to secure an SSL cert for the domain, the attacker does
 not gain control of the identities on the domain.
 
-\item DSNP allows unfriending. Once a user is unfriended, they no longer have
+.item DSNP allows unfriending. Once a user is unfriended, they no longer have
 access to the user's broadcasts, even if they are somehow able to snoop the
 broadcast traffic.
 
-\item DSNP allows users to deny messages and trace a leak in the event that a
+.item DSNP allows users to deny messages and trace a leak in the event that a
 private statement is shared along with the proof.
 
-\end{enumerate}
+.end enumerate
 
 .subsection Security Model
 
@@ -141,14 +141,14 @@ hardly know but might like to get to know better.
 
 .subsection Definitions
 
-\begin{itemize}
+.itemize
 
-\item Content-Manager: Software that a user, and user's connections interact with.
+.item Content-Manager: Software that a user, and user's connections interact with.
 This software provides the 'front' for the user's identity. At a minimum, this
 should be a web-based application, though other forms of content-manager are
 possible.
 
-\end{itemize}
+.end itemize
 
 .section Packets
 
@@ -171,10 +171,10 @@ then reparsed as some other packet.
 .end grammar
 
 .subsection Public Key
-\label{public-key-packet}
+.label{public-key-packet}
 
 The public-key packet is used for transmitting a user's public key. The key
-contains \verb|n| and \verb|e| BIGNUM components, encoded in big-endian binary
+contains .verb|n| and .verb|e| BIGNUM components, encoded in big-endian binary
 format. 
 
 .grammar
@@ -184,11 +184,11 @@ format.
 .end grammar
 
 .subsection Public Key Set
-\label{public-key-set}
+.label{public-key-set}
 
 The Public Key Set packages up the four public keys at privilege levels 0 to 3.
 Privilege level 0 is the most trusted. The public key set is delivered in a
-signed packet (Section \ref{signed}), with the signature verifiable by the
+signed packet (Section .ref{signed}), with the signature verifiable by the
 privilege 0 key.
 
 .grammar
@@ -272,7 +272,7 @@ password is hashed (SHA1) and used as the RC4 key (note RC4 is temporary).
 .end grammar
 
 .subsection Signed
-\label{signed-packet}
+.label{signed-packet}
 
 This packet contains plaintext data that is accompanied by a signature. Unless
 specified otherwise, the signature is acquired by applying RSA-sign to the
@@ -290,7 +290,7 @@ plain message component excludes the keys.
 .end grammar
 
 .subsection Signed Id
-\label{signed-packet}
+.label{signed-packet}
 
 .grammar
     signed-id = %x09 iduri %x00 bin16 bin16
@@ -316,7 +316,7 @@ protected by the RSA public key. It has two components: the RSA-protected key,
 and the symmetric-key protected RSA signature and message. The RSA sig and the
 message body are encrypted using the symmetric key as a single stream. The
 signature is produced by concatenating the public key packet (Section
-\ref{public-key-packet} and the message body, then RSA-signing the resulting
+.ref{public-key-packet} and the message body, then RSA-signing the resulting
 block. SHA1 is used as the signing hash. RC4 is used as the stream cipher
 (temporary).
 
@@ -418,10 +418,10 @@ writing. The user agent times out connections to the daemon after 12 seconds.
 .subsection Modified Base64
 
 Throughout DSNP a modified Base64 encoding is used for binary data. The
-characters \verb|-| and \verb|_| are used in place of \verb|+| and \verb|/| for
+characters .verb|-| and .verb|_| are used in place of .verb|+| and .verb|/| for
 the 63rd and 64th characters. This modified encoding is commonly used in
 applications where Base64 data must be embedded in URLs. Note that we omit
-trailing padding, which is normally specified using the \verb|=| character.
+trailing padding, which is normally specified using the .verb|=| character.
 
 .grammar
     base64-chars  = %x41-5A / %x61-7A / %x30-39 / "-" / "_"
@@ -469,7 +469,7 @@ the server. Local connections must pass through the loopback network interface
 
 If it is a TLS-secured connection, the server must supply a valid certificate
 that matches the requested hostname. The server responds with OK followed by
-the version it has chosen from the list. \verb|"OK" SP version EOL|. This
+the version it has chosen from the list. .verb|"OK" SP version EOL|. This
 should be the highest supplied version it supports.
 
 .grammar
@@ -491,9 +491,9 @@ should be the highest supplied version it supports.
 .subsection Creating Users
 
 A user name and password is requested. The user's IDURI is assigned. It
-consists of the scheme \verb'dsnp://', the site's root name, and the user name
+consists of the scheme .verb|dsnp://|, the site's root name, and the user name
 as the final path component. It must end with a slash. Similarly, the user's
-IDURL is assigned. This is identical, except the scheme is \verb'https://'.
+IDURL is assigned. This is identical, except the scheme is .verb|https://|.
 
 %
 % IDURI: dsnp://www.foo.com/site/gia/ 
@@ -504,26 +504,26 @@ Four RSA key pairs are created. The keys have privilege levels 3 to 0.
 Privilege level 3 is considered the weakest. Privilege level 0 is reserved for
 the most significant actions, such as profile moving.
 
-\begin{itemize}
-\item Priv 3: Not password protected. For activity that doesn't require the user be logged
+.itemize
+.item Priv 3: Not password protected. For activity that doesn't require the user be logged
 in.
 
-\item Priv 2: Password protected, decrypted in memory only while user is logged
+.item Priv 2: Password protected, decrypted in memory only while user is logged
 in. A sig indicates the user is currently logged in. Used for activity by
 logged in user.
 
-\item Priv 1: Password protected. Purged from memory immediately after it is
+.item Priv 1: Password protected. Purged from memory immediately after it is
 used. Decrypted on each login. A signed timestamp by this key indicates the
 user logged in with her password at that time.
 
-\item Priv 0: Password protected. Purged from memory immediately after use.
+.item Priv 0: Password protected. Purged from memory immediately after use.
 Decrypted on demand. A message signed by this key indicates the user submitted
 her password to produce the signature. This privilege ring is reserved for
 moving and deleting the identity.
-\end{itemize}
+.end itemize
 
 The public portions of the keys are made available (Section
-\ref{public-key-command}). The key must always be fetched using SSL. This
+.ref{public-key-command}). The key must always be fetched using SSL. This
 guarantees that a key has been provided by the server hosting the identity and
 has not been altered.
 
@@ -536,8 +536,8 @@ has not been altered.
             pass EOL
 .end grammar
 
-The context is a local connection. This command returns \verb|"OK"| followed by
-\verb|EOL|.
+The context is a local connection. This command returns .verb|"OK"| followed by
+.verb|EOL|.
 
 .subsection Owner Login
 
@@ -562,22 +562,22 @@ needs to specify to the user agent that the browser's login token has expired.
 This command is for local connections only. On success, the login commands
 returns the owner's URI hash, a login token, and the number of seconds the
 token is valid for. The URI hash can be computed independently, but is returned
-here for convenience. \verb|"OK" SP hash SP token SP lasts EOL|.
+here for convenience. .verb|"OK" SP hash SP token SP lasts EOL|.
 
 .subsubsection Public Key
-\label{public-key-command}
+.label{public-key-command}
 
 The Public Key command is for fetching a user's public key. A public key must
 never change. If a peer detects a change, the user must be considered invalid.
-The message returned is a signed packet (Section \ref{signed-packet}), that
-contains a public key set (Section \ref{public-key-set}). The priv0 key is used
+The message returned is a signed packet (Section .ref{signed-packet}), that
+contains a public key set (Section .ref{public-key-set}). The priv0 key is used
 for signing.
 
 .grammar
     public-key = %x32 user %x00
 .end grammar
 
-This command is for TLS connections only. It returns \verb|%x bin16|.
+This command is for TLS connections only. It returns .verb|%x bin16|.
 
 .subsection Friendship Request
 
@@ -604,47 +604,47 @@ The person requesting friendship is the referred to as the requestor, with
 identity requestor-iduri. The person who is receiving the request is the responder, with
 identity responder-iduri
 
-\begin{enumerate}
-\item The requestor fills in a friend request form at resp-iduri
-    \begin{enumerate}
-    \item requestor answers a challenge, which can be a CAPTCHA, or 
+.enumerate
+.item The requestor fills in a friend request form at resp-iduri
+    .enumerate
+    .item requestor answers a challenge, which can be a CAPTCHA, or 
             personalized question
-    \item requestor submits requestor-iduri
-    \end{enumerate}
+    .item requestor submits requestor-iduri
+    .end enumerate
 
-\item The responder's server processes the request:
-    \begin{enumerate}
-    \item verifies challenge response
-    \item fetches the public key for requestor-iduri (using SSL)
-    \item randomly generates a set of one-way relationship ids (requested-relid-set)
-    \item randomly generates a one-way request id (requested-reqid)
-    \item encrypts the relationship ids to requestor and signs it
-    \item makes message available to be fetched using requested-reqid to identify it
-    \item redirects the requestor's browser home to requestor-iduri, calling the return-relid 
+.item The responder's server processes the request:
+    .enumerate
+    .item verifies challenge response
+    .item fetches the public key for requestor-iduri (using SSL)
+    .item randomly generates a set of one-way relationship ids (requested-relid-set)
+    .item randomly generates a one-way request id (requested-reqid)
+    .item encrypts the relationship ids to requestor and signs it
+    .item makes message available to be fetched using requested-reqid to identify it
+    .item redirects the requestor's browser home to requestor-iduri, calling the return-relid 
         function with resp-iduri and requested-reqid as arguments
-    \end{enumerate}
+    .end enumerate
 
-\item Requestor's server processes the return-relid call:
-    \begin{enumerate}
-    \item verifies browser is logged in as the owner of requestor-iduri
-    \item fetches public key for resp-iduri (using SSL)
-    \item fetches encrypted requested-relid-set from resp-iduri using requested-reqid
-    \item decrypts and verifies requested-relid-set
-    \item randomly generates returned-relid-set
-    \item randomly generates returned-reqid
-    \item encrypts (requested-relid-set,returned-relid-set) to responder and signs it
-    \item makes message available to be fetched using returned-reqid to identify it
-    \item redirects the friender back to responder-iduri, where the friend-final function is called
+.item Requestor's server processes the return-relid call:
+    .enumerate
+    .item verifies browser is logged in as the owner of requestor-iduri
+    .item fetches public key for resp-iduri (using SSL)
+    .item fetches encrypted requested-relid-set from resp-iduri using requested-reqid
+    .item decrypts and verifies requested-relid-set
+    .item randomly generates returned-relid-set
+    .item randomly generates returned-reqid
+    .item encrypts (requested-relid-set,returned-relid-set) to responder and signs it
+    .item makes message available to be fetched using returned-reqid to identify it
+    .item redirects the friender back to responder-iduri, where the friend-final function is called
     with requestor-iduri and returned-reqid as arguments.
-    \end{enumerate}
+    .end enumerate
 
-\item Responder's processes the friend-final call:
-    \begin{enumerate}
-    \item fetches encrypted (requested-relid-set,returned-relid-set) from requestor-iduri using returned-reqid
-    \item decrypts and verifies message, must contain correct requested-relid-set
-    \item stores request for friendee to accept/deny
-    \end{enumerate}
-\end{enumerate}
+.item Responder's processes the friend-final call:
+    .enumerate
+    .item fetches encrypted (requested-relid-set,returned-relid-set) from requestor-iduri using returned-reqid
+    .item decrypts and verifies message, must contain correct requested-relid-set
+    .item stores request for friendee to accept/deny
+    .end enumerate
+.end enumerate
 
 There are five commands related to friendship request. The first three are the
 commands used by the user agent on behalf of the browser for the three major
@@ -807,39 +807,39 @@ we call the QURI-RELID, and will be the one she was given during the friendship
 request process. The friend who's page is being logged into will be called the
 responder, and her identity is responder-iduri.
 
-\begin{enumerate}
-\item The requestor visits responder-iduri/login-as-friend
-    \begin{enumerate}
-    \item submits as the only argument a hash of requestor-iduri
-    \end{enumerate}
+.enumerate
+.item The requestor visits responder-iduri/login-as-friend
+    .enumerate
+    .item submits as the only argument a hash of requestor-iduri
+    .end enumerate
 
-\item The responder's server processes the request
-    \begin{enumerate}
-    \item verifies that hash(requestor-iduri) is a friend
-    \item randomly generates a reqid and login token
-    \item encrypts the token to the user and signs it
-    \item makes it available to be fetched with reqid as identifier
-    \item redirects user to requestor-iduri/return-token with hash(requestor-iduri) and reqid as
+.item The responder's server processes the request
+    .enumerate
+    .item verifies that hash(requestor-iduri) is a friend
+    .item randomly generates a reqid and login token
+    .item encrypts the token to the user and signs it
+    .item makes it available to be fetched with reqid as identifier
+    .item redirects user to requestor-iduri/return-token with hash(requestor-iduri) and reqid as
             arguments
-    \end{enumerate}
+    .end enumerate
 
-\item The requestor's server verifies the browser is the identity owner
-    \begin{enumerate}
-    \item checks that hash(responder-iduri) is a friend
-    \item if browser is not logged in, fails the process
+.item The requestor's server verifies the browser is the identity owner
+    .enumerate
+    .item checks that hash(responder-iduri) is a friend
+    .item if browser is not logged in, fails the process
             (sending the user to a login page encourages phishing)
-    \item fetches the token using from responder-iduri using reqid to identify it
-    \item decrypts and verifies the token
-    \item redirects the browser to responder-iduri/submit-ftoken with requestor-iduri 
+    .item fetches the token using from responder-iduri using reqid to identify it
+    .item decrypts and verifies the token
+    .item redirects the browser to responder-iduri/submit-ftoken with requestor-iduri 
     and the token as arguments
-    \end{enumerate}
+    .end enumerate
 
-\item Friend login final
-    \begin{enumerate}
-    \item verifies that token is valid for requestor-iduri.
-    \item grants friend credentials to the browser for the session.
-    \end{enumerate}
-\end{enumerate}
+.item Friend login final
+    .enumerate
+    .item verifies that token is valid for requestor-iduri.
+    .item grants friend credentials to the browser for the session.
+    .end enumerate
+.end enumerate
 
 There are four commands related to friend login. The first three are used by
 the content-manager on behalf of the user in the primary challenge-response
@@ -1307,7 +1307,7 @@ storage and display. This particular section of DSNP is likely to change, as
 better message formats become apparent. For the time being, we use an
 rfc822-like message format. There are just four types.
 
-\begin{verbatim}
+.grammar
 publisher-iduri      = "Publisher-Iduri" COLON SP iduri CRLF
 
 author-iduri         = "Author-Iduri" COLON SP iduri CRLF
@@ -1334,14 +1334,13 @@ date                 = "Date" COLON SP
 remote-resource      = "Remote-Resource" COLON SP path CRLF
 
 remote-presentation  = "Remote-Presentation" COLON SP path CRLF
-\end{verbatim}
+.end grammar
 
 .subsection Broadcast
 
 Broadcast message type is used for so-called status updates.
 
-\vspace{10pt}
-\begin{verbatim}
+.grammar
 Publisher-Iduri: publisher-iduri
 Message-Id: message-id
 Content-Type: text/plain
@@ -1349,16 +1348,14 @@ Type: broadcast
 Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
-\end{verbatim}
-\vspace{10pt}
+.end grammar
 
 .subsection Board Post
 
 Board post is used for messages that are to be shared with the sender and
 recipient's friends. The board post is akin to a "wall" message.
 
-\vspace{10pt}
-\begin{verbatim}
+.grammar
 Author-Iduri: author-iduri
 Publisher-Iduri: publisher-iduri
 Message-Id: message-id
@@ -1367,15 +1364,13 @@ Content-Type: text/plain
 Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
-\end{verbatim}
-\vspace{10pt}
+.end grammar
 
 .subsection Name Change
 
 Name change is used to transmit a user's new name.
 
-\vspace{10pt}
-\begin{verbatim}
+.grammar
 Publisher-Iduri: publisher-iduri
 Message-Id: message-id
 Type: name-change
@@ -1383,16 +1378,14 @@ Content-Type: text/plain
 Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
-\end{verbatim}
-\vspace{10pt}
+.end grammar
 
 .subsection Photo Upload
 
 Photo upload is use to notifiy friend's about a photo that has been uploaded.
 Resource-Id is an identifier describing the uploader's image.
 
-\vspace{10pt}
-\begin{verbatim}
+.grammar
 Publisher-Iduri: publisher-iduri
 Type: photo-upload
 Message-Id: message-id
@@ -1403,16 +1396,14 @@ Remote-Presentation: /full/path/to/presentation/page
 Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
-\end{verbatim}
-\vspace{10pt}
+.end grammar
 
 .subsection Photo Tag
 
 Photo upload is use to notifiy friend's about a photo that has been uploaded.
 Resource-Id is an identifier describing the uploader's image.
 
-\vspace{10pt}
-\begin{verbatim}
+.grammar
 Author-Iduri: author-iduri
 Publisher-Iduri: publisher-iduri
 Subject-Iduri: subject-iduri
@@ -1425,7 +1416,4 @@ Remote-Presentation: /full//path/to/presentation/page
 Date: YYYY-MM-DD HH:MM:SS
 
 CONTENT
-\end{verbatim}
-\vspace{10pt}
-
-\end{document}
+.end grammar

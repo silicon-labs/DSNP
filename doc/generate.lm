@@ -24,6 +24,7 @@ lex top
 	token cmd_graphic /'.graphic' lws/
 	token cmd_comment /'.comment' lws? '\n'/
 	token cmd_verbatim /'.verbatim' lws? '\n'/
+	token cmd_grammar /'.grammar' lws? '\n'/
 	token cmd_code /'.code' lws? '\n'/
 
 	token cmd_itemize /'.itemize' lws? '\n'/
@@ -92,6 +93,15 @@ lex verbatim
 def verbatim
 	[cmd_verbatim verbatim_line* end_verbatim]
 
+lex grammar
+{
+	token end_grammar /lws? '.' lws? 'end' lws 'grammar' lws? '\n'/
+	token grammar_line /[^\n]* '\n'/
+}
+
+def grammar
+	[cmd_grammar grammar_line* end_grammar]
+
 lex code
 {
 	token end_code /lws? '.' lws? 'end' lws 'code' lws? '\n'/
@@ -155,6 +165,7 @@ def line
 |	[nl]
 |	[comment]
 |	[verbatim]
+|	[grammar]
 |	[code]
 |	[graphic]
 |	[itemize]
@@ -294,6 +305,13 @@ int printLines( Lines: line* )
 			print( Lines )
 			print( '\\end{verbatim}\n' )
 			print( '\\verbspace\n' )
+		}
+		if match L [cmd_grammar Lines: grammar_line* end_grammar] {
+			print( '\\vspace{10pt}\n' )
+			print( '\\begin{verbatim}\n' )
+			print( Lines )
+			print( '\\end{verbatim}\n' )
+			print( '\\vspace{10pt}\n' )
 		}
 		if match L [cmd_code Lines: code_line* end_code] {
 			print( '\\begin{inline_code}\n' )

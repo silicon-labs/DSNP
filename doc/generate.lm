@@ -408,7 +408,6 @@ int main()
 
 	NoteList: note* = note* in Preamble
 
-	License: license = license in Preamble
 
 	print( 
 		~\documentclass[letterpaper,11pt,oneside]{book}
@@ -465,20 +464,6 @@ int main()
 		~
 	)
 
-	i: int = 0
-	for P: paragraph in License {
-		if ( i != 0 ) {
-			print(
-				~
-				~\vspace{5pt}
-				~
-			)
-		}
-		print( "{\\bf\\it\\noindent " )
-		print( P )
-		print( "}\n" )
-		i = i + 1
-	}
 
 	print(
 		~
@@ -593,23 +578,23 @@ print(
 	~
 	~Copyright \copyright\ 2007-2011 Dr. Adrian D. Thurston
 	~
-	~\vspace{5pt}
-	~
-	~{\bf\it\noindent Permission to use, copy, modify, and/or distribute this
-	~software for any purpose with or without fee is hereby granted, provided that
-	~the above copyright notice and this permission notice appear in all copies.}
-	~
-	~\vspace{5pt}
-	~
-	~{\bf\it\noindent
-	~THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-	~WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-	~MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-	~ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-	~WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-	~ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-	~OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.}
-	~
+)
+
+License: license = license in Preamble
+i: int = 0
+for P: paragraph in License {
+		print(
+			~
+			~\vspace{5pt}
+			~
+		)
+	print( "{\\bf\\it\\noindent " )
+	print( P )
+	print( "}\n" )
+	i = i + 1
+}
+
+print( 
 	~\vspace{1.5in}
 	~
 	~{\noindent\bf\large DISCLAIMER: This document is draft quality. It is steadily

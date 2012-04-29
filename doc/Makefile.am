@@ -13,18 +13,18 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-all: dsnp-spec.pdf
+all: spec.pdf
 
 generate.bin: generate.lm
 	colm generate.lm
 
-dsnp-spec.tex: generate.bin dsnp-spec.txt
-	./generate.bin < dsnp-spec.txt > dsnp-spec.tex
+spec.tex: generate.bin spec.txt
+	./generate.bin < spec.txt > spec.tex
 
-dsnp-spec.pdf: dsnp-spec.tex
+spec.pdf: spec.tex
 	pdflatex -interaction=nonstopmode $< >/dev/null
 	pdflatex -interaction=nonstopmode $< >/dev/null
 	pdflatex -interaction=nonstopmode $< >/dev/null
 
 clean:
-	rm -f dsnp-spec.pdf dsnp-spec.log
+	rm -f spec.pdf spec.log

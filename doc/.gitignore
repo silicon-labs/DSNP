@@ -2,10 +2,10 @@
 /init-system
 /new-site
 /init.d-dsnpd
-/dsnp-spec.tex
-/dsnp-spec.log
-/dsnp-spec.toc
-/dsnp-spec.aux
-/dsnp-spec.pdf
+/spec.tex
+/spec.log
+/spec.toc
+/spec.aux
+/spec.pdf
 /generate.bin
 /generate.c

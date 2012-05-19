@@ -476,8 +476,6 @@
     <created_on>Mon Apr 11 22:14:14 -0700 2011</created_on>
     <updated_on>Sun Jan 22 11:06:05 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>261</id>
     <project name="DSNP" id="4"/>
@@ -957,8 +955,6 @@ Also need to broadcast out of author and subjects.</description>
     <created_on>Sun Mar 06 17:59:58 -0800 2011</created_on>
     <updated_on>Sun Jan 22 11:07:42 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>224</id>
     <project name="DSNP" id="4"/>
@@ -1451,8 +1447,6 @@ IDURL starts with https://</description>
     <created_on>Sat Feb 26 11:51:53 -0800 2011</created_on>
     <updated_on>Sun Jan 22 11:06:00 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>199</id>
     <project name="DSNP" id="4"/>
@@ -1957,8 +1951,6 @@ will allow reclaiming of iduri if no keepalive is issued
     <created_on>Sat Feb 12 08:34:18 -0800 2011</created_on>
     <updated_on>Sun Jan 22 11:07:39 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>174</id>
     <project name="DSNP" id="4"/>
@@ -2464,8 +2456,6 @@ are issued on a non-local connection and vice versa.</description>
     <created_on>Tue Feb 01 21:54:20 -0800 2011</created_on>
     <updated_on>Sun Jan 22 11:05:47 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>148</id>
     <project name="DSNP" id="4"/>
@@ -2973,8 +2963,6 @@ as well as with other servers.</description>
     <created_on>Sun Jan 23 11:15:36 -0800 2011</created_on>
     <updated_on>Sun Jan 22 11:05:44 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>123</id>
     <project name="DSNP" id="4"/>
@@ -3482,8 +3470,6 @@ Very well known bug.</description>
     <created_on>Sun May 02 13:20:04 -0700 2010</created_on>
     <updated_on>Sun Jan 22 11:05:41 -0800 2012</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>92</id>
     <project name="DSNP" id="4"/>
@@ -3951,8 +3937,6 @@ On Chris' list Gomethrius, Paul and Soojin should be common to mine.
     <created_on>Sun May 02 13:08:37 -0700 2010</created_on>
     <updated_on>Sun May 02 13:14:01 -0700 2010</updated_on>
   </issue>
-</issues>
-<issues type="array">
   <issue>
     <id>67</id>
     <project name="DSNP" id="4"/>

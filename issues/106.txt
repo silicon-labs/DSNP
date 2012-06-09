@@ -1,0 +1,9 @@
+Id: 106 
+Subject: friend_claim table has friend_id and identity columns 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Fri Dec 31 11:30:22 -0800 2010 
+Updated-On: Fri Jan 07 23:29:42 -0800 2011 
+ 
+Duplicate found it's way in during early development. Need just one. 

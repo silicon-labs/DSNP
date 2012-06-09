@@ -1,0 +1,9 @@
+Id: 67 
+Subject: there seems to be duplicates on the test site 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:08:27 -0700 2010 
+Updated-On: Sun May 02 13:13:54 -0700 2010 
+ 
+could be due to message sending failures -- good messages seem to get duplicated due to the presence of the failures 

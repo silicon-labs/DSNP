@@ -1,0 +1,9 @@
+Id: 62 
+Subject: need a limit on the feed gets big fast 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:06:42 -0700 2010 
+Updated-On: Sun May 02 13:13:58 -0700 2010 
+ 
+ 

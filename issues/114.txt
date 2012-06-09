@@ -1,0 +1,9 @@
+Id: 114 
+Subject: links in message board need login hashes 
+Tracker: Bug 
+Status: Resolved 
+Fixed-Version:  
+Created-On: Wed Jan 12 06:36:48 -0800 2011 
+Updated-On: Sun Jan 22 11:05:42 -0800 2012 
+ 
+They can't be used to initially login to a friend's page. 

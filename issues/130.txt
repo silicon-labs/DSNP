@@ -1,0 +1,9 @@
+Id: 130 
+Subject: parsers and constructors for encryption packets 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Jan 25 17:39:33 -0800 2011 
+Updated-On: Sun Jan 22 11:05:45 -0800 2012 
+ 
+In the process of specifying these. Implementation should be done in parallel. 

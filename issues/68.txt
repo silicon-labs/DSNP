@@ -1,0 +1,9 @@
+Id: 68 
+Subject: photo uploads in the activity stream link to the thumbnail, should link to full  
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:08:37 -0700 2010 
+Updated-On: Sun May 02 13:14:01 -0700 2010 
+ 
+ 

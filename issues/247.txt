@@ -1,0 +1,9 @@
+Id: 247 
+Subject: single database for all sites 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Mon Apr 04 21:51:14 -0700 2011 
+Updated-On: Sun Jan 22 11:07:44 -0800 2012 
+ 
+Going to eliminate the specification of the site at connection time. Selecting a database will have to be done using relids, request ids, iduiris, and other things. May move to this method in the future, but that is not something we need at this time. 

@@ -1,0 +1,9 @@
+Id: 87 
+Subject: can't use case-insensitive searches in mysql for base64 data 
+Tracker: Bug 
+Status: Resolved 
+Fixed-Version:  
+Created-On: Sun May 02 13:17:12 -0700 2010 
+Updated-On: Fri Jan 14 20:03:44 -0800 2011 
+ 
+ 

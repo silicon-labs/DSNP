@@ -1,0 +1,9 @@
+Id: 166 
+Subject: encrypt  in the key agent 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun Feb 06 22:29:48 -0800 2011 
+Updated-On: Sun Jan 22 11:05:52 -0800 2012 
+ 
+first step to jailing keys: signEncrypt in the key agent. 

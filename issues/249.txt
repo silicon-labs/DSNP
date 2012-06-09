@@ -1,0 +1,9 @@
+Id: 249 
+Subject: the notification agent will need a database to manage the site callbacks 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Apr 05 20:23:35 -0700 2011 
+Updated-On: Sun Jan 22 11:07:45 -0800 2012 
+ 
+Need this because we don't want the dsnpd telling the notification agent which program to call. 

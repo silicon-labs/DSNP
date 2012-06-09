@@ -1,0 +1,13 @@
+Id: 187 
+Subject: public key expiry and extension 
+Tracker: Research 
+Status: New 
+Fixed-Version:  
+Created-On: Tue Feb 15 22:54:41 -0800 2011 
+Updated-On: Wed Mar 02 20:19:42 -0800 2011 
+ 
+possible
+
+will allow reclaiming of iduri if no keepalive is issued
+
+"Must never change" is too permanent. 

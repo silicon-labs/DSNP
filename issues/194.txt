@@ -1,0 +1,9 @@
+Id: 194 
+Subject: new request ids for the friend-accept 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Mon Feb 21 11:34:26 -0800 2011 
+Updated-On: Sun Jan 22 11:05:57 -0800 2012 
+ 
+New request ids are warranted here. 

@@ -1,0 +1,9 @@
+Id: 278 
+Subject: bring spec up to current protocol in DSNPd 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.6 
+Created-On: Mon Apr 25 20:51:33 -0700 2011 
+Updated-On: Mon Apr 25 20:55:07 -0700 2011 
+ 
+Most of the development on this version is described in the DSNPd project. Need to make the spec current. 

@@ -1,0 +1,9 @@
+Id: 111 
+Subject: lowercase user names too restrictive 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Mon Jan 10 16:54:28 -0800 2011 
+Updated-On: Thu Jan 20 22:54:34 -0800 2011 
+ 
+At least need uppercase and some symbols like '.'. 

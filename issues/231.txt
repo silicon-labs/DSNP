@@ -1,0 +1,10 @@
+Id: 231 
+Subject: notify remote message participants on remote broadcast success 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.5 
+Created-On: Fri Mar 11 23:00:18 -0800 2011 
+Updated-On: Sun Mar 20 19:02:13 -0700 2011 
+ 
+It is on this notification we need to record (with subjects it can be failed)
+Also need to broadcast out of author and subjects. 

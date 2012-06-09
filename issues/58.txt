@@ -1,0 +1,9 @@
+Id: 58 
+Subject: the pre-filled login forms now have data for all users 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:05:06 -0700 2010 
+Updated-On: Sun May 02 13:14:14 -0700 2010 
+ 
+this is strange, worked better before moving to CakePHP 

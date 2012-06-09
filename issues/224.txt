@@ -1,0 +1,9 @@
+Id: 224 
+Subject: remote_inner can go away 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Mar 06 15:15:24 -0800 2011 
+Updated-On: Sun Jan 22 11:07:41 -0800 2012 
+ 
+This does not carry any information now. It can be removed. 

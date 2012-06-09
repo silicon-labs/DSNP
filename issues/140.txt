@@ -1,0 +1,9 @@
+Id: 140 
+Subject: do we want https:// included in the IDURI? 
+Tracker: Research 
+Status: New 
+Fixed-Version:  
+Created-On: Sat Jan 29 12:46:05 -0800 2011 
+Updated-On: Sat Jan 29 16:09:55 -0800 2011 
+ 
+needs to be resolved. 

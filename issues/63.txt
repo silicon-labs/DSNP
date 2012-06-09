@@ -1,0 +1,9 @@
+Id: 63 
+Subject: messages bradcast from mom to me don't display 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:07:06 -0700 2010 
+Updated-On: Sun May 02 13:13:50 -0700 2010 
+ 
+ 

@@ -1,0 +1,9 @@
+Id: 57 
+Subject: the init.sh script should allow sites to be added to the roster. 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:04:45 -0700 2010 
+Updated-On: Sun May 02 13:14:24 -0700 2010 
+ 
+ 

@@ -1,0 +1,62 @@
+Id: 66 
+Subject: bad crash on wrong password 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:08:05 -0700 2010 
+Updated-On: Sun May 02 13:13:43 -0700 2010 
+ 
+<pre>
+Notice (8): Undefined variable: code [/var/www/dsnp-devel/cake_1.2.5/cake/libs/error.php, line 130]
+
+Code | Context
+
+$params =       array(
+        "USER_ID" => "9",
+        "USER_NAME" => "Suzanne",
+        "USER_URI" => "https://www.anemonal.ca/Suzanne/",
+        "USER" => array(
+        "id" => "9",
+        "user" => "Suzanne",
+        "identity" => "https://www.anemonal.ca/Suzanne/",
+        "name" => "Suzanne Thurston",
+        "email" => null,
+        "display_short" => "Suzanne",
+        "display_long" => "https://www.anemonal.ca/Suzanne/"
+)
+)
+$USER_ID        =       "9"
+$USER_NAME      =       "Suzanne"
+$USER_URI       =       "https://www.anemonal.ca/Suzanne/"
+$USER   =       array(
+        "id" => "9",
+        "user" => "Suzanne",
+        "identity" => "https://www.anemonal.ca/Suzanne/",
+        "name" => "Suzanne Thurston",
+        "email" => null,
+        "display_short" => "Suzanne",
+        "display_long" => "https://www.anemonal.ca/Suzanne/"
+)
+
+        extract($params, EXTR_OVERWRITE);
+        $this->controller->set(array(
+            'code' => $code,
+
+ErrorHandler::error() - /var/www/dsnp-devel/cake_1.2.5/cake/libs/error.php, line 130
+Object::dispatchMethod() - /var/www/dsnp-devel/cake_1.2.5/cake/libs/object.php, line 118
+ErrorHandler::__construct() - /var/www/dsnp-devel/cake_1.2.5/cake/libs/error.php, line 118
+AppError::__construct() - APP/app_error.php, line 14
+Object::cakeError() - /var/www/dsnp-devel/cake_1.2.5/cake/libs/object.php, line 201
+AppController::userError() - APP/app_controller.php, line 62
+CredController::slogin() - APP/controllers/cred_controller.php, line 43
+Object::dispatchMethod() - /var/www/dsnp-devel/cake_1.2.5/cake/libs/object.php, line 116
+Dispatcher::_invoke() - /var/www/dsnp-devel/cake_1.2.5/cake/dispatcher.php, line 227
+Dispatcher::dispatch() - /var/www/dsnp-devel/cake_1.2.5/cake/dispatcher.php, line 194
+[main] - APP/webroot/index.php, line 111
+
+Notice (8): Undefined variable: name [/var/www/dsnp-devel/cake_1.2.5/cake/libs/error.php, line 131]
+
+Code | Context
+
+
+</pre> 

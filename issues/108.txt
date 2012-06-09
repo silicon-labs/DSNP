@@ -1,0 +1,9 @@
+Id: 108 
+Subject: schema refactor around users, identities, relationships 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Fri Dec 31 23:31:41 -0800 2010 
+Updated-On: Fri Jan 07 23:11:18 -0800 2011 
+ 
+Breaking down the schema. 

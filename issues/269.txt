@@ -1,0 +1,9 @@
+Id: 269 
+Subject: need to tighten up fof messages, too much revealed 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Wed Apr 13 20:14:50 -0700 2011 
+Updated-On: Sun Jan 22 11:07:45 -0800 2012 
+ 
+There is too much revealed in these message. Need to tighten them up. 

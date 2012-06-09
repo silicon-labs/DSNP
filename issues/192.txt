@@ -1,0 +1,12 @@
+Id: 192 
+Subject: remove relids from friend request and friend accept portions of protocol 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.4 
+Created-On: Sun Feb 20 12:13:30 -0800 2011 
+Updated-On: Tue Feb 22 23:02:48 -0800 2011 
+ 
+Now that the number of relids is growing, it it clear they
+should not be used to identify objects. The reqids should
+be used. These live only through the friend request process.
+Possibly another set of semi-nonces. 

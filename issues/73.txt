@@ -1,0 +1,9 @@
+Id: 73 
+Subject: problem with friend login Grandpa -> Gomethrius 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:09:56 -0700 2010 
+Updated-On: Sun May 02 13:13:33 -0700 2010 
+ 
+need to investigate this 

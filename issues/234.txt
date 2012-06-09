@@ -1,0 +1,9 @@
+Id: 234 
+Subject: generalize the authorization step for author to all remote broadcast actors 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Mar 12 08:18:41 -0800 2011 
+Updated-On: Sun Jan 22 11:07:43 -0800 2012 
+ 
+Generalize the authorization step for author to all remote broadcast actors, including the publisher. 

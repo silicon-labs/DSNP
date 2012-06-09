@@ -1,0 +1,12 @@
+Id: 145 
+Subject: separate databases of DSNPd and user-agent 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun Jan 30 09:01:27 -0800 2011 
+Updated-On: Sun Jan 22 11:05:47 -0800 2012 
+ 
+It is time to bring the split between the DSNPd and
+user-agent databases back. The complexity is now
+justified. This split is essential if DSNPd is to
+be considered reusable. 

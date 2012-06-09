@@ -1,0 +1,9 @@
+Id: 139 
+Subject: add a notification for logging out the user from the user-agent 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.3 
+Created-On: Sat Jan 29 12:30:25 -0800 2011 
+Updated-On: Sun Jan 30 08:38:01 -0800 2011 
+ 
+ 

@@ -1,0 +1,9 @@
+Id: 129 
+Subject: formalize encryption packet 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.2 
+Created-On: Tue Jan 25 17:38:15 -0800 2011 
+Updated-On: Fri Jan 28 13:19:38 -0800 2011 
+ 
+Encryption data packets are parsed and reconstructed without any kind of specification. They should be specified in a manner that is consistent with the rest of the protocol. 

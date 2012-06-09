@@ -1,0 +1,9 @@
+Id: 113 
+Subject: redirecting from /cred/login back to the home page is annoying 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Mon Jan 10 17:34:33 -0800 2011 
+Updated-On: Tue Jan 11 21:43:24 -0800 2011 
+ 
+breaks the back button after a login. 

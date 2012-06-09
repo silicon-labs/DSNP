@@ -1,0 +1,9 @@
+Id: 253 
+Subject: don't specify user within iduri 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Wed Apr 06 21:55:07 -0700 2011 
+Updated-On: Sun Jan 22 11:07:45 -0800 2012 
+ 
+This change is motivated by a desire to reduce the requirements placed on content managers. We don't want them to have to adopt our SITE/USER/ iduri conventions. They should be able encode a user id in their iduri however they please. 

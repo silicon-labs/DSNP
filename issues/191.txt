@@ -1,0 +1,9 @@
+Id: 191 
+Subject: don't pass any relids to the user agent 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Feb 20 10:51:03 -0800 2011 
+Updated-On: Sun Jan 22 11:05:57 -0800 2012 
+ 
+Don't pass any relids to the user agent. It is not necessary. 

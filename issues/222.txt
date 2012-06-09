@@ -1,0 +1,9 @@
+Id: 222 
+Subject: use an integer for publication type 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Mar 06 08:47:05 -0800 2011 
+Updated-On: Sun Jan 22 11:06:04 -0800 2012 
+ 
+ 

@@ -1,0 +1,9 @@
+Id: 91 
+Subject: logout should force logout with friends 
+Tracker: Bug 
+Status: New 
+Fixed-Version:  
+Created-On: Sun May 02 13:19:28 -0700 2010 
+Updated-On: Tue Jan 18 21:14:45 -0800 2011 
+ 
+otherwise a trail of logins is left about for other people using the browser to stumble upon 

@@ -1,0 +1,9 @@
+Id: 105 
+Subject: all activity should have both subject and author 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Fri Dec 31 10:48:36 -0800 2010 
+Updated-On: Fri Jan 07 23:11:22 -0800 2011 
+ 
+ 

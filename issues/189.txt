@@ -1,0 +1,10 @@
+Id: 189 
+Subject: consider using two ports, messages and control 
+Tracker: Research 
+Status: New 
+Fixed-Version:  
+Created-On: Sun Feb 20 08:42:07 -0800 2011 
+Updated-On: Sun Feb 20 08:42:07 -0800 2011 
+ 
+The message port for high volume broadcast.
+Control for user-user interaction. 

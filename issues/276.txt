@@ -1,0 +1,9 @@
+Id: 276 
+Subject: DSNPd is getting stricter about use of IDURI 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sat Apr 23 11:50:20 -0700 2011 
+Updated-On: Sun Jan 22 11:06:05 -0800 2012 
+ 
+Now only accepts proper IDURIs (scheme is dsnp). 

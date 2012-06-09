@@ -1,0 +1,9 @@
+Id: 112 
+Subject: "arg does not validate" is way too cryptic 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Mon Jan 10 16:55:17 -0800 2011 
+Updated-On: Sun Jan 22 11:05:42 -0800 2012 
+ 
+Need friendlier, custom error messages for each arg. 

@@ -1,0 +1,13 @@
+Id: 237 
+Subject: move away from the term 'user-agent' 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version: 0.6 
+Created-On: Sat Mar 19 10:49:34 -0700 2011 
+Updated-On: Mon Apr 25 20:54:50 -0700 2011 
+ 
+Don't try to change the meaning of this from what is extablished.
+
+"Content-Mangaer" would be better.
+
+The reference content manager can be called DCM1 or DCMONE (DSNP Content-Manager One). 

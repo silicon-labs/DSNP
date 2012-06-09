@@ -1,0 +1,9 @@
+Id: 78 
+Subject: login function should return a token used to auth user-based commands 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.3 
+Created-On: Sun May 02 13:15:27 -0700 2010 
+Updated-On: Sun Jan 30 08:40:16 -0800 2011 
+ 
+The login function should return a token that is used to authorize user-based commands. 

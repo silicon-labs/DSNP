@@ -1,0 +1,9 @@
+Id: 183 
+Subject: encryption packets should be fully binary 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.4 
+Created-On: Mon Feb 14 19:37:25 -0800 2011 
+Updated-On: Tue Feb 22 22:35:29 -0800 2011 
+ 
+Many encryption packets are composed of other encryption packets, resulting in binary data. Makes sense to go all binary and not bother with ascii at all. Also, encryption packets don't need to be parsed or composed in the UI (typically scripting languages). 

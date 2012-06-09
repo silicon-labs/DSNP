@@ -1,0 +1,9 @@
+Id: 88 
+Subject: ping up the tree 
+Tracker: Research 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:18:37 -0700 2010 
+Updated-On: Fri Jan 07 23:30:49 -0800 2011 
+ 
+An ack of all messages up the tree is pretty complicated. Maybe just periodic pings. The ping could contain the max of all highest message sequence number. 

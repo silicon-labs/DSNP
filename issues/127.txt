@@ -1,0 +1,10 @@
+Id: 127 
+Subject: query the sysadmin for convert program in init-system 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Mon Jan 24 14:19:17 -0800 2011 
+Updated-On: Sun Jan 22 11:05:45 -0800 2012 
+ 
+Install it in the new-site-conf file and source that when making configuration files.
+ 

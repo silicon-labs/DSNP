@@ -1,0 +1,9 @@
+Id: 79 
+Subject: all connections must either be SSL or from localhost 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun May 02 13:15:36 -0700 2010 
+Updated-On: Wed Mar 02 18:09:34 -0800 2011 
+ 
+The localhost check should be performed when the connection opens. If over the loopback interface then non-ssl is permitted. Otherwise it is required. 

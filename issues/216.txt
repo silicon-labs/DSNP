@@ -1,0 +1,9 @@
+Id: 216 
+Subject: the date and time fields should be moved into user messages 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version: 0.5 
+Created-On: Thu Mar 03 20:40:23 -0800 2011 
+Updated-On: Sat Mar 05 09:56:14 -0800 2011 
+ 
+ 

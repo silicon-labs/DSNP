@@ -1,0 +1,9 @@
+Id: 185 
+Subject: encryption packets for relids 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.4 
+Created-On: Tue Feb 15 20:06:22 -0800 2011 
+Updated-On: Tue Feb 22 22:35:40 -0800 2011 
+ 
+There should be one that encapsulates the four relids, one per key. There should be another that encapsulates two pairs of relid sets, for the friend-request process to use. 

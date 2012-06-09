@@ -1,0 +1,9 @@
+Id: 180 
+Subject: public key packet needs to be updated to include the four keys, plus a priv0 sig. 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.4 
+Created-On: Sun Feb 13 11:25:52 -0800 2011 
+Updated-On: Tue Feb 22 22:08:01 -0800 2011 
+ 
+ 

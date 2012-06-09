@@ -1,0 +1,9 @@
+Id: 72 
+Subject: need a retry time on failed messages 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:09:40 -0700 2010 
+Updated-On: Sun May 02 13:13:26 -0700 2010 
+ 
+ 

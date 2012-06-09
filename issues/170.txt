@@ -1,0 +1,9 @@
+Id: 170 
+Subject: CA cert file should be set at configuration time 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Thu Feb 10 21:19:37 -0800 2011 
+Updated-On: Sun Jan 22 11:05:53 -0800 2012 
+ 
+Add a configuration option and some guessing for the CA cert file. This will eliminate the new-site config file entirely. 

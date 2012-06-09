@@ -1,0 +1,9 @@
+Id: 117 
+Subject: make spec document more easily available (not inside a tarball) 
+Tracker: Support 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Sun Jan 16 15:29:24 -0800 2011 
+Updated-On: Tue Jan 18 21:14:11 -0800 2011 
+ 
+ 

@@ -1,0 +1,9 @@
+Id: 92 
+Subject: reduce concurrent connection consumption 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun May 02 13:19:45 -0700 2010 
+Updated-On: Sun Jan 22 11:05:40 -0800 2012 
+ 
+concurrent connection consumption is pretty high during message propgation. Need some turn takgin. 

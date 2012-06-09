@@ -1,0 +1,9 @@
+Id: 77 
+Subject: wrapping text of a message around a floated details section is awkward 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:11:14 -0700 2010 
+Updated-On: Sun May 02 13:12:51 -0700 2010 
+ 
+instead just divide the sections with a vertical divider 

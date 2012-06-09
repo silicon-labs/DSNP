@@ -1,0 +1,10 @@
+Id: 95 
+Subject: switch away from RC4 or abandon prefix 
+Tracker: Bug 
+Status: New 
+Fixed-Version:  
+Created-On: Sun May 02 13:20:54 -0700 2010 
+Updated-On: Tue Jan 18 21:14:46 -0800 2011 
+ 
+RC4 weak WRT prefix. Harden this or pick something else.
+Very well known bug. 

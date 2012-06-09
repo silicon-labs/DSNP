@@ -1,0 +1,9 @@
+Id: 56 
+Subject: local delivery mechanism 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:04:26 -0700 2010 
+Updated-On: Sun May 02 13:14:28 -0700 2010 
+ 
+Need a mechanism, probably a program specified in the conf file, that is used to notify on events and deliver messages from DSNPd to the application. 

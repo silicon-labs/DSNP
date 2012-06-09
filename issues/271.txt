@@ -1,0 +1,9 @@
+Id: 271 
+Subject: send notification all on stdin, no args, expect result 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun Apr 17 11:18:26 -0700 2011 
+Updated-On: Sun Jan 22 11:07:46 -0800 2012 
+ 
+ 

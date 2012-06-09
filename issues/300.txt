@@ -1,0 +1,9 @@
+Id: 300 
+Subject: friend of friends should fetch the remote pub signing key 
+Tracker: Feature 
+Status: New 
+Fixed-Version: 0.7 
+Created-On: Sat Jun 25 10:17:57 -0700 2011 
+Updated-On: Sat Jun 25 10:17:57 -0700 2011 
+ 
+Have the recipient fetch instead of the sender deliver. The recipient may not care. It can also be proactive in verifying the message, instead of just waiting. 

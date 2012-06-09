@@ -1,0 +1,9 @@
+Id: 228 
+Subject: add subjects to remote broadcasting 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.5 
+Created-On: Tue Mar 08 20:18:25 -0800 2011 
+Updated-On: Sun Mar 20 19:02:01 -0700 2011 
+ 
+This is necessary to cover tagging and other kinds of messages where a third party needs to be mentioned. 

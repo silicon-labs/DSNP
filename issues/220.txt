@@ -1,0 +1,9 @@
+Id: 220 
+Subject: in remote activity what we call subject_id is actually publisher_id 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version: 0.5 
+Created-On: Sun Mar 06 08:44:17 -0800 2011 
+Updated-On: Sun Mar 06 15:46:20 -0800 2011 
+ 
+ 

@@ -1,0 +1,9 @@
+Id: 287 
+Subject: The rb_key table will grow endlessly 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Thu May 12 07:44:50 -0700 2011 
+Updated-On: Sun Jan 22 11:07:48 -0800 2012 
+ 
+This needs to be restricted. Probably just a unique key on the table and then using an INSERT IGNORE. 

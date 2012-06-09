@@ -1,0 +1,9 @@
+Id: 125 
+Subject: there is no non-blocking SSL connect 
+Tracker: Bug 
+Status: Resolved 
+Fixed-Version:  
+Created-On: Sun Jan 23 11:16:14 -0800 2011 
+Updated-On: Sun Jan 22 11:05:44 -0800 2012 
+ 
+needed for consistency 

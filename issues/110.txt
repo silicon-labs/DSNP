@@ -1,0 +1,9 @@
+Id: 110 
+Subject: dsnpd: switch to non-blocking sockets with select 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Jan 08 13:35:19 -0800 2011 
+Updated-On: Sun Jan 22 11:05:42 -0800 2012 
+ 
+This will allow timeout to be properly implemented. 

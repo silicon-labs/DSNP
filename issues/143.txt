@@ -1,0 +1,9 @@
+Id: 143 
+Subject: friend request referral to bypass captcha 
+Tracker: Feature 
+Status: New 
+Fixed-Version:  
+Created-On: Sat Jan 29 14:39:33 -0800 2011 
+Updated-On: Sat Jan 29 14:39:33 -0800 2011 
+ 
+If you are a friend of a friend you should be able to friend request without having to solve a captcha. 

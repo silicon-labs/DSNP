@@ -1,0 +1,11 @@
+Id: 190 
+Subject: expand the friend_claim states to accomodate friend accept 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun Feb 20 10:13:58 -0800 2011 
+Updated-On: Sun Jan 22 11:05:56 -0800 2012 
+ 
+Need another friend_claim state for friend accept state.
+The sender moves into ACCEPT_GRANTED in the notify_accept,
+then goes into ESTABLISHED on the registered. 

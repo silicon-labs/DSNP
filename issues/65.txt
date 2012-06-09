@@ -1,0 +1,9 @@
+Id: 65 
+Subject: if no real name is given then show just the user name, not the full ID 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:07:34 -0700 2010 
+Updated-On: Sun May 02 13:13:47 -0700 2010 
+ 
+Eats up too much space and it not really necessary. People can mouse-over if interested. 

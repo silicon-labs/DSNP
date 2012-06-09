@@ -1,0 +1,43 @@
+Id: 60 
+Subject: submitting an invalid ID to freq/become results in a crash 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:06:05 -0700 2010 
+Updated-On: Sun May 02 13:14:08 -0700 2010 
+ 
+<pre>
+Notice (8): Undefined variable: ERROR [APP/controllers/freq_controller.php, line 58]
+
+Code | Context
+
+$identity       =       "https://www.anemonal.ca/Suzanne/"
+$fp     =       resource
+$send   =       "SPP/0.1 https://www.anemonal.ca/
+comm_key b1e222eb6781262df3bbe009cacd9299fa20908c9368ab59
+relid_request Grandpa https://www.anemonal.ca/Suzanne/
+"
+$res    =       "ERROR 2
+"
+$regs   =       array(
+        "ERROR 2",
+        "2"
+)
+
+        else if ( ereg("^ERROR ([0-9]+)", $res, $regs) ) {
+            die( "!!! There was an error:<br>" .
+            $ERROR[$regs[1]] . "<br>" .
+
+FreqController::sbecome() - APP/controllers/freq_controller.php, line 58
+Object::dispatchMethod() - /var/www/dsnp-devel/cake_1.2.5/cake/libs/object.php, line 116
+Dispatcher::_invoke() - /var/www/dsnp-devel/cake_1.2.5/cake/dispatcher.php, line 227
+
+
+Dispatcher::dispatch() - /var/www/dsnp-devel/cake_1.2.5/cake/dispatcher.php, line 194
+[main] - APP/webroot/index.php, line 111
+
+!!! There was an error:
+
+Check that the URI you submitted is correct.
+
+</pre> 

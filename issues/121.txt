@@ -1,0 +1,9 @@
+Id: 121 
+Subject: need to remove the redirect to a login page when taken home and have no creds 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sat Jan 22 15:28:28 -0800 2011 
+Updated-On: Sun Jan 22 11:05:44 -0800 2012 
+ 
+This usage pattern encourages phishing. It should not be used. 

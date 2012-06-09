@@ -1,0 +1,9 @@
+Id: 270 
+Subject: need a relid to give to friends to use in FOF messages 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Thu Apr 14 21:05:42 -0700 2011 
+Updated-On: Sun Jan 22 11:07:46 -0800 2012 
+ 
+The relid will be used to decrypt. Then inside will be the signer's iduri. 

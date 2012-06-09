@@ -1,0 +1,9 @@
+Id: 132 
+Subject: need to describe notifications 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.3 
+Created-On: Tue Jan 25 17:55:58 -0800 2011 
+Updated-On: Sun Jan 30 08:39:00 -0800 2011 
+ 
+notifications are formalized, we need to describe them. 

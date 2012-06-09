@@ -1,0 +1,9 @@
+Id: 102 
+Subject: salt in friend_id table probably is not needed 
+Tracker: Research 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Fri Dec 31 09:18:17 -0800 2010 
+Updated-On: Fri Jan 07 23:34:07 -0800 2011 
+ 
+likely don't need this 

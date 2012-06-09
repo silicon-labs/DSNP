@@ -1,0 +1,9 @@
+Id: 148 
+Subject: parse messages as they are submitted 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Feb 01 15:51:18 -0800 2011 
+Updated-On: Sun Jan 22 11:05:47 -0800 2012 
+ 
+When messages come in via submit_broadcast and other, the message body should be verified then. 

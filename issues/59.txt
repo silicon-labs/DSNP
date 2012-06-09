@@ -1,0 +1,9 @@
+Id: 59 
+Subject: need to change name after friending someone otherwise they don't get it 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:05:22 -0700 2010 
+Updated-On: Sun May 02 13:14:11 -0700 2010 
+ 
+After a friend accept, need to push out the name. 

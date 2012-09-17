@@ -420,28 +420,28 @@ if ( ! StartParser.tree ) {
 	exit( 1 )
 }
 
-print( 
-	~\documentclass[letterpaper,11pt,oneside]{article}
-	~\usepackage{comment}
-	~
-	~\topmargin -0.20in
-	~\oddsidemargin 0in
-	~\textwidth 6.5in
-	~\textheight 9in
-	~
-	~\setlength{\parskip}{0pt}
-	~\setlength{\topsep}{0pt}
-	~\setlength{\partopsep}{0pt}
-	~\setlength{\itemsep}{0pt}
-	~
-	~\begin{document}
-)
+#print( 
+#	~\documentclass[letterpaper,11pt,oneside]{article}
+#	~\usepackage{comment}
+#	~
+#	~\topmargin -0.20in
+#	~\oddsidemargin 0in
+#	~\textwidth 6.5in
+#	~\textheight 9in
+#	~
+#	~\setlength{\parskip}{0pt}
+#	~\setlength{\topsep}{0pt}
+#	~\setlength{\partopsep}{0pt}
+#	~\setlength{\itemsep}{0pt}
+#	~
+#	~\begin{document}
+#)
 
-print(
-	~
-	~\thispagestyle{empty}
-	~\begin{center}
-)
+#print(
+#	~
+#	~\thispagestyle{empty}
+#	~\begin{center}
+#)
 
 match StartParser.tree
 	[Preamble: preamble SectionList: section*]
@@ -455,94 +455,98 @@ match SubTitle [cmd_sub_title SubTitleData: text* nl]
 Author: author = author in Preamble
 match Author [cmd_author AuthorData: text* nl]
 
-print( '{\\huge ' TitleData '}\\\\\n' )
-print( '\\vspace*{12pt}\n' )
-print( '{\\Large ' SubTitleData '}\\\\\n' )
-print(
-	~\vspace{12pt}
-	~by\\
-	~\vspace{12pt}
-)
-print( '{\\large ' AuthorData '}\\\\\n' )
-print( '\\vspace{16pt}\n' )
+print( '= ' TitleData '\n' )
+print( AuthorData '\n' )
+print( '\n' )
+
+#print( '{\\huge ' TitleData '}\\\\\n' )
+#print( '\\vspace*{12pt}\n' )
+#print( '{\\Large ' SubTitleData '}\\\\\n' )
+#print(
+#	~\vspace{12pt}
+#	~by\\
+#	~\vspace{12pt}
+#)
+#print( '{\\large ' AuthorData '}\\\\\n' )
+#print( '\\vspace{16pt}\n' )
 
 for N: note in Preamble {
 	match N [cmd_note T: text* nl]
-	print( '\\vspace{6pt}\n' )
-	print( "{\\noindent\\bf\\large " T "}\\\\\n" )
+	#print( '\\vspace{6pt}\n' )
+	#print( "{\\noindent\\bf\\large " T "}\\\\\n" )
 }
 
-print(
-	~\end{center}
-)
+#print(
+#	~\end{center}
+#)
 
-print(
-	~\pagenumbering{roman}
-	~
-	~\vspace{1.3in}
-	~
-	~\section*{License}
-	~
-	~Copyright \copyright\ 2007-2011 Dr. Adrian D. Thurston
-	~
-)
+#print(
+#	~\pagenumbering{roman}
+#	~
+#	~\vspace{1.3in}
+#	~
+#	~\section*{License}
+#	~
+#	~Copyright \copyright\ 2007-2011 Dr. Adrian D. Thurston
+#	~
+#)
 
 License: license = license in Preamble
 i: int = 0
 for P: paragraph in License {
-		print(
-			~
-			~\vspace{5pt}
-			~
-		)
-	print( "{\\bf\\it\\noindent " )
-	print( P )
-	print( "}\n" )
+#		print(
+#			~
+#			~\vspace{5pt}
+#			~
+#		)
+#	print( "{\\bf\\it\\noindent " )
+#	print( P )
+#	print( "}\n" )
 	i = i + 1
 }
 
-print( 
-	~\vspace{1.5in}
-	~
-	~{\noindent\bf\large DISCLAIMER: This document is draft quality. It is steadily
-	~improving in lockstep with the reference implementation.}
-	~
-	~\newpage
-	~
-	~\tableofcontents
-	~
-)
+#print( 
+#	~\vspace{1.5in}
+#	~
+#	~{\noindent\bf\large DISCLAIMER: This document is draft quality. It is steadily
+#	~improving in lockstep with the reference implementation.}
+#	~
+#	~\newpage
+#	~
+#	~\tableofcontents
+#	~
+#)
 
-print(
-	~\pagenumbering{arabic}
-	~
-	~\newpage
-	~
-)
+#print(
+#	~\pagenumbering{arabic}
+#	~
+#	~\newpage
+#	~
+#)
 
 for Section: section in repeat(SectionList) {
 	match Section
 		[cmd_section DirData: text* nl Lines: line* SubSectionList: sub_section*]
 
-	print( '\\section{' DirData '}\n' )
+	print( '== ' DirData '\n' )
 	printLines( Lines )
 	for SubSection: sub_section in repeat(SubSectionList) {
 		match SubSection
 			[cmd_sub_section DirData: text* nl Lines: line* 
 					SubSubSectionList: sub_sub_section*]
 
-		print( '\\subsection{' DirData '}\n' )
+		print( '=== ' DirData '\n' )
 		printLines( Lines )
 
 		for SubSubSection: sub_sub_section in repeat(SubSubSectionList) {
 			match SubSubSection
 				[cmd_sub_sub_section DirData: text* nl Lines: line*]
 
-			print( '\\subsubsection{' DirData '}\n' )
+			print( '=== ' DirData '\n' )
 			printLines( Lines )
 		}
 	}
 }
 
-print( "\n" )
-print( "\\end{document}\n" )
+#print( "\n" )
+#print( "\\end{document}\n" )

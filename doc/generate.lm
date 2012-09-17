@@ -414,9 +414,9 @@ int printLines( Lines: line* )
 	}
 }
 
-parse Start: start( stdin )
-if ( ! Start ) {
-	print( error() '\n' )
+parse StartParser: start[ stdin ]
+if ( ! StartParser.tree ) {
+	print( StartParser.error '\n' )
 	exit( 1 )
 }
 
@@ -443,7 +443,7 @@ print(
 	~\begin{center}
 )
 
-match Start 
+match StartParser.tree
 	[Preamble: preamble SectionList: section*]
 
 Title: title = title in Preamble

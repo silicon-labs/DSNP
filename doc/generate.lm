@@ -291,6 +291,8 @@ int printText( Lines: text* )
 	}
 }
 
+global depth: int = 1
+
 int printLines( Lines: line* )
 {
 	for L: line in repeat(Lines) {
@@ -307,25 +309,19 @@ int printLines( Lines: line* )
 			printPlData( PlData )
 		}
 		if match L [cmd_verbatim Lines: verbatim_line* end_verbatim] {
-			print( '\\begin{verbatim}\n' )
+			print( '----\n' )
 			print( Lines )
-			print( '\\end{verbatim}\n' )
-			print( '\\verbspace\n' )
+			print( '----\n' )
 		}
 		if match L [cmd_grammar Lines: grammar_line* end_grammar] {
-			print( '\\vspace{10pt}\n' )
-			print( '\\begin{verbatim}\n' )
+			print( '----\n' )
 			print( Lines )
-			print( '\\end{verbatim}\n' )
-			print( '\\vspace{10pt}\n' )
+			print( '----\n' )
 		}
 		if match L [cmd_code Lines: code_line* end_code] {
-			print( '\\begin{inline_code}\n' )
-			print( '\\begin{verbatim}\n' )
+			print( '----\n' )
 			print( Lines )
-			print( '\\end{verbatim}\n' )
-			print( '\\end{inline_code}\n' )
-			print( '\\verbspace\n' )
+			print( '----\n' )
 		}
 		if match L [cmd_graphic Name: word Scale: scale? nl] {
 			print( '\\graphspace\n' )
@@ -340,24 +336,27 @@ int printLines( Lines: line* )
 			print( '\\graphspace\n' )
 		}
 		if match L [cmd_itemize Lines: line* Items: item* end_itemize] {
-			print( '\\begin{itemize}\n' )
 			printLines( Lines )
 			for Item: item in repeat(Items) {
 				match Item [cmd_item Lines: line*]
-				print( '\\item ' )
+				print( '* ' )
 				printLines( Lines )
 			}
-			print( '\\end{itemize}\n' )
 		}
 		if match L [cmd_enumerate Lines: line* Items: item* end_enumerate] {
-			print( '\\begin{enumerate}\n' )
 			printLines( Lines )
 			for Item: item in repeat(Items) {
 				match Item [cmd_item Lines: line*]
-				print( '\\item ' )
+				d: int = depth
+				while ( d > 0 ) {
+					print( '.' )
+					d = d - 1
+				}
+				print( ' ' )
+				depth = depth + 1
 				printLines( Lines )
+				depth = depth - 1
 			}
-			print( '\\end{enumerate}\n' )
 		}
 		if match L [cmd_figure DirData: text nl Lines: line* Caption: caption? end_figure] {
 			print( '\\begin{figure}\n' )

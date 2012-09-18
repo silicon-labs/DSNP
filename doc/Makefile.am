@@ -13,21 +13,9 @@
 #  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 #  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-all: spec-asciidoc.html
+all: spec.html
 
-generate.bin: generate.lm
-	colm generate.lm
+spec.html: spec.txt
+	a2x -d book -f xhtml spec.txt
 
-spec-asciidoc.html: spec-asciidoc.txt
-	a2x -d book -f xhtml spec-asciidoc.txt
-
-spec-asciidoc.txt: generate.bin spec.txt
-	./generate.bin < spec.txt > spec-asciidoc.txt
-
-spec.pdf: spec.tex
-	pdflatex -interaction=nonstopmode $< >/dev/null
-	pdflatex -interaction=nonstopmode $< >/dev/null
-	pdflatex -interaction=nonstopmode $< >/dev/null
-
-clean:
-	rm -f spec.pdf spec.log
+CLEANFILES = spec.html

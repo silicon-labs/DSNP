@@ -24,6 +24,22 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 DISCLAIMER: This document is draft quality. It is steadily
 improving in lockstep with the reference implementation.
 
+[preface]
+== Abstract
+
+The social web is emerging as a pervasive communication tool. The systems in
+use provide us with online identity and give us tools for efficiently
+communicating with people we know. While the emergence of this new paradigm is
+to be appreciated, there is a fundamental improvement to be made. The existing
+tools force us to consider who we are able to communicate with when we decide
+who our communication service provider is. As we collectively discover the
+value in the social web, we must lift this constraint. We must go from pockets
+of social activity in closed systems, to global social activity over open
+protocols. Distributed Social Networking Protocol (DSNP) one such protocol.
+DSNP is a base protocol for taking the user experiences of the social web into
+an open space were everyone is free to contribute to an ecosystem of software
+and techniques. 
+
 == Introduction
 
 Social networking sites have become an important part of our day-to-day
@@ -47,7 +63,6 @@ rich applications that can compete with the products developed as single
 databases.
 
 === Properties of DSNP
-
 
 . Identities are URI-based.
 
@@ -138,7 +153,6 @@ hardly know but might like to get to know better.
 
 === Definitions
 
-
 * Content-Manager: Software that a user, and user's connections interact with.
 This software provides the 'front' for the user's identity. At a minimum, this
 should be a web-based application, though other forms of content-manager are
@@ -146,32 +160,17 @@ possible.
 
 == Short Paper
 
-=== Abstract
-
-The social web is emerging as a pervasive communication tool. The systems in
-use provide us with online identity. They give us tools for efficiently
-communicating with people we know. While the emergence of this new paradigm is
-to be appreciated, there are improvements to be made. The existing tools force
-us to consider who we are able to communicate with when we decide who our
-communication service provider is. As we collectively discover the value in the
-social web, we must lift this constraint. We must go from pockets of social
-activity in closed systems, to global social activity over open protocols.
-Distributed Social Networking Protocol (DSNP) one such protocol. In this
-position paper we cover the most important elements of DSNP. These elements are
-tools for taking the user experiences of the social web into an open space were
-everyone is free to contribute to an ecosystem of software and techniques. 
-
 === Introduction
 
 Social networking sites are becoming essential communication tools. The
 paradigms are becoming ingrained in our day-to-day communication, but we are
-behind the needed state of affairs because the de facto tools are closed systems.
-Our identities are becoming fused with the companies that
-provide us with the software. Our data is not owned by us. We have little
-choice and therefore little control. The good news is that the existing systems
-represent the first generation of this technology. The next generation will be
-built on a foundation of open technology. This paper focuses on the design of
-one candidate -- Distributed Social Networking Protocol (DSNP).
+behind the needed state of affairs because the de facto tools are closed
+systems. Our online identities are fused with the companies that provide us
+with the software. Our data is not owned by us. We have little choice and
+therefore little control. The good news is that the existing systems represent
+the first generation of this technology. The next generation will be built on a
+foundation of open technology. This document describes the design of one
+candidate -- Distributed Social Networking Protocol (DSNP).
 
 When we look closely at existing social networking systems we find that
 underlying all the features are two basic elements, identity and message
@@ -181,22 +180,23 @@ other times, content is created on a friend's identity. In both cases,
 notification of the activity is broadcast to the user's contacts. Once received
 by contacts, it can be filtered and displayed appropriately.
 
-In a closed system this is an easy problem. We can have a collection of users with
-some internal encoding of identity. User-created content is encoded in the same
-database using the same schemes. Displaying broadcasted information is simply a
-problem of selecting the appropriate data from the common database. So long as
-the system is programmed securely, no user can break the rules by injectng
-messages to appear as though they come from someone else. No user can or snoop
-on messages they are not entitled to see.
+In a closed system this is an easy problem to solve. We can have a collection
+of users with some internal encoding of identity. User-created content is
+encoded in the same database using the same schemas. Displaying broadcasted
+information is simply a problem of selecting the appropriate data from the
+common database. So long as the system is programmed appropriately, no user can
+break the rules by injectng messages to appear as though they come from someone
+else. No user can snoop on messages they are not entitled to see.
 
-Once we start moving to a decentralized system, we gain badly needed freedom,
-but at the same time we introduce a number of security issues. How does one
-stop people from sniffing activity? How about forging messages? The integrity of our
+Once we move to a decentralized system, we gain badly needed freedom, but at
+the same time we introduce a number of security issues. How does one stop
+people from sniffing activity? How about forging messages? The integrity of our
 identity is important to us, and without ground rules and some basic
 protections, any proposed system will quickly become unusable. 
 
-In this paper we reduce social networking activities to a small number of
-functions. We do not need to compromise on security or reduce the quality of
+In this document we reduce social networking activities to a small number of
+basic functions that can be used to construct a familiar social networking user
+experience. We do not need to compromise on security or reduce the quality of
 the user experience when we break from a central database. We give an overview
 of our techniques and we present a software architecture designed for rapid
 uptake of these ideas.

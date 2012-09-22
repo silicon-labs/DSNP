@@ -40,6 +40,15 @@ DSNP is a base technology for taking the user experiences of the social web into
 an open space were everyone is free to contribute to an ecosystem of software
 and techniques. 
 
+[preface]
+== About the Author
+
+Adrian D. Thurston holds a Ph.D. in Computer Science from Queen's University,
+where he studied and developed source transformation systems. Dr. Thurston is
+the author of Ragel, a unique software development tool for producing very fast
+parsers. He works in the field of network security where he designs and
+develops real-time parsing systems that detect security-related events.
+
 == Introduction
 
 Social networking sites have become an important part of our day-to-day
@@ -183,7 +192,7 @@ This software provides the 'front' for the user's identity. At a minimum, this
 should be a web-based application, though other forms of content-manager are
 possible.
 
-== Short Paper
+== Overview
 
 === RSA-Based Identity
 
@@ -464,15 +473,6 @@ http://www.complang.org/dsnp/
 This protocol is still being developed and is expected to change. The intent is
 to continuously maintain a working reference implementation. As of this
 writing, the protocol is at version 0.6.
-
-=== About the Author
-
-Adrian D. Thurston holds a Ph.D. in Computer Science from Queen's University,
-where he studied and developed source transformation systems. Adrian is the
-author of Ragel, a unique software development tool for producing very fast
-parsers. He works in the field of network security where he designs and
-develops real-time parsing systems that analyse network traffic for evidence of
-security events.
 
 == Packets
 

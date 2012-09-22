@@ -35,8 +35,8 @@ tools force us to consider who we are able to communicate with when we decide
 who our communication service provider is. As we collectively discover the
 value in the social web, we must lift this constraint. We must go from pockets
 of social activity in closed systems, to global social activity over open
-protocols. Distributed Social Networking Protocol (DSNP) one such protocol.
-DSNP is a base protocol for taking the user experiences of the social web into
+protocols. Distributed Social Networking Protocol (DSNP) is one such protocol.
+DSNP is a base technology for taking the user experiences of the social web into
 an open space were everyone is free to contribute to an ecosystem of software
 and techniques. 
 
@@ -44,23 +44,49 @@ and techniques.
 
 Social networking sites have become an important part of our day-to-day
 communication. These sites give us a place to declare our identity, an ability
-to establish connections with others, and a suite of efficient broadcast communcation
-tools.
+to establish connections with others, and a suite of efficient broadcast
+communcation tools.
 
-This is all well and good, save for the fact that the popular social networks
-of today are closed systems that do not allow their users to cross network
-boundaries. For social networking to reach its full potential as a
-commmunication paradigm, there must be no boundaries between service providers.
-Instead, users must be able to establish connections to others regardless of
-where they host their profile. 
+This is all well and good, save for the fact that the sites we use are closed
+systems that do not allow users to cross network boundaries. Our online
+identities are fused with the companies that provide us with the software. Our
+data is not owned by us. We have little choice and therefore little control. 
 
-The rewards of such a system are a freedom to choose providers, competition,
-innovation, and dispersion of the data, eliminating the problems associated
-with massive repositories of personal information.
+For social networking to reach its full potential as a commmunication paradigm,
+there must be no boundaries between service providers. Instead, users must be
+able to establish connections to others regardless of where they host their
+profile. This can be achieved by developing a protocol for social networking
+software to use to communicate across the internet. This document describes the
+design of one candidate -- Distributed Social Networking Protocol (DSNP).
 
-The challenges of such a system are security, privacy, and developing feature
-rich applications that can compete with the products developed as single
-databases.
+When we look closely at existing social networking systems we find that
+underlying all the features are two basic elements, identity and message
+broadcast. When a user takes an action, such as uploading a file or writing a
+blog post, they do it with their own identity as the host of the content. At
+other times, content is created on a friend's identity. In both cases,
+notification of the activity is broadcast to the user's contacts. Once received
+by contacts, it can be filtered and displayed appropriately.
+
+In a closed system this is an easy problem to solve. We can have a collection
+of users with some internal encoding of identity. User-created content is
+encoded in the same database using the same schemas. Displaying broadcasted
+information is simply a problem of selecting the appropriate data from the
+common database. So long as the system is programmed appropriately, no user can
+break the rules by injectng messages to appear as though they come from someone
+else. No user can snoop on messages they are not entitled to see.
+
+Once we move to a decentralized system, we gain badly needed freedom, but at
+the same time we introduce a number of security issues. How does one stop
+people from sniffing activity? How about forging messages? The integrity of our
+identity is important to us, and without ground rules and some basic
+protections, any proposed system will quickly become unusable. 
+
+In this document we reduce social networking activities to a small number of
+basic functions that can be used to construct a familiar social networking user
+experience. We do not need to compromise on security or reduce the quality of
+the user experience when we break from a central database. We give an overview
+of our techniques and we present a software architecture designed for rapid
+uptake of these ideas.
 
 === Properties of DSNP
 
@@ -93,7 +119,6 @@ broadcast traffic.
 
 . DSNP allows users to deny messages and trace a leak in the event that a
 private statement is shared along with the proof.
-
 
 === Security Model
 
@@ -159,47 +184,6 @@ should be a web-based application, though other forms of content-manager are
 possible.
 
 == Short Paper
-
-=== Introduction
-
-Social networking sites are becoming essential communication tools. The
-paradigms are becoming ingrained in our day-to-day communication, but we are
-behind the needed state of affairs because the de facto tools are closed
-systems. Our online identities are fused with the companies that provide us
-with the software. Our data is not owned by us. We have little choice and
-therefore little control. The good news is that the existing systems represent
-the first generation of this technology. The next generation will be built on a
-foundation of open technology. This document describes the design of one
-candidate -- Distributed Social Networking Protocol (DSNP).
-
-When we look closely at existing social networking systems we find that
-underlying all the features are two basic elements, identity and message
-broadcast. When a user takes an action, such as uploading a file or writing a
-blog post, they do it with their own identity as the host of the content. At
-other times, content is created on a friend's identity. In both cases,
-notification of the activity is broadcast to the user's contacts. Once received
-by contacts, it can be filtered and displayed appropriately.
-
-In a closed system this is an easy problem to solve. We can have a collection
-of users with some internal encoding of identity. User-created content is
-encoded in the same database using the same schemas. Displaying broadcasted
-information is simply a problem of selecting the appropriate data from the
-common database. So long as the system is programmed appropriately, no user can
-break the rules by injectng messages to appear as though they come from someone
-else. No user can snoop on messages they are not entitled to see.
-
-Once we move to a decentralized system, we gain badly needed freedom, but at
-the same time we introduce a number of security issues. How does one stop
-people from sniffing activity? How about forging messages? The integrity of our
-identity is important to us, and without ground rules and some basic
-protections, any proposed system will quickly become unusable. 
-
-In this document we reduce social networking activities to a small number of
-basic functions that can be used to construct a familiar social networking user
-experience. We do not need to compromise on security or reduce the quality of
-the user experience when we break from a central database. We give an overview
-of our techniques and we present a software architecture designed for rapid
-uptake of these ideas.
 
 === RSA-Based Identity
 

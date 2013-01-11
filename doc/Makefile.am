@@ -18,4 +18,6 @@ all: spec.html
 spec.html: spec.txt
 	a2x -d book -f xhtml spec.txt
 
+doc_DATA = spec.html docbook-xsl.css
+
 CLEANFILES = spec.html

@@ -1,6 +1,9 @@
 /Makefile
+/Makefile.in
 /dsnpd
 /config.h
+/config.h.in
+/config.h.in~
 /parser.cc
 /schema.h
 /.*.d
@@ -10,3 +13,6 @@
 /packet.cc
 /umessage.cc
 /command.cc
+/*.o
+/.deps
+/stamp-h1

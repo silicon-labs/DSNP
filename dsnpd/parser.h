@@ -17,6 +17,8 @@
 #ifndef _PARSER_H
 #define _PARSER_H
 
+#include "lstring.h"
+
 struct Parser
 {
 	enum Control

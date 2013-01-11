@@ -343,7 +343,10 @@ int main( int argc, char *const *argv )
 
 	/* Open the log file. */
 	if ( gbl.background ) {
-		daemon( 0, 0 );
+		int r = daemon( 0, 0 );
+		if ( r != 0 ) {
+			fatal( "daemonization failed: %s\n", strerror(errno) );
+		}
 		gbl.pid = getpid();
 		openLogFile();
 	}

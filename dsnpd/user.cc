@@ -32,7 +32,7 @@
 
 #include "dsnp.h"
 #include "encrypt.h"
-#include "string.h"
+#include "lstring.h"
 #include "error.h"
 #include "keyagent.h"
 

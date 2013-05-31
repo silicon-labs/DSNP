@@ -1,0 +1,9 @@
+Id: 210 
+Subject: include in message author/publisher/subject 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.5 
+Created-On: Wed Mar 02 21:01:48 -0800 2011 
+Updated-On: Sat Mar 05 09:56:29 -0800 2011 
+ 
+The user messages, which are what are signed, need to have the author, publisher and subject IDURIs in them. 

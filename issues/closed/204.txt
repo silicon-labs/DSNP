@@ -1,0 +1,10 @@
+Id: 204 
+Subject: how to configure the call to the notification 
+Tracker: Research 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun Feb 27 10:26:30 -0800 2011 
+Updated-On: Sun Jan 22 11:07:40 -0800 2012 
+ 
+# Package configure time, in which case one DSNPd can serve only a single kind of user agent. Idea being it is more secure and simpler.
+# Software configuration time. Not really less secure since conf files are now owned by root and not writable by the network-facing processes. Will allow multiple types of user agents to run on a single host -- perhaps should override all other concerns. 

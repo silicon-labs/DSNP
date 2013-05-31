@@ -1,0 +1,9 @@
+Id: 344 
+Subject: unify the three projects 
+Tracker: Bug 
+Status: New 
+Fixed-Version: 0.14 
+Created-On: Sat Apr 28 14:49:16 -0700 2012 
+Updated-On: Sat Apr 28 14:49:16 -0700 2012 
+ 
+Was maintaining three separate docs: the specification, the daemon and the UI. Unify. They will be released as one. 

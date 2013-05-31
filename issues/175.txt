@@ -1,0 +1,9 @@
+Id: 175 
+Subject: the key agent should not rely on the user -> id and iduri -> id mappings in DSNPd 
+Tracker: Bug 
+Status: New 
+Fixed-Version:  
+Created-On: Sat Feb 12 08:34:18 -0800 2011 
+Updated-On: Sun Jan 22 11:07:39 -0800 2012 
+ 
+The key agent should store user names and iduris. Altering DSNPd user ids to another user's set of keys is a possible attack vectors. Keys should be fixed to the string identifying the owner (the public facing identifier). 

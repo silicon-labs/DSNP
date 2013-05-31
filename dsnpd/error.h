@@ -17,7 +17,7 @@
 #ifndef _USERERR_H
 #define _USERERR_H
 
-#include "string.h"
+#include "lstring.h"
 #include "errno.h"
 
 #include <openssl/bio.h>

@@ -1,0 +1,9 @@
+Id: 182 
+Subject: eliminate the prefriend message 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.4 
+Created-On: Sun Feb 13 22:24:20 -0800 2011 
+Updated-On: Tue Feb 22 22:02:30 -0800 2011 
+ 
+With the advent of the four keys we don't want to have to make explicit the type of message (key priv) of each message, so we will allocate multiple relids. In keeping with this hiding, we should also hide the fact that a message is a prefriend message. Merge these messages into 'message.' 

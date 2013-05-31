@@ -1,0 +1,12 @@
+Id: 153 
+Subject: implement a listener process and fork server processes on incoming connections 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Wed Feb 02 19:55:06 -0800 2011 
+Updated-On: Sun Jan 22 11:05:48 -0800 2012 
+ 
+A few reasons to go this way now ...
+1. Don't want to load TLS context on every connection
+2. Want a privileged process for black boxing private keys and managing sessions. Access should be granted to this process via a pipe passed on by the fork.
+3. Want to trigger operations by a timer. 

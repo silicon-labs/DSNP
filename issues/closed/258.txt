@@ -1,0 +1,9 @@
+Id: 258 
+Subject: specify the dsnp functions using a URI arg, not path components 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Apr 09 09:31:40 -0700 2011 
+Updated-On: Sun Jan 22 11:06:04 -0800 2012 
+ 
+We don't want a dependence on any kind of content manager implementation. Using URI args is as generic as we can get. They can be tacked on to any URI. 

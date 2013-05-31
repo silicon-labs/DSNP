@@ -1,0 +1,9 @@
+Id: 94 
+Subject: key data out of user table 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun May 02 13:20:21 -0700 2010 
+Updated-On: Sun Jan 22 11:05:41 -0800 2012 
+ 
+Key data needs to come out of the user table and into a separate table that the _ua user does not have access to. 

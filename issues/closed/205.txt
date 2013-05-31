@@ -1,0 +1,9 @@
+Id: 205 
+Subject: need to source the comm key from DSNPd in new-site 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Feb 27 12:03:55 -0800 2011 
+Updated-On: Sun Jan 22 11:06:01 -0800 2012 
+ 
+Can't generate this. Responsibility lies with the DSNPd software to generate the key that it requires for communication. 

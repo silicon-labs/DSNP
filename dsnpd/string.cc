@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "string.h"
+#include "lstring.h"
 #include "dsnp.h"
 #include "buffer.h"
 #include "error.h"

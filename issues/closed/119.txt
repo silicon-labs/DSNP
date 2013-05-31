@@ -1,0 +1,12 @@
+Id: 119 
+Subject: need to catch exceptions in the queue runner 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sat Jan 22 11:21:16 -0800 2011 
+Updated-On: Sun Jan 22 11:05:43 -0800 2012 
+ 
+Need to catch exceptions in the queue runner. However
+we cannot print error messages to any BIO, we should
+just log. This will require some adjustment to the
+error handling framework. 

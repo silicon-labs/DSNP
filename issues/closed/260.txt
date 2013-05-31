@@ -1,0 +1,9 @@
+Id: 260 
+Subject: delayed broadcast message delivery if missing repub key 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Apr 09 23:08:28 -0700 2011 
+Updated-On: Sun Jan 22 11:07:45 -0800 2012 
+ 
+If one of the actor's remote broadcast key isn't present, then delay processing of the message. 

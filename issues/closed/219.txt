@@ -1,0 +1,9 @@
+Id: 219 
+Subject: record publications in a separate table 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Mar 05 10:34:31 -0800 2011 
+Updated-On: Sun Jan 22 11:06:03 -0800 2012 
+ 
+Use this table to track message identifiers. 

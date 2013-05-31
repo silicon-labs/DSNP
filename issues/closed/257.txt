@@ -1,0 +1,9 @@
+Id: 257 
+Subject: notifications and commands up to date (USER -> IDURI) 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Thu Apr 07 21:24:16 -0700 2011 
+Updated-On: Sun Jan 22 11:06:04 -0800 2012 
+ 
+In the latest DSNPd version the daemon will no longer know about users, only iduri. The commands and the notifications will change. Need to keep the user agent up date WRT these changes. 

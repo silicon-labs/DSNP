@@ -1,0 +1,9 @@
+Id: 84 
+Subject: need a way to evaluate someone who has friend-requested you 
+Tracker: Feature 
+Status: New 
+Fixed-Version:  
+Created-On: Sun May 02 13:16:37 -0700 2010 
+Updated-On: Tue Jan 18 21:14:45 -0800 2011 
+ 
+ 

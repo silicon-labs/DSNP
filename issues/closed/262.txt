@@ -1,0 +1,9 @@
+Id: 262 
+Subject: must include the full path (starting at host) for remote content 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Mon Apr 11 22:14:14 -0700 2011 
+Updated-On: Sun Jan 22 11:06:05 -0800 2012 
+ 
+Previously we could rely on the username and site forming the base to these paths. No longer true. We don't know how the URI is constructed. The paths for remote items should be full. They should be rooted at the remote host or contain the host. If they contain the host then we allow references to objects at other hosts ... is that a good idea ... possibly for content servers. 

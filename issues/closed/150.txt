@@ -1,0 +1,12 @@
+Id: 150 
+Subject: partition server commands by local/TLS connection 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Feb 01 22:33:50 -0800 2011 
+Updated-On: Sun Jan 22 11:05:48 -0800 2012 
+ 
+Once a connection has been established as local or TLS,
+jump to a parser with only the appropriate commands.
+This will result in parse errors if local commands
+are issued on a non-local connection and vice versa. 

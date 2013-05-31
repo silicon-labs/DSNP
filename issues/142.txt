@@ -1,0 +1,9 @@
+Id: 142 
+Subject: friend of a friend login 
+Tracker: Feature 
+Status: New 
+Fixed-Version:  
+Created-On: Sat Jan 29 14:38:23 -0800 2011 
+Updated-On: Sat Jan 29 16:05:42 -0800 2011 
+ 
+should result in a new role type 

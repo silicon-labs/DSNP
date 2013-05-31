@@ -1,0 +1,9 @@
+Id: 193 
+Subject: new request ids for the friend-accept 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version: 0.4 
+Created-On: Mon Feb 21 11:31:33 -0800 2011 
+Updated-On: Tue Feb 22 23:01:33 -0800 2011 
+ 
+Can't use relids, shouldn't use the original reqids due to the possible time between request and response. Need something new. 

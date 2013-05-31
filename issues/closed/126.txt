@@ -1,0 +1,9 @@
+Id: 126 
+Subject: new user page needs a hint for valid user names 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Mon Jan 24 09:18:07 -0800 2011 
+Updated-On: Sun Jan 22 11:05:45 -0800 2012 
+ 
+ 

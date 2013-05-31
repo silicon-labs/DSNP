@@ -18,7 +18,7 @@
 
 #include "dsnp.h"
 #include "encrypt.h"
-#include "string.h"
+#include "lstring.h"
 #include "keyagent.h"
 #include "error.h"
 

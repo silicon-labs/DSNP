@@ -1,0 +1,9 @@
+Id: 212 
+Subject: is there any point in authors or subjects encrypting messages? 
+Tracker: Research 
+Status: Closed 
+Fixed-Version: 0.5 
+Created-On: Thu Mar 03 17:45:53 -0800 2011 
+Updated-On: Fri Mar 11 21:14:14 -0800 2011 
+ 
+The publisher will most likely display the activity on their page. It is not possible for the publisher to serve it only to the author's or the subject's friends, therefore during distribution there is not much point in encrypting using these user's keys. Though signing is certainly advisable. 

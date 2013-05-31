@@ -1,0 +1,16 @@
+Id: 76 
+Subject: friend links not complete on testing sites 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:10:58 -0700 2010 
+Updated-On: Sun May 02 13:14:20 -0700 2010 
+ 
+From Suzanne:
+
+Going on my site and checking my friends'list, I noticed the following:
+
+On your friend list Gomethrius should be common with mine
+On Gomethrius' list  Adrian and Santa should be common with mine
+On Chris' list Gomethrius, Paul and Soojin should be common to mine.
+ 

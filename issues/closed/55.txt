@@ -1,0 +1,10 @@
+Id: 55 
+Subject: remove user-data from backend user table 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:04:10 -0700 2010 
+Updated-On: Sun May 02 13:14:31 -0700 2010 
+ 
+Need to move to a strict separation of DSNP tables from user-data. All user data is stored by the application and the DSNPd manages only the user data necessary for connection.
+ 

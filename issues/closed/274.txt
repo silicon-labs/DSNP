@@ -1,0 +1,9 @@
+Id: 274 
+Subject: remove traces of site and username ... now should have just iduris 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Fri Apr 22 17:18:39 -0700 2011 
+Updated-On: Sun Jan 22 11:07:47 -0800 2012 
+ 
+There are still artifacts of the the old assumed iduri composition. Remove them. 

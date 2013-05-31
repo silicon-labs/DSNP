@@ -1,0 +1,9 @@
+Id: 93 
+Subject: id hash computation should use lowercase ID 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:20:04 -0700 2010 
+Updated-On: Sun Jan 22 11:05:41 -0800 2012 
+ 
+Much of the system allows case-insensitive identities. The friend-hash computation needs to follow. If changed, the DB needs to be updated throughout. 

@@ -1,0 +1,9 @@
+Id: 238 
+Subject: TlsConnect should close connections when done. 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Mar 20 10:51:28 -0700 2011 
+Updated-On: Sun Jan 22 11:07:43 -0800 2012 
+ 
+ 

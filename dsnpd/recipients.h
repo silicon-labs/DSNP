@@ -20,7 +20,7 @@
 #include <list>
 #include <string>
 #include "dlist.h"
-#include "string.h"
+#include "lstring.h"
 
 struct Recipient
 {

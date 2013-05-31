@@ -1,0 +1,9 @@
+Id: 226 
+Subject: protect inner sigs in remote broadcast using the publisher's broadcast key 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Mar 06 18:01:29 -0800 2011 
+Updated-On: Sun Jan 22 11:07:42 -0800 2012 
+ 
+We are no longer encrypting the inner (#212), but the sig needs some protection. Makes sense to use the publisher's broadcast key, so all sigs on the message are verified using the same broadcast key. 

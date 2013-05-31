@@ -1,0 +1,9 @@
+Id: 147 
+Subject: describe the user message format 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.3 
+Created-On: Mon Jan 31 18:16:13 -0800 2011 
+Updated-On: Mon Jan 31 21:58:40 -0800 2011 
+ 
+ 

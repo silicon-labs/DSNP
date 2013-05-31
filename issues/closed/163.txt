@@ -1,0 +1,9 @@
+Id: 163 
+Subject: public keys that come from elsewhere need to be stored in the key agent 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun Feb 06 21:30:35 -0800 2011 
+Updated-On: Sun Jan 22 11:05:51 -0800 2012 
+ 
+Need a database connection and to store incoming keys. 

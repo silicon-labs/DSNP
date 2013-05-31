@@ -1,0 +1,9 @@
+Id: 162 
+Subject: eliminate the config global 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Feb 06 18:05:43 -0800 2011 
+Updated-On: Sun Jan 22 11:05:51 -0800 2012 
+ 
+Won't do for setting configuration of the keyagent, which needs to be a thread. 

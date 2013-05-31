@@ -1,0 +1,9 @@
+Id: 133 
+Subject: need to parse message payloads before handing them to the notification script 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Jan 25 17:56:55 -0800 2011 
+Updated-On: Sun Jan 22 11:05:46 -0800 2012 
+ 
+the notification program will parse them, but we should verify them inside dsnp first 

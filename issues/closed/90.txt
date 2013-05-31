@@ -1,0 +1,9 @@
+Id: 90 
+Subject: users can set their names to empty, to create zero-length links 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun May 02 13:19:09 -0700 2010 
+Updated-On: Sun Jan 22 11:05:40 -0800 2012 
+ 
+should detect empty names and use the user name instead 

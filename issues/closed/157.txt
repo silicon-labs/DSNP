@@ -1,0 +1,9 @@
+Id: 157 
+Subject: open TLS context before forking  
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Feb 05 09:32:25 -0800 2011 
+Updated-On: Sun Jan 22 11:05:50 -0800 2012 
+ 
+Now that we are doing the listen-fork ourselves we can open TLS context sooner and avoid doing it at every server startup. 

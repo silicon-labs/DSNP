@@ -1,0 +1,9 @@
+Id: 261 
+Subject: one config file with specific vars taken per agent/server 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sun Apr 10 12:34:15 -0700 2011 
+Updated-On: Sun Jan 22 11:07:45 -0800 2012 
+ 
+ 

@@ -1,2 +1,2 @@
 
-SUBDIRS = doc
+SUBDIRS = dsnpd doc

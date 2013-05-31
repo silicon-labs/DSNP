@@ -1,0 +1,9 @@
+Id: 245 
+Subject: binary for anything that isn't for communcation with the content manager 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sat Mar 26 18:36:44 -0700 2011 
+Updated-On: Sun Jan 22 11:07:44 -0800 2012 
+ 
+ 

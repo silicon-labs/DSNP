@@ -1,0 +1,9 @@
+Id: 215 
+Subject: sequence numbers should be replaced by a message ID that is allocated by the publisher 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Thu Mar 03 17:57:52 -0800 2011 
+Updated-On: Sun Jan 22 11:06:02 -0800 2012 
+ 
+The message ID should not necessarily by required to be sequential. Up to the publisher? 

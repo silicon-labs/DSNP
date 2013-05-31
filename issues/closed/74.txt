@@ -1,0 +1,9 @@
+Id: 74 
+Subject: resetting the forward tree for thurston causes an error 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:10:11 -0700 2010 
+Updated-On: Sun May 02 13:13:22 -0700 2010 
+ 
+resetting the forward tree for thurston causes SSL_connect to error 

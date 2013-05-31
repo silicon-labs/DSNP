@@ -1,0 +1,14 @@
+Id: 137 
+Subject: supply session id at login time 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.3 
+Created-On: Sat Jan 29 09:11:32 -0800 2011 
+Updated-On: Sun Jan 30 08:38:20 -0800 2011 
+ 
+Need to supply a user-agent chosen session id to
+supply at login time. The session id will be
+used by the daemon to notify the user agent
+when login tokens are no longer valid.
+
+This should be done for user login and friend login. 

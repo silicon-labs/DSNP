@@ -1,0 +1,9 @@
+Id: 146 
+Subject: need new notifications to support database split 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.3 
+Created-On: Sun Jan 30 09:56:19 -0800 2011 
+Updated-On: Sun Jan 30 20:09:22 -0800 2011 
+ 
+Once DSNPd and UA start using separate databases there will need to be a number of new notifications. 

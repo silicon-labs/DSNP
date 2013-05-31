@@ -1,0 +1,11 @@
+Id: 120 
+Subject: display of browser's activity cannot send to friend login 
+Tracker: Bug 
+Status: Resolved 
+Fixed-Version:  
+Created-On: Sat Jan 22 15:24:44 -0800 2011 
+Updated-On: Sun Jan 22 11:05:43 -0800 2012 
+ 
+Causes relationship not found error. Should instead just go to the root of identity.
+
+Reported by Wren. 

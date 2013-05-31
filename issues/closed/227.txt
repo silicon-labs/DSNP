@@ -1,0 +1,9 @@
+Id: 227 
+Subject: inner sigs in the remote broadcast should be protected by the publisher's broadcast key 
+Tracker: Research 
+Status: Closed 
+Fixed-Version: 0.5 
+Created-On: Sun Mar 06 18:03:10 -0800 2011 
+Updated-On: Sun Mar 20 20:47:01 -0700 2011 
+ 
+The inner sig is no longer protected using an inner (author) broadcast key. It is a bad idea to send a sig without any added key. Use the publisher's bk key, which the author has because she is a friend. 

@@ -1,0 +1,9 @@
+Id: 75 
+Subject: error in SSL_connect when trying to reload friends for thurston 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:10:41 -0700 2010 
+Updated-On: Sun May 02 13:13:17 -0700 2010 
+ 
+Most likely due to xinet limit on number of connections. 

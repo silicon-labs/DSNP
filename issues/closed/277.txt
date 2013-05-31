@@ -1,0 +1,9 @@
+Id: 277 
+Subject: implement photo tagging as an example of remote broadcast with subject 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Apr 23 16:03:10 -0700 2011 
+Updated-On: Sun Jan 22 11:06:05 -0800 2012 
+ 
+ 

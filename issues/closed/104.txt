@@ -1,0 +1,9 @@
+Id: 104 
+Subject: add check for exepected schema version to daemon and user agent 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Fri Dec 31 09:34:44 -0800 2010 
+Updated-On: Sun Jan 22 11:05:41 -0800 2012 
+ 
+Refuse to run if the schema is not the correct version. 

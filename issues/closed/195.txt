@@ -1,0 +1,9 @@
+Id: 195 
+Subject: use the three separate log files if backgrounded, otherwise stderr 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Wed Feb 23 19:27:04 -0800 2011 
+Updated-On: Sun Jan 22 11:05:58 -0800 2012 
+ 
+bout time to do this 

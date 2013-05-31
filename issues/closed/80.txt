@@ -1,0 +1,10 @@
+Id: 80 
+Subject: the init.sh script is missing SSL conf info. 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Sun May 02 13:15:50 -0700 2010 
+Updated-On: Fri Jan 07 23:36:40 -0800 2011 
+ 
+It should ask about this and set it up.
+ 

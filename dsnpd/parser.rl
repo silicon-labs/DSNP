@@ -15,7 +15,7 @@
  */
 
 #include "dsnp.h"
-#include "string.h"
+#include "lstring.h"
 #include "error.h"
 #include "encrypt.h"
 

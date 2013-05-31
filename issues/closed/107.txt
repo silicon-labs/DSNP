@@ -1,0 +1,12 @@
+Id: 107 
+Subject: need to organize names for different types of things 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Fri Dec 31 11:55:50 -0800 2010 
+Updated-On: Sun Jan 22 11:05:42 -0800 2012 
+ 
+id -> column name for primary key
+iduri -> the URI representing a user's identity
+user  -> the username
+ 

@@ -26,7 +26,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 
-#include "string.h"
+#include "lstring.h"
 #include "buffer.h"
 #include "parser.h"
 #include "dlist.h"

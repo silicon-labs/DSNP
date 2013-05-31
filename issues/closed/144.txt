@@ -1,0 +1,13 @@
+Id: 144 
+Subject: follow protocol spec in passing in login tokens where login is required 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Jan 29 17:08:03 -0800 2011 
+Updated-On: Sun Jan 22 11:05:46 -0800 2012 
+ 
+A number of commands are only for logged-in
+users. The DSNP 0.3 spec will require that
+login tokens be used for these commands.
+Need to follow the spec.
+ 

@@ -1,0 +1,9 @@
+Id: 61 
+Subject: friending oneself appears to work and causes problems 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:06:26 -0700 2010 
+Updated-On: Sun May 02 13:14:04 -0700 2010 
+ 
+ 

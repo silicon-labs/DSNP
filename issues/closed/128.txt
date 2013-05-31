@@ -1,0 +1,12 @@
+Id: 128 
+Subject: four private keys should be allocated per user 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.4 
+Created-On: Tue Jan 25 00:45:05 -0800 2011 
+Updated-On: Tue Feb 22 22:35:13 -0800 2011 
+ 
+* priv 3: no password. For activity that doesn't require the user be logged in.
+* priv 2: password, decrypted in memory only while user is logged in. A sig indicates the user is currently logged in. Used for activity by logged in user.
+* priv 1: password, never stored in memory, decrypted on each login. A sig by this key indicates the user recently logged in with her password. 
+* priv 0: password, never stored in memory, decrypted on demand. A sig by the key indicates the user submitted her password to produce the sig. This ring is reserved for moving and deleting the identity. 

@@ -1,0 +1,9 @@
+Id: 208 
+Subject: notification commands should be normalized 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Wed Mar 02 18:11:41 -0800 2011 
+Updated-On: Sun Jan 22 11:06:01 -0800 2012 
+ 
+Many of them have the prefix notification_. This is too verbose. 

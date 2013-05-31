@@ -17,7 +17,7 @@
 #ifndef _ENCRYPT_H
 #define _ENCRYPT_H
 
-#include "string.h"
+#include "lstring.h"
 #include "parser.h"
 #include "buffer.h"
 #include "dlist.h"

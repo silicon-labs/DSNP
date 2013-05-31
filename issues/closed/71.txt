@@ -1,0 +1,9 @@
+Id: 71 
+Subject: forward_tree_insert after a ftr segfaults 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:09:24 -0700 2010 
+Updated-On: Sun May 02 13:13:30 -0700 2010 
+ 
+may not be building tree correctly 

@@ -1,0 +1,9 @@
+Id: 86 
+Subject: error messages are a little too intense 
+Tracker: Bug 
+Status: Resolved 
+Fixed-Version:  
+Created-On: Sun May 02 13:17:03 -0700 2010 
+Updated-On: Fri Jan 14 19:59:54 -0800 2011 
+ 
+Need to tone them down a bit. Less red. 

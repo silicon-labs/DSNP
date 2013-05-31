@@ -1,0 +1,9 @@
+Id: 314 
+Subject: generate the spec doc, outputting HTML and PDF (latex). 
+Tracker: Feature 
+Status: New 
+Fixed-Version: 0.7 
+Created-On: Sat Aug 06 10:10:20 -0700 2011 
+Updated-On: Sat Aug 06 10:10:20 -0700 2011 
+ 
+ 

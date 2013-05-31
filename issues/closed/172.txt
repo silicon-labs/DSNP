@@ -1,0 +1,9 @@
+Id: 172 
+Subject: new user creation should pause until the notification comes in 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Fri Feb 11 17:02:20 -0800 2011 
+Updated-On: Sun Jan 22 11:05:54 -0800 2012 
+ 
+otherwise it appears as no new user was created 

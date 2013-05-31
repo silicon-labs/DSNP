@@ -1,0 +1,9 @@
+Id: 225 
+Subject: don't encrypt in inner remote broadcast 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sun Mar 06 17:59:58 -0800 2011 
+Updated-On: Sun Jan 22 11:07:42 -0800 2012 
+ 
+As per #212 we are no longer encrypting inner messages in remote broadcast. Since the publisher may display to all friends, we just match that. 

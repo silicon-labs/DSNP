@@ -1,0 +1,10 @@
+Id: 81 
+Subject: need to implement the bottom-up distribution tree 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:16:03 -0700 2010 
+Updated-On: Fri Jan 14 20:02:07 -0800 2011 
+ 
+This will require the addition of a redundancy number to indicate which redundant version of the tree a message is associated with. This should be distinct from the distribution tree identity that is used to categorize friends.
+ 

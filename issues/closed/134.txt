@@ -1,0 +1,9 @@
+Id: 134 
+Subject: need a notification for DSNPd to use to expire cookies 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Jan 25 17:58:53 -0800 2011 
+Updated-On: Sun Jan 22 11:05:46 -0800 2012 
+ 
+The lifetime of a login cookie needs to be controlled by DSNPd, since it can receive logout requests from other servers. DSNPd needs to be able to notify that a cookie is done. 

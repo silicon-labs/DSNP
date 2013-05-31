@@ -1,0 +1,9 @@
+Id: 288 
+Subject: remove duplicates from the activity stream 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Sat May 14 13:39:09 -0700 2011 
+Updated-On: Sun Jan 22 11:06:06 -0800 2012 
+ 
+Probably just insert the message id, add a unique key constraint on it and make the row insert an insert ignore. 

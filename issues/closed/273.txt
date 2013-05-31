@@ -1,0 +1,9 @@
+Id: 273 
+Subject: use ABNF for specifcation 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version: 0.6 
+Created-On: Fri Apr 22 10:29:51 -0700 2011 
+Updated-On: Mon Apr 25 20:54:10 -0700 2011 
+ 
+ 

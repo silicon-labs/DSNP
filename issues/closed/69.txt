@@ -1,0 +1,9 @@
+Id: 69 
+Subject: if the notification log file cannot be opened, the message is lost 
+Tracker: Bug 
+Status: Closed 
+Fixed-Version:  
+Created-On: Sun May 02 13:08:52 -0700 2010 
+Updated-On: Sun May 02 13:13:37 -0700 2010 
+ 
+should just redirect to /dev/null 

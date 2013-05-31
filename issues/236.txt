@@ -1,0 +1,9 @@
+Id: 236 
+Subject: signing key pairs for every friendship 
+Tracker: Feature 
+Status: New 
+Fixed-Version:  
+Created-On: Thu Mar 17 22:05:18 -0700 2011 
+Updated-On: Thu Mar 17 22:05:18 -0700 2011 
+ 
+ 

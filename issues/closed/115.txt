@@ -1,0 +1,9 @@
+Id: 115 
+Subject: protocol+version, comm_key commands need results 
+Tracker: Feature 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Sat Jan 15 09:48:15 -0800 2011 
+Updated-On: Sat Jan 15 09:55:28 -0800 2011 
+ 
+ 

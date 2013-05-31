@@ -1,0 +1,9 @@
+Id: 209 
+Subject: look into the use of error identifiers instead of codes in ERROR returns statements. 
+Tracker: Research 
+Status: New 
+Fixed-Version:  
+Created-On: Wed Mar 02 20:19:15 -0800 2011 
+Updated-On: Sun Mar 20 19:08:51 -0700 2011 
+ 
+Eliminating the need for a code -> ID mapping may prove better for the UI implementations. 

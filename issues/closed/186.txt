@@ -1,0 +1,10 @@
+Id: 186 
+Subject: add encryption packets for relid set and relid set pair 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Tue Feb 15 20:07:31 -0800 2011 
+Updated-On: Sun Jan 22 11:05:56 -0800 2012 
+ 
+# Packet for a set of four relids.
+# Packet for a pair of relid sets. 

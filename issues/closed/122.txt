@@ -1,0 +1,9 @@
+Id: 122 
+Subject: add a dsnp user 
+Tracker: Feature 
+Status: Completed 
+Fixed-Version:  
+Created-On: Sat Jan 22 15:38:31 -0800 2011 
+Updated-On: Sun Jan 22 11:05:44 -0800 2012 
+ 
+The daemon should run as an isolated user. 

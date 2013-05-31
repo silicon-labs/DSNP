@@ -1,0 +1,10 @@
+Id: 103 
+Subject: extend friend_claim table to include self 
+Tracker: Research 
+Status: Closed 
+Fixed-Version: 0.1 
+Created-On: Fri Dec 31 09:29:04 -0800 2010 
+Updated-On: Fri Jan 07 23:31:26 -0800 2011 
+ 
+Move friend_claim towards a 'relationship' table with all possible kinds of relationships
+that could occur in an activity stream, oneself. 

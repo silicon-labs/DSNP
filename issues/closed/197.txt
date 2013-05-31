@@ -1,0 +1,9 @@
+Id: 197 
+Subject: conf files owned by root, drop privs after reading them 
+Tracker: Bug 
+Status: Fixed 
+Fixed-Version:  
+Created-On: Wed Feb 23 22:52:07 -0800 2011 
+Updated-On: Sun Jan 22 11:05:59 -0800 2012 
+ 
+this can prevent the processes from being able to modify the conf files 
